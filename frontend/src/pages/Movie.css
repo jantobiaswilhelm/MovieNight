@@ -1,0 +1,148 @@
+.movie-page {
+  padding: 2rem 0;
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 1.5rem;
+  color: var(--text-secondary);
+}
+
+.back-link:hover {
+  color: var(--accent);
+}
+
+.movie-header {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.movie-poster-large {
+  width: 200px;
+  height: 300px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.movie-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.movie-details h1 {
+  margin: 0;
+}
+
+.movie-date {
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.movie-announcer {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.movie-stats {
+  display: flex;
+  gap: 2rem;
+  margin-top: auto;
+}
+
+.movie-stats .stat {
+  display: flex;
+  flex-direction: column;
+}
+
+.movie-stats .stat-value {
+  font-size: 2rem;
+  font-weight: bold;
+  color: var(--warning);
+}
+
+.movie-stats .stat-label {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.rating-section {
+  margin-bottom: 2rem;
+}
+
+.rating-section h2 {
+  margin-bottom: 1rem;
+}
+
+.login-prompt {
+  background: var(--bg-secondary);
+  padding: 1.5rem;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.login-prompt p {
+  margin-bottom: 1rem;
+  color: var(--text-secondary);
+}
+
+.success {
+  color: var(--success);
+  margin-top: 1rem;
+}
+
+.all-ratings h2 {
+  margin-bottom: 1rem;
+}
+
+.ratings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.rating-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: var(--bg-card);
+  border-radius: 4px;
+}
+
+.rating-user {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.rating-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+}
+
+.rating-score {
+  font-weight: bold;
+  color: var(--warning);
+}
+
+@media (max-width: 600px) {
+  .movie-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .movie-poster-large {
+    width: 150px;
+    height: 225px;
+  }
+
+  .movie-stats {
+    justify-content: center;
+  }
+}
