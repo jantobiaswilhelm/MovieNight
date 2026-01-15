@@ -1,0 +1,80 @@
+.stats-page {
+  padding: 2rem 0;
+}
+
+.stats-page h1 {
+  margin-bottom: 2rem;
+}
+
+.stats-section {
+  margin-top: 2rem;
+}
+
+.stats-section h2 {
+  margin-bottom: 1rem;
+  font-size: 1.25rem;
+}
+
+.top-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.top-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--bg-card);
+  border-radius: 8px;
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.2s;
+}
+
+.top-item:hover {
+  background: #1a4a70;
+  text-decoration: none;
+}
+
+.rank {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: var(--accent);
+  min-width: 40px;
+}
+
+.name {
+  flex: 1;
+  color: var(--text-primary);
+}
+
+.value {
+  color: var(--text-secondary);
+}
+
+.rater-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.rater-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+}
+
+@media (max-width: 600px) {
+  .top-item {
+    flex-wrap: wrap;
+  }
+
+  .value {
+    width: 100%;
+    margin-left: 56px;
+    font-size: 0.875rem;
+  }
+}
