@@ -117,67 +117,82 @@ const Home = () => {
         {/* Left Side - Featured Movie */}
         <div className="home-hero-column">
           {loading ? (
-            <div className="hero-card hero-skeleton">
-              <div className="skeleton hero-poster-skeleton" />
-              <div className="hero-details">
-                <div className="skeleton" style={{ width: '60%', height: 24 }} />
-                <div className="skeleton" style={{ width: '100%', height: 16, marginTop: 12 }} />
-                <div className="skeleton" style={{ width: '80%', height: 16, marginTop: 8 }} />
+            <div className="hero-backdrop hero-skeleton">
+              <div className="hero-content">
+                <div className="skeleton hero-poster-skeleton" />
+                <div className="hero-details">
+                  <div className="skeleton" style={{ width: '60%', height: 32 }} />
+                  <div className="skeleton" style={{ width: '100%', height: 16, marginTop: 12 }} />
+                  <div className="skeleton" style={{ width: '80%', height: 16, marginTop: 8 }} />
+                </div>
               </div>
             </div>
           ) : nextMovie ? (
-            <Link to={`/movie/${nextMovie.id}`} className="hero-card">
-              <div className="hero-poster-container">
-                {nextMovie.image_url ? (
-                  <img src={nextMovie.image_url} alt={nextMovie.title} className="hero-poster" />
-                ) : (
-                  <div className="hero-poster-placeholder">No Poster</div>
-                )}
-                <span className="hero-badge">Up Next</span>
-              </div>
-              <div className="hero-details">
-                <h1 className="hero-title">{nextMovie.title}</h1>
-                {nextMovie.tagline && (
-                  <p className="hero-tagline">"{nextMovie.tagline}"</p>
-                )}
-                <div className="hero-meta">
-                  {nextMovie.release_year && (
-                    <span className="hero-meta-item">{nextMovie.release_year}</span>
-                  )}
-                  {nextMovie.runtime && (
-                    <span className="hero-meta-item">{Math.floor(nextMovie.runtime / 60)}h {nextMovie.runtime % 60}m</span>
-                  )}
-                  {nextMovie.tmdb_rating > 0 && (
-                    <span className="hero-meta-item hero-tmdb">TMDB {parseFloat(nextMovie.tmdb_rating).toFixed(1)}</span>
+            <Link
+              to={`/movie/${nextMovie.id}`}
+              className="hero-backdrop"
+              style={{
+                backgroundImage: nextMovie.backdrop_url
+                  ? `url(${nextMovie.backdrop_url})`
+                  : nextMovie.image_url
+                    ? `url(${nextMovie.image_url})`
+                    : 'none'
+              }}
+            >
+              <div className="hero-backdrop-overlay" />
+              <div className="hero-content">
+                <div className="hero-poster-small">
+                  {nextMovie.image_url ? (
+                    <img src={nextMovie.image_url} alt={nextMovie.title} className="hero-poster" />
+                  ) : (
+                    <div className="hero-poster-placeholder">No Poster</div>
                   )}
                 </div>
-                {nextMovie.genres && (
-                  <div className="hero-genres">
-                    {nextMovie.genres.split(', ').map((genre, i) => (
-                      <span key={i} className="hero-genre-tag">{genre}</span>
-                    ))}
-                  </div>
-                )}
-                {nextMovie.description && (
-                  <p className="hero-description">{nextMovie.description}</p>
-                )}
-                <div className="hero-footer">
-                  <p className="hero-date">{formatDate(nextMovie.scheduled_at)}</p>
-                  {nextMovie.announced_by_name && (
-                    <p className="hero-picker">Picked by {nextMovie.announced_by_name}</p>
+                <div className="hero-details">
+                  <span className="hero-badge">Up Next</span>
+                  <h1 className="hero-title">{nextMovie.title}</h1>
+                  {nextMovie.tagline && (
+                    <p className="hero-tagline">"{nextMovie.tagline}"</p>
                   )}
+                  <div className="hero-meta">
+                    {nextMovie.release_year && (
+                      <span className="hero-meta-item">{nextMovie.release_year}</span>
+                    )}
+                    {nextMovie.runtime && (
+                      <span className="hero-meta-item">{Math.floor(nextMovie.runtime / 60)}h {nextMovie.runtime % 60}m</span>
+                    )}
+                    {nextMovie.tmdb_rating > 0 && (
+                      <span className="hero-meta-item hero-tmdb">TMDB {parseFloat(nextMovie.tmdb_rating).toFixed(1)}</span>
+                    )}
+                  </div>
+                  {nextMovie.genres && (
+                    <div className="hero-genres">
+                      {nextMovie.genres.split(', ').map((genre, i) => (
+                        <span key={i} className="hero-genre-tag">{genre}</span>
+                      ))}
+                    </div>
+                  )}
+                  {nextMovie.description && (
+                    <p className="hero-description">{nextMovie.description}</p>
+                  )}
+                  <div className="hero-footer">
+                    <p className="hero-date">{formatDate(nextMovie.scheduled_at)}</p>
+                    {nextMovie.announced_by_name && (
+                      <p className="hero-picker">Picked by {nextMovie.announced_by_name}</p>
+                    )}
+                  </div>
                 </div>
               </div>
             </Link>
           ) : (
-            <div className="hero-card hero-empty">
-              <div className="hero-poster-placeholder">
-                <span>No Movie</span>
-              </div>
-              <div className="hero-details">
-                <span className="hero-badge empty">No Upcoming</span>
-                <h2 className="hero-title">No movie scheduled</h2>
-                <p className="hero-description">Start a vote to pick the next movie!</p>
+            <div className="hero-backdrop hero-empty">
+              <div className="hero-backdrop-overlay" />
+              <div className="hero-content">
+                <div className="hero-details hero-details-centered">
+                  <span className="hero-badge empty">No Upcoming</span>
+                  <h2 className="hero-title">No movie scheduled</h2>
+                  <p className="hero-description">Start a vote to pick the next movie!</p>
+                </div>
               </div>
             </div>
           )}
