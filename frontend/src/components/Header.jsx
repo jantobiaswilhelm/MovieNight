@@ -18,9 +18,10 @@ const Header = () => {
         </Link>
 
         <nav className="nav">
-          <Link to="/">Movies</Link>
+          <Link to="/">Home</Link>
           <Link to="/calendar">Calendar</Link>
           <Link to="/stats">Stats</Link>
+          <Link to="/commands">Commands</Link>
           {isAuthenticated && <Link to="/profile">My Ratings</Link>}
         </nav>
 

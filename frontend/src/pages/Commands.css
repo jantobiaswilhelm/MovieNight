@@ -1,0 +1,113 @@
+.commands-page {
+  padding: 1rem 0;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.commands-page h1 {
+  margin-bottom: 0.5rem;
+}
+
+.commands-intro {
+  color: var(--text-secondary);
+  margin-bottom: 2rem;
+}
+
+.commands-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.command-card {
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid var(--border-color);
+}
+
+.command-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.command-name {
+  background: var(--primary-color);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.command-desc {
+  font-weight: 500;
+}
+
+.command-usage {
+  background: var(--bg-secondary);
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  overflow-x: auto;
+}
+
+.usage-label {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+.command-usage code {
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.command-details {
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.commands-tip {
+  margin-top: 2rem;
+  background: rgba(88, 101, 242, 0.1);
+  border: 1px solid var(--primary-color);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.commands-tip h3 {
+  margin: 0 0 0.5rem 0;
+  color: var(--primary-color);
+}
+
+.commands-tip p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.commands-tip code {
+  background: var(--bg-secondary);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+}
+
+@media (max-width: 768px) {
+  .command-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .command-usage {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}
