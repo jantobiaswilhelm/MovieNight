@@ -46,26 +46,31 @@ export const execute = async (interaction) => {
 
     const timestamp = Math.floor(scheduledAt.getTime() / 1000);
 
-    // Build embed and buttons
+    // First send the message to get the message ID
     const embed = buildVotingEmbed(null, [], timestamp);
     embed.setFooter({ text: `Started by ${interaction.user.username}` });
 
-    const buttons = buildVotingButtons([]);
-
+    // Initially send without session ID (we'll update after creating session)
     const reply = await interaction.reply({
       embeds: [embed],
-      components: buttons,
+      components: buildVotingButtons([]),
       fetchReply: true
     });
 
     // Create voting session in database
-    await createVotingSession(
+    const session = await createVotingSession(
       interaction.guildId,
       interaction.channelId,
       reply.id,
       scheduledAt,
       user.id
     );
+
+    // Update the message to include session ID in buttons
+    await reply.edit({
+      embeds: [embed],
+      components: buildVotingButtons([], false, session.id)
+    });
 
   } catch (err) {
     console.error('Error starting vote:', err);

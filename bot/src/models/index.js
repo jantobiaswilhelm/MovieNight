@@ -195,6 +195,17 @@ export const getActiveVotingSession = async (guildId) => {
   return result.rows[0];
 };
 
+export const getVotingSessionById = async (sessionId) => {
+  const result = await pool.query(
+    `SELECT vs.*, u.username as created_by_name
+     FROM voting_sessions vs
+     LEFT JOIN users u ON vs.created_by = u.id
+     WHERE vs.id = $1`,
+    [sessionId]
+  );
+  return result.rows[0];
+};
+
 export const closeVotingSession = async (id, winnerId) => {
   const result = await pool.query(
     `UPDATE voting_sessions

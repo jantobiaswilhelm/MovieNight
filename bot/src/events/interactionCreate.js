@@ -5,6 +5,7 @@ import {
   upsertRating,
   getUserRating,
   getActiveVotingSession,
+  getVotingSessionById,
   createSuggestion,
   getSuggestionsForSession,
   castVote,
@@ -66,7 +67,7 @@ export const execute = async (interaction) => {
 
     if (customId.startsWith('rate_')) {
       await handleRatingButton(interaction);
-    } else if (customId === 'vote_suggest') {
+    } else if (customId === 'vote_suggest' || customId.startsWith('vote_suggest_')) {
       await handleSuggestButton(interaction);
     } else if (customId.startsWith('vote_for_')) {
       await handleVoteButton(interaction);
@@ -82,7 +83,7 @@ export const execute = async (interaction) => {
 
   // Handle modal submissions
   if (interaction.isModalSubmit()) {
-    if (interaction.customId === 'suggest_movie_modal') {
+    if (interaction.customId === 'suggest_movie_modal' || interaction.customId.startsWith('suggest_movie_modal_')) {
       await handleSuggestModal(interaction);
     }
     return;
@@ -142,18 +143,37 @@ async function handleRatingButton(interaction) {
 
 async function handleSuggestButton(interaction) {
   try {
-    // Check if there's an active voting session
-    const session = await getActiveVotingSession(interaction.guildId);
-    if (!session) {
+    // Parse session ID from button customId if present
+    const customId = interaction.customId;
+    let session;
+
+    console.log('handleSuggestButton - customId:', customId);
+
+    if (customId.startsWith('vote_suggest_')) {
+      const sessionId = parseInt(customId.replace('vote_suggest_', ''));
+      console.log('Parsed sessionId from button:', sessionId);
+      session = await getVotingSessionById(sessionId);
+    } else {
+      // Fallback for old buttons without session ID
+      console.log('Using fallback getActiveVotingSession for button');
+      session = await getActiveVotingSession(interaction.guildId);
+    }
+
+    console.log('Session for modal:', session ? { id: session.id, status: session.status } : null);
+
+    if (!session || session.status !== 'open') {
       return interaction.reply({
         content: 'This voting session has ended.',
         ephemeral: true
       });
     }
 
-    // Create and show modal
+    // Create and show modal with session ID
+    const modalCustomId = `suggest_movie_modal_${session.id}`;
+    console.log('Creating modal with customId:', modalCustomId);
+
     const modal = new ModalBuilder()
-      .setCustomId('suggest_movie_modal')
+      .setCustomId(modalCustomId)
       .setTitle('Suggest a Movie');
 
     const titleInput = new TextInputBuilder()
@@ -192,9 +212,25 @@ async function handleSuggestModal(interaction) {
     const title = interaction.fields.getTextInputValue('movie_title');
     const imageUrl = interaction.fields.getTextInputValue('movie_image');
 
-    // Check if there's an active voting session
-    const session = await getActiveVotingSession(interaction.guildId);
-    if (!session) {
+    // Parse session ID from modal customId if present
+    const customId = interaction.customId;
+    let session;
+
+    console.log('handleSuggestModal - customId:', customId);
+
+    if (customId.startsWith('suggest_movie_modal_')) {
+      const sessionId = parseInt(customId.replace('suggest_movie_modal_', ''));
+      console.log('Parsed sessionId:', sessionId);
+      session = await getVotingSessionById(sessionId);
+    } else {
+      // Fallback for old modals without session ID
+      console.log('Using fallback getActiveVotingSession');
+      session = await getActiveVotingSession(interaction.guildId);
+    }
+
+    console.log('Session found:', session ? { id: session.id, status: session.status, channel_id: session.channel_id } : null);
+
+    if (!session || session.status !== 'open') {
       return interaction.reply({
         content: 'This voting session has ended.',
         ephemeral: true
@@ -430,20 +466,40 @@ async function handleShowAdminButtons(interaction) {
 
 async function updateVotingMessage(interaction, session, suggestions, showAdminButtons = false) {
   try {
-    const channel = interaction.channel;
+    console.log('updateVotingMessage called:', {
+      sessionId: session.id,
+      channelId: session.channel_id,
+      messageId: session.message_id,
+      suggestionsCount: suggestions.length
+    });
+
+    // Use the session's channel_id instead of interaction.channel
+    // This ensures we update the correct message even if the interaction
+    // happens in a different context
+    const channel = await interaction.client.channels.fetch(session.channel_id);
+    if (!channel) {
+      console.error('Could not find channel for voting message:', session.channel_id);
+      return;
+    }
+
+    console.log('Channel found:', channel.id);
+
     const message = await channel.messages.fetch(session.message_id);
+    console.log('Message found:', message?.id);
 
     if (message) {
       const timestamp = Math.floor(new Date(session.scheduled_at).getTime() / 1000);
       const embed = buildVotingEmbed(session, suggestions, timestamp);
       embed.setFooter({ text: `Started by ${session.created_by_name || 'Unknown'}` });
 
-      const buttons = buildVotingButtons(suggestions, showAdminButtons);
+      const buttons = buildVotingButtons(suggestions, showAdminButtons, session.id);
 
+      console.log('Editing message with', suggestions.length, 'suggestions');
       await message.edit({
         embeds: [embed],
         components: buttons
       });
+      console.log('Message edited successfully');
     }
   } catch (err) {
     console.error('Error updating voting message:', err);

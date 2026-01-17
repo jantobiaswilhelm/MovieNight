@@ -41,22 +41,24 @@ export const execute = async (interaction) => {
     // Get all suggestions to update the voting message
     const suggestions = await getSuggestionsForSession(session.id);
 
-    // Update the voting message
+    // Update the voting message using session's channel_id
     try {
-      const channel = interaction.channel;
-      const message = await channel.messages.fetch(session.message_id);
+      const channel = await interaction.client.channels.fetch(session.channel_id);
+      if (channel) {
+        const message = await channel.messages.fetch(session.message_id);
 
-      if (message) {
-        const timestamp = Math.floor(new Date(session.scheduled_at).getTime() / 1000);
-        const embed = buildVotingEmbed(session, suggestions, timestamp);
-        embed.setFooter({ text: `Started by ${session.created_by_name || 'Unknown'}` });
+        if (message) {
+          const timestamp = Math.floor(new Date(session.scheduled_at).getTime() / 1000);
+          const embed = buildVotingEmbed(session, suggestions, timestamp);
+          embed.setFooter({ text: `Started by ${session.created_by_name || 'Unknown'}` });
 
-        const buttons = buildVotingButtons(suggestions);
+          const buttons = buildVotingButtons(suggestions, false, session.id);
 
-        await message.edit({
-          embeds: [embed],
-          components: buttons
-        });
+          await message.edit({
+            embeds: [embed],
+            components: buttons
+          });
+        }
       }
     } catch (err) {
       console.error('Error updating voting message:', err);
