@@ -1,4 +1,4 @@
-import { Events, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } from 'discord.js';
+import { Events, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, StringSelectMenuBuilder, EmbedBuilder } from 'discord.js';
 import {
   findOrCreateUser,
   getMovieNightById,
@@ -16,6 +16,7 @@ import {
 } from '../models/index.js';
 import { buildVotingEmbed, buildVotingButtons } from '../utils/votingEmbed.js';
 import { isAdmin } from '../utils/admin.js';
+import { searchMovies, getMovieDetails } from '../utils/tmdb.js';
 
 export const name = Events.InteractionCreate;
 
@@ -85,6 +86,14 @@ export const execute = async (interaction) => {
   if (interaction.isModalSubmit()) {
     if (interaction.customId === 'suggest_movie_modal' || interaction.customId.startsWith('suggest_movie_modal_')) {
       await handleSuggestModal(interaction);
+    }
+    return;
+  }
+
+  // Handle select menu interactions
+  if (interaction.isStringSelectMenu()) {
+    if (interaction.customId.startsWith('tmdb_select_')) {
+      await handleTmdbSelect(interaction);
     }
     return;
   }
@@ -179,21 +188,13 @@ async function handleSuggestButton(interaction) {
     const titleInput = new TextInputBuilder()
       .setCustomId('movie_title')
       .setLabel('Movie Title')
-      .setPlaceholder('Enter the movie name')
+      .setPlaceholder('Enter the movie name to search')
       .setStyle(TextInputStyle.Short)
       .setRequired(true)
       .setMaxLength(255);
 
-    const imageInput = new TextInputBuilder()
-      .setCustomId('movie_image')
-      .setLabel('Poster Image URL (optional)')
-      .setPlaceholder('https://example.com/poster.jpg')
-      .setStyle(TextInputStyle.Short)
-      .setRequired(false);
-
     modal.addComponents(
-      new ActionRowBuilder().addComponents(titleInput),
-      new ActionRowBuilder().addComponents(imageInput)
+      new ActionRowBuilder().addComponents(titleInput)
     );
 
     await interaction.showModal(modal);
@@ -209,20 +210,7 @@ async function handleSuggestButton(interaction) {
 
 async function handleSuggestModal(interaction) {
   try {
-    const title = interaction.fields.getTextInputValue('movie_title');
-    let imageUrl = interaction.fields.getTextInputValue('movie_image')?.trim() || null;
-
-    // Validate image URL if provided
-    if (imageUrl) {
-      try {
-        const url = new URL(imageUrl);
-        if (!['http:', 'https:'].includes(url.protocol)) {
-          imageUrl = null; // Invalid protocol, ignore the image
-        }
-      } catch {
-        imageUrl = null; // Invalid URL format, ignore the image
-      }
-    }
+    const searchQuery = interaction.fields.getTextInputValue('movie_title');
 
     // Parse session ID from modal customId if present
     const customId = interaction.customId;
@@ -249,33 +237,148 @@ async function handleSuggestModal(interaction) {
       });
     }
 
-    // Create or get user
-    const user = await findOrCreateUser(
-      interaction.user.id,
-      interaction.user.username,
-      interaction.user.avatar
-    );
+    // Search TMDB for movies
+    const movies = await searchMovies(searchQuery, 10);
 
-    // Create suggestion
-    await createSuggestion(session.id, title, imageUrl, user.id);
+    if (movies.length === 0) {
+      // No results - add as manual entry
+      const user = await findOrCreateUser(
+        interaction.user.id,
+        interaction.user.username,
+        interaction.user.avatar
+      );
 
-    // Get updated suggestions
-    const suggestions = await getSuggestionsForSession(session.id);
+      await createSuggestion(session.id, searchQuery, null, user.id);
 
-    // Update the original voting message
-    const userIsAdmin = isAdmin(interaction.user.id);
-    await updateVotingMessage(interaction, session, suggestions, userIsAdmin);
+      const suggestions = await getSuggestionsForSession(session.id);
+      const userIsAdmin = isAdmin(interaction.user.id);
+      await updateVotingMessage(interaction, session, suggestions, userIsAdmin);
+
+      return interaction.reply({
+        content: `No movies found on TMDB for "${searchQuery}", but I've added it as a manual entry!`,
+        ephemeral: true
+      });
+    }
+
+    // Build select menu with movie options
+    const selectOptions = movies.map(movie => ({
+      label: movie.year ? `${movie.title} (${movie.year})`.slice(0, 100) : movie.title.slice(0, 100),
+      description: movie.overview?.slice(0, 100) || 'No description available',
+      value: `${movie.id}`
+    }));
+
+    // Add manual entry option
+    selectOptions.push({
+      label: `Add "${searchQuery.slice(0, 80)}" manually`,
+      description: 'Add without TMDB data',
+      value: `manual:${searchQuery}`
+    });
+
+    const selectMenu = new StringSelectMenuBuilder()
+      .setCustomId(`tmdb_select_${session.id}`)
+      .setPlaceholder('Select the correct movie')
+      .addOptions(selectOptions.slice(0, 25)); // Discord limit is 25
+
+    const row = new ActionRowBuilder().addComponents(selectMenu);
+
+    const embed = new EmbedBuilder()
+      .setColor(0xf43f5e)
+      .setTitle(`Search results for "${searchQuery}"`)
+      .setDescription('Select the movie you want to suggest:')
+      .setFooter({ text: 'Select from dropdown below' });
 
     await interaction.reply({
-      content: `Your suggestion **${title}** has been added!`,
+      embeds: [embed],
+      components: [row],
       ephemeral: true
     });
 
   } catch (err) {
     console.error('Error handling suggest modal:', err);
     await interaction.reply({
-      content: 'There was an error adding your suggestion.',
+      content: 'There was an error processing your suggestion.',
       ephemeral: true
+    });
+  }
+}
+
+async function handleTmdbSelect(interaction) {
+  try {
+    const sessionId = parseInt(interaction.customId.replace('tmdb_select_', ''));
+    const selectedValue = interaction.values[0];
+
+    const session = await getVotingSessionById(sessionId);
+    if (!session || session.status !== 'open') {
+      return interaction.update({
+        content: 'This voting session has ended.',
+        embeds: [],
+        components: []
+      });
+    }
+
+    const user = await findOrCreateUser(
+      interaction.user.id,
+      interaction.user.username,
+      interaction.user.avatar
+    );
+
+    let title, imageUrl, description;
+
+    if (selectedValue.startsWith('manual:')) {
+      // Manual entry
+      title = selectedValue.replace('manual:', '');
+      imageUrl = null;
+      description = null;
+    } else {
+      // TMDB selection
+      const tmdbId = parseInt(selectedValue);
+      const movie = await getMovieDetails(tmdbId);
+
+      if (!movie) {
+        return interaction.update({
+          content: 'Could not fetch movie details. Please try again.',
+          embeds: [],
+          components: []
+        });
+      }
+
+      title = movie.year ? `${movie.title} (${movie.year})` : movie.title;
+      imageUrl = movie.posterPath;
+      description = movie.overview?.slice(0, 500);
+      if (movie.overview && movie.overview.length > 500) {
+        description += '...';
+      }
+    }
+
+    // Create suggestion
+    await createSuggestion(session.id, title, imageUrl, user.id, description);
+
+    // Get updated suggestions and update voting message
+    const suggestions = await getSuggestionsForSession(session.id);
+    const userIsAdmin = isAdmin(interaction.user.id);
+    await updateVotingMessage(interaction, session, suggestions, userIsAdmin);
+
+    // Build confirmation embed
+    const confirmEmbed = new EmbedBuilder()
+      .setColor(0x4ade80)
+      .setTitle('Movie Suggested!')
+      .setDescription(`**${title}** has been added to the voting.`);
+
+    if (imageUrl) {
+      confirmEmbed.setThumbnail(imageUrl);
+    }
+
+    await interaction.update({
+      embeds: [confirmEmbed],
+      components: []
+    });
+
+  } catch (err) {
+    console.error('Error handling TMDB select:', err);
+    await interaction.update({
+      content: 'There was an error adding your suggestion.',
+      embeds: [],
+      components: []
     });
   }
 }
