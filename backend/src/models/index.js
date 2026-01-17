@@ -422,3 +422,36 @@ export const deleteMovieNight = async (movieId) => {
   );
   return result.rows[0];
 };
+
+// Movie start operations
+export const getMoviesToStart = async () => {
+  const result = await pool.query(
+    `SELECT * FROM movie_nights
+     WHERE scheduled_at <= CURRENT_TIMESTAMP
+       AND started_at IS NULL
+     ORDER BY scheduled_at ASC`
+  );
+  return result.rows;
+};
+
+export const startMovieNight = async (movieId) => {
+  const result = await pool.query(
+    `UPDATE movie_nights
+     SET started_at = CURRENT_TIMESTAMP
+     WHERE id = $1
+     RETURNING *`,
+    [movieId]
+  );
+  return result.rows[0];
+};
+
+export const rescheduleMovieNight = async (movieId, newScheduledAt) => {
+  const result = await pool.query(
+    `UPDATE movie_nights
+     SET scheduled_at = $2
+     WHERE id = $1
+     RETURNING *`,
+    [movieId, newScheduledAt]
+  );
+  return result.rows[0];
+};

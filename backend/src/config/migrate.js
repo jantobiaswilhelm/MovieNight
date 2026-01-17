@@ -32,12 +32,24 @@ const migrate = async () => {
         title VARCHAR(255) NOT NULL,
         image_url VARCHAR(500),
         scheduled_at TIMESTAMP NOT NULL,
+        started_at TIMESTAMP,
         announced_by INTEGER REFERENCES users(id),
         guild_id VARCHAR(20) NOT NULL,
         channel_id VARCHAR(20),
         message_id VARCHAR(20),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
+    `);
+
+    // Add started_at column if it doesn't exist (for existing databases)
+    await client.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                       WHERE table_name='movie_nights' AND column_name='started_at') THEN
+          ALTER TABLE movie_nights ADD COLUMN started_at TIMESTAMP;
+        END IF;
+      END $$;
     `);
 
     // Ratings table

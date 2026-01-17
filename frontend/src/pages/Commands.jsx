@@ -77,6 +77,20 @@ const commands = [
     usage: '/delete movie:"Movie Name"',
     details: 'Permanently delete a movie and all its ratings. Only available to server admins.',
     category: 'Admin'
+  },
+  {
+    name: '/start',
+    description: 'Manually start a movie night (Admin only)',
+    usage: '/start movie:"Movie Name"',
+    details: 'Manually trigger the "starting now" announcement for a movie. Movies normally start automatically at their scheduled time.',
+    category: 'Admin'
+  },
+  {
+    name: '/reschedule',
+    description: 'Reschedule a movie night (Admin only)',
+    usage: '/reschedule movie:"Movie Name" datetime:"new time"',
+    details: 'Change the scheduled time for a movie that hasn\'t started yet. Only available to server admins.',
+    category: 'Admin'
   }
 ];
 

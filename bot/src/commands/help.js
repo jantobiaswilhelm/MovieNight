@@ -48,7 +48,7 @@ export const execute = async (interaction) => {
       },
       {
         name: '🔒 Admin Commands',
-        value: '`/admin` - Show delete controls on voting\n`/delete movie:"Title"` - Delete a movie and its ratings'
+        value: '`/admin` - Show delete controls on voting\n`/delete movie:"Title"` - Delete a movie and its ratings\n`/start movie:"Title"` - Manually start a movie night\n`/reschedule movie:"Title" datetime:"new time"` - Reschedule a movie'
       }
     )
     .setFooter({ text: 'You can also rate movies by clicking the buttons under announcements!' });

@@ -1,27 +1,47 @@
 import { SlashCommandBuilder } from 'discord.js';
-import { findOrCreateUser, createMovieNight } from '../models/index.js';
-import { createAnnouncementEmbed } from '../utils/embeds.js';
+import { getUpcomingMovies, getMovieNightById, rescheduleMovieNight } from '../models/index.js';
+import { isAdmin } from '../utils/admin.js';
 
 export const data = new SlashCommandBuilder()
-  .setName('announce')
-  .setDescription('Announce a new movie night')
-  .addStringOption(option =>
-    option.setName('title')
-      .setDescription('The movie title')
-      .setRequired(true))
+  .setName('reschedule')
+  .setDescription('Reschedule a movie night (admin only)')
+  .addIntegerOption(option =>
+    option.setName('movie')
+      .setDescription('The movie to reschedule')
+      .setRequired(true)
+      .setAutocomplete(true))
   .addStringOption(option =>
     option.setName('datetime')
-      .setDescription('When the movie night starts (e.g., "2024-01-20 20:00" or "tomorrow 8pm")')
-      .setRequired(true))
-  .addStringOption(option =>
-    option.setName('image')
-      .setDescription('URL to a movie poster or image')
+      .setDescription('New date/time (e.g., "2024-01-20 20:00" or "tomorrow 8pm")')
       .setRequired(true));
 
+export const autocomplete = async (interaction) => {
+  const focusedValue = interaction.options.getFocused().toLowerCase();
+  const movies = await getUpcomingMovies(interaction.guildId);
+
+  const filtered = movies
+    .filter(movie => movie.title.toLowerCase().includes(focusedValue))
+    .slice(0, 25);
+
+  await interaction.respond(
+    filtered.map(movie => ({
+      name: `${movie.title} (${new Date(movie.scheduled_at).toLocaleDateString()})`,
+      value: movie.id
+    }))
+  );
+};
+
 export const execute = async (interaction) => {
-  const title = interaction.options.getString('title');
+  // Check admin
+  if (!isAdmin(interaction.user.id)) {
+    return interaction.reply({
+      content: 'Only admins can use this command.',
+      ephemeral: true
+    });
+  }
+
+  const movieId = interaction.options.getInteger('movie');
   const datetimeStr = interaction.options.getString('datetime');
-  const imageUrl = interaction.options.getString('image');
 
   // Parse datetime
   let scheduledAt;
@@ -38,52 +58,37 @@ export const execute = async (interaction) => {
   }
 
   try {
-    // Create or get user
-    const user = await findOrCreateUser(
-      interaction.user.id,
-      interaction.user.username,
-      interaction.user.avatar
-    );
+    const movie = await getMovieNightById(movieId);
 
-    // Send announcement first to get message ID
-    const announcementEmbed = createAnnouncementEmbed(
-      title,
-      scheduledAt,
-      imageUrl,
-      interaction.user.username
-    );
-
-    const reply = await interaction.reply({
-      embeds: [announcementEmbed],
-      fetchReply: true
-    });
-
-    // Create movie night in database
-    await createMovieNight(
-      title,
-      scheduledAt,
-      user.id,
-      interaction.guildId,
-      interaction.channelId,
-      reply.id,
-      imageUrl
-    );
-
-    // Rating buttons will be sent automatically when the movie starts
-
-  } catch (err) {
-    console.error('Error creating movie night:', err);
-    if (interaction.replied) {
-      await interaction.followUp({
-        content: 'There was an error creating the movie night.',
-        ephemeral: true
-      });
-    } else {
-      await interaction.reply({
-        content: 'There was an error creating the movie night.',
+    if (!movie) {
+      return interaction.reply({
+        content: 'Movie not found.',
         ephemeral: true
       });
     }
+
+    if (movie.started_at) {
+      return interaction.reply({
+        content: 'Cannot reschedule a movie that has already started.',
+        ephemeral: true
+      });
+    }
+
+    // Reschedule
+    await rescheduleMovieNight(movieId, scheduledAt);
+
+    const timestamp = Math.floor(scheduledAt.getTime() / 1000);
+
+    await interaction.reply({
+      content: `**${movie.title}** has been rescheduled to <t:${timestamp}:F> (<t:${timestamp}:R>)`,
+    });
+
+  } catch (err) {
+    console.error('Error rescheduling movie:', err);
+    await interaction.reply({
+      content: 'There was an error rescheduling the movie.',
+      ephemeral: true
+    });
   }
 };
 

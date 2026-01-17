@@ -72,6 +72,11 @@ router.post('/:id/ratings', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Movie not found' });
     }
 
+    // Check if movie has started
+    if (!movie.started_at) {
+      return res.status(400).json({ error: 'Movie has not started yet. Ratings will be available once the movie night begins.' });
+    }
+
     const rating = await db.upsertRating(parseInt(id), req.user.id, score);
     res.json(rating);
   } catch (err) {

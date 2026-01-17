@@ -115,6 +115,24 @@
   margin-top: 1rem;
 }
 
+.not-started-message {
+  background: var(--bg-secondary);
+  padding: 1.5rem;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.not-started-message p {
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.not-started-hint {
+  margin-top: 0.5rem !important;
+  color: var(--text-secondary) !important;
+  font-size: 0.9rem;
+}
+
 .all-ratings h2 {
   margin-bottom: 1rem;
 }
