@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import StarRating from './StarRating';
 import './Hero.css';
 
-const Hero = ({ movie, type = 'upcoming' }) => {
+const Hero = ({ movie, type = 'upcoming', compact = false }) => {
   if (!movie) return null;
 
   const formatDate = (dateStr) => {
@@ -20,7 +20,7 @@ const Hero = ({ movie, type = 'upcoming' }) => {
   const isUpcoming = type === 'upcoming';
 
   return (
-    <div className="hero">
+    <div className={`hero ${compact ? 'hero--compact' : ''}`}>
       {movie.image_url && (
         <div
           className="hero-backdrop"

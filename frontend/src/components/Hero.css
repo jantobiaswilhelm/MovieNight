@@ -3,9 +3,27 @@
   background: var(--bg-card);
   border-radius: 20px;
   overflow: hidden;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
   min-height: 320px;
   animation: fadeIn 0.5s ease-out;
+}
+
+.hero--compact {
+  min-height: 200px;
+  margin-bottom: 1rem;
+}
+
+.hero--compact .hero-content {
+  padding: 1.5rem;
+}
+
+.hero--compact .hero-title {
+  font-size: 1.75rem;
+}
+
+.hero--compact .hero-poster {
+  width: 120px;
+  height: 180px;
 }
 
 .hero-backdrop {
