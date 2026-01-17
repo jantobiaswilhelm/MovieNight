@@ -44,14 +44,14 @@ export const buildVotingEmbed = (session, suggestions, timestamp) => {
   return embed;
 };
 
-export const buildVotingButtons = (suggestions, includeAdminButtons = false) => {
+export const buildVotingButtons = (suggestions, includeAdminButtons = false, sessionId = null) => {
   const rows = [];
 
   // Add suggestion button (always first row)
   const suggestRow = new ActionRowBuilder()
     .addComponents(
       new ButtonBuilder()
-        .setCustomId('vote_suggest')
+        .setCustomId(sessionId ? `vote_suggest_${sessionId}` : 'vote_suggest')
         .setLabel('🎬 Add Suggestion')
         .setStyle(ButtonStyle.Primary)
     );
