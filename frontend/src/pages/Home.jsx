@@ -181,6 +181,32 @@ const Home = () => {
                       <p className="hero-picker">Picked by {nextMovie.announced_by_name}</p>
                     )}
                   </div>
+                  {(nextMovie.trailer_url || nextMovie.imdb_id) && (
+                    <div className="hero-actions">
+                      {nextMovie.trailer_url && (
+                        <a
+                          href={nextMovie.trailer_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hero-btn hero-btn-primary"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          ▶ Watch Trailer
+                        </a>
+                      )}
+                      {nextMovie.imdb_id && (
+                        <a
+                          href={`https://www.imdb.com/title/${nextMovie.imdb_id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hero-btn hero-btn-secondary"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          IMDb
+                        </a>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </Link>
