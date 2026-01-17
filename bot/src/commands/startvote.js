@@ -72,6 +72,11 @@ export const execute = async (interaction) => {
       components: buildVotingButtons([], false, session.id)
     });
 
+    // Send follow-up message with website link
+    await interaction.followUp({
+      content: '🎬 **Vote for the next movie night!** Click the button above to add your suggestion.\n\n📱 You can also check out our website: https://onlyfansmovies.up.railway.app/'
+    });
+
   } catch (err) {
     console.error('Error starting vote:', err);
     if (interaction.replied) {
