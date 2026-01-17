@@ -37,7 +37,15 @@ export const buildVotingEmbed = (session, suggestions, timestamp) => {
     // Set thumbnail to the leading suggestion's image
     const leader = suggestions[0];
     if (leader?.image_url) {
-      embed.setThumbnail(leader.image_url);
+      try {
+        // Validate URL before setting
+        const url = new URL(leader.image_url);
+        if (['http:', 'https:'].includes(url.protocol)) {
+          embed.setThumbnail(leader.image_url);
+        }
+      } catch {
+        // Invalid URL, skip thumbnail
+      }
     }
   }
 
