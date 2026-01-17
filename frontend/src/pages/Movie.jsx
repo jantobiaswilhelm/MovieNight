@@ -103,8 +103,25 @@ const Movie = () => {
     return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
   };
 
+  const getLanguageName = (code) => {
+    const languages = {
+      en: 'English', es: 'Spanish', fr: 'French', de: 'German', it: 'Italian',
+      ja: 'Japanese', ko: 'Korean', zh: 'Chinese', pt: 'Portuguese', ru: 'Russian',
+      hi: 'Hindi', ar: 'Arabic', nl: 'Dutch', sv: 'Swedish', no: 'Norwegian',
+      da: 'Danish', fi: 'Finnish', pl: 'Polish', tr: 'Turkish', th: 'Thai'
+    };
+    return languages[code] || code?.toUpperCase();
+  };
+
   return (
     <div className="movie-page">
+      {/* Hero Section with Backdrop */}
+      {movie.backdrop_url && (
+        <div className="movie-hero" style={{ backgroundImage: `url(${movie.backdrop_url})` }}>
+          <div className="movie-hero-overlay" />
+        </div>
+      )}
+
       <Link to="/movies" className="back-link">&larr; Back to Movies</Link>
 
       <div className="movie-header">
@@ -115,6 +132,10 @@ const Movie = () => {
         <div className="movie-details">
           <h1>{movie.title}</h1>
 
+          {movie.tagline && (
+            <p className="movie-tagline">"{movie.tagline}"</p>
+          )}
+
           <div className="movie-meta-info">
             {movie.release_year && (
               <span className="meta-item">{movie.release_year}</span>
@@ -122,37 +143,66 @@ const Movie = () => {
             {movie.runtime && (
               <span className="meta-item">{formatRuntime(movie.runtime)}</span>
             )}
-            {movie.genres && (
-              <span className="meta-item meta-genres">{movie.genres}</span>
+            {movie.original_language && (
+              <span className="meta-item">{getLanguageName(movie.original_language)}</span>
             )}
           </div>
 
-          {movie.tmdb_rating > 0 && (
-            <div className="tmdb-rating">
-              <span className="tmdb-label">TMDB</span>
-              <span className="tmdb-score">{parseFloat(movie.tmdb_rating).toFixed(1)}</span>
+          {movie.genres && (
+            <div className="movie-genres">
+              {movie.genres.split(', ').map((genre, i) => (
+                <span key={i} className="genre-tag">{genre}</span>
+              ))}
             </div>
           )}
+
+          {movie.collection_name && (
+            <p className="movie-collection">Part of the <strong>{movie.collection_name}</strong></p>
+          )}
+
+          <div className="movie-ratings-row">
+            {movie.tmdb_rating > 0 && (
+              <div className="tmdb-rating">
+                <span className="tmdb-label">TMDB</span>
+                <span className="tmdb-score">{parseFloat(movie.tmdb_rating).toFixed(1)}</span>
+              </div>
+            )}
+            {movie.avg_rating > 0 && (
+              <div className="group-rating">
+                <StarRating rating={movie.avg_rating} size="medium" />
+                <span className="rating-label">{movie.rating_count} group votes</span>
+              </div>
+            )}
+          </div>
+
+          <div className="movie-links">
+            {movie.imdb_id && (
+              <a
+                href={`https://www.imdb.com/title/${movie.imdb_id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="movie-link imdb-link"
+              >
+                IMDb
+              </a>
+            )}
+            {movie.trailer_url && (
+              <a
+                href={movie.trailer_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="movie-link trailer-link"
+              >
+                Watch Trailer
+              </a>
+            )}
+          </div>
 
           <p className="movie-date">Watched on {formatDate(movie.scheduled_at)}</p>
 
           {movie.announced_by_name && (
             <p className="movie-announcer">Picked by {movie.announced_by_name}</p>
           )}
-
-          <div className="movie-stats">
-            {movie.avg_rating > 0 ? (
-              <div className="stat stat-rating">
-                <StarRating rating={movie.avg_rating} size="large" />
-                <span className="stat-label">{movie.rating_count} votes</span>
-              </div>
-            ) : (
-              <div className="stat">
-                <span className="stat-value">-</span>
-                <span className="stat-label">No ratings yet</span>
-              </div>
-            )}
-          </div>
 
           {isAdmin && (
             <button

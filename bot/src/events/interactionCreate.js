@@ -349,7 +349,13 @@ async function handleTmdbSelect(interaction) {
         tmdbRating: movie.rating,
         genres: movie.genres,
         runtime: movie.runtime,
-        releaseYear: movie.year
+        releaseYear: movie.year,
+        backdropUrl: movie.backdropPath,
+        tagline: movie.tagline,
+        imdbId: movie.imdbId,
+        originalLanguage: movie.originalLanguage,
+        collectionName: movie.collectionName,
+        trailerUrl: movie.trailerUrl
       };
     }
 

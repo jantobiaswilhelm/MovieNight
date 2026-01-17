@@ -31,12 +31,18 @@ const migrate = async () => {
         id SERIAL PRIMARY KEY,
         title VARCHAR(255) NOT NULL,
         image_url VARCHAR(500),
+        backdrop_url VARCHAR(500),
         description TEXT,
+        tagline VARCHAR(500),
         tmdb_id INTEGER,
+        imdb_id VARCHAR(20),
         tmdb_rating DECIMAL(3,1),
         genres VARCHAR(255),
         runtime INTEGER,
         release_year INTEGER,
+        original_language VARCHAR(10),
+        collection_name VARCHAR(255),
+        trailer_url VARCHAR(500),
         scheduled_at TIMESTAMP NOT NULL,
         started_at TIMESTAMP,
         announced_by INTEGER REFERENCES users(id),
@@ -57,18 +63,27 @@ const migrate = async () => {
     }
 
     // Add TMDB columns to movie_nights if they don't exist
-    const tmdbColumns = ['description', 'tmdb_id', 'tmdb_rating', 'genres', 'runtime', 'release_year'];
+    const tmdbColumns = [
+      { name: 'description', type: 'TEXT' },
+      { name: 'tmdb_id', type: 'INTEGER' },
+      { name: 'tmdb_rating', type: 'DECIMAL(3,1)' },
+      { name: 'genres', type: 'VARCHAR(255)' },
+      { name: 'runtime', type: 'INTEGER' },
+      { name: 'release_year', type: 'INTEGER' },
+      { name: 'backdrop_url', type: 'VARCHAR(500)' },
+      { name: 'tagline', type: 'VARCHAR(500)' },
+      { name: 'imdb_id', type: 'VARCHAR(20)' },
+      { name: 'original_language', type: 'VARCHAR(10)' },
+      { name: 'collection_name', type: 'VARCHAR(255)' },
+      { name: 'trailer_url', type: 'VARCHAR(500)' }
+    ];
     for (const col of tmdbColumns) {
       const check = await client.query(`
         SELECT column_name FROM information_schema.columns
         WHERE table_name = 'movie_nights' AND column_name = $1
-      `, [col]);
+      `, [col.name]);
       if (check.rows.length === 0) {
-        let colType = 'TEXT';
-        if (col === 'tmdb_id' || col === 'runtime' || col === 'release_year') colType = 'INTEGER';
-        if (col === 'tmdb_rating') colType = 'DECIMAL(3,1)';
-        if (col === 'genres') colType = 'VARCHAR(255)';
-        await client.query(`ALTER TABLE movie_nights ADD COLUMN ${col} ${colType}`);
+        await client.query(`ALTER TABLE movie_nights ADD COLUMN ${col.name} ${col.type}`);
       }
     }
 
@@ -108,30 +123,45 @@ const migrate = async () => {
         voting_session_id INTEGER REFERENCES voting_sessions(id) ON DELETE CASCADE,
         title VARCHAR(255) NOT NULL,
         image_url VARCHAR(500),
+        backdrop_url VARCHAR(500),
         description TEXT,
+        tagline VARCHAR(500),
         tmdb_id INTEGER,
+        imdb_id VARCHAR(20),
         tmdb_rating DECIMAL(3,1),
         genres VARCHAR(255),
         runtime INTEGER,
         release_year INTEGER,
+        original_language VARCHAR(10),
+        collection_name VARCHAR(255),
+        trailer_url VARCHAR(500),
         suggested_by INTEGER REFERENCES users(id),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
 
     // Add TMDB columns to movie_suggestions if they don't exist
-    const suggestionTmdbColumns = ['description', 'tmdb_id', 'tmdb_rating', 'genres', 'runtime', 'release_year'];
+    const suggestionTmdbColumns = [
+      { name: 'description', type: 'TEXT' },
+      { name: 'tmdb_id', type: 'INTEGER' },
+      { name: 'tmdb_rating', type: 'DECIMAL(3,1)' },
+      { name: 'genres', type: 'VARCHAR(255)' },
+      { name: 'runtime', type: 'INTEGER' },
+      { name: 'release_year', type: 'INTEGER' },
+      { name: 'backdrop_url', type: 'VARCHAR(500)' },
+      { name: 'tagline', type: 'VARCHAR(500)' },
+      { name: 'imdb_id', type: 'VARCHAR(20)' },
+      { name: 'original_language', type: 'VARCHAR(10)' },
+      { name: 'collection_name', type: 'VARCHAR(255)' },
+      { name: 'trailer_url', type: 'VARCHAR(500)' }
+    ];
     for (const col of suggestionTmdbColumns) {
       const check = await client.query(`
         SELECT column_name FROM information_schema.columns
         WHERE table_name = 'movie_suggestions' AND column_name = $1
-      `, [col]);
+      `, [col.name]);
       if (check.rows.length === 0) {
-        let colType = 'TEXT';
-        if (col === 'tmdb_id' || col === 'runtime' || col === 'release_year') colType = 'INTEGER';
-        if (col === 'tmdb_rating') colType = 'DECIMAL(3,1)';
-        if (col === 'genres') colType = 'VARCHAR(255)';
-        await client.query(`ALTER TABLE movie_suggestions ADD COLUMN ${col} ${colType}`);
+        await client.query(`ALTER TABLE movie_suggestions ADD COLUMN ${col.name} ${col.type}`);
       }
     }
 
