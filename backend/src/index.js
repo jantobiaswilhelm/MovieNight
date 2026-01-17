@@ -46,7 +46,7 @@ process.on('unhandledRejection', (err) => {
   console.error('Unhandled Rejection:', err);
 });
 
-const server = app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, () => {
   console.log(`Backend server running on port ${PORT}`);
 });
 
