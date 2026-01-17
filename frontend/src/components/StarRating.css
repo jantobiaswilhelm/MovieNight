@@ -1,0 +1,76 @@
+.star-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.stars {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.star {
+  color: var(--star-empty);
+  transition: transform 0.2s, color 0.2s;
+}
+
+.star--full {
+  color: var(--star-filled);
+}
+
+.star--empty {
+  color: var(--star-empty);
+}
+
+.star--partial {
+  position: relative;
+  display: inline-block;
+}
+
+.star--partial .star-bg {
+  color: var(--star-empty);
+}
+
+.star--partial .star-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  overflow: hidden;
+  color: var(--star-filled);
+}
+
+.star-value {
+  font-weight: 700;
+  color: var(--star-filled);
+}
+
+/* Sizes */
+.star-rating--small .star {
+  font-size: 0.875rem;
+}
+
+.star-rating--small .star-value {
+  font-size: 0.875rem;
+}
+
+.star-rating--medium .star {
+  font-size: 1.125rem;
+}
+
+.star-rating--medium .star-value {
+  font-size: 1rem;
+}
+
+.star-rating--large .star {
+  font-size: 1.5rem;
+}
+
+.star-rating--large .star-value {
+  font-size: 1.25rem;
+}
+
+/* Hover effect for interactive stars */
+.star-rating:hover .star--full,
+.star-rating:hover .star--partial .star-fill {
+  transform: scale(1.1);
+}
