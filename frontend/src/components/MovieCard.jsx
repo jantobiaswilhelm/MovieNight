@@ -43,6 +43,25 @@ const MovieCard = ({ movie, variant = 'horizontal' }) => {
     );
   }
 
+  if (variant === 'compact') {
+    return (
+      <Link to={`/movie/${movie.id}`} className="movie-card movie-card--compact">
+        {movie.image_url && (
+          <img src={movie.image_url} alt={movie.title} className="movie-poster-small" />
+        )}
+        <div className="movie-info-compact">
+          <h3 className="movie-title">{movie.title}</h3>
+          <p className="movie-date">{formatDate(movie.scheduled_at)}</p>
+        </div>
+        {avgRating > 0 && (
+          <div className="movie-rating-compact">
+            <StarRating rating={avgRating} size="small" showValue={false} />
+          </div>
+        )}
+      </Link>
+    );
+  }
+
   return (
     <Link to={`/movie/${movie.id}`} className="movie-card movie-card--horizontal">
       <div className="poster-container">

@@ -103,201 +103,185 @@ const Home = () => {
 
   return (
     <div className="home">
-      {/* Hero Section */}
+      {/* Hero Section - Compact */}
       {loading ? (
         <HeroSkeleton />
       ) : nextMovie ? (
-        <Hero movie={nextMovie} type="upcoming" />
+        <Hero movie={nextMovie} type="upcoming" compact />
       ) : null}
 
-      {/* Active Voting Section */}
-      {voting && (
-        <section className="home-section voting-section">
-          <div className="section-header">
-            <h2>Vote for Next Movie</h2>
-            {voting.scheduled_at && (
-              <span className="voting-date">
-                Planned: {new Date(voting.scheduled_at).toLocaleDateString('en-US', {
-                  weekday: 'short',
-                  month: 'short',
-                  day: 'numeric',
-                  hour: 'numeric',
-                  minute: '2-digit'
-                })}
-              </span>
-            )}
-          </div>
-
-          <div className="voting-active">
-            {voting.suggestions && voting.suggestions.length > 0 ? (
-              <div className="suggestions-list">
-                {voting.suggestions.map((suggestion) => {
-                  const votePercent = totalVotes > 0
-                    ? Math.round((parseInt(suggestion.vote_count) / totalVotes) * 100)
-                    : 0;
-                  const isUserVote = voting.user_vote?.suggestion_id === suggestion.id;
-
-                  return (
-                    <div
-                      key={suggestion.id}
-                      className={`suggestion-item ${isUserVote ? 'voted' : ''}`}
-                      onClick={() => !votingLoading && isAuthenticated && handleVote(suggestion.id)}
-                    >
-                      {suggestion.image_url && (
-                        <img
-                          src={suggestion.image_url}
-                          alt=""
-                          className="suggestion-poster"
-                        />
-                      )}
-                      <div className="suggestion-info">
-                        <span className="suggestion-title">{suggestion.title}</span>
-                        <span className="suggestion-by">by {suggestion.suggested_by_name}</span>
-                      </div>
-                      <div className="suggestion-votes">
-                        <div className="vote-bar-container">
-                          <div
-                            className="vote-bar-fill"
-                            style={{ width: `${votePercent}%` }}
-                          ></div>
-                        </div>
-                        <span className="vote-count">{suggestion.vote_count} votes</span>
-                        {suggestion.voters && suggestion.voters.length > 0 && (
-                          <div className="voter-avatars">
-                            {suggestion.voters.slice(0, 5).map((voter) => (
-                              <img
-                                key={voter.discord_id}
-                                src={voter.avatar
-                                  ? `https://cdn.discordapp.com/avatars/${voter.discord_id}/${voter.avatar}.png?size=32`
-                                  : `https://cdn.discordapp.com/embed/avatars/${parseInt(voter.discord_id) % 5}.png`
-                                }
-                                alt={voter.username}
-                                title={voter.username}
-                                className="voter-avatar"
-                              />
-                            ))}
-                            {suggestion.voters.length > 5 && (
-                              <span className="voter-overflow">+{suggestion.voters.length - 5}</span>
+      {/* Main Content Grid */}
+      <div className="home-grid">
+        {/* Left Column - Voting */}
+        <div className="home-column">
+          {voting ? (
+            <section className="home-section voting-section">
+              <div className="section-header">
+                <h2>Vote for Next Movie</h2>
+                {voting.scheduled_at && (
+                  <span className="voting-date">
+                    {new Date(voting.scheduled_at).toLocaleDateString('en-US', {
+                      weekday: 'short',
+                      month: 'short',
+                      day: 'numeric'
+                    })}
+                  </span>
+                )}
+              </div>
+              <div className="voting-active">
+                {voting.suggestions && voting.suggestions.length > 0 ? (
+                  <div className="suggestions-list">
+                    {voting.suggestions.map((suggestion) => {
+                      const votePercent = totalVotes > 0
+                        ? Math.round((parseInt(suggestion.vote_count) / totalVotes) * 100)
+                        : 0;
+                      const isUserVote = voting.user_vote?.suggestion_id === suggestion.id;
+                      return (
+                        <div
+                          key={suggestion.id}
+                          className={`suggestion-item ${isUserVote ? 'voted' : ''}`}
+                          onClick={() => !votingLoading && isAuthenticated && handleVote(suggestion.id)}
+                        >
+                          {suggestion.image_url && (
+                            <img src={suggestion.image_url} alt="" className="suggestion-poster" />
+                          )}
+                          <div className="suggestion-info">
+                            <span className="suggestion-title">{suggestion.title}</span>
+                            <span className="suggestion-by">by {suggestion.suggested_by_name}</span>
+                          </div>
+                          <div className="suggestion-votes">
+                            <div className="vote-bar-container">
+                              <div className="vote-bar-fill" style={{ width: `${votePercent}%` }}></div>
+                            </div>
+                            <span className="vote-count">{suggestion.vote_count} votes</span>
+                            {suggestion.voters && suggestion.voters.length > 0 && (
+                              <div className="voter-avatars">
+                                {suggestion.voters.slice(0, 5).map((voter) => (
+                                  <img
+                                    key={voter.discord_id}
+                                    src={voter.avatar
+                                      ? `https://cdn.discordapp.com/avatars/${voter.discord_id}/${voter.avatar}.png?size=32`
+                                      : `https://cdn.discordapp.com/embed/avatars/${parseInt(voter.discord_id) % 5}.png`
+                                    }
+                                    alt={voter.username}
+                                    title={voter.username}
+                                    className="voter-avatar"
+                                  />
+                                ))}
+                                {suggestion.voters.length > 5 && (
+                                  <span className="voter-overflow">+{suggestion.voters.length - 5}</span>
+                                )}
+                              </div>
                             )}
                           </div>
-                        )}
-                      </div>
-                      {isUserVote && <span className="your-vote">Your vote</span>}
-                      {isAdmin && (
-                        <button
-                          className="suggestion-delete-btn"
-                          onClick={(e) => handleDeleteSuggestion(e, suggestion.id, suggestion.title)}
-                          disabled={deletingSuggestion === suggestion.id}
-                          title="Delete suggestion"
-                        >
-                          {deletingSuggestion === suggestion.id ? '...' : '×'}
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
+                          {isUserVote && <span className="your-vote">Your vote</span>}
+                          {isAdmin && (
+                            <button
+                              className="suggestion-delete-btn"
+                              onClick={(e) => handleDeleteSuggestion(e, suggestion.id, suggestion.title)}
+                              disabled={deletingSuggestion === suggestion.id}
+                              title="Delete suggestion"
+                            >
+                              {deletingSuggestion === suggestion.id ? '...' : '×'}
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="empty-state compact">
+                    <p>No suggestions yet! Use <code>/suggest</code> in Discord.</p>
+                  </div>
+                )}
+                {!isAuthenticated && voting.suggestions?.length > 0 && (
+                  <div className="login-to-vote">
+                    <p>Log in to vote!</p>
+                    <button onClick={login} className="btn-primary">Login with Discord</button>
+                  </div>
+                )}
+              </div>
+            </section>
+          ) : !loading && (
+            <section className="home-section voting-section">
+              <div className="section-header">
+                <h2>Vote for Next Movie</h2>
+              </div>
+              <div className="voting-placeholder">
+                <div className="voting-card">
+                  <div className="voting-icon">🗳️</div>
+                  <h3>No Active Voting</h3>
+                  <p>Use <code>/startvote</code> in Discord to start!</p>
+                </div>
+              </div>
+            </section>
+          )}
+        </div>
+
+        {/* Right Column - Upcoming & Best Rated */}
+        <div className="home-column">
+          <section className="home-section">
+            <div className="section-header">
+              <h2>Upcoming</h2>
+              <Link to="/calendar" className="view-all">Calendar →</Link>
+            </div>
+            {loading ? (
+              <div className="upcoming-compact">
+                <MovieCardSkeleton />
+              </div>
+            ) : upcomingMovies.length <= 1 ? (
+              <div className="empty-state compact">
+                <p>No more upcoming movies.</p>
               </div>
             ) : (
-              <div className="empty-state">
-                <p>No suggestions yet!</p>
-                <p>Use <code>/suggest</code> in Discord to add movies.</p>
+              <div className="upcoming-compact">
+                {upcomingMovies.slice(1, 3).map((movie) => (
+                  <MovieCard key={movie.id} movie={movie} variant="compact" />
+                ))}
               </div>
             )}
+          </section>
 
-            {!isAuthenticated && voting.suggestions?.length > 0 && (
-              <div className="login-to-vote">
-                <p>Log in to vote!</p>
-                <button onClick={login} className="btn-primary">Login with Discord</button>
-              </div>
-            )}
-          </div>
-        </section>
-      )}
-
-      {/* No Active Voting */}
-      {!loading && !voting && (
-        <section className="home-section voting-section">
-          <div className="section-header">
-            <h2>Vote for Next Movie</h2>
-          </div>
-          <div className="voting-placeholder">
-            <div className="voting-card">
-              <div className="voting-icon">🗳️</div>
-              <h3>No Active Voting</h3>
-              <p>Use <code>/startvote</code> in Discord to start a new voting session!</p>
+          <section className="home-section">
+            <div className="section-header">
+              <h2>Best This Month</h2>
+              <Link to="/stats" className="view-all">Stats →</Link>
             </div>
-          </div>
-        </section>
-      )}
-
-      {/* Upcoming Movies Section */}
-      <section className="home-section">
-        <div className="section-header">
-          <h2>Upcoming Movie Nights</h2>
-          <Link to="/calendar" className="view-all">View Calendar →</Link>
-        </div>
-
-        {loading ? (
-          <div className="movie-grid horizontal">
-            <MovieCardSkeleton />
-            <MovieCardSkeleton />
-            <MovieCardSkeleton />
-          </div>
-        ) : upcomingMovies.length === 0 ? (
-          <div className="empty-state">
-            <p>No upcoming movie nights scheduled.</p>
-            <p>Use <code>/announce</code> in Discord to create one.</p>
-          </div>
-        ) : (
-          <div className="movie-grid horizontal">
-            {upcomingMovies.slice(1, 4).map((movie) => (
-              <MovieCard key={movie.id} movie={movie} />
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* Best Rated This Month Section */}
-      <section className="home-section">
-        <div className="section-header">
-          <h2>Best Rated This Month</h2>
-          <Link to="/stats" className="view-all">View Stats →</Link>
-        </div>
-
-        {loading ? (
-          <div className="best-rated-list">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="best-rated-item best-rated-skeleton">
-                <div className="skeleton" style={{ width: 40, height: 24 }} />
-                <div className="skeleton" style={{ width: 40, height: 60 }} />
-                <div className="best-rated-info">
-                  <div className="skeleton" style={{ width: 150, height: 20 }} />
-                  <div className="skeleton" style={{ width: 80, height: 16 }} />
-                </div>
+            {loading ? (
+              <div className="best-rated-list compact">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="best-rated-item best-rated-skeleton">
+                    <div className="skeleton" style={{ width: 30, height: 20 }} />
+                    <div className="skeleton" style={{ width: 30, height: 45 }} />
+                    <div className="best-rated-info">
+                      <div className="skeleton" style={{ width: 100, height: 16 }} />
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        ) : bestRatedThisMonth.length === 0 ? (
-          <div className="empty-state">
-            <p>No rated movies this month yet.</p>
-          </div>
-        ) : (
-          <div className="best-rated-list">
-            {bestRatedThisMonth.map((movie, index) => (
-              <Link to={`/movie/${movie.id}`} key={movie.id} className="best-rated-item">
-                <span className="rank">#{index + 1}</span>
-                {movie.image_url && (
-                  <img src={movie.image_url} alt="" className="best-rated-poster" />
-                )}
-                <div className="best-rated-info">
-                  <span className="best-rated-title">{movie.title}</span>
-                  <StarRating rating={parseFloat(movie.avg_rating)} size="small" />
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </section>
+            ) : bestRatedThisMonth.length === 0 ? (
+              <div className="empty-state compact">
+                <p>No rated movies yet.</p>
+              </div>
+            ) : (
+              <div className="best-rated-list compact">
+                {bestRatedThisMonth.slice(0, 3).map((movie, index) => (
+                  <Link to={`/movie/${movie.id}`} key={movie.id} className="best-rated-item">
+                    <span className="rank">#{index + 1}</span>
+                    {movie.image_url && (
+                      <img src={movie.image_url} alt="" className="best-rated-poster" />
+                    )}
+                    <div className="best-rated-info">
+                      <span className="best-rated-title">{movie.title}</span>
+                      <StarRating rating={parseFloat(movie.avg_rating)} size="small" />
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
+      </div>
     </div>
   );
 };
