@@ -1,5 +1,6 @@
 .home {
   padding: 1rem 0;
+  animation: fadeIn 0.4s ease-out;
 }
 
 .home-section {
@@ -70,23 +71,40 @@
   align-items: center;
   gap: 1rem;
   padding: 0.75rem 1rem;
-  background: var(--card-bg);
-  border-radius: 8px;
+  background: var(--bg-card);
+  border-radius: 12px;
   text-decoration: none;
   color: var(--text-primary);
-  transition: background 0.2s, transform 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid transparent;
 }
 
 .best-rated-item:hover {
-  background: var(--bg-secondary);
-  transform: translateX(4px);
+  background: var(--bg-card-hover);
+  transform: translateX(8px);
+  border-color: var(--accent-glow);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.best-rated-skeleton {
+  pointer-events: none;
 }
 
 .best-rated-item .rank {
   font-size: 1.25rem;
   font-weight: 700;
-  color: var(--primary-color);
   min-width: 40px;
+  background: linear-gradient(135deg, var(--accent) 0%, #7c3aed 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.best-rated-item:first-child .rank {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .best-rated-poster {
@@ -172,20 +190,23 @@
   gap: 1rem;
   padding: 1rem;
   background: var(--bg-secondary);
-  border-radius: 8px;
+  border-radius: 12px;
   cursor: pointer;
-  transition: background 0.2s, transform 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
+  border: 1px solid transparent;
 }
 
 .suggestion-item:hover {
-  background: rgba(88, 101, 242, 0.1);
-  transform: translateX(4px);
+  background: rgba(88, 101, 242, 0.15);
+  transform: translateX(6px);
+  border-color: var(--accent-glow);
 }
 
 .suggestion-item.voted {
-  background: rgba(88, 101, 242, 0.15);
-  border: 2px solid var(--primary-color);
+  background: rgba(88, 101, 242, 0.2);
+  border: 2px solid var(--accent);
+  box-shadow: 0 0 20px rgba(88, 101, 242, 0.2);
 }
 
 .suggestion-poster {

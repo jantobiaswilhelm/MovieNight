@@ -5,16 +5,38 @@
 }
 
 :root {
-  --bg-primary: #1a1a2e;
-  --bg-secondary: #16213e;
-  --bg-card: #0f3460;
+  --bg-primary: #0d0d1a;
+  --bg-secondary: #1a1a2e;
+  --bg-card: #252542;
+  --bg-card-hover: #2d2d4a;
   --text-primary: #eaeaea;
   --text-secondary: #a0a0a0;
   --accent: #5865f2;
   --accent-hover: #4752c4;
+  --accent-glow: rgba(88, 101, 242, 0.4);
   --success: #57f287;
   --warning: #fee75c;
   --danger: #ed4245;
+  --star-filled: #fbbf24;
+  --star-empty: #4b5563;
+  --gradient-poster: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 40%, transparent 100%);
+  --border-color: rgba(255,255,255,0.1);
+}
+
+/* Animations */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
 body {

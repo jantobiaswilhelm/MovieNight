@@ -2,7 +2,10 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getMovies, getActiveVoting, castVote, deleteSuggestion } from '../api/client';
+import Hero from '../components/Hero';
 import MovieCard from '../components/MovieCard';
+import StarRating from '../components/StarRating';
+import { HeroSkeleton, MovieCardSkeleton } from '../components/Skeleton';
 import './Home.css';
 
 const Home = () => {
@@ -70,10 +73,6 @@ const Home = () => {
     }
   };
 
-  if (loading) {
-    return <div className="loading">Loading...</div>;
-  }
-
   if (error) {
     return <div className="error">Error: {error}</div>;
   }
@@ -99,8 +98,18 @@ const Home = () => {
   // Calculate total votes for percentage
   const totalVotes = voting?.suggestions?.reduce((sum, s) => sum + parseInt(s.vote_count), 0) || 0;
 
+  // Get the next upcoming movie for the hero
+  const nextMovie = upcomingMovies[0];
+
   return (
     <div className="home">
+      {/* Hero Section */}
+      {loading ? (
+        <HeroSkeleton />
+      ) : nextMovie ? (
+        <Hero movie={nextMovie} type="upcoming" />
+      ) : null}
+
       {/* Active Voting Section */}
       {voting && (
         <section className="home-section voting-section">
@@ -187,7 +196,7 @@ const Home = () => {
       )}
 
       {/* No Active Voting */}
-      {!voting && (
+      {!loading && !voting && (
         <section className="home-section voting-section">
           <div className="section-header">
             <h2>Vote for Next Movie</h2>
@@ -206,17 +215,23 @@ const Home = () => {
       <section className="home-section">
         <div className="section-header">
           <h2>Upcoming Movie Nights</h2>
-          <Link to="/calendar" className="view-all">View Calendar &rarr;</Link>
+          <Link to="/calendar" className="view-all">View Calendar →</Link>
         </div>
 
-        {upcomingMovies.length === 0 ? (
+        {loading ? (
+          <div className="movie-grid horizontal">
+            <MovieCardSkeleton />
+            <MovieCardSkeleton />
+            <MovieCardSkeleton />
+          </div>
+        ) : upcomingMovies.length === 0 ? (
           <div className="empty-state">
             <p>No upcoming movie nights scheduled.</p>
             <p>Use <code>/announce</code> in Discord to create one.</p>
           </div>
         ) : (
           <div className="movie-grid horizontal">
-            {upcomingMovies.slice(0, 3).map((movie) => (
+            {upcomingMovies.slice(1, 4).map((movie) => (
               <MovieCard key={movie.id} movie={movie} />
             ))}
           </div>
@@ -227,10 +242,23 @@ const Home = () => {
       <section className="home-section">
         <div className="section-header">
           <h2>Best Rated This Month</h2>
-          <Link to="/stats" className="view-all">View Stats &rarr;</Link>
+          <Link to="/stats" className="view-all">View Stats →</Link>
         </div>
 
-        {bestRatedThisMonth.length === 0 ? (
+        {loading ? (
+          <div className="best-rated-list">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="best-rated-item best-rated-skeleton">
+                <div className="skeleton" style={{ width: 40, height: 24 }} />
+                <div className="skeleton" style={{ width: 40, height: 60 }} />
+                <div className="best-rated-info">
+                  <div className="skeleton" style={{ width: 150, height: 20 }} />
+                  <div className="skeleton" style={{ width: 80, height: 16 }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : bestRatedThisMonth.length === 0 ? (
           <div className="empty-state">
             <p>No rated movies this month yet.</p>
           </div>
@@ -244,7 +272,7 @@ const Home = () => {
                 )}
                 <div className="best-rated-info">
                   <span className="best-rated-title">{movie.title}</span>
-                  <span className="best-rated-rating">{parseFloat(movie.avg_rating).toFixed(1)}/10</span>
+                  <StarRating rating={parseFloat(movie.avg_rating)} size="small" />
                 </div>
               </Link>
             ))}

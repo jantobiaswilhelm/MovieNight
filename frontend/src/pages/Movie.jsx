@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getMovie, submitRating, getMyRating, deleteMovie } from '../api/client';
 import RatingInput from '../components/RatingInput';
+import StarRating from '../components/StarRating';
 import './Movie.css';
 
 const Movie = () => {
@@ -113,16 +114,17 @@ const Movie = () => {
           )}
 
           <div className="movie-stats">
-            <div className="stat">
-              <span className="stat-value">
-                {movie.avg_rating > 0 ? movie.avg_rating.toFixed(1) : '-'}
-              </span>
-              <span className="stat-label">Average</span>
-            </div>
-            <div className="stat">
-              <span className="stat-value">{movie.rating_count}</span>
-              <span className="stat-label">Votes</span>
-            </div>
+            {movie.avg_rating > 0 ? (
+              <div className="stat stat-rating">
+                <StarRating rating={movie.avg_rating} size="large" />
+                <span className="stat-label">{movie.rating_count} votes</span>
+              </div>
+            ) : (
+              <div className="stat">
+                <span className="stat-value">-</span>
+                <span className="stat-label">No ratings yet</span>
+              </div>
+            )}
           </div>
 
           {isAdmin && (
