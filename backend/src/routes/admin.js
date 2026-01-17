@@ -7,7 +7,7 @@ const router = Router();
 
 // Middleware to check admin status
 const requireAdmin = (req, res, next) => {
-  if (!req.user || !isAdmin(req.user.discordId)) {
+  if (!req.user || !isAdmin(req.user.discord_id)) {
     return res.status(403).json({ error: 'Admin access required' });
   }
   next();
@@ -15,7 +15,7 @@ const requireAdmin = (req, res, next) => {
 
 // Check if current user is admin
 router.get('/check', authenticateToken, (req, res) => {
-  res.json({ isAdmin: isAdmin(req.user.discordId) });
+  res.json({ isAdmin: isAdmin(req.user.discord_id) });
 });
 
 // Delete a movie
