@@ -1,5 +1,6 @@
-import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
-import { findOrCreateUser, createVotingSession, getActiveVotingSession } from '../models/index.js';
+import { SlashCommandBuilder } from 'discord.js';
+import { findOrCreateUser, createVotingSession, getActiveVotingSession, getSuggestionsForSession } from '../models/index.js';
+import { buildVotingEmbed, buildVotingButtons } from '../utils/votingEmbed.js';
 
 export const data = new SlashCommandBuilder()
   .setName('startvote')
@@ -45,20 +46,15 @@ export const execute = async (interaction) => {
 
     const timestamp = Math.floor(scheduledAt.getTime() / 1000);
 
-    const embed = new EmbedBuilder()
-      .setTitle('🗳️ Movie Night Voting')
-      .setDescription(
-        `**Vote for the next movie night!**\n\n` +
-        `📅 Planned for: <t:${timestamp}:F> (<t:${timestamp}:R>)\n\n` +
-        `Use \`/suggest\` to add a movie to the poll.\n` +
-        `Vote on the website or react to suggestions!`
-      )
-      .setColor(0xFEE75C)
-      .setFooter({ text: `Started by ${interaction.user.username}` })
-      .setTimestamp();
+    // Build embed and buttons
+    const embed = buildVotingEmbed(null, [], timestamp);
+    embed.setFooter({ text: `Started by ${interaction.user.username}` });
+
+    const buttons = buildVotingButtons([]);
 
     const reply = await interaction.reply({
       embeds: [embed],
+      components: buttons,
       fetchReply: true
     });
 
@@ -70,11 +66,6 @@ export const execute = async (interaction) => {
       scheduledAt,
       user.id
     );
-
-    await interaction.followUp({
-      content: '✅ Voting session started! Use `/suggest` to add movie suggestions.',
-      ephemeral: true
-    });
 
   } catch (err) {
     console.error('Error starting vote:', err);

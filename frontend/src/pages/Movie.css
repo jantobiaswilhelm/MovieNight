@@ -50,7 +50,28 @@
 .movie-stats {
   display: flex;
   gap: 2rem;
-  margin-top: auto;
+  margin-top: 1rem;
+}
+
+.btn-danger {
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-danger:hover {
+  background: #c82333;
+}
+
+.btn-danger:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
 }
 
 .movie-stats .stat {

@@ -47,6 +47,39 @@
   color: var(--text-primary);
 }
 
+/* Month selector */
+.month-header {
+  margin-bottom: 1rem;
+}
+
+.month-select {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 1rem;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.month-select:hover {
+  border-color: var(--primary-color);
+}
+
+.month-select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(88, 101, 242, 0.2);
+}
+
+.section-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.5rem;
+}
+
 .empty-message {
   color: var(--text-secondary);
   font-size: 0.9rem;

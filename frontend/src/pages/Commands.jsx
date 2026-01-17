@@ -26,14 +26,14 @@ const commands = [
     name: '/startvote',
     description: 'Start a voting session',
     usage: '/startvote datetime:"Saturday 8pm"',
-    details: 'Start a new voting session where users can suggest and vote for the next movie night. The datetime sets the planned movie night time.',
+    details: 'Start a new voting session with interactive buttons. Users can click "Add Suggestion" to suggest movies and vote with buttons. The message auto-updates as votes come in.',
     category: 'Voting'
   },
   {
     name: '/suggest',
     description: 'Suggest a movie for voting',
     usage: '/suggest title:"Movie Name" image:"poster-url"',
-    details: 'Add a movie suggestion to the current voting session. Requires an active voting session.',
+    details: 'Alternative way to add a movie suggestion. You can also use the "Add Suggestion" button on the voting message.',
     category: 'Voting'
   },
   {
@@ -63,6 +63,20 @@ const commands = [
     usage: '/help',
     details: 'Display all available commands in Discord.',
     category: 'Other'
+  },
+  {
+    name: '/admin',
+    description: 'Show admin controls (Admin only)',
+    usage: '/admin',
+    details: 'Shows delete buttons on the voting message. Only available to server admins.',
+    category: 'Admin'
+  },
+  {
+    name: '/delete',
+    description: 'Delete a movie (Admin only)',
+    usage: '/delete movie:"Movie Name"',
+    details: 'Permanently delete a movie and all its ratings. Only available to server admins.',
+    category: 'Admin'
   }
 ];
 

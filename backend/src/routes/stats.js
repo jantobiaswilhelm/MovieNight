@@ -6,7 +6,7 @@ const router = Router();
 
 // Get server-wide stats
 router.get('/', async (req, res) => {
-  const { guild_id } = req.query;
+  const { guild_id, month } = req.query;
 
   if (!guild_id) {
     return res.status(400).json({ error: 'guild_id is required' });
@@ -22,17 +22,19 @@ router.get('/', async (req, res) => {
       topAllTime,
       worstMonth,
       worstYear,
-      worstAllTime
+      worstAllTime,
+      availableMonths
     ] = await Promise.all([
       db.getGuildStats(guild_id),
       db.getTopRatedMovies(guild_id, 5),
       db.getMostActiveRaters(guild_id, 5),
-      db.getTopRatedMoviesByPeriod(guild_id, 'month', 5, 3),
+      db.getTopRatedMoviesByPeriod(guild_id, 'month', 5, 3, month || null),
       db.getTopRatedMoviesByPeriod(guild_id, 'year', 5, 3),
       db.getTopRatedMoviesByPeriod(guild_id, 'all', 5, 3),
-      db.getWorstRatedMoviesByPeriod(guild_id, 'month', 5, 3),
+      db.getWorstRatedMoviesByPeriod(guild_id, 'month', 5, 3, month || null),
       db.getWorstRatedMoviesByPeriod(guild_id, 'year', 5, 3),
-      db.getWorstRatedMoviesByPeriod(guild_id, 'all', 5, 3)
+      db.getWorstRatedMoviesByPeriod(guild_id, 'all', 5, 3),
+      db.getAvailableMonths(guild_id)
     ]);
 
     res.json({
@@ -44,7 +46,9 @@ router.get('/', async (req, res) => {
       top_all_time: topAllTime,
       worst_month: worstMonth,
       worst_year: worstYear,
-      worst_all_time: worstAllTime
+      worst_all_time: worstAllTime,
+      available_months: availableMonths,
+      selected_month: month || null
     });
   } catch (err) {
     console.error('Error fetching stats:', err);

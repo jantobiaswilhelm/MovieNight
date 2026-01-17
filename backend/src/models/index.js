@@ -164,9 +164,12 @@ export const getTopRatedMovies = async (guildId, limit = 5) => {
   return result.rows;
 };
 
-export const getTopRatedMoviesByPeriod = async (guildId, period, limit = 5, minVotes = 3) => {
+export const getTopRatedMoviesByPeriod = async (guildId, period, limit = 5, minVotes = 3, specificMonth = null) => {
   let dateFilter = '';
-  if (period === 'month') {
+  if (specificMonth) {
+    // specificMonth format: "2024-01" (year-month)
+    dateFilter = `AND TO_CHAR(mn.scheduled_at, 'YYYY-MM') = '${specificMonth}'`;
+  } else if (period === 'month') {
     dateFilter = `AND mn.scheduled_at >= DATE_TRUNC('month', CURRENT_DATE)`;
   } else if (period === 'year') {
     dateFilter = `AND mn.scheduled_at >= DATE_TRUNC('year', CURRENT_DATE)`;
@@ -189,9 +192,12 @@ export const getTopRatedMoviesByPeriod = async (guildId, period, limit = 5, minV
   return result.rows;
 };
 
-export const getWorstRatedMoviesByPeriod = async (guildId, period, limit = 5, minVotes = 3) => {
+export const getWorstRatedMoviesByPeriod = async (guildId, period, limit = 5, minVotes = 3, specificMonth = null) => {
   let dateFilter = '';
-  if (period === 'month') {
+  if (specificMonth) {
+    // specificMonth format: "2024-01" (year-month)
+    dateFilter = `AND TO_CHAR(mn.scheduled_at, 'YYYY-MM') = '${specificMonth}'`;
+  } else if (period === 'month') {
     dateFilter = `AND mn.scheduled_at >= DATE_TRUNC('month', CURRENT_DATE)`;
   } else if (period === 'year') {
     dateFilter = `AND mn.scheduled_at >= DATE_TRUNC('year', CURRENT_DATE)`;
@@ -212,6 +218,17 @@ export const getWorstRatedMoviesByPeriod = async (guildId, period, limit = 5, mi
     [guildId, limit, minVotes]
   );
   return result.rows;
+};
+
+export const getAvailableMonths = async (guildId) => {
+  const result = await pool.query(
+    `SELECT DISTINCT TO_CHAR(scheduled_at, 'YYYY-MM') as month
+     FROM movie_nights
+     WHERE guild_id = $1 AND scheduled_at IS NOT NULL
+     ORDER BY month DESC`,
+    [guildId]
+  );
+  return result.rows.map(r => r.month);
 };
 
 export const getUserStats = async (userId) => {
@@ -379,6 +396,29 @@ export const getWinningSuggestion = async (votingSessionId) => {
      ORDER BY vote_count DESC, ms.created_at ASC
      LIMIT 1`,
     [votingSessionId]
+  );
+  return result.rows[0];
+};
+
+// Admin delete operations
+export const deleteSuggestion = async (suggestionId) => {
+  // First delete all votes for this suggestion
+  await pool.query('DELETE FROM votes WHERE suggestion_id = $1', [suggestionId]);
+  // Then delete the suggestion
+  const result = await pool.query(
+    'DELETE FROM movie_suggestions WHERE id = $1 RETURNING *',
+    [suggestionId]
+  );
+  return result.rows[0];
+};
+
+export const deleteMovieNight = async (movieId) => {
+  // First delete all ratings for this movie
+  await pool.query('DELETE FROM ratings WHERE movie_night_id = $1', [movieId]);
+  // Then delete the movie
+  const result = await pool.query(
+    'DELETE FROM movie_nights WHERE id = $1 RETURNING *',
+    [movieId]
   );
   return result.rows[0];
 };

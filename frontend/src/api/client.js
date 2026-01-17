@@ -56,7 +56,11 @@ export const getUserRatings = (userId, limit = 20) =>
   fetchAPI(`/api/ratings/user/${userId}?limit=${limit}`);
 
 // Stats
-export const getStats = () => fetchAPI(`/api/stats?guild_id=${GUILD_ID}`);
+export const getStats = (month = null) => {
+  const params = new URLSearchParams({ guild_id: GUILD_ID });
+  if (month) params.append('month', month);
+  return fetchAPI(`/api/stats?${params}`);
+};
 
 export const getMyStats = () => fetchAPI('/api/stats/me');
 
@@ -79,5 +83,18 @@ export const castVote = (suggestionId) =>
 
 export const removeVote = (suggestionId) =>
   fetchAPI(`/api/voting/suggestions/${suggestionId}/vote`, {
+    method: 'DELETE'
+  });
+
+// Admin
+export const checkAdmin = () => fetchAPI('/api/admin/check');
+
+export const deleteMovie = (movieId) =>
+  fetchAPI(`/api/admin/movies/${movieId}`, {
+    method: 'DELETE'
+  });
+
+export const deleteSuggestion = (suggestionId) =>
+  fetchAPI(`/api/admin/suggestions/${suggestionId}`, {
     method: 'DELETE'
   });

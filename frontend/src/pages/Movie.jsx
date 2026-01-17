@@ -1,18 +1,20 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getMovie, submitRating, getMyRating } from '../api/client';
+import { getMovie, submitRating, getMyRating, deleteMovie } from '../api/client';
 import RatingInput from '../components/RatingInput';
 import './Movie.css';
 
 const Movie = () => {
   const { id } = useParams();
-  const { user, isAuthenticated, login } = useAuth();
+  const navigate = useNavigate();
+  const { user, isAuthenticated, isAdmin, login } = useAuth();
   const [movie, setMovie] = useState(null);
   const [myRating, setMyRating] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [ratingMessage, setRatingMessage] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -54,6 +56,21 @@ const Movie = () => {
     }
   };
 
+  const handleDelete = async () => {
+    if (!confirm(`Are you sure you want to delete "${movie.title}"? This will also delete all ratings.`)) {
+      return;
+    }
+
+    setDeleting(true);
+    try {
+      await deleteMovie(id);
+      navigate('/movies');
+    } catch (err) {
+      alert('Failed to delete movie: ' + err.message);
+      setDeleting(false);
+    }
+  };
+
   if (loading) {
     return <div className="loading">Loading movie...</div>;
   }
@@ -80,7 +97,7 @@ const Movie = () => {
 
   return (
     <div className="movie-page">
-      <Link to="/" className="back-link">&larr; Back to Movies</Link>
+      <Link to="/movies" className="back-link">&larr; Back to Movies</Link>
 
       <div className="movie-header">
         {movie.image_url && (
@@ -107,6 +124,16 @@ const Movie = () => {
               <span className="stat-label">Votes</span>
             </div>
           </div>
+
+          {isAdmin && (
+            <button
+              className="btn-danger"
+              onClick={handleDelete}
+              disabled={deleting}
+            >
+              {deleting ? 'Deleting...' : 'Delete Movie'}
+            </button>
+          )}
         </div>
       </div>
 
