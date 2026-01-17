@@ -16,7 +16,7 @@ export const data = new SlashCommandBuilder()
   .addStringOption(option =>
     option.setName('image')
       .setDescription('URL to a movie poster or image')
-      .setRequired(false));
+      .setRequired(true));
 
 export const execute = async (interaction) => {
   const title = interaction.options.getString('title');
