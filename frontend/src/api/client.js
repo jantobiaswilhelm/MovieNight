@@ -61,3 +61,23 @@ export const getStats = () => fetchAPI(`/api/stats?guild_id=${GUILD_ID}`);
 export const getMyStats = () => fetchAPI('/api/stats/me');
 
 export const getUserStats = (userId) => fetchAPI(`/api/stats/user/${userId}`);
+
+// Voting
+export const getActiveVoting = () =>
+  fetchAPI(`/api/voting/active?guild_id=${GUILD_ID}`);
+
+export const submitSuggestion = (sessionId, title, imageUrl) =>
+  fetchAPI(`/api/voting/${sessionId}/suggestions`, {
+    method: 'POST',
+    body: JSON.stringify({ title, image_url: imageUrl })
+  });
+
+export const castVote = (suggestionId) =>
+  fetchAPI(`/api/voting/suggestions/${suggestionId}/vote`, {
+    method: 'POST'
+  });
+
+export const removeVote = (suggestionId) =>
+  fetchAPI(`/api/voting/suggestions/${suggestionId}/vote`, {
+    method: 'DELETE'
+  });

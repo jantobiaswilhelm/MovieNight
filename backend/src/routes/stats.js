@@ -13,14 +13,38 @@ router.get('/', async (req, res) => {
   }
 
   try {
-    const stats = await db.getGuildStats(guild_id);
-    const topMovies = await db.getTopRatedMovies(guild_id, 5);
-    const topRaters = await db.getMostActiveRaters(guild_id, 5);
+    const [
+      stats,
+      topMovies,
+      topRaters,
+      topMonth,
+      topYear,
+      topAllTime,
+      worstMonth,
+      worstYear,
+      worstAllTime
+    ] = await Promise.all([
+      db.getGuildStats(guild_id),
+      db.getTopRatedMovies(guild_id, 5),
+      db.getMostActiveRaters(guild_id, 5),
+      db.getTopRatedMoviesByPeriod(guild_id, 'month', 5, 3),
+      db.getTopRatedMoviesByPeriod(guild_id, 'year', 5, 3),
+      db.getTopRatedMoviesByPeriod(guild_id, 'all', 5, 3),
+      db.getWorstRatedMoviesByPeriod(guild_id, 'month', 5, 3),
+      db.getWorstRatedMoviesByPeriod(guild_id, 'year', 5, 3),
+      db.getWorstRatedMoviesByPeriod(guild_id, 'all', 5, 3)
+    ]);
 
     res.json({
       ...stats,
       top_movies: topMovies,
-      top_raters: topRaters
+      top_raters: topRaters,
+      top_month: topMonth,
+      top_year: topYear,
+      top_all_time: topAllTime,
+      worst_month: worstMonth,
+      worst_year: worstYear,
+      worst_all_time: worstAllTime
     });
   } catch (err) {
     console.error('Error fetching stats:', err);

@@ -5,37 +5,64 @@ const commands = [
     name: '/announce',
     description: 'Announce a new movie night',
     usage: '/announce title:"Movie Name" datetime:"tomorrow 8pm" image:"poster-url"',
-    details: 'Schedule a movie night and post an announcement with rating buttons. The image is required and will be shown in the embed.'
+    details: 'Schedule a movie night and post an announcement with rating buttons. The image is required and will be shown in the embed.',
+    category: 'Movies'
   },
   {
     name: '/rate',
     description: 'Rate a movie',
     usage: '/rate movie:"Movie Name" score:8.5',
-    details: 'Rate a movie with half-point precision (1-10). Use this for ratings like 7.5 or 8.5 that aren\'t available on the buttons.'
+    details: 'Rate a movie with half-point precision (1-10). Use this for ratings like 7.5 or 8.5 that aren\'t available on the buttons.',
+    category: 'Movies'
   },
   {
     name: '/history',
     description: 'View movie history',
     usage: '/history',
-    details: 'See all past movie nights with their average ratings and vote counts.'
+    details: 'See all past movie nights with their average ratings and vote counts.',
+    category: 'Movies'
+  },
+  {
+    name: '/startvote',
+    description: 'Start a voting session',
+    usage: '/startvote datetime:"Saturday 8pm"',
+    details: 'Start a new voting session where users can suggest and vote for the next movie night. The datetime sets the planned movie night time.',
+    category: 'Voting'
+  },
+  {
+    name: '/suggest',
+    description: 'Suggest a movie for voting',
+    usage: '/suggest title:"Movie Name" image:"poster-url"',
+    details: 'Add a movie suggestion to the current voting session. Requires an active voting session.',
+    category: 'Voting'
+  },
+  {
+    name: '/endvote',
+    description: 'End voting and announce winner',
+    usage: '/endvote or /endvote datetime:"Sunday 9pm"',
+    details: 'Close the voting session, announce the winner, and automatically create a movie night announcement. Optionally override the planned datetime.',
+    category: 'Voting'
   },
   {
     name: '/stats',
     description: 'View server statistics',
     usage: '/stats',
-    details: 'See overall stats including total movies watched, top rated movies, and most active raters.'
+    details: 'See overall stats including total movies watched, top rated movies, and most active raters.',
+    category: 'Stats'
   },
   {
     name: '/myratings',
     description: 'View your ratings',
     usage: '/myratings',
-    details: 'See all the movies you\'ve rated and your personal average score.'
+    details: 'See all the movies you\'ve rated and your personal average score.',
+    category: 'Stats'
   },
   {
     name: '/help',
     description: 'Show help message',
     usage: '/help',
-    details: 'Display all available commands in Discord.'
+    details: 'Display all available commands in Discord.',
+    category: 'Other'
   }
 ];
 

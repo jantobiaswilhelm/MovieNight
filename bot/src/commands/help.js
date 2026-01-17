@@ -31,6 +31,18 @@ export const execute = async (interaction) => {
         value: '**View your ratings**\n`/myratings`\nSee all the movies you\'ve rated and your average score.'
       },
       {
+        name: '/startvote',
+        value: '**Start a voting session**\n`/startvote datetime:"Saturday 8pm"`\nStart a new voting session for choosing the next movie.'
+      },
+      {
+        name: '/suggest',
+        value: '**Suggest a movie**\n`/suggest title:"Movie Name" image:"poster-url"`\nAdd a movie to the current voting session.'
+      },
+      {
+        name: '/endvote',
+        value: '**End voting and announce winner**\n`/endvote` or `/endvote datetime:"Sunday 9pm"`\nClose voting, announce the winner, and create the movie night.'
+      },
+      {
         name: '/help',
         value: '**Show this help message**\n`/help`\nDisplay all available commands.'
       }
