@@ -8,12 +8,10 @@ const Calendar = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
 
-  const guildId = import.meta.env.VITE_GUILD_ID;
-
   useEffect(() => {
     const fetchMovies = async () => {
       try {
-        const data = await getMovies(guildId, 100, 0);
+        const data = await getMovies(100, 0);
         setMovies(data);
       } catch (err) {
         console.error('Error fetching movies:', err);
@@ -23,7 +21,7 @@ const Calendar = () => {
     };
 
     fetchMovies();
-  }, [guildId]);
+  }, []);
 
   const getDaysInMonth = (date) => {
     const year = date.getFullYear();
