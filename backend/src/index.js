@@ -10,15 +10,6 @@ import statsRoutes from './routes/stats.js';
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-console.log('Starting server with PORT:', PORT);
-console.log('FRONTEND_URL:', process.env.FRONTEND_URL);
-
-// Log all requests
-app.use((req, res, next) => {
-  console.log(`${req.method} ${req.path}`);
-  next();
-});
-
 // Middleware
 app.use(cors({
   origin: process.env.FRONTEND_URL || '*',
