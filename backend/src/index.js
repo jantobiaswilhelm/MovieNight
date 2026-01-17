@@ -6,6 +6,7 @@ import authRoutes from './routes/auth.js';
 import movieRoutes from './routes/movies.js';
 import ratingRoutes from './routes/ratings.js';
 import statsRoutes from './routes/stats.js';
+import votingRoutes from './routes/voting.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -22,6 +23,7 @@ app.use('/auth', authRoutes);
 app.use('/api/movies', movieRoutes);
 app.use('/api/ratings', ratingRoutes);
 app.use('/api/stats', statsRoutes);
+app.use('/api/voting', votingRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

@@ -170,3 +170,130 @@ export const getMostActiveRaters = async (guildId, limit = 5) => {
   );
   return result.rows;
 };
+
+// Voting operations
+export const createVotingSession = async (guildId, channelId, messageId, scheduledAt, createdBy) => {
+  const result = await pool.query(
+    `INSERT INTO voting_sessions (guild_id, channel_id, message_id, scheduled_at, created_by, status)
+     VALUES ($1, $2, $3, $4, $5, 'open')
+     RETURNING *`,
+    [guildId, channelId, messageId, scheduledAt, createdBy]
+  );
+  return result.rows[0];
+};
+
+export const getActiveVotingSession = async (guildId) => {
+  const result = await pool.query(
+    `SELECT vs.*, u.username as created_by_name
+     FROM voting_sessions vs
+     LEFT JOIN users u ON vs.created_by = u.id
+     WHERE vs.guild_id = $1 AND vs.status = 'open'
+     ORDER BY vs.created_at DESC
+     LIMIT 1`,
+    [guildId]
+  );
+  return result.rows[0];
+};
+
+export const closeVotingSession = async (id, winnerId) => {
+  const result = await pool.query(
+    `UPDATE voting_sessions
+     SET status = 'closed', winner_id = $2, closed_at = CURRENT_TIMESTAMP
+     WHERE id = $1
+     RETURNING *`,
+    [id, winnerId]
+  );
+  return result.rows[0];
+};
+
+export const updateVotingSessionSchedule = async (id, scheduledAt) => {
+  const result = await pool.query(
+    `UPDATE voting_sessions SET scheduled_at = $2 WHERE id = $1 RETURNING *`,
+    [id, scheduledAt]
+  );
+  return result.rows[0];
+};
+
+// Suggestion operations
+export const createSuggestion = async (votingSessionId, title, imageUrl, suggestedBy) => {
+  const result = await pool.query(
+    `INSERT INTO movie_suggestions (voting_session_id, title, image_url, suggested_by)
+     VALUES ($1, $2, $3, $4)
+     RETURNING *`,
+    [votingSessionId, title, imageUrl, suggestedBy]
+  );
+  return result.rows[0];
+};
+
+export const getSuggestionsForSession = async (votingSessionId) => {
+  const result = await pool.query(
+    `SELECT ms.*, u.username as suggested_by_name,
+            COUNT(v.id) as vote_count
+     FROM movie_suggestions ms
+     LEFT JOIN users u ON ms.suggested_by = u.id
+     LEFT JOIN votes v ON ms.id = v.suggestion_id
+     WHERE ms.voting_session_id = $1
+     GROUP BY ms.id, u.username
+     ORDER BY vote_count DESC, ms.created_at ASC`,
+    [votingSessionId]
+  );
+  return result.rows;
+};
+
+export const getWinningSuggestion = async (votingSessionId) => {
+  const result = await pool.query(
+    `SELECT ms.*, u.username as suggested_by_name,
+            COUNT(v.id) as vote_count
+     FROM movie_suggestions ms
+     LEFT JOIN users u ON ms.suggested_by = u.id
+     LEFT JOIN votes v ON ms.id = v.suggestion_id
+     WHERE ms.voting_session_id = $1
+     GROUP BY ms.id, u.username
+     ORDER BY vote_count DESC, ms.created_at ASC
+     LIMIT 1`,
+    [votingSessionId]
+  );
+  return result.rows[0];
+};
+
+// Vote operations
+export const castVote = async (suggestionId, odiscordId) => {
+  // Get user id from discord id
+  const user = await getUserByDiscordId(odiscordId);
+  if (!user) return null;
+
+  const result = await pool.query(
+    `INSERT INTO votes (suggestion_id, user_id)
+     VALUES ($1, $2)
+     ON CONFLICT (suggestion_id, user_id) DO NOTHING
+     RETURNING *`,
+    [suggestionId, user.id]
+  );
+  return result.rows[0];
+};
+
+export const getUserVoteForSession = async (votingSessionId, discordId) => {
+  const result = await pool.query(
+    `SELECT v.*, ms.title
+     FROM votes v
+     JOIN movie_suggestions ms ON v.suggestion_id = ms.id
+     JOIN users u ON v.user_id = u.id
+     WHERE ms.voting_session_id = $1 AND u.discord_id = $2`,
+    [votingSessionId, discordId]
+  );
+  return result.rows[0];
+};
+
+export const removeVoteByDiscordId = async (votingSessionId, discordId) => {
+  const result = await pool.query(
+    `DELETE FROM votes v
+     USING movie_suggestions ms, users u
+     WHERE v.suggestion_id = ms.id
+     AND v.user_id = u.id
+     AND ms.voting_session_id = $1
+     AND u.discord_id = $2
+     RETURNING v.*`,
+    [votingSessionId, discordId]
+  );
+  return result.rows[0];
+};

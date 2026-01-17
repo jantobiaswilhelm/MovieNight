@@ -53,6 +53,45 @@ const migrate = async () => {
       )
     `);
 
+    // Voting sessions table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS voting_sessions (
+        id SERIAL PRIMARY KEY,
+        guild_id VARCHAR(20) NOT NULL,
+        channel_id VARCHAR(20),
+        message_id VARCHAR(20),
+        scheduled_at TIMESTAMP NOT NULL,
+        status VARCHAR(20) DEFAULT 'open',
+        created_by INTEGER REFERENCES users(id),
+        winner_id INTEGER,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        closed_at TIMESTAMP
+      )
+    `);
+
+    // Movie suggestions table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS movie_suggestions (
+        id SERIAL PRIMARY KEY,
+        voting_session_id INTEGER REFERENCES voting_sessions(id) ON DELETE CASCADE,
+        title VARCHAR(255) NOT NULL,
+        image_url VARCHAR(500),
+        suggested_by INTEGER REFERENCES users(id),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Votes table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS votes (
+        id SERIAL PRIMARY KEY,
+        suggestion_id INTEGER REFERENCES movie_suggestions(id) ON DELETE CASCADE,
+        user_id INTEGER REFERENCES users(id),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(suggestion_id, user_id)
+      )
+    `);
+
     // Indexes
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_ratings_movie ON ratings(movie_night_id)
@@ -62,6 +101,15 @@ const migrate = async () => {
     `);
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_movie_nights_guild ON movie_nights(guild_id)
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_voting_sessions_guild ON voting_sessions(guild_id)
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_suggestions_session ON movie_suggestions(voting_session_id)
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_votes_suggestion ON votes(suggestion_id)
     `);
 
     await client.query('COMMIT');

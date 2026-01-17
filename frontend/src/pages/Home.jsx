@@ -1,23 +1,55 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getMovies } from '../api/client';
+import { useAuth } from '../context/AuthContext';
+import { getMovies, getActiveVoting, castVote } from '../api/client';
 import MovieCard from '../components/MovieCard';
 import './Home.css';
 
 const Home = () => {
+  const { isAuthenticated, login } = useAuth();
   const [movies, setMovies] = useState([]);
+  const [voting, setVoting] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [votingLoading, setVotingLoading] = useState(false);
 
   useEffect(() => {
-    getMovies(100, 0)
-      .then(setMovies)
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
+    const fetchData = async () => {
+      try {
+        const [moviesData, votingData] = await Promise.all([
+          getMovies(100, 0),
+          getActiveVoting().catch(() => null)
+        ]);
+        setMovies(moviesData);
+        setVoting(votingData);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, []);
 
+  const handleVote = async (suggestionId) => {
+    if (!isAuthenticated) return;
+
+    setVotingLoading(true);
+    try {
+      await castVote(suggestionId);
+      // Refresh voting data
+      const votingData = await getActiveVoting();
+      setVoting(votingData);
+    } catch (err) {
+      console.error('Error voting:', err);
+    } finally {
+      setVotingLoading(false);
+    }
+  };
+
   if (loading) {
-    return <div className="loading">Loading movies...</div>;
+    return <div className="loading">Loading...</div>;
   }
 
   if (error) {
@@ -42,8 +74,102 @@ const Home = () => {
     .sort((a, b) => parseFloat(b.avg_rating) - parseFloat(a.avg_rating))
     .slice(0, 5);
 
+  // Calculate total votes for percentage
+  const totalVotes = voting?.suggestions?.reduce((sum, s) => sum + parseInt(s.vote_count), 0) || 0;
+
   return (
     <div className="home">
+      {/* Active Voting Section */}
+      {voting && (
+        <section className="home-section voting-section">
+          <div className="section-header">
+            <h2>Vote for Next Movie</h2>
+            {voting.scheduled_at && (
+              <span className="voting-date">
+                Planned: {new Date(voting.scheduled_at).toLocaleDateString('en-US', {
+                  weekday: 'short',
+                  month: 'short',
+                  day: 'numeric',
+                  hour: 'numeric',
+                  minute: '2-digit'
+                })}
+              </span>
+            )}
+          </div>
+
+          <div className="voting-active">
+            {voting.suggestions && voting.suggestions.length > 0 ? (
+              <div className="suggestions-list">
+                {voting.suggestions.map((suggestion) => {
+                  const votePercent = totalVotes > 0
+                    ? Math.round((parseInt(suggestion.vote_count) / totalVotes) * 100)
+                    : 0;
+                  const isUserVote = voting.user_vote?.suggestion_id === suggestion.id;
+
+                  return (
+                    <div
+                      key={suggestion.id}
+                      className={`suggestion-item ${isUserVote ? 'voted' : ''}`}
+                      onClick={() => !votingLoading && isAuthenticated && handleVote(suggestion.id)}
+                    >
+                      {suggestion.image_url && (
+                        <img
+                          src={suggestion.image_url}
+                          alt=""
+                          className="suggestion-poster"
+                        />
+                      )}
+                      <div className="suggestion-info">
+                        <span className="suggestion-title">{suggestion.title}</span>
+                        <span className="suggestion-by">by {suggestion.suggested_by_name}</span>
+                      </div>
+                      <div className="suggestion-votes">
+                        <div className="vote-bar-container">
+                          <div
+                            className="vote-bar-fill"
+                            style={{ width: `${votePercent}%` }}
+                          ></div>
+                        </div>
+                        <span className="vote-count">{suggestion.vote_count} votes</span>
+                      </div>
+                      {isUserVote && <span className="your-vote">Your vote</span>}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="empty-state">
+                <p>No suggestions yet!</p>
+                <p>Use <code>/suggest</code> in Discord to add movies.</p>
+              </div>
+            )}
+
+            {!isAuthenticated && voting.suggestions?.length > 0 && (
+              <div className="login-to-vote">
+                <p>Log in to vote!</p>
+                <button onClick={login} className="btn-primary">Login with Discord</button>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* No Active Voting */}
+      {!voting && (
+        <section className="home-section voting-section">
+          <div className="section-header">
+            <h2>Vote for Next Movie</h2>
+          </div>
+          <div className="voting-placeholder">
+            <div className="voting-card">
+              <div className="voting-icon">🗳️</div>
+              <h3>No Active Voting</h3>
+              <p>Use <code>/startvote</code> in Discord to start a new voting session!</p>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Upcoming Movies Section */}
       <section className="home-section">
         <div className="section-header">
@@ -92,37 +218,6 @@ const Home = () => {
             ))}
           </div>
         )}
-      </section>
-
-      {/* Voting Section (Template) */}
-      <section className="home-section voting-section">
-        <div className="section-header">
-          <h2>Vote for Next Movie</h2>
-        </div>
-
-        <div className="voting-placeholder">
-          <div className="voting-card">
-            <div className="voting-icon">🎬</div>
-            <h3>Movie Voting Coming Soon</h3>
-            <p>Soon you'll be able to suggest and vote for upcoming movie nights right here!</p>
-            <div className="voting-preview">
-              <div className="vote-option disabled">
-                <span className="vote-title">Movie Suggestion 1</span>
-                <div className="vote-bar">
-                  <div className="vote-progress" style={{ width: '65%' }}></div>
-                </div>
-                <span className="vote-count">13 votes</span>
-              </div>
-              <div className="vote-option disabled">
-                <span className="vote-title">Movie Suggestion 2</span>
-                <div className="vote-bar">
-                  <div className="vote-progress" style={{ width: '35%' }}></div>
-                </div>
-                <span className="vote-count">7 votes</span>
-              </div>
-            </div>
-          </div>
-        </div>
       </section>
     </div>
   );

@@ -1,57 +1,147 @@
 .stats-page {
-  padding: 2rem 0;
+  padding: 1rem 0;
 }
 
 .stats-page h1 {
   margin-bottom: 2rem;
 }
 
-.stats-section {
-  margin-top: 2rem;
+.stats-page h2 {
+  margin-bottom: 0.5rem;
+  font-size: 1.5rem;
 }
 
-.stats-section h2 {
+.section-note {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
   margin-bottom: 1rem;
-  font-size: 1.25rem;
 }
 
-.top-list {
+.stats-section {
+  margin-top: 2.5rem;
+}
+
+/* Grid layouts for desktop */
+.stats-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.stats-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+}
+
+/* List sections */
+.stats-list-section {
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.stats-list-section h3 {
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  color: var(--text-primary);
+}
+
+.empty-message {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 1rem 0;
+}
+
+/* Movie list items */
+.movie-list {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.top-item {
+.movie-list-item {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  background: var(--bg-card);
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: var(--bg-secondary);
   border-radius: 8px;
   text-decoration: none;
   color: inherit;
-  transition: background 0.2s;
+  transition: background 0.2s, transform 0.2s;
 }
 
-.top-item:hover {
-  background: #1a4a70;
-  text-decoration: none;
+.movie-list-item:hover {
+  background: rgba(88, 101, 242, 0.1);
+  transform: translateX(4px);
 }
 
-.rank {
-  font-size: 1.25rem;
-  font-weight: bold;
-  color: var(--accent);
-  min-width: 40px;
+.movie-list-item .rank {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  min-width: 30px;
 }
 
-.name {
+.movie-thumb {
+  width: 32px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.movie-info {
   flex: 1;
-  color: var(--text-primary);
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
-.value {
+.movie-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.movie-meta {
+  font-size: 0.75rem;
   color: var(--text-secondary);
+}
+
+.movie-rating {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--primary-color);
+  min-width: 35px;
+  text-align: right;
+}
+
+/* Rater list */
+.rater-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.rater-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+}
+
+.rater-item .rank {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  min-width: 30px;
 }
 
 .rater-info {
@@ -59,22 +149,80 @@
   align-items: center;
   gap: 0.5rem;
   flex: 1;
+  min-width: 0;
 }
 
 .rater-avatar {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
+  flex-shrink: 0;
 }
 
-@media (max-width: 600px) {
-  .top-item {
-    flex-wrap: wrap;
+.rater-name {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rater-stats {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-size: 0.85rem;
+}
+
+.rater-count {
+  color: var(--text-primary);
+}
+
+.rater-avg {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+}
+
+/* Responsive: tablet */
+@media (max-width: 1024px) {
+  .stats-grid-3 {
+    grid-template-columns: repeat(2, 1fr);
   }
 
-  .value {
-    width: 100%;
-    margin-left: 56px;
-    font-size: 0.875rem;
+  .stats-grid-3 > *:last-child {
+    grid-column: span 2;
+  }
+}
+
+/* Responsive: mobile */
+@media (max-width: 768px) {
+  .stats-grid-3,
+  .stats-grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .stats-grid-3 > *:last-child {
+    grid-column: span 1;
+  }
+
+  .movie-list-item {
+    padding: 0.5rem;
+  }
+
+  .movie-thumb {
+    width: 28px;
+    height: 42px;
+  }
+
+  .movie-title {
+    font-size: 0.85rem;
+  }
+
+  .rater-stats {
+    flex-direction: row;
+    gap: 0.5rem;
+  }
+
+  .rater-avg {
+    font-size: 0.85rem;
   }
 }
