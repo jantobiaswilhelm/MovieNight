@@ -2,7 +2,7 @@ import { useState } from 'react';
 import './RatingInput.css';
 
 const RatingInput = ({ currentRating, onSubmit, disabled }) => {
-  const [score, setScore] = useState(currentRating || 7);
+  const [score, setScore] = useState(currentRating ? parseFloat(currentRating) : 7);
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async () => {
