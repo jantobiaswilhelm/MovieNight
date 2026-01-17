@@ -1,27 +1,43 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { findOrCreateUser, createMovieNight } from '../models/index.js';
 import { createAnnouncementEmbed } from '../utils/embeds.js';
+import { searchMovies, getMovieDetails } from '../utils/tmdb.js';
 
 export const data = new SlashCommandBuilder()
   .setName('announce')
   .setDescription('Announce a new movie night')
   .addStringOption(option =>
-    option.setName('title')
-      .setDescription('The movie title')
-      .setRequired(true))
+    option.setName('movie')
+      .setDescription('Search for a movie by title')
+      .setRequired(true)
+      .setAutocomplete(true))
   .addStringOption(option =>
     option.setName('datetime')
       .setDescription('When the movie night starts (e.g., "2024-01-20 20:00" or "tomorrow 8pm")')
-      .setRequired(true))
-  .addStringOption(option =>
-    option.setName('image')
-      .setDescription('URL to a movie poster or image')
       .setRequired(true));
 
+export const autocomplete = async (interaction) => {
+  const focusedValue = interaction.options.getFocused();
+
+  if (focusedValue.length < 2) {
+    return interaction.respond([]);
+  }
+
+  const movies = await searchMovies(focusedValue, 25);
+
+  const choices = movies.map(movie => ({
+    name: movie.year
+      ? `${movie.title} (${movie.year})`.slice(0, 100)
+      : movie.title.slice(0, 100),
+    value: `tmdb:${movie.id}`
+  }));
+
+  await interaction.respond(choices);
+};
+
 export const execute = async (interaction) => {
-  const title = interaction.options.getString('title');
+  const movieValue = interaction.options.getString('movie');
   const datetimeStr = interaction.options.getString('datetime');
-  const imageUrl = interaction.options.getString('image');
 
   // Parse datetime
   let scheduledAt;
@@ -35,6 +51,42 @@ export const execute = async (interaction) => {
       content: 'Could not parse the date/time. Try formats like "2024-01-20 20:00" or "tomorrow 8pm"',
       ephemeral: true
     });
+  }
+
+  let title, imageUrl, tmdbData = {};
+
+  // Check if it's a TMDB selection (user picked from autocomplete)
+  if (movieValue.startsWith('tmdb:')) {
+    const tmdbId = movieValue.replace('tmdb:', '');
+    const movie = await getMovieDetails(tmdbId);
+
+    if (!movie) {
+      return interaction.reply({
+        content: 'Could not fetch movie details. Please try again.',
+        ephemeral: true
+      });
+    }
+
+    title = movie.year ? `${movie.title} (${movie.year})` : movie.title;
+    imageUrl = movie.posterPath;
+    tmdbData = {
+      description: movie.overview,
+      tmdbId: movie.id,
+      tmdbRating: movie.rating,
+      genres: movie.genres,
+      runtime: movie.runtime,
+      releaseYear: movie.year,
+      backdropUrl: movie.backdropPath,
+      tagline: movie.tagline,
+      imdbId: movie.imdbId,
+      originalLanguage: movie.originalLanguage,
+      collectionName: movie.collectionName,
+      trailerUrl: movie.trailerUrl
+    };
+  } else {
+    // Manual entry - user typed something but didn't pick from autocomplete
+    title = movieValue;
+    imageUrl = null;
   }
 
   try {
@@ -58,7 +110,7 @@ export const execute = async (interaction) => {
       fetchReply: true
     });
 
-    // Create movie night in database
+    // Create movie night in database with TMDB data
     await createMovieNight(
       title,
       scheduledAt,
@@ -66,7 +118,8 @@ export const execute = async (interaction) => {
       interaction.guildId,
       interaction.channelId,
       reply.id,
-      imageUrl
+      imageUrl,
+      tmdbData
     );
 
     // Rating buttons will be sent automatically when the movie starts
