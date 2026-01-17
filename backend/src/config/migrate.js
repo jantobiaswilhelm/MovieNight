@@ -86,10 +86,20 @@ const migrate = async () => {
         voting_session_id INTEGER REFERENCES voting_sessions(id) ON DELETE CASCADE,
         title VARCHAR(255) NOT NULL,
         image_url VARCHAR(500),
+        description TEXT,
         suggested_by INTEGER REFERENCES users(id),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+
+    // Add description column if it doesn't exist (for existing databases)
+    const descColumnCheck = await client.query(`
+      SELECT column_name FROM information_schema.columns
+      WHERE table_name = 'movie_suggestions' AND column_name = 'description'
+    `);
+    if (descColumnCheck.rows.length === 0) {
+      await client.query(`ALTER TABLE movie_suggestions ADD COLUMN description TEXT`);
+    }
 
     // Votes table
     await client.query(`

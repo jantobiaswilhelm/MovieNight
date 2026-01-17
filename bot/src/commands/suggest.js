@@ -1,22 +1,38 @@
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 import { findOrCreateUser, getActiveVotingSession, createSuggestion, getSuggestionsForSession } from '../models/index.js';
 import { buildVotingEmbed, buildVotingButtons } from '../utils/votingEmbed.js';
+import { searchMovies, getMovieDetails } from '../utils/tmdb.js';
 
 export const data = new SlashCommandBuilder()
   .setName('suggest')
   .setDescription('Suggest a movie for the current voting session')
   .addStringOption(option =>
-    option.setName('title')
-      .setDescription('The movie title')
-      .setRequired(true))
-  .addStringOption(option =>
-    option.setName('image')
-      .setDescription('URL to a movie poster or image')
-      .setRequired(true));
+    option.setName('movie')
+      .setDescription('Search for a movie by title')
+      .setRequired(true)
+      .setAutocomplete(true));
+
+export const autocomplete = async (interaction) => {
+  const focusedValue = interaction.options.getFocused();
+
+  if (focusedValue.length < 2) {
+    return interaction.respond([]);
+  }
+
+  const movies = await searchMovies(focusedValue, 25);
+
+  const choices = movies.map(movie => ({
+    name: movie.year
+      ? `${movie.title} (${movie.year})`.slice(0, 100)
+      : movie.title.slice(0, 100),
+    value: `tmdb:${movie.id}`
+  }));
+
+  await interaction.respond(choices);
+};
 
 export const execute = async (interaction) => {
-  const title = interaction.options.getString('title');
-  const imageUrl = interaction.options.getString('image');
+  const movieValue = interaction.options.getString('movie');
 
   // Check if there's an active voting session
   const session = await getActiveVotingSession(interaction.guildId);
@@ -25,6 +41,33 @@ export const execute = async (interaction) => {
       content: 'There\'s no active voting session! Use `/startvote` to start one.',
       ephemeral: true
     });
+  }
+
+  let title, imageUrl, description;
+
+  // Check if it's a TMDB selection (user picked from autocomplete)
+  if (movieValue.startsWith('tmdb:')) {
+    const tmdbId = movieValue.replace('tmdb:', '');
+    const movie = await getMovieDetails(tmdbId);
+
+    if (!movie) {
+      return interaction.reply({
+        content: 'Could not fetch movie details. Please try again.',
+        ephemeral: true
+      });
+    }
+
+    title = movie.year ? `${movie.title} (${movie.year})` : movie.title;
+    imageUrl = movie.posterPath;
+    description = movie.overview?.slice(0, 500);
+    if (movie.overview && movie.overview.length > 500) {
+      description += '...';
+    }
+  } else {
+    // Manual entry - user typed something but didn't pick from autocomplete
+    title = movieValue;
+    imageUrl = null;
+    description = null;
   }
 
   try {
@@ -36,7 +79,7 @@ export const execute = async (interaction) => {
     );
 
     // Create suggestion
-    await createSuggestion(session.id, title, imageUrl, user.id);
+    await createSuggestion(session.id, title, imageUrl, user.id, description);
 
     // Get all suggestions to update the voting message
     const suggestions = await getSuggestionsForSession(session.id);
@@ -64,8 +107,22 @@ export const execute = async (interaction) => {
       console.error('Error updating voting message:', err);
     }
 
+    // Build confirmation embed
+    const confirmEmbed = new EmbedBuilder()
+      .setColor(0x4ade80)
+      .setTitle('Movie Suggested!')
+      .setDescription(`**${title}** has been added to the voting.`);
+
+    if (imageUrl) {
+      confirmEmbed.setThumbnail(imageUrl);
+    }
+
+    if (description) {
+      confirmEmbed.addFields({ name: 'Overview', value: description.slice(0, 200) + (description.length > 200 ? '...' : '') });
+    }
+
     await interaction.reply({
-      content: `Your suggestion **${title}** has been added to the vote!`,
+      embeds: [confirmEmbed],
       ephemeral: true
     });
 
