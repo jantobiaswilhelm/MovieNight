@@ -8,7 +8,7 @@ import {
   updateVotingSessionSchedule,
   createMovieNight
 } from '../models/index.js';
-import { createAnnouncementEmbed, createRatingButtons, createRatingPromptEmbed } from '../utils/embeds.js';
+import { createAnnouncementEmbed } from '../utils/embeds.js';
 
 export const data = new SlashCommandBuilder()
   .setName('endvote')
@@ -95,7 +95,7 @@ export const execute = async (interaction) => {
     });
 
     // Create movie night in database
-    const movieNight = await createMovieNight(
+    await createMovieNight(
       winner.title,
       scheduledAt,
       user.id,
@@ -105,14 +105,8 @@ export const execute = async (interaction) => {
       winner.image_url
     );
 
-    // Send rating prompt
-    const ratingEmbed = createRatingPromptEmbed(winner.title);
-    const ratingButtons = createRatingButtons(movieNight.id);
-
-    await interaction.followUp({
-      embeds: [ratingEmbed],
-      components: ratingButtons
-    });
+    // Rating buttons will appear automatically when the movie starts
+    // (handled by the movieStarter scheduled job)
 
   } catch (err) {
     console.error('Error ending vote:', err);
