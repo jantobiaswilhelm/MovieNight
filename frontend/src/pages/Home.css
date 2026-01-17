@@ -34,7 +34,7 @@
   background-size: cover;
   background-position: center top;
   background-color: var(--bg-card);
-  min-height: 320px;
+  min-height: 400px;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
@@ -63,13 +63,13 @@
   display: flex;
   gap: 1.5rem;
   padding: 1.5rem;
-  min-height: 320px;
+  min-height: 400px;
   align-items: flex-end;
 }
 
 .hero-poster-small {
   flex-shrink: 0;
-  width: 140px;
+  width: 160px;
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
@@ -237,7 +237,7 @@
 }
 
 .hero-poster-skeleton {
-  width: 140px;
+  width: 160px;
   aspect-ratio: 2/3;
   border-radius: 8px;
 }
@@ -311,7 +311,7 @@
   }
 
   .hero-poster-small {
-    width: 120px;
+    width: 140px;
   }
 }
 
@@ -326,15 +326,15 @@
   }
 
   .hero-backdrop {
-    min-height: 280px;
+    min-height: 320px;
   }
 
   .hero-content {
-    min-height: 280px;
+    min-height: 320px;
   }
 
   .hero-poster-small {
-    width: 100px;
+    width: 120px;
   }
 
   .hero-title {
@@ -352,17 +352,17 @@
 
 @media (max-width: 600px) {
   .hero-backdrop {
-    min-height: 240px;
+    min-height: 260px;
   }
 
   .hero-content {
-    min-height: 240px;
+    min-height: 260px;
     padding: 1rem;
     gap: 1rem;
   }
 
   .hero-poster-small {
-    width: 80px;
+    width: 100px;
   }
 
   .hero-title {
