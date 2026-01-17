@@ -186,10 +186,10 @@ async function handleSuggestButton(interaction) {
 
     const imageInput = new TextInputBuilder()
       .setCustomId('movie_image')
-      .setLabel('Poster Image URL')
+      .setLabel('Poster Image URL (optional)')
       .setPlaceholder('https://example.com/poster.jpg')
       .setStyle(TextInputStyle.Short)
-      .setRequired(true);
+      .setRequired(false);
 
     modal.addComponents(
       new ActionRowBuilder().addComponents(titleInput),
@@ -210,7 +210,19 @@ async function handleSuggestButton(interaction) {
 async function handleSuggestModal(interaction) {
   try {
     const title = interaction.fields.getTextInputValue('movie_title');
-    const imageUrl = interaction.fields.getTextInputValue('movie_image');
+    let imageUrl = interaction.fields.getTextInputValue('movie_image')?.trim() || null;
+
+    // Validate image URL if provided
+    if (imageUrl) {
+      try {
+        const url = new URL(imageUrl);
+        if (!['http:', 'https:'].includes(url.protocol)) {
+          imageUrl = null; // Invalid protocol, ignore the image
+        }
+      } catch {
+        imageUrl = null; // Invalid URL format, ignore the image
+      }
+    }
 
     // Parse session ID from modal customId if present
     const customId = interaction.customId;
