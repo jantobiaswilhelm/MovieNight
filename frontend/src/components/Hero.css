@@ -50,9 +50,9 @@
 }
 
 .hero-badge--upcoming {
-  background: linear-gradient(135deg, var(--accent) 0%, #7c3aed 100%);
+  background: linear-gradient(135deg, var(--accent) 0%, #be123c 100%);
   color: white;
-  box-shadow: 0 4px 15px rgba(88, 101, 242, 0.4);
+  box-shadow: 0 4px 15px rgba(244, 63, 94, 0.4);
 }
 
 .hero-badge--featured {
@@ -101,19 +101,19 @@
   width: fit-content;
   margin-top: 1rem;
   padding: 12px 28px;
-  background: linear-gradient(135deg, var(--accent) 0%, #7c3aed 100%);
+  background: linear-gradient(135deg, var(--accent) 0%, #be123c 100%);
   color: white;
   border-radius: 12px;
   font-weight: 600;
   font-size: 1rem;
   text-decoration: none;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(88, 101, 242, 0.3);
+  box-shadow: 0 4px 15px rgba(244, 63, 94, 0.3);
 }
 
 .hero-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(88, 101, 242, 0.5);
+  box-shadow: 0 8px 25px rgba(244, 63, 94, 0.5);
   text-decoration: none;
 }
 

@@ -70,7 +70,7 @@
 .month-select:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(88, 101, 242, 0.2);
+  box-shadow: 0 0 0 2px rgba(244, 63, 94, 0.2);
 }
 
 .section-header-row {
@@ -107,7 +107,7 @@
 }
 
 .movie-list-item:hover {
-  background: rgba(88, 101, 242, 0.1);
+  background: rgba(244, 63, 94, 0.1);
   transform: translateX(4px);
 }
 

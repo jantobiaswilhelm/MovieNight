@@ -5,22 +5,22 @@
 }
 
 :root {
-  --bg-primary: #0d0d1a;
-  --bg-secondary: #1a1a2e;
-  --bg-card: #252542;
-  --bg-card-hover: #2d2d4a;
-  --text-primary: #eaeaea;
-  --text-secondary: #a0a0a0;
-  --accent: #5865f2;
-  --accent-hover: #4752c4;
-  --accent-glow: rgba(88, 101, 242, 0.4);
-  --success: #57f287;
-  --warning: #fee75c;
-  --danger: #ed4245;
+  --bg-primary: #0f0a0a;
+  --bg-secondary: #1a1215;
+  --bg-card: #2a1f22;
+  --bg-card-hover: #3a2a2e;
+  --text-primary: #f5f0f1;
+  --text-secondary: #a89a9d;
+  --accent: #f43f5e;
+  --accent-hover: #e11d48;
+  --accent-glow: rgba(244, 63, 94, 0.4);
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --danger: #ef4444;
   --star-filled: #fbbf24;
   --star-empty: #4b5563;
-  --gradient-poster: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 40%, transparent 100%);
-  --border-color: rgba(255,255,255,0.1);
+  --gradient-poster: linear-gradient(to top, rgba(15,10,10,0.95) 0%, rgba(15,10,10,0.5) 40%, transparent 100%);
+  --border-color: rgba(255,255,255,0.08);
 }
 
 /* Animations */
