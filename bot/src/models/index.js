@@ -226,12 +226,12 @@ export const updateVotingSessionSchedule = async (id, scheduledAt) => {
 };
 
 // Suggestion operations
-export const createSuggestion = async (votingSessionId, title, imageUrl, suggestedBy) => {
+export const createSuggestion = async (votingSessionId, title, imageUrl, suggestedBy, description = null) => {
   const result = await pool.query(
-    `INSERT INTO movie_suggestions (voting_session_id, title, image_url, suggested_by)
-     VALUES ($1, $2, $3, $4)
+    `INSERT INTO movie_suggestions (voting_session_id, title, image_url, suggested_by, description)
+     VALUES ($1, $2, $3, $4, $5)
      RETURNING *`,
-    [votingSessionId, title, imageUrl, suggestedBy]
+    [votingSessionId, title, imageUrl, suggestedBy, description]
   );
   return result.rows[0];
 };
