@@ -5,12 +5,12 @@
 }
 
 :root {
-  --bg-primary: #0f0a0a;
-  --bg-secondary: #1a1215;
-  --bg-card: #2a1f22;
-  --bg-card-hover: #3a2a2e;
-  --text-primary: #f5f0f1;
-  --text-secondary: #a89a9d;
+  --bg-primary: #1c1517;
+  --bg-secondary: #2a2023;
+  --bg-card: #3d2f33;
+  --bg-card-hover: #4d3b40;
+  --text-primary: #f8f4f5;
+  --text-secondary: #c4b5b8;
   --accent: #f43f5e;
   --accent-hover: #e11d48;
   --accent-glow: rgba(244, 63, 94, 0.4);
@@ -18,9 +18,9 @@
   --warning: #fbbf24;
   --danger: #ef4444;
   --star-filled: #fbbf24;
-  --star-empty: #4b5563;
-  --gradient-poster: linear-gradient(to top, rgba(15,10,10,0.95) 0%, rgba(15,10,10,0.5) 40%, transparent 100%);
-  --border-color: rgba(255,255,255,0.08);
+  --star-empty: #5c4f52;
+  --gradient-poster: linear-gradient(to top, rgba(28,21,23,0.95) 0%, rgba(28,21,23,0.5) 40%, transparent 100%);
+  --border-color: rgba(255,255,255,0.12);
 }
 
 /* Animations */
