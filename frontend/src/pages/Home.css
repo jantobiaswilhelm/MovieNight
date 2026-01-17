@@ -263,6 +263,37 @@
   color: var(--text-secondary);
 }
 
+.voter-avatars {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-top: 0.25rem;
+}
+
+.voter-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid var(--bg-secondary);
+  margin-left: -8px;
+  transition: transform 0.2s ease;
+}
+
+.voter-avatar:first-child {
+  margin-left: 0;
+}
+
+.voter-avatar:hover {
+  transform: scale(1.2);
+  z-index: 10;
+}
+
+.voter-overflow {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-left: 4px;
+}
+
 .your-vote {
   position: absolute;
   top: 0.5rem;

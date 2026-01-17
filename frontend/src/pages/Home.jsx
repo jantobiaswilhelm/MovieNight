@@ -162,6 +162,25 @@ const Home = () => {
                           ></div>
                         </div>
                         <span className="vote-count">{suggestion.vote_count} votes</span>
+                        {suggestion.voters && suggestion.voters.length > 0 && (
+                          <div className="voter-avatars">
+                            {suggestion.voters.slice(0, 5).map((voter) => (
+                              <img
+                                key={voter.discord_id}
+                                src={voter.avatar
+                                  ? `https://cdn.discordapp.com/avatars/${voter.discord_id}/${voter.avatar}.png?size=32`
+                                  : `https://cdn.discordapp.com/embed/avatars/${parseInt(voter.discord_id) % 5}.png`
+                                }
+                                alt={voter.username}
+                                title={voter.username}
+                                className="voter-avatar"
+                              />
+                            ))}
+                            {suggestion.voters.length > 5 && (
+                              <span className="voter-overflow">+{suggestion.voters.length - 5}</span>
+                            )}
+                          </div>
+                        )}
                       </div>
                       {isUserVote && <span className="your-vote">Your vote</span>}
                       {isAdmin && (

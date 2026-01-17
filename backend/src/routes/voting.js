@@ -20,6 +20,26 @@ router.get('/active', optionalAuth, async (req, res) => {
     }
 
     const suggestions = await db.getSuggestionsForSession(session.id);
+    const voters = await db.getVotersForSession(session.id);
+
+    // Group voters by suggestion_id
+    const votersBySuggestion = {};
+    voters.forEach(voter => {
+      if (!votersBySuggestion[voter.suggestion_id]) {
+        votersBySuggestion[voter.suggestion_id] = [];
+      }
+      votersBySuggestion[voter.suggestion_id].push({
+        discord_id: voter.discord_id,
+        username: voter.username,
+        avatar: voter.avatar
+      });
+    });
+
+    // Attach voters to each suggestion
+    const suggestionsWithVoters = suggestions.map(s => ({
+      ...s,
+      voters: votersBySuggestion[s.id] || []
+    }));
 
     let userVote = null;
     if (req.user) {
@@ -28,7 +48,7 @@ router.get('/active', optionalAuth, async (req, res) => {
 
     res.json({
       ...session,
-      suggestions,
+      suggestions: suggestionsWithVoters,
       user_vote: userVote
     });
   } catch (err) {

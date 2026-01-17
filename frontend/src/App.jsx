@@ -26,6 +26,9 @@ function App() {
           <Route path="/auth/callback" element={<AuthCallback />} />
         </Routes>
       </main>
+      <footer className="app-footer">
+        <span>Made by Jan Wilhelm</span>
+      </footer>
     </div>
   );
 }

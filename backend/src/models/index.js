@@ -384,6 +384,19 @@ export const getUserVoteForSession = async (votingSessionId, userId) => {
   return result.rows[0];
 };
 
+export const getVotersForSession = async (votingSessionId) => {
+  const result = await pool.query(
+    `SELECT v.suggestion_id, u.discord_id, u.username, u.avatar
+     FROM votes v
+     JOIN users u ON v.user_id = u.id
+     JOIN movie_suggestions ms ON v.suggestion_id = ms.id
+     WHERE ms.voting_session_id = $1
+     ORDER BY v.created_at ASC`,
+    [votingSessionId]
+  );
+  return result.rows;
+};
+
 export const getWinningSuggestion = async (votingSessionId) => {
   const result = await pool.query(
     `SELECT ms.*, u.username as suggested_by_name,
