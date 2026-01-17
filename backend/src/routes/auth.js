@@ -6,9 +6,10 @@ const router = Router();
 
 // Redirect to Discord OAuth
 router.get('/discord', (req, res) => {
+  const redirectUri = `${process.env.BACKEND_URL}/auth/callback`;
   const params = new URLSearchParams({
     client_id: process.env.DISCORD_CLIENT_ID,
-    redirect_uri: `${req.protocol}://${req.get('host')}/auth/callback`,
+    redirect_uri: redirectUri,
     response_type: 'code',
     scope: 'identify'
   });
@@ -26,6 +27,7 @@ router.get('/callback', async (req, res) => {
 
   try {
     // Exchange code for token
+    const redirectUri = `${process.env.BACKEND_URL}/auth/callback`;
     const tokenResponse = await fetch('https://discord.com/api/oauth2/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -34,7 +36,7 @@ router.get('/callback', async (req, res) => {
         client_secret: process.env.DISCORD_CLIENT_SECRET,
         grant_type: 'authorization_code',
         code,
-        redirect_uri: `${req.protocol}://${req.get('host')}/auth/callback`
+        redirect_uri: redirectUri
       })
     });
 
