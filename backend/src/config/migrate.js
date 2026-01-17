@@ -42,15 +42,13 @@ const migrate = async () => {
     `);
 
     // Add started_at column if it doesn't exist (for existing databases)
-    await client.query(`
-      DO $$
-      BEGIN
-        IF NOT EXISTS (SELECT 1 FROM information_schema.columns
-                       WHERE table_name='movie_nights' AND column_name='started_at') THEN
-          ALTER TABLE movie_nights ADD COLUMN started_at TIMESTAMP;
-        END IF;
-      END $$;
+    const columnCheck = await client.query(`
+      SELECT column_name FROM information_schema.columns
+      WHERE table_name = 'movie_nights' AND column_name = 'started_at'
     `);
+    if (columnCheck.rows.length === 0) {
+      await client.query(`ALTER TABLE movie_nights ADD COLUMN started_at TIMESTAMP`);
+    }
 
     // Ratings table
     await client.query(`
