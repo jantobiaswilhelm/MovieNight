@@ -109,7 +109,13 @@ export const execute = async (interaction) => {
         tmdbRating: winner.tmdb_rating,
         genres: winner.genres,
         runtime: winner.runtime,
-        releaseYear: winner.release_year
+        releaseYear: winner.release_year,
+        backdropUrl: winner.backdrop_url,
+        tagline: winner.tagline,
+        imdbId: winner.imdb_id,
+        originalLanguage: winner.original_language,
+        collectionName: winner.collection_name,
+        trailerUrl: winner.trailer_url
       }
     );
 

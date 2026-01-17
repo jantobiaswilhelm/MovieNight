@@ -65,7 +65,13 @@ export const execute = async (interaction) => {
       tmdbRating: movie.rating,
       genres: movie.genres,
       runtime: movie.runtime,
-      releaseYear: movie.year
+      releaseYear: movie.year,
+      backdropUrl: movie.backdropPath,
+      tagline: movie.tagline,
+      imdbId: movie.imdbId,
+      originalLanguage: movie.originalLanguage,
+      collectionName: movie.collectionName,
+      trailerUrl: movie.trailerUrl
     };
   } else {
     // Manual entry - user typed something but didn't pick from autocomplete
