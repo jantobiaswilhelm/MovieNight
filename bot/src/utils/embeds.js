@@ -74,6 +74,20 @@ export const createRatingPromptEmbed = (title) => {
     .setColor(0xFEE75C);
 };
 
+export const createStartingNowEmbed = (title, imageUrl) => {
+  const embed = new EmbedBuilder()
+    .setTitle(`Movie Night is Starting NOW!`)
+    .setDescription(`**${title}**\n\nTime to rate the movie! Use the buttons below or \`/rate\` for half-point ratings.`)
+    .setColor(0x57F287)
+    .setTimestamp();
+
+  if (imageUrl) {
+    embed.setThumbnail(imageUrl);
+  }
+
+  return embed;
+};
+
 export const createHistoryEmbed = (movies) => {
   const embed = new EmbedBuilder()
     .setTitle('Movie Night History')

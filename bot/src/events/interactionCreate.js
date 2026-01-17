@@ -104,6 +104,14 @@ async function handleRatingButton(interaction) {
       });
     }
 
+    // Check if movie has started
+    if (!movie.started_at) {
+      return interaction.reply({
+        content: 'This movie has not started yet. Ratings will be available once the movie night begins.',
+        ephemeral: true
+      });
+    }
+
     // Create or get user
     const user = await findOrCreateUser(
       interaction.user.id,

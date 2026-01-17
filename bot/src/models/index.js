@@ -64,8 +64,8 @@ export const getRecentMovieNightsForRating = async (guildId, limit = 10) => {
   const result = await pool.query(
     `SELECT mn.id, mn.title, mn.scheduled_at
      FROM movie_nights mn
-     WHERE mn.guild_id = $1 AND mn.scheduled_at <= CURRENT_TIMESTAMP
-     ORDER BY mn.scheduled_at DESC
+     WHERE mn.guild_id = $1 AND mn.started_at IS NOT NULL
+     ORDER BY mn.started_at DESC
      LIMIT $2`,
     [guildId, limit]
   );
@@ -363,4 +363,47 @@ export const deleteVotingSession = async (sessionId) => {
     [sessionId]
   );
   return result.rows[0];
+};
+
+// Movie start operations
+export const getMoviesToStart = async () => {
+  const result = await pool.query(
+    `SELECT * FROM movie_nights
+     WHERE scheduled_at <= CURRENT_TIMESTAMP
+       AND started_at IS NULL
+     ORDER BY scheduled_at ASC`
+  );
+  return result.rows;
+};
+
+export const startMovieNight = async (movieId) => {
+  const result = await pool.query(
+    `UPDATE movie_nights
+     SET started_at = CURRENT_TIMESTAMP
+     WHERE id = $1
+     RETURNING *`,
+    [movieId]
+  );
+  return result.rows[0];
+};
+
+export const rescheduleMovieNight = async (movieId, newScheduledAt) => {
+  const result = await pool.query(
+    `UPDATE movie_nights
+     SET scheduled_at = $2
+     WHERE id = $1
+     RETURNING *`,
+    [movieId, newScheduledAt]
+  );
+  return result.rows[0];
+};
+
+export const getUpcomingMovies = async (guildId) => {
+  const result = await pool.query(
+    `SELECT id, title, scheduled_at FROM movie_nights
+     WHERE guild_id = $1 AND started_at IS NULL
+     ORDER BY scheduled_at ASC`,
+    [guildId]
+  );
+  return result.rows;
 };

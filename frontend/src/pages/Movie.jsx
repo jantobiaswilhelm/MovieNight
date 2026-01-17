@@ -137,31 +137,41 @@ const Movie = () => {
         </div>
       </div>
 
-      <div className="rating-section">
-        <h2>Your Rating</h2>
-        {isAuthenticated ? (
-          <>
-            <RatingInput
-              currentRating={myRating}
-              onSubmit={handleSubmitRating}
-            />
-            {ratingMessage && (
-              <p className={ratingMessage.startsWith('Error') ? 'error' : 'success'}>
-                {ratingMessage}
-              </p>
-            )}
-          </>
-        ) : (
-          <div className="login-prompt">
-            <p>Log in with Discord to rate this movie.</p>
-            <button onClick={login} className="btn-primary">
-              Login with Discord
-            </button>
+      {movie.started_at ? (
+        <div className="rating-section">
+          <h2>Your Rating</h2>
+          {isAuthenticated ? (
+            <>
+              <RatingInput
+                currentRating={myRating}
+                onSubmit={handleSubmitRating}
+              />
+              {ratingMessage && (
+                <p className={ratingMessage.startsWith('Error') ? 'error' : 'success'}>
+                  {ratingMessage}
+                </p>
+              )}
+            </>
+          ) : (
+            <div className="login-prompt">
+              <p>Log in with Discord to rate this movie.</p>
+              <button onClick={login} className="btn-primary">
+                Login with Discord
+              </button>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="rating-section">
+          <h2>Rating</h2>
+          <div className="not-started-message">
+            <p>This movie night hasn't started yet.</p>
+            <p className="not-started-hint">Ratings will be available once the movie begins.</p>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      {movie.ratings && movie.ratings.length > 0 && (
+      {movie.started_at && movie.ratings && movie.ratings.length > 0 && (
         <div className="all-ratings">
           <h2>All Ratings</h2>
           <div className="ratings-list">
