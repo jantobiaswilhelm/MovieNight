@@ -114,16 +114,28 @@ const Home = () => {
   return (
     <div className="home">
       <div className="home-layout">
-        {/* Left Side - Featured Movie Hero */}
+        {/* Left Side - Featured Movie */}
         <div className="home-hero-column">
           {loading ? (
             <div className="hero-card hero-skeleton">
-              <div className="skeleton" style={{ width: '100%', height: '100%' }} />
+              <div className="skeleton hero-poster-skeleton" />
+              <div className="hero-details">
+                <div className="skeleton" style={{ width: '60%', height: 24 }} />
+                <div className="skeleton" style={{ width: '100%', height: 16, marginTop: 12 }} />
+                <div className="skeleton" style={{ width: '80%', height: 16, marginTop: 8 }} />
+              </div>
             </div>
           ) : nextMovie ? (
-            <Link to={`/movie/${nextMovie.id}`} className="hero-card" style={{ backgroundImage: nextMovie.backdrop_url ? `url(${nextMovie.backdrop_url})` : nextMovie.image_url ? `url(${nextMovie.image_url})` : 'none' }}>
-              <div className="hero-card-overlay">
+            <Link to={`/movie/${nextMovie.id}`} className="hero-card">
+              <div className="hero-poster-container">
+                {nextMovie.image_url ? (
+                  <img src={nextMovie.image_url} alt={nextMovie.title} className="hero-poster" />
+                ) : (
+                  <div className="hero-poster-placeholder">No Poster</div>
+                )}
                 <span className="hero-badge">Up Next</span>
+              </div>
+              <div className="hero-details">
                 <h1 className="hero-title">{nextMovie.title}</h1>
                 {nextMovie.tagline && (
                   <p className="hero-tagline">"{nextMovie.tagline}"</p>
@@ -141,23 +153,31 @@ const Home = () => {
                 </div>
                 {nextMovie.genres && (
                   <div className="hero-genres">
-                    {nextMovie.genres.split(', ').slice(0, 3).map((genre, i) => (
+                    {nextMovie.genres.split(', ').map((genre, i) => (
                       <span key={i} className="hero-genre-tag">{genre}</span>
                     ))}
                   </div>
                 )}
-                <p className="hero-date">{formatDate(nextMovie.scheduled_at)}</p>
-                {nextMovie.announced_by_name && (
-                  <p className="hero-picker">Picked by {nextMovie.announced_by_name}</p>
+                {nextMovie.description && (
+                  <p className="hero-description">{nextMovie.description}</p>
                 )}
+                <div className="hero-footer">
+                  <p className="hero-date">{formatDate(nextMovie.scheduled_at)}</p>
+                  {nextMovie.announced_by_name && (
+                    <p className="hero-picker">Picked by {nextMovie.announced_by_name}</p>
+                  )}
+                </div>
               </div>
             </Link>
           ) : (
             <div className="hero-card hero-empty">
-              <div className="hero-card-overlay">
-                <span className="hero-badge">No Upcoming</span>
+              <div className="hero-poster-placeholder">
+                <span>No Movie</span>
+              </div>
+              <div className="hero-details">
+                <span className="hero-badge empty">No Upcoming</span>
                 <h2 className="hero-title">No movie scheduled</h2>
-                <p className="hero-date">Start a vote to pick the next movie!</p>
+                <p className="hero-description">Start a vote to pick the next movie!</p>
               </div>
             </div>
           )}
