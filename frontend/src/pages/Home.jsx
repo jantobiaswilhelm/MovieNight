@@ -2,10 +2,9 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getMovies, getActiveVoting, castVote, deleteSuggestion } from '../api/client';
-import Hero from '../components/Hero';
 import MovieCard from '../components/MovieCard';
 import StarRating from '../components/StarRating';
-import { HeroSkeleton, MovieCardSkeleton } from '../components/Skeleton';
+import { MovieCardSkeleton } from '../components/Skeleton';
 import './Home.css';
 
 const Home = () => {
@@ -101,19 +100,72 @@ const Home = () => {
   // Get the next upcoming movie for the hero
   const nextMovie = upcomingMovies[0];
 
+  const formatDate = (dateStr) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit'
+    });
+  };
+
   return (
     <div className="home">
-      {/* Hero Section - Compact */}
-      {loading ? (
-        <HeroSkeleton />
-      ) : nextMovie ? (
-        <Hero movie={nextMovie} type="upcoming" compact />
-      ) : null}
+      <div className="home-layout">
+        {/* Left Side - Featured Movie Hero */}
+        <div className="home-hero-column">
+          {loading ? (
+            <div className="hero-card hero-skeleton">
+              <div className="skeleton" style={{ width: '100%', height: '100%' }} />
+            </div>
+          ) : nextMovie ? (
+            <Link to={`/movie/${nextMovie.id}`} className="hero-card" style={{ backgroundImage: nextMovie.backdrop_url ? `url(${nextMovie.backdrop_url})` : nextMovie.image_url ? `url(${nextMovie.image_url})` : 'none' }}>
+              <div className="hero-card-overlay">
+                <span className="hero-badge">Up Next</span>
+                <h1 className="hero-title">{nextMovie.title}</h1>
+                {nextMovie.tagline && (
+                  <p className="hero-tagline">"{nextMovie.tagline}"</p>
+                )}
+                <div className="hero-meta">
+                  {nextMovie.release_year && (
+                    <span className="hero-meta-item">{nextMovie.release_year}</span>
+                  )}
+                  {nextMovie.runtime && (
+                    <span className="hero-meta-item">{Math.floor(nextMovie.runtime / 60)}h {nextMovie.runtime % 60}m</span>
+                  )}
+                  {nextMovie.tmdb_rating > 0 && (
+                    <span className="hero-meta-item hero-tmdb">TMDB {parseFloat(nextMovie.tmdb_rating).toFixed(1)}</span>
+                  )}
+                </div>
+                {nextMovie.genres && (
+                  <div className="hero-genres">
+                    {nextMovie.genres.split(', ').slice(0, 3).map((genre, i) => (
+                      <span key={i} className="hero-genre-tag">{genre}</span>
+                    ))}
+                  </div>
+                )}
+                <p className="hero-date">{formatDate(nextMovie.scheduled_at)}</p>
+                {nextMovie.announced_by_name && (
+                  <p className="hero-picker">Picked by {nextMovie.announced_by_name}</p>
+                )}
+              </div>
+            </Link>
+          ) : (
+            <div className="hero-card hero-empty">
+              <div className="hero-card-overlay">
+                <span className="hero-badge">No Upcoming</span>
+                <h2 className="hero-title">No movie scheduled</h2>
+                <p className="hero-date">Start a vote to pick the next movie!</p>
+              </div>
+            </div>
+          )}
+        </div>
 
-      {/* Main Content Grid */}
-      <div className="home-grid">
-        {/* Left Column - Voting */}
-        <div className="home-column">
+        {/* Right Side - All Content */}
+        <div className="home-content-column">
+          {/* Voting Section */}
           {voting ? (
             <section className="home-section voting-section">
               <div className="section-header">
@@ -216,70 +268,70 @@ const Home = () => {
               </div>
             </section>
           )}
-        </div>
 
-        {/* Right Column - Upcoming & Best Rated */}
-        <div className="home-column">
-          <section className="home-section">
-            <div className="section-header">
-              <h2>Upcoming</h2>
-              <Link to="/calendar" className="view-all">Calendar →</Link>
-            </div>
-            {loading ? (
-              <div className="upcoming-compact">
-                <MovieCardSkeleton />
+          {/* Bottom Row - Upcoming & Best Rated side by side */}
+          <div className="home-bottom-row">
+            <section className="home-section">
+              <div className="section-header">
+                <h2>Upcoming</h2>
+                <Link to="/movies" className="view-all">All Movies →</Link>
               </div>
-            ) : upcomingMovies.length <= 1 ? (
-              <div className="empty-state compact">
-                <p>No more upcoming movies.</p>
-              </div>
-            ) : (
-              <div className="upcoming-compact">
-                {upcomingMovies.slice(1, 3).map((movie) => (
-                  <MovieCard key={movie.id} movie={movie} variant="compact" />
-                ))}
-              </div>
-            )}
-          </section>
+              {loading ? (
+                <div className="upcoming-compact">
+                  <MovieCardSkeleton />
+                </div>
+              ) : upcomingMovies.length <= 1 ? (
+                <div className="empty-state compact">
+                  <p>No more upcoming movies.</p>
+                </div>
+              ) : (
+                <div className="upcoming-compact">
+                  {upcomingMovies.slice(1, 4).map((movie) => (
+                    <MovieCard key={movie.id} movie={movie} variant="compact" />
+                  ))}
+                </div>
+              )}
+            </section>
 
-          <section className="home-section">
-            <div className="section-header">
-              <h2>Best This Month</h2>
-              <Link to="/stats" className="view-all">Stats →</Link>
-            </div>
-            {loading ? (
-              <div className="best-rated-list compact">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="best-rated-item best-rated-skeleton">
-                    <div className="skeleton" style={{ width: 30, height: 20 }} />
-                    <div className="skeleton" style={{ width: 30, height: 45 }} />
-                    <div className="best-rated-info">
-                      <div className="skeleton" style={{ width: 100, height: 16 }} />
+            <section className="home-section">
+              <div className="section-header">
+                <h2>Best This Month</h2>
+                <Link to="/movies" className="view-all">Stats →</Link>
+              </div>
+              {loading ? (
+                <div className="best-rated-list compact">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="best-rated-item best-rated-skeleton">
+                      <div className="skeleton" style={{ width: 30, height: 20 }} />
+                      <div className="skeleton" style={{ width: 30, height: 45 }} />
+                      <div className="best-rated-info">
+                        <div className="skeleton" style={{ width: 100, height: 16 }} />
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            ) : bestRatedThisMonth.length === 0 ? (
-              <div className="empty-state compact">
-                <p>No rated movies yet.</p>
-              </div>
-            ) : (
-              <div className="best-rated-list compact">
-                {bestRatedThisMonth.slice(0, 3).map((movie, index) => (
-                  <Link to={`/movie/${movie.id}`} key={movie.id} className="best-rated-item">
-                    <span className="rank">#{index + 1}</span>
-                    {movie.image_url && (
-                      <img src={movie.image_url} alt="" className="best-rated-poster" />
-                    )}
-                    <div className="best-rated-info">
-                      <span className="best-rated-title">{movie.title}</span>
-                      <StarRating rating={parseFloat(movie.avg_rating)} size="small" />
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </section>
+                  ))}
+                </div>
+              ) : bestRatedThisMonth.length === 0 ? (
+                <div className="empty-state compact">
+                  <p>No rated movies yet.</p>
+                </div>
+              ) : (
+                <div className="best-rated-list compact">
+                  {bestRatedThisMonth.slice(0, 4).map((movie, index) => (
+                    <Link to={`/movie/${movie.id}`} key={movie.id} className="best-rated-item">
+                      <span className="rank">#{index + 1}</span>
+                      {movie.image_url && (
+                        <img src={movie.image_url} alt="" className="best-rated-poster" />
+                      )}
+                      <div className="best-rated-info">
+                        <span className="best-rated-title">{movie.title}</span>
+                        <StarRating rating={parseFloat(movie.avg_rating)} size="small" />
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </section>
+          </div>
         </div>
       </div>
     </div>
