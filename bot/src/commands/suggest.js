@@ -43,7 +43,7 @@ export const execute = async (interaction) => {
     });
   }
 
-  let title, imageUrl, description;
+  let title, imageUrl, tmdbData = {};
 
   // Check if it's a TMDB selection (user picked from autocomplete)
   if (movieValue.startsWith('tmdb:')) {
@@ -59,15 +59,18 @@ export const execute = async (interaction) => {
 
     title = movie.year ? `${movie.title} (${movie.year})` : movie.title;
     imageUrl = movie.posterPath;
-    description = movie.overview?.slice(0, 500);
-    if (movie.overview && movie.overview.length > 500) {
-      description += '...';
-    }
+    tmdbData = {
+      description: movie.overview,
+      tmdbId: movie.id,
+      tmdbRating: movie.rating,
+      genres: movie.genres,
+      runtime: movie.runtime,
+      releaseYear: movie.year
+    };
   } else {
     // Manual entry - user typed something but didn't pick from autocomplete
     title = movieValue;
     imageUrl = null;
-    description = null;
   }
 
   try {
@@ -79,7 +82,7 @@ export const execute = async (interaction) => {
     );
 
     // Create suggestion
-    await createSuggestion(session.id, title, imageUrl, user.id, description);
+    await createSuggestion(session.id, title, imageUrl, user.id, tmdbData);
 
     // Get all suggestions to update the voting message
     const suggestions = await getSuggestionsForSession(session.id);
@@ -117,8 +120,9 @@ export const execute = async (interaction) => {
       confirmEmbed.setThumbnail(imageUrl);
     }
 
-    if (description) {
-      confirmEmbed.addFields({ name: 'Overview', value: description.slice(0, 200) + (description.length > 200 ? '...' : '') });
+    if (tmdbData.description) {
+      const desc = tmdbData.description;
+      confirmEmbed.addFields({ name: 'Overview', value: desc.slice(0, 200) + (desc.length > 200 ? '...' : '') });
     }
 
     await interaction.reply({

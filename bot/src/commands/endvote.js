@@ -94,7 +94,7 @@ export const execute = async (interaction) => {
       fetchReply: true
     });
 
-    // Create movie night in database
+    // Create movie night in database with TMDB data from winning suggestion
     await createMovieNight(
       winner.title,
       scheduledAt,
@@ -102,7 +102,15 @@ export const execute = async (interaction) => {
       interaction.guildId,
       interaction.channelId,
       announcementMsg.id,
-      winner.image_url
+      winner.image_url,
+      {
+        description: winner.description,
+        tmdbId: winner.tmdb_id,
+        tmdbRating: winner.tmdb_rating,
+        genres: winner.genres,
+        runtime: winner.runtime,
+        releaseYear: winner.release_year
+      }
     );
 
     // Rating buttons will appear automatically when the movie starts

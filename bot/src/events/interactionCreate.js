@@ -248,7 +248,7 @@ async function handleSuggestModal(interaction) {
         interaction.user.avatar
       );
 
-      await createSuggestion(session.id, searchQuery, null, user.id);
+      await createSuggestion(session.id, searchQuery, null, user.id, {});
 
       const suggestions = await getSuggestionsForSession(session.id);
       const userIsAdmin = isAdmin(interaction.user.id);
@@ -322,13 +322,12 @@ async function handleTmdbSelect(interaction) {
       interaction.user.avatar
     );
 
-    let title, imageUrl, description;
+    let title, imageUrl, tmdbData = {};
 
     if (selectedValue.startsWith('manual:')) {
       // Manual entry
       title = selectedValue.replace('manual:', '');
       imageUrl = null;
-      description = null;
     } else {
       // TMDB selection
       const tmdbId = parseInt(selectedValue);
@@ -344,14 +343,18 @@ async function handleTmdbSelect(interaction) {
 
       title = movie.year ? `${movie.title} (${movie.year})` : movie.title;
       imageUrl = movie.posterPath;
-      description = movie.overview?.slice(0, 500);
-      if (movie.overview && movie.overview.length > 500) {
-        description += '...';
-      }
+      tmdbData = {
+        description: movie.overview,
+        tmdbId: movie.id,
+        tmdbRating: movie.rating,
+        genres: movie.genres,
+        runtime: movie.runtime,
+        releaseYear: movie.year
+      };
     }
 
     // Create suggestion
-    await createSuggestion(session.id, title, imageUrl, user.id, description);
+    await createSuggestion(session.id, title, imageUrl, user.id, tmdbData);
 
     // Get updated suggestions and update voting message
     const suggestions = await getSuggestionsForSession(session.id);
