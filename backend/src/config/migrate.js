@@ -31,6 +31,12 @@ const migrate = async () => {
         id SERIAL PRIMARY KEY,
         title VARCHAR(255) NOT NULL,
         image_url VARCHAR(500),
+        description TEXT,
+        tmdb_id INTEGER,
+        tmdb_rating DECIMAL(3,1),
+        genres VARCHAR(255),
+        runtime INTEGER,
+        release_year INTEGER,
         scheduled_at TIMESTAMP NOT NULL,
         started_at TIMESTAMP,
         announced_by INTEGER REFERENCES users(id),
@@ -48,6 +54,22 @@ const migrate = async () => {
     `);
     if (columnCheck.rows.length === 0) {
       await client.query(`ALTER TABLE movie_nights ADD COLUMN started_at TIMESTAMP`);
+    }
+
+    // Add TMDB columns to movie_nights if they don't exist
+    const tmdbColumns = ['description', 'tmdb_id', 'tmdb_rating', 'genres', 'runtime', 'release_year'];
+    for (const col of tmdbColumns) {
+      const check = await client.query(`
+        SELECT column_name FROM information_schema.columns
+        WHERE table_name = 'movie_nights' AND column_name = $1
+      `, [col]);
+      if (check.rows.length === 0) {
+        let colType = 'TEXT';
+        if (col === 'tmdb_id' || col === 'runtime' || col === 'release_year') colType = 'INTEGER';
+        if (col === 'tmdb_rating') colType = 'DECIMAL(3,1)';
+        if (col === 'genres') colType = 'VARCHAR(255)';
+        await client.query(`ALTER TABLE movie_nights ADD COLUMN ${col} ${colType}`);
+      }
     }
 
     // Ratings table
@@ -87,18 +109,30 @@ const migrate = async () => {
         title VARCHAR(255) NOT NULL,
         image_url VARCHAR(500),
         description TEXT,
+        tmdb_id INTEGER,
+        tmdb_rating DECIMAL(3,1),
+        genres VARCHAR(255),
+        runtime INTEGER,
+        release_year INTEGER,
         suggested_by INTEGER REFERENCES users(id),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
 
-    // Add description column if it doesn't exist (for existing databases)
-    const descColumnCheck = await client.query(`
-      SELECT column_name FROM information_schema.columns
-      WHERE table_name = 'movie_suggestions' AND column_name = 'description'
-    `);
-    if (descColumnCheck.rows.length === 0) {
-      await client.query(`ALTER TABLE movie_suggestions ADD COLUMN description TEXT`);
+    // Add TMDB columns to movie_suggestions if they don't exist
+    const suggestionTmdbColumns = ['description', 'tmdb_id', 'tmdb_rating', 'genres', 'runtime', 'release_year'];
+    for (const col of suggestionTmdbColumns) {
+      const check = await client.query(`
+        SELECT column_name FROM information_schema.columns
+        WHERE table_name = 'movie_suggestions' AND column_name = $1
+      `, [col]);
+      if (check.rows.length === 0) {
+        let colType = 'TEXT';
+        if (col === 'tmdb_id' || col === 'runtime' || col === 'release_year') colType = 'INTEGER';
+        if (col === 'tmdb_rating') colType = 'DECIMAL(3,1)';
+        if (col === 'genres') colType = 'VARCHAR(255)';
+        await client.query(`ALTER TABLE movie_suggestions ADD COLUMN ${col} ${colType}`);
+      }
     }
 
     // Votes table

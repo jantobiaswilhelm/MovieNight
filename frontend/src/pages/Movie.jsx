@@ -96,6 +96,13 @@ const Movie = () => {
     });
   };
 
+  const formatRuntime = (minutes) => {
+    if (!minutes) return null;
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+  };
+
   return (
     <div className="movie-page">
       <Link to="/movies" className="back-link">&larr; Back to Movies</Link>
@@ -107,7 +114,27 @@ const Movie = () => {
 
         <div className="movie-details">
           <h1>{movie.title}</h1>
-          <p className="movie-date">{formatDate(movie.scheduled_at)}</p>
+
+          <div className="movie-meta-info">
+            {movie.release_year && (
+              <span className="meta-item">{movie.release_year}</span>
+            )}
+            {movie.runtime && (
+              <span className="meta-item">{formatRuntime(movie.runtime)}</span>
+            )}
+            {movie.genres && (
+              <span className="meta-item meta-genres">{movie.genres}</span>
+            )}
+          </div>
+
+          {movie.tmdb_rating > 0 && (
+            <div className="tmdb-rating">
+              <span className="tmdb-label">TMDB</span>
+              <span className="tmdb-score">{parseFloat(movie.tmdb_rating).toFixed(1)}</span>
+            </div>
+          )}
+
+          <p className="movie-date">Watched on {formatDate(movie.scheduled_at)}</p>
 
           {movie.announced_by_name && (
             <p className="movie-announcer">Picked by {movie.announced_by_name}</p>
@@ -138,6 +165,13 @@ const Movie = () => {
           )}
         </div>
       </div>
+
+      {movie.description && (
+        <div className="movie-description">
+          <h2>Overview</h2>
+          <p>{movie.description}</p>
+        </div>
+      )}
 
       {movie.started_at ? (
         <div className="rating-section">

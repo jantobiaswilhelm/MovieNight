@@ -56,13 +56,13 @@ export const getMovieDetails = async (tmdbId) => {
     return {
       id: movie.id,
       title: movie.title,
-      year: movie.release_date ? movie.release_date.split('-')[0] : null,
+      year: movie.release_date ? parseInt(movie.release_date.split('-')[0]) : null,
       overview: movie.overview,
       posterPath: movie.poster_path ? `${TMDB_IMAGE_BASE}${movie.poster_path}` : null,
-      rating: movie.vote_average,
+      rating: movie.vote_average ? parseFloat(movie.vote_average.toFixed(1)) : null,
       releaseDate: movie.release_date,
-      runtime: movie.runtime,
-      genres: movie.genres?.map(g => g.name) || []
+      runtime: movie.runtime || null,
+      genres: movie.genres?.map(g => g.name).join(', ') || null
     };
   } catch (err) {
     console.error('TMDB details error:', err);

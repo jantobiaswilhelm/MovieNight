@@ -22,12 +22,13 @@ export const getUserByDiscordId = async (discordId) => {
 };
 
 // Movie night operations
-export const createMovieNight = async (title, scheduledAt, announcedBy, guildId, channelId, messageId, imageUrl) => {
+export const createMovieNight = async (title, scheduledAt, announcedBy, guildId, channelId, messageId, imageUrl, tmdbData = {}) => {
+  const { description, tmdbId, tmdbRating, genres, runtime, releaseYear } = tmdbData;
   const result = await pool.query(
-    `INSERT INTO movie_nights (title, scheduled_at, announced_by, guild_id, channel_id, message_id, image_url)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)
+    `INSERT INTO movie_nights (title, scheduled_at, announced_by, guild_id, channel_id, message_id, image_url, description, tmdb_id, tmdb_rating, genres, runtime, release_year)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
      RETURNING *`,
-    [title, scheduledAt, announcedBy, guildId, channelId, messageId, imageUrl]
+    [title, scheduledAt, announcedBy, guildId, channelId, messageId, imageUrl, description || null, tmdbId || null, tmdbRating || null, genres || null, runtime || null, releaseYear || null]
   );
   return result.rows[0];
 };
@@ -226,12 +227,13 @@ export const updateVotingSessionSchedule = async (id, scheduledAt) => {
 };
 
 // Suggestion operations
-export const createSuggestion = async (votingSessionId, title, imageUrl, suggestedBy, description = null) => {
+export const createSuggestion = async (votingSessionId, title, imageUrl, suggestedBy, tmdbData = {}) => {
+  const { description, tmdbId, tmdbRating, genres, runtime, releaseYear } = tmdbData;
   const result = await pool.query(
-    `INSERT INTO movie_suggestions (voting_session_id, title, image_url, suggested_by, description)
-     VALUES ($1, $2, $3, $4, $5)
+    `INSERT INTO movie_suggestions (voting_session_id, title, image_url, suggested_by, description, tmdb_id, tmdb_rating, genres, runtime, release_year)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
      RETURNING *`,
-    [votingSessionId, title, imageUrl, suggestedBy, description]
+    [votingSessionId, title, imageUrl, suggestedBy, description || null, tmdbId || null, tmdbRating || null, genres || null, runtime || null, releaseYear || null]
   );
   return result.rows[0];
 };
