@@ -1,5 +1,6 @@
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 import { findOrCreateUser, getActiveVotingSession, createSuggestion, getSuggestionsForSession } from '../models/index.js';
+import { buildVotingEmbed, buildVotingButtons } from '../utils/votingEmbed.js';
 
 export const data = new SlashCommandBuilder()
   .setName('suggest')
@@ -37,23 +38,34 @@ export const execute = async (interaction) => {
     // Create suggestion
     await createSuggestion(session.id, title, imageUrl, user.id);
 
-    // Get all suggestions to show updated list
+    // Get all suggestions to update the voting message
     const suggestions = await getSuggestionsForSession(session.id);
 
-    const embed = new EmbedBuilder()
-      .setTitle('🎬 Movie Suggested!')
-      .setDescription(`**${title}** has been added to the vote!`)
-      .setThumbnail(imageUrl)
-      .setColor(0x57F287)
-      .addFields({
-        name: 'Current Suggestions',
-        value: suggestions.map((s, i) =>
-          `${i + 1}. **${s.title}** (${s.vote_count} votes) - by ${s.suggested_by_name}`
-        ).join('\n') || 'No suggestions yet'
-      })
-      .setFooter({ text: `Suggested by ${interaction.user.username}` });
+    // Update the voting message
+    try {
+      const channel = interaction.channel;
+      const message = await channel.messages.fetch(session.message_id);
 
-    await interaction.reply({ embeds: [embed] });
+      if (message) {
+        const timestamp = Math.floor(new Date(session.scheduled_at).getTime() / 1000);
+        const embed = buildVotingEmbed(session, suggestions, timestamp);
+        embed.setFooter({ text: `Started by ${session.created_by_name || 'Unknown'}` });
+
+        const buttons = buildVotingButtons(suggestions);
+
+        await message.edit({
+          embeds: [embed],
+          components: buttons
+        });
+      }
+    } catch (err) {
+      console.error('Error updating voting message:', err);
+    }
+
+    await interaction.reply({
+      content: `Your suggestion **${title}** has been added to the vote!`,
+      ephemeral: true
+    });
 
   } catch (err) {
     console.error('Error suggesting movie:', err);

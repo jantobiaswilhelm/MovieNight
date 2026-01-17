@@ -1,17 +1,18 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getMovies, getActiveVoting, castVote } from '../api/client';
+import { getMovies, getActiveVoting, castVote, deleteSuggestion } from '../api/client';
 import MovieCard from '../components/MovieCard';
 import './Home.css';
 
 const Home = () => {
-  const { isAuthenticated, login } = useAuth();
+  const { isAuthenticated, isAdmin, login } = useAuth();
   const [movies, setMovies] = useState([]);
   const [voting, setVoting] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [votingLoading, setVotingLoading] = useState(false);
+  const [deletingSuggestion, setDeletingSuggestion] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -45,6 +46,27 @@ const Home = () => {
       console.error('Error voting:', err);
     } finally {
       setVotingLoading(false);
+    }
+  };
+
+  const handleDeleteSuggestion = async (e, suggestionId, suggestionTitle) => {
+    e.stopPropagation();
+
+    if (!confirm(`Delete suggestion "${suggestionTitle}"?`)) {
+      return;
+    }
+
+    setDeletingSuggestion(suggestionId);
+    try {
+      await deleteSuggestion(suggestionId);
+      // Refresh voting data
+      const votingData = await getActiveVoting();
+      setVoting(votingData);
+    } catch (err) {
+      console.error('Error deleting suggestion:', err);
+      alert('Failed to delete suggestion');
+    } finally {
+      setDeletingSuggestion(null);
     }
   };
 
@@ -133,6 +155,16 @@ const Home = () => {
                         <span className="vote-count">{suggestion.vote_count} votes</span>
                       </div>
                       {isUserVote && <span className="your-vote">Your vote</span>}
+                      {isAdmin && (
+                        <button
+                          className="suggestion-delete-btn"
+                          onClick={(e) => handleDeleteSuggestion(e, suggestion.id, suggestion.title)}
+                          disabled={deletingSuggestion === suggestion.id}
+                          title="Delete suggestion"
+                        >
+                          {deletingSuggestion === suggestion.id ? '...' : '×'}
+                        </button>
+                      )}
                     </div>
                   );
                 })}

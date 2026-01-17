@@ -45,6 +45,10 @@ export const execute = async (interaction) => {
       {
         name: '/help',
         value: '**Show this help message**\n`/help`\nDisplay all available commands.'
+      },
+      {
+        name: '🔒 Admin Commands',
+        value: '`/admin` - Show delete controls on voting\n`/delete movie:"Title"` - Delete a movie and its ratings'
       }
     )
     .setFooter({ text: 'You can also rate movies by clicking the buttons under announcements!' });

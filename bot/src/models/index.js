@@ -257,29 +257,56 @@ export const getWinningSuggestion = async (votingSessionId) => {
 };
 
 // Vote operations
-export const castVote = async (suggestionId, odiscordId) => {
-  // Get user id from discord id
-  const user = await getUserByDiscordId(odiscordId);
-  if (!user) return null;
+export const castVote = async (suggestionId, userId) => {
+  // First, get the voting session for this suggestion to remove any existing vote
+  const suggestionResult = await pool.query(
+    'SELECT voting_session_id FROM movie_suggestions WHERE id = $1',
+    [suggestionId]
+  );
 
+  if (suggestionResult.rows.length > 0) {
+    const sessionId = suggestionResult.rows[0].voting_session_id;
+
+    // Remove any existing vote for this user in this session
+    await pool.query(
+      `DELETE FROM votes v
+       USING movie_suggestions ms
+       WHERE v.suggestion_id = ms.id
+       AND ms.voting_session_id = $1
+       AND v.user_id = $2`,
+      [sessionId, userId]
+    );
+  }
+
+  // Now insert the new vote
   const result = await pool.query(
     `INSERT INTO votes (suggestion_id, user_id)
      VALUES ($1, $2)
      ON CONFLICT (suggestion_id, user_id) DO NOTHING
      RETURNING *`,
-    [suggestionId, user.id]
+    [suggestionId, userId]
   );
   return result.rows[0];
 };
 
-export const getUserVoteForSession = async (votingSessionId, discordId) => {
+export const getUserVoteForSession = async (votingSessionId, userId) => {
   const result = await pool.query(
     `SELECT v.*, ms.title
      FROM votes v
      JOIN movie_suggestions ms ON v.suggestion_id = ms.id
-     JOIN users u ON v.user_id = u.id
-     WHERE ms.voting_session_id = $1 AND u.discord_id = $2`,
-    [votingSessionId, discordId]
+     WHERE ms.voting_session_id = $1 AND v.user_id = $2`,
+    [votingSessionId, userId]
+  );
+  return result.rows[0];
+};
+
+export const getSuggestionById = async (id) => {
+  const result = await pool.query(
+    `SELECT ms.*, u.username as suggested_by_name
+     FROM movie_suggestions ms
+     LEFT JOIN users u ON ms.suggested_by = u.id
+     WHERE ms.id = $1`,
+    [id]
   );
   return result.rows[0];
 };
@@ -294,6 +321,46 @@ export const removeVoteByDiscordId = async (votingSessionId, discordId) => {
      AND u.discord_id = $2
      RETURNING v.*`,
     [votingSessionId, discordId]
+  );
+  return result.rows[0];
+};
+
+// Admin delete operations
+export const deleteSuggestion = async (suggestionId) => {
+  // First delete all votes for this suggestion
+  await pool.query('DELETE FROM votes WHERE suggestion_id = $1', [suggestionId]);
+  // Then delete the suggestion
+  const result = await pool.query(
+    'DELETE FROM movie_suggestions WHERE id = $1 RETURNING *',
+    [suggestionId]
+  );
+  return result.rows[0];
+};
+
+export const deleteMovieNight = async (movieId) => {
+  // First delete all ratings for this movie
+  await pool.query('DELETE FROM ratings WHERE movie_night_id = $1', [movieId]);
+  // Then delete the movie
+  const result = await pool.query(
+    'DELETE FROM movie_nights WHERE id = $1 RETURNING *',
+    [movieId]
+  );
+  return result.rows[0];
+};
+
+export const deleteVotingSession = async (sessionId) => {
+  // Delete all votes for suggestions in this session
+  await pool.query(
+    `DELETE FROM votes WHERE suggestion_id IN
+     (SELECT id FROM movie_suggestions WHERE voting_session_id = $1)`,
+    [sessionId]
+  );
+  // Delete all suggestions
+  await pool.query('DELETE FROM movie_suggestions WHERE voting_session_id = $1', [sessionId]);
+  // Delete the session
+  const result = await pool.query(
+    'DELETE FROM voting_sessions WHERE id = $1 RETURNING *',
+    [sessionId]
   );
   return result.rows[0];
 };

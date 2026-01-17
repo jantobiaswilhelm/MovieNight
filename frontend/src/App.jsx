@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
 import Home from './pages/Home';
 import Movie from './pages/Movie';
+import MoviesPage from './pages/MoviesPage';
 import Profile from './pages/Profile';
 import StatsPage from './pages/StatsPage';
 import Calendar from './pages/Calendar';
@@ -16,6 +17,7 @@ function App() {
       <main className="container">
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/movies" element={<MoviesPage />} />
           <Route path="/movie/:id" element={<Movie />} />
           <Route path="/calendar" element={<Calendar />} />
           <Route path="/commands" element={<Commands />} />
