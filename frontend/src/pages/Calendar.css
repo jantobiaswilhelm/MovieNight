@@ -1,0 +1,148 @@
+.calendar-page {
+  padding: 1rem 0;
+}
+
+.calendar-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.calendar-header h1 {
+  margin-bottom: 1rem;
+}
+
+.calendar-nav {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.current-month {
+  font-size: 1.5rem;
+  color: var(--text-secondary);
+}
+
+.calendar-grid {
+  background: var(--card-bg);
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.calendar-weekdays div {
+  padding: 1rem;
+  text-align: center;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.calendar-day {
+  min-height: 120px;
+  padding: 0.5rem;
+  border-right: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+  background: var(--card-bg);
+}
+
+.calendar-day:nth-child(7n) {
+  border-right: none;
+}
+
+.calendar-day.empty {
+  background: var(--bg-secondary);
+}
+
+.calendar-day.today {
+  background: rgba(88, 101, 242, 0.1);
+}
+
+.calendar-day.today .day-number {
+  background: var(--primary-color);
+  color: white;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.calendar-day.has-movies {
+  background: rgba(87, 242, 135, 0.05);
+}
+
+.day-number {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+}
+
+.calendar-movie {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  background: var(--primary-color);
+  color: white;
+  border-radius: 4px;
+  text-decoration: none;
+  font-size: 0.75rem;
+  margin-bottom: 0.25rem;
+  transition: background 0.2s;
+}
+
+.calendar-movie:hover {
+  background: var(--primary-hover);
+}
+
+.calendar-movie-thumb {
+  width: 24px;
+  height: 36px;
+  object-fit: cover;
+  border-radius: 2px;
+}
+
+.calendar-movie-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .calendar-weekdays div {
+    padding: 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  .calendar-day {
+    min-height: 80px;
+    padding: 0.25rem;
+  }
+
+  .day-number {
+    font-size: 0.875rem;
+  }
+
+  .calendar-movie {
+    font-size: 0.65rem;
+    padding: 0.15rem 0.25rem;
+  }
+
+  .calendar-movie-thumb {
+    display: none;
+  }
+}
