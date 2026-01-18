@@ -8,6 +8,8 @@ import ratingRoutes from './routes/ratings.js';
 import statsRoutes from './routes/stats.js';
 import votingRoutes from './routes/voting.js';
 import adminRoutes from './routes/admin.js';
+import wishlistRoutes from './routes/wishlists.js';
+import tmdbRoutes from './routes/tmdb.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -26,6 +28,8 @@ app.use('/api/ratings', ratingRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/voting', votingRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/wishlists', wishlistRoutes);
+app.use('/api/tmdb', tmdbRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

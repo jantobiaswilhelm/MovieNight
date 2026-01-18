@@ -468,3 +468,86 @@ export const rescheduleMovieNight = async (movieId, newScheduledAt) => {
   );
   return result.rows[0];
 };
+
+// Wishlist operations
+export const addToWishlist = async (data) => {
+  const result = await pool.query(
+    `INSERT INTO wishlists (user_id, guild_id, title, image_url, backdrop_url, description, tmdb_id, imdb_id, tmdb_rating, genres, runtime, release_year, trailer_url, importance)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+     ON CONFLICT (user_id, tmdb_id, guild_id)
+     DO UPDATE SET importance = $14, updated_at = CURRENT_TIMESTAMP
+     RETURNING *`,
+    [data.userId, data.guildId, data.title, data.imageUrl, data.backdropUrl, data.description, data.tmdbId, data.imdbId, data.tmdbRating, data.genres, data.runtime, data.releaseYear, data.trailerUrl, data.importance]
+  );
+  return result.rows[0];
+};
+
+export const getUserWishlist = async (userId, guildId, sort = 'importance') => {
+  let orderBy = 'w.importance DESC, w.created_at DESC';
+  if (sort === 'newest') orderBy = 'w.created_at DESC';
+  else if (sort === 'alphabetical') orderBy = 'w.title ASC';
+
+  const result = await pool.query(
+    `SELECT w.*, u.username, u.discord_id, u.avatar
+     FROM wishlists w
+     JOIN users u ON w.user_id = u.id
+     WHERE w.user_id = $1 AND w.guild_id = $2
+     ORDER BY ${orderBy}`,
+    [userId, guildId]
+  );
+  return result.rows;
+};
+
+export const getGuildWishlist = async (guildId, sort = 'importance') => {
+  let orderBy = 'w.importance DESC, w.created_at DESC';
+  if (sort === 'newest') orderBy = 'w.created_at DESC';
+  else if (sort === 'alphabetical') orderBy = 'w.title ASC';
+
+  const result = await pool.query(
+    `SELECT w.*, u.username, u.discord_id, u.avatar
+     FROM wishlists w
+     JOIN users u ON w.user_id = u.id
+     WHERE w.guild_id = $1
+     ORDER BY ${orderBy}`,
+    [guildId]
+  );
+  return result.rows;
+};
+
+export const updateWishlistImportance = async (id, userId, importance) => {
+  const result = await pool.query(
+    `UPDATE wishlists
+     SET importance = $3, updated_at = CURRENT_TIMESTAMP
+     WHERE id = $1 AND user_id = $2
+     RETURNING *`,
+    [id, userId, importance]
+  );
+  return result.rows[0];
+};
+
+export const removeFromWishlist = async (id, userId) => {
+  const result = await pool.query(
+    `DELETE FROM wishlists WHERE id = $1 AND user_id = $2 RETURNING *`,
+    [id, userId]
+  );
+  return result.rows[0];
+};
+
+export const getWishlistItem = async (userId, tmdbId, guildId) => {
+  const result = await pool.query(
+    `SELECT * FROM wishlists WHERE user_id = $1 AND tmdb_id = $2 AND guild_id = $3`,
+    [userId, tmdbId, guildId]
+  );
+  return result.rows[0];
+};
+
+export const getWishlistById = async (id) => {
+  const result = await pool.query(
+    `SELECT w.*, u.username, u.discord_id, u.avatar
+     FROM wishlists w
+     JOIN users u ON w.user_id = u.id
+     WHERE w.id = $1`,
+    [id]
+  );
+  return result.rows[0];
+};

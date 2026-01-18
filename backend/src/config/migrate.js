@@ -176,6 +176,30 @@ const migrate = async () => {
       )
     `);
 
+    // Wishlists table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS wishlists (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        guild_id VARCHAR(20) NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        image_url VARCHAR(500),
+        backdrop_url VARCHAR(500),
+        description TEXT,
+        tmdb_id INTEGER,
+        imdb_id VARCHAR(20),
+        tmdb_rating DECIMAL(3,1),
+        genres VARCHAR(255),
+        runtime INTEGER,
+        release_year INTEGER,
+        trailer_url VARCHAR(500),
+        importance INTEGER CHECK (importance >= 1 AND importance <= 5) DEFAULT 3,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user_id, tmdb_id, guild_id)
+      )
+    `);
+
     // Indexes
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_ratings_movie ON ratings(movie_night_id)
@@ -194,6 +218,12 @@ const migrate = async () => {
     `);
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_votes_suggestion ON votes(suggestion_id)
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_wishlists_user ON wishlists(user_id)
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_wishlists_guild ON wishlists(guild_id)
     `);
 
     await client.query('COMMIT');

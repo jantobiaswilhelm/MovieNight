@@ -98,3 +98,34 @@ export const deleteSuggestion = (suggestionId) =>
   fetchAPI(`/api/admin/suggestions/${suggestionId}`, {
     method: 'DELETE'
   });
+
+// Wishlists
+export const getMyWishlist = (sort = 'importance') =>
+  fetchAPI(`/api/wishlists/me?guild_id=${GUILD_ID}&sort=${sort}`);
+
+export const getGuildWishlist = (sort = 'importance') =>
+  fetchAPI(`/api/wishlists/guild?guild_id=${GUILD_ID}&sort=${sort}`);
+
+export const addToWishlist = (movieData) =>
+  fetchAPI('/api/wishlists', {
+    method: 'POST',
+    body: JSON.stringify({ ...movieData, guild_id: GUILD_ID })
+  });
+
+export const updateWishlistImportance = (id, importance) =>
+  fetchAPI(`/api/wishlists/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify({ importance })
+  });
+
+export const removeFromWishlist = (id) =>
+  fetchAPI(`/api/wishlists/${id}`, {
+    method: 'DELETE'
+  });
+
+// TMDB
+export const searchTMDB = (query) =>
+  fetchAPI(`/api/tmdb/search?query=${encodeURIComponent(query)}`);
+
+export const getTMDBMovie = (id) =>
+  fetchAPI(`/api/tmdb/${id}`);
