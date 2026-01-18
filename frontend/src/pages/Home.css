@@ -933,27 +933,56 @@
 
 .inline-form-field label {
   display: block;
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
   margin-bottom: 0.5rem;
 }
 
 .inline-form-field input {
   width: 100%;
-  padding: 0.625rem 0.875rem;
+  padding: 1rem 1.25rem;
   background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
   color: var(--text-primary);
-  font-size: 0.95rem;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  font-size: 1.1rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.inline-form-field input:hover {
+  border-color: var(--glass-border);
+  background: var(--bg-card-hover);
 }
 
 .inline-form-field input:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-glow);
+  box-shadow: 0 0 0 4px var(--accent-glow);
+  background: var(--bg-card);
+}
+
+.inline-form-field input[type="date"],
+.inline-form-field input[type="time"] {
+  color-scheme: dark;
+  min-height: 56px;
+}
+
+.inline-form-field input[type="date"]::-webkit-calendar-picker-indicator,
+.inline-form-field input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+  padding: 0.5rem;
+  margin-right: -0.5rem;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.inline-form-field input[type="date"]::-webkit-calendar-picker-indicator:hover,
+.inline-form-field input[type="time"]::-webkit-calendar-picker-indicator:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .inline-form-actions {
@@ -1428,9 +1457,10 @@
   }
 }
 
-/* Announce Section */
-.announce-section {
-  margin-bottom: 0.5rem;
+/* Announce Section - Full Width */
+.announce-section-fullwidth {
+  width: 100%;
+  margin-bottom: 1.5rem;
 }
 
 .announce-main-btn {
@@ -1519,10 +1549,16 @@
 
 .announce-results {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.75rem;
-  max-height: 300px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  max-height: 350px;
   overflow-y: auto;
+}
+
+@media (min-width: 1200px) {
+  .announce-results {
+    grid-template-columns: repeat(8, 1fr);
+  }
 }
 
 .announce-result-item {
@@ -1645,66 +1681,119 @@
 }
 
 /* Announce Schedule */
+.announce-schedule {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
 .announce-schedule-movie {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 1rem;
-  margin-bottom: 1rem;
-  padding: 0.75rem;
+  gap: 0.75rem;
+  padding: 1rem;
   background: var(--bg-secondary);
-  border-radius: 8px;
+  border-radius: 12px;
+  min-width: 140px;
 }
 
 .announce-schedule-poster {
-  width: 50px;
-  height: 75px;
+  width: 100px;
+  height: 150px;
   object-fit: cover;
-  border-radius: 4px;
+  border-radius: 8px;
+  box-shadow: var(--shadow-md);
 }
 
 .announce-schedule-title {
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 0.9rem;
+  text-align: center;
+  line-height: 1.3;
+}
+
+.announce-schedule-form {
+  flex: 1;
 }
 
 .announce-schedule-fields {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  margin-bottom: 1rem;
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
 }
 
 .announce-field {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  flex: 1;
 }
 
 .announce-field label {
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
 }
 
 .announce-field input {
-  padding: 0.75rem;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
+  padding: 1rem 1.25rem;
+  border-radius: 12px;
+  border: 2px solid var(--border-color);
   background: var(--bg-secondary);
   color: var(--text-primary);
-  font-size: 0.95rem;
+  font-size: 1.1rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.announce-field input:hover {
+  border-color: var(--glass-border);
+  background: var(--bg-card-hover);
 }
 
 .announce-field input:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-glow);
+  box-shadow: 0 0 0 4px var(--accent-glow);
+  background: var(--bg-card);
+}
+
+/* Custom date/time input styling */
+.announce-field input[type="date"],
+.announce-field input[type="time"] {
+  color-scheme: dark;
+  min-height: 56px;
+}
+
+.announce-field input[type="date"]::-webkit-calendar-picker-indicator,
+.announce-field input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+  padding: 0.5rem;
+  margin-right: -0.5rem;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.announce-field input[type="date"]::-webkit-calendar-picker-indicator:hover,
+.announce-field input[type="time"]::-webkit-calendar-picker-indicator:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .announce-schedule-actions {
   display: flex;
-  gap: 0.75rem;
+  gap: 1rem;
   justify-content: flex-end;
+  padding-top: 0.5rem;
+}
+
+.announce-schedule-actions .btn-primary,
+.announce-schedule-actions .btn-secondary {
+  padding: 0.875rem 1.5rem;
+  font-size: 0.95rem;
 }
 
 /* Responsive adjustments for announce section */
@@ -1727,7 +1816,32 @@
     justify-content: center;
   }
 
+  .announce-schedule {
+    flex-direction: column;
+  }
+
+  .announce-schedule-movie {
+    flex-direction: row;
+    width: 100%;
+    min-width: auto;
+  }
+
+  .announce-schedule-poster {
+    width: 60px;
+    height: 90px;
+  }
+
+  .announce-schedule-title {
+    text-align: left;
+  }
+
   .announce-schedule-fields {
-    grid-template-columns: 1fr;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .announce-field input {
+    font-size: 1rem;
+    padding: 0.875rem 1rem;
   }
 }

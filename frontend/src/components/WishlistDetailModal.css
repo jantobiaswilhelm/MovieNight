@@ -274,27 +274,56 @@
 
 .schedule-form-field label {
   display: block;
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
   margin-bottom: 0.5rem;
 }
 
 .schedule-form-field input {
   width: 100%;
-  padding: 0.625rem 0.875rem;
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  background: var(--bg-secondary);
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
   color: var(--text-primary);
-  font-size: 0.95rem;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  font-size: 1.1rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.schedule-form-field input:hover {
+  border-color: var(--glass-border);
+  background: var(--bg-card-hover);
 }
 
 .schedule-form-field input:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-glow);
+  box-shadow: 0 0 0 4px var(--accent-glow);
+  background: var(--bg-card);
+}
+
+.schedule-form-field input[type="date"],
+.schedule-form-field input[type="time"] {
+  color-scheme: dark;
+  min-height: 56px;
+}
+
+.schedule-form-field input[type="date"]::-webkit-calendar-picker-indicator,
+.schedule-form-field input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+  padding: 0.5rem;
+  margin-right: -0.5rem;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.schedule-form-field input[type="date"]::-webkit-calendar-picker-indicator:hover,
+.schedule-form-field input[type="time"]::-webkit-calendar-picker-indicator:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .schedule-form-error {
