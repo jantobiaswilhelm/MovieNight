@@ -103,44 +103,47 @@
 
 /* ===== Joker Dark ===== */
 [data-theme="joker"][data-mode="dark"] {
-  /* Background layers - dark green base */
-  --bg-primary: #0a120c;
-  --bg-secondary: #0f1a12;
-  --bg-card: #142118;
-  --bg-card-hover: #1a2b1f;
-  --bg-elevated: #213627;
+  /* Background layers - dark with purple-green undertone */
+  --bg-primary: #0d0b12;
+  --bg-secondary: #13111a;
+  --bg-card: #1a1723;
+  --bg-card-hover: #23202e;
+  --bg-elevated: #2c2839;
 
-  /* Text colors - slightly green tinted */
-  --text-primary: #f0fff4;
-  --text-secondary: #9ae6b4;
-  --text-muted: #68d391;
+  /* Text colors */
+  --text-primary: #f4f4f6;
+  --text-secondary: #a8a3b8;
+  --text-muted: #716b82;
 
-  /* Accent colors - purple stays as secondary accent */
+  /* Accent colors - green primary (Joker's hair) */
   --accent: #22c55e;
   --accent-hover: #4ade80;
   --accent-glow: rgba(34, 197, 94, 0.4);
 
+  /* Secondary accent - purple (Joker's suit) */
+  --accent-secondary: #a855f7;
+
   /* Supporting colors */
-  --success: #a855f7;
+  --success: #22c55e;
   --warning: #eab308;
   --danger: #ef4444;
-  --info: #3b82f6;
+  --info: #a855f7;
 
-  /* Star colors */
+  /* Star colors - purple */
   --star-filled: #a855f7;
-  --star-empty: #2d4a35;
+  --star-empty: #3d3850;
 
-  /* Glass effect - green tinted */
-  --glass-bg: rgba(34, 197, 94, 0.08);
+  /* Glass effect - mixed purple-green */
+  --glass-bg: rgba(120, 80, 200, 0.08);
   --glass-border: rgba(34, 197, 94, 0.2);
 
   /* Gradients */
-  --gradient-poster: linear-gradient(to top, rgba(10, 18, 12, 0.95) 0%, rgba(10, 18, 12, 0.5) 40%, transparent 100%);
+  --gradient-poster: linear-gradient(to top, rgba(13, 11, 18, 0.95) 0%, rgba(13, 11, 18, 0.5) 40%, transparent 100%);
   --gradient-hero: linear-gradient(to top, var(--bg-primary) 0%, transparent 100%);
-  --gradient-card: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
+  --gradient-card: linear-gradient(135deg, rgba(34, 197, 94, 0.03) 0%, rgba(168, 85, 247, 0.03) 100%);
 
-  /* Border - green tinted */
-  --border-color: rgba(34, 197, 94, 0.15);
+  /* Border - purple tinted */
+  --border-color: rgba(168, 85, 247, 0.15);
 
   /* Shadows */
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
@@ -151,49 +154,52 @@
 
 /* ===== Joker Light ===== */
 [data-theme="joker"][data-mode="light"] {
-  /* Background layers - light green base */
-  --bg-primary: #f0fdf4;
-  --bg-secondary: #f7fef9;
+  /* Background layers - light with subtle purple-green */
+  --bg-primary: #f8f7fc;
+  --bg-secondary: #ffffff;
   --bg-card: #ffffff;
-  --bg-card-hover: #dcfce7;
-  --bg-elevated: #d1fae5;
+  --bg-card-hover: #f3f0fa;
+  --bg-elevated: #ebe7f4;
 
-  /* Text colors - green tinted darks */
-  --text-primary: #14532d;
-  --text-secondary: #166534;
-  --text-muted: #22863a;
+  /* Text colors */
+  --text-primary: #1a1625;
+  --text-secondary: #4a4358;
+  --text-muted: #6b6280;
 
-  /* Accent colors - green primary */
+  /* Accent colors - green primary (Joker's hair) */
   --accent: #16a34a;
   --accent-hover: #15803d;
   --accent-glow: rgba(22, 163, 74, 0.25);
 
+  /* Secondary accent - purple (Joker's suit) */
+  --accent-secondary: #9333ea;
+
   /* Supporting colors */
-  --success: #9333ea;
+  --success: #16a34a;
   --warning: #ca8a04;
   --danger: #dc2626;
-  --info: #2563eb;
+  --info: #9333ea;
 
-  /* Star colors */
+  /* Star colors - purple */
   --star-filled: #9333ea;
-  --star-empty: #bbf7d0;
+  --star-empty: #e2ddf0;
 
-  /* Glass effect - green tinted */
-  --glass-bg: rgba(22, 163, 74, 0.06);
+  /* Glass effect - mixed purple-green */
+  --glass-bg: rgba(147, 51, 234, 0.04);
   --glass-border: rgba(22, 163, 74, 0.15);
 
   /* Gradients */
-  --gradient-poster: linear-gradient(to top, rgba(240, 253, 244, 0.95) 0%, rgba(240, 253, 244, 0.5) 40%, transparent 100%);
+  --gradient-poster: linear-gradient(to top, rgba(248, 247, 252, 0.95) 0%, rgba(248, 247, 252, 0.5) 40%, transparent 100%);
   --gradient-hero: linear-gradient(to top, var(--bg-primary) 0%, transparent 100%);
-  --gradient-card: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
+  --gradient-card: linear-gradient(135deg, rgba(22, 163, 74, 0.02) 0%, rgba(147, 51, 234, 0.02) 100%);
 
-  /* Border - green tinted */
-  --border-color: rgba(22, 163, 74, 0.12);
+  /* Border - purple tinted */
+  --border-color: rgba(147, 51, 234, 0.1);
 
-  /* Shadows - green tinted */
-  --shadow-sm: 0 2px 8px rgba(22, 163, 74, 0.08);
-  --shadow-md: 0 4px 16px rgba(22, 163, 74, 0.1);
-  --shadow-lg: 0 8px 32px rgba(22, 163, 74, 0.12);
+  /* Shadows - purple tinted */
+  --shadow-sm: 0 2px 8px rgba(147, 51, 234, 0.06);
+  --shadow-md: 0 4px 16px rgba(147, 51, 234, 0.08);
+  --shadow-lg: 0 8px 32px rgba(147, 51, 234, 0.1);
   --shadow-glow: 0 0 20px var(--accent-glow);
 }
 
