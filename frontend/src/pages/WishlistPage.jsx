@@ -308,7 +308,7 @@ const WishlistPage = () => {
                   <span className="random-movie-year">{randomMovie.release_year}</span>
                 )}
                 {randomMovie.tmdb_rating && (
-                  <span className="random-movie-rating">⭐ {randomMovie.tmdb_rating.toFixed(1)}</span>
+                  <span className="random-movie-rating">⭐ {parseFloat(randomMovie.tmdb_rating).toFixed(1)}</span>
                 )}
                 {randomMovie.genres && (
                   <div className="random-movie-genres">
