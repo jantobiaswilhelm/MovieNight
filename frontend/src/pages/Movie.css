@@ -8,8 +8,8 @@
 .movie-hero {
   position: absolute;
   top: 0;
-  left: -2rem;
-  right: -2rem;
+  left: -1.5rem;
+  right: -1.5rem;
   height: 400px;
   background-size: cover;
   background-position: center top;
