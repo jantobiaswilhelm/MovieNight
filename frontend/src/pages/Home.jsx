@@ -38,6 +38,7 @@ const Home = () => {
   const [voteTime, setVoteTime] = useState('20:00');
   const [creatingVote, setCreatingVote] = useState(false);
   const [endingVote, setEndingVote] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(null); // 'end' | 'cancel' | null
 
   // Movie search state
   const [movieSearch, setMovieSearch] = useState('');
@@ -55,7 +56,7 @@ const Home = () => {
   const [togglingAttendance, setTogglingAttendance] = useState(false);
 
   // Direct announcement state
-  const [announceStep, setAnnounceStep] = useState('button'); // 'button' | 'search' | 'preview' | 'schedule'
+  const [announceStep, setAnnounceStep] = useState('button'); // 'button' | 'search' | 'preview' | 'schedule' | 'success'
   const [selectedAnnounceMovie, setSelectedAnnounceMovie] = useState(null);
   const [announceSearch, setAnnounceSearch] = useState('');
   const [announceResults, setAnnounceResults] = useState([]);
@@ -64,6 +65,7 @@ const Home = () => {
   const [announceTime, setAnnounceTime] = useState('20:00');
   const [announcing, setAnnouncing] = useState(false);
   const [announceError, setAnnounceError] = useState(null);
+  const [announcedMovieTitle, setAnnouncedMovieTitle] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -151,9 +153,9 @@ const Home = () => {
 
   const handleEndVote = async () => {
     if (!voting) return;
-    if (!confirm('End voting and schedule the winning movie?')) return;
 
     setEndingVote(true);
+    setConfirmAction(null);
     try {
       const result = await closeVotingSession(voting.id, true);
 
@@ -177,7 +179,7 @@ const Home = () => {
       setUpcomingWithAttendees(upcomingData);
     } catch (err) {
       console.error('Error ending vote:', err);
-      alert('Failed to end vote: ' + err.message);
+      setConfirmAction(null);
     } finally {
       setEndingVote(false);
     }
@@ -185,9 +187,9 @@ const Home = () => {
 
   const handleCancelVote = async () => {
     if (!voting) return;
-    if (!confirm('Cancel voting? This will delete all suggestions and votes.')) return;
 
     setEndingVote(true);
+    setConfirmAction(null);
     try {
       await deleteVotingSession(voting.id);
       setVoting(null);
@@ -332,8 +334,14 @@ const Home = () => {
       setNextMovieWithAttendees(nextMovieData);
       setUpcomingWithAttendees(upcomingData);
 
-      // Reset announcement state
-      resetAnnounceState();
+      // Show success state
+      setAnnouncedMovieTitle(selectedAnnounceMovie.title);
+      setAnnounceStep('success');
+
+      // Auto-reset after 3 seconds
+      setTimeout(() => {
+        resetAnnounceState();
+      }, 3000);
     } catch (err) {
       console.error('Error announcing movie:', err);
       setAnnounceError(err.message || 'Failed to announce movie');
@@ -350,6 +358,7 @@ const Home = () => {
     setAnnounceDate('');
     setAnnounceTime('20:00');
     setAnnounceError(null);
+    setAnnouncedMovieTitle('');
   };
 
   if (error) {
@@ -538,6 +547,14 @@ const Home = () => {
               </div>
             </div>
           )}
+
+          {announceStep === 'success' && (
+            <div className="announce-success">
+              <div className="announce-success-icon">✓</div>
+              <h3>Movie Night Announced!</h3>
+              <p><strong>{announcedMovieTitle}</strong> has been scheduled.</p>
+            </div>
+          )}
         </section>
       )}
 
@@ -717,18 +734,18 @@ const Home = () => {
                       + Add Movie
                     </button>
                   )}
-                  {isAdmin && (
+                  {isAdmin && !confirmAction && (
                     <>
                       <button
                         className="btn-primary btn-small"
-                        onClick={handleEndVote}
+                        onClick={() => setConfirmAction('end')}
                         disabled={endingVote}
                       >
                         {endingVote ? 'Ending...' : 'End Vote'}
                       </button>
                       <button
                         className="btn-danger btn-small"
-                        onClick={handleCancelVote}
+                        onClick={() => setConfirmAction('cancel')}
                         disabled={endingVote}
                       >
                         Cancel
@@ -737,6 +754,34 @@ const Home = () => {
                   )}
                 </div>
               </div>
+
+              {/* Inline Confirmation */}
+              {confirmAction && (
+                <div className="vote-confirm-inline">
+                  <span className="confirm-message">
+                    {confirmAction === 'end'
+                      ? 'End voting and schedule the winning movie?'
+                      : 'Cancel voting? This will delete all suggestions.'}
+                  </span>
+                  <div className="confirm-actions">
+                    <button
+                      className="btn-secondary btn-small"
+                      onClick={() => setConfirmAction(null)}
+                      disabled={endingVote}
+                    >
+                      No, go back
+                    </button>
+                    <button
+                      className={`btn-small ${confirmAction === 'end' ? 'btn-primary' : 'btn-danger'}`}
+                      onClick={confirmAction === 'end' ? handleEndVote : handleCancelVote}
+                      disabled={endingVote}
+                    >
+                      {endingVote ? 'Processing...' : confirmAction === 'end' ? 'Yes, end vote' : 'Yes, cancel'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="voting-active">
                 {voting.suggestions && voting.suggestions.length > 0 ? (
                   <div className="suggestions-list">
