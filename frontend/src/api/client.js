@@ -129,3 +129,10 @@ export const searchTMDB = (query) =>
 
 export const getTMDBMovie = (id) =>
   fetchAPI(`/api/tmdb/${id}`);
+
+// Announce from wishlist
+export const announceFromWishlist = (wishlistId, scheduledAt) =>
+  fetchAPI('/api/wishlists/announce', {
+    method: 'POST',
+    body: JSON.stringify({ wishlist_id: wishlistId, scheduled_at: scheduledAt })
+  });

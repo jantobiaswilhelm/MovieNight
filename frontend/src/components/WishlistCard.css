@@ -4,7 +4,16 @@
   border-radius: 8px;
   overflow: hidden;
   position: relative;
-  transition: opacity 0.2s;
+  transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+
+.wishlist-card.clickable {
+  cursor: pointer;
+}
+
+.wishlist-card.clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 }
 
 .wishlist-card.updating {

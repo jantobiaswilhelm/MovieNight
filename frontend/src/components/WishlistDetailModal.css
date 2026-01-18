@@ -1,0 +1,277 @@
+.wishlist-detail-modal {
+  max-width: 700px;
+  max-height: 90vh;
+  overflow: hidden;
+  position: relative;
+}
+
+.detail-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 200px;
+  background-size: cover;
+  background-position: center top;
+  z-index: 0;
+}
+
+.detail-backdrop-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(61, 47, 51, 0.4) 0%,
+    rgba(61, 47, 51, 0.8) 50%,
+    var(--bg-card) 100%
+  );
+}
+
+.wishlist-detail-modal .modal-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 10;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.detail-content {
+  position: relative;
+  z-index: 1;
+  padding: 1.25rem;
+  padding-top: 120px;
+  overflow-y: auto;
+  max-height: 90vh;
+}
+
+.detail-header {
+  display: flex;
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.detail-poster {
+  width: 150px;
+  height: 225px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.detail-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.detail-info h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.detail-meta span:not(:last-child)::after {
+  content: "•";
+  margin-left: 0.5rem;
+  opacity: 0.5;
+}
+
+.detail-genres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.detail-genres .genre-tag {
+  background: var(--bg-secondary);
+  color: var(--accent);
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: 1px solid var(--accent-glow);
+}
+
+.detail-ratings {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 0.5rem 0;
+}
+
+.detail-ratings .tmdb-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: linear-gradient(135deg, #01b4e4 0%, #90cea1 100%);
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+}
+
+.detail-ratings .tmdb-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #032541;
+  text-transform: uppercase;
+}
+
+.detail-ratings .tmdb-score {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #032541;
+}
+
+.importance-display {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.importance-display .importance-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.importance-stars-display {
+  color: var(--star-filled);
+  font-size: 0.9rem;
+}
+
+.detail-links {
+  display: flex;
+  gap: 0.75rem;
+  margin: 0.5rem 0;
+}
+
+.detail-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.detail-link.imdb-link {
+  background: #f5c518;
+  color: #000;
+}
+
+.detail-link.imdb-link:hover {
+  background: #e0b015;
+  text-decoration: none;
+}
+
+.detail-link.trailer-link {
+  background: #ff0000;
+  color: white;
+}
+
+.detail-link.trailer-link:hover {
+  background: #cc0000;
+  text-decoration: none;
+}
+
+.detail-added-by {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-top: auto;
+}
+
+.added-by-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+}
+
+.detail-description {
+  background: var(--bg-secondary);
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.detail-description h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+}
+
+.detail-description p {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  font-size: 0.9rem;
+}
+
+.detail-actions {
+  display: flex;
+  justify-content: center;
+  padding-top: 0.5rem;
+}
+
+.announce-btn {
+  padding: 0.75rem 2rem;
+  font-size: 1rem;
+}
+
+@media (max-width: 600px) {
+  .detail-content {
+    padding-top: 80px;
+  }
+
+  .detail-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .detail-poster {
+    width: 120px;
+    height: 180px;
+  }
+
+  .detail-info h2 {
+    font-size: 1.25rem;
+  }
+
+  .detail-meta {
+    justify-content: center;
+  }
+
+  .detail-genres {
+    justify-content: center;
+  }
+
+  .detail-ratings {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .detail-links {
+    justify-content: center;
+  }
+
+  .detail-added-by {
+    justify-content: center;
+  }
+}

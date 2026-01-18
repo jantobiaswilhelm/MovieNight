@@ -551,3 +551,14 @@ export const getWishlistById = async (id) => {
   );
   return result.rows[0];
 };
+
+// Pending announcement operations
+export const createPendingAnnouncement = async (data) => {
+  const result = await pool.query(
+    `INSERT INTO pending_announcements (guild_id, channel_id, user_id, title, image_url, backdrop_url, description, tmdb_id, imdb_id, tmdb_rating, genres, runtime, release_year, trailer_url, scheduled_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+     RETURNING *`,
+    [data.guildId, data.channelId, data.userId, data.title, data.imageUrl, data.backdropUrl, data.description, data.tmdbId, data.imdbId, data.tmdbRating, data.genres, data.runtime, data.releaseYear, data.trailerUrl, data.scheduledAt]
+  );
+  return result.rows[0];
+};

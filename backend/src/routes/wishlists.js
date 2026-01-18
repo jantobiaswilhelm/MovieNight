@@ -119,4 +119,57 @@ router.delete('/:id', authenticateToken, async (req, res) => {
   }
 });
 
+// Announce movie from wishlist (creates pending announcement for bot)
+router.post('/announce', authenticateToken, async (req, res) => {
+  const { wishlist_id, scheduled_at } = req.body;
+
+  if (!wishlist_id || !scheduled_at) {
+    return res.status(400).json({ error: 'wishlist_id and scheduled_at are required' });
+  }
+
+  const scheduledDate = new Date(scheduled_at);
+  if (isNaN(scheduledDate.getTime())) {
+    return res.status(400).json({ error: 'Invalid scheduled_at date' });
+  }
+
+  if (scheduledDate <= new Date()) {
+    return res.status(400).json({ error: 'Scheduled time must be in the future' });
+  }
+
+  try {
+    // Get the wishlist item
+    const wishlistItem = await db.getWishlistById(parseInt(wishlist_id));
+
+    if (!wishlistItem) {
+      return res.status(404).json({ error: 'Wishlist item not found' });
+    }
+
+    // Create pending announcement
+    const announcement = await db.createPendingAnnouncement({
+      guildId: wishlistItem.guild_id,
+      channelId: null, // Bot will use default channel
+      userId: req.user.id,
+      title: wishlistItem.release_year
+        ? `${wishlistItem.title} (${wishlistItem.release_year})`
+        : wishlistItem.title,
+      imageUrl: wishlistItem.image_url,
+      backdropUrl: wishlistItem.backdrop_url,
+      description: wishlistItem.description,
+      tmdbId: wishlistItem.tmdb_id,
+      imdbId: wishlistItem.imdb_id,
+      tmdbRating: wishlistItem.tmdb_rating,
+      genres: wishlistItem.genres,
+      runtime: wishlistItem.runtime,
+      releaseYear: wishlistItem.release_year,
+      trailerUrl: wishlistItem.trailer_url,
+      scheduledAt: scheduledDate
+    });
+
+    res.json(announcement);
+  } catch (err) {
+    console.error('Error creating announcement:', err);
+    res.status(500).json({ error: 'Failed to create announcement' });
+  }
+});
+
 export default router;

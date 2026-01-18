@@ -32,8 +32,18 @@ const ImportanceStars = ({ value, editable, onChange }) => {
   );
 };
 
-const WishlistCard = ({ item, isOwner, showUser, onUpdate, onRemove }) => {
+const WishlistCard = ({ item, isOwner, showUser, onUpdate, onRemove, onClick }) => {
   const [isUpdating, setIsUpdating] = useState(false);
+
+  const handleCardClick = (e) => {
+    // Don't trigger if clicking on interactive elements
+    if (e.target.closest('.wishlist-remove-btn') || e.target.closest('.importance-stars')) {
+      return;
+    }
+    if (onClick) {
+      onClick(item);
+    }
+  };
 
   const handleImportanceChange = async (newImportance) => {
     if (newImportance === item.importance) return;
@@ -73,7 +83,10 @@ const WishlistCard = ({ item, isOwner, showUser, onUpdate, onRemove }) => {
   };
 
   return (
-    <div className={`wishlist-card ${isUpdating ? 'updating' : ''}`}>
+    <div
+      className={`wishlist-card ${isUpdating ? 'updating' : ''} ${onClick ? 'clickable' : ''}`}
+      onClick={handleCardClick}
+    >
       {isOwner && (
         <button
           className="wishlist-remove-btn"
