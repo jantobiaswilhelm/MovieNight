@@ -21,6 +21,7 @@ const Header = () => {
           <Link to="/">Home</Link>
           <Link to="/movies">Movies</Link>
           <Link to="/calendar">Calendar</Link>
+          <Link to="/wishlist">Wishlist</Link>
           <Link to="/stats">Stats</Link>
           <Link to="/commands">Commands</Link>
           {isAuthenticated && <Link to="/profile">My Ratings</Link>}
