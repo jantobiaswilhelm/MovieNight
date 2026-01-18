@@ -130,6 +130,9 @@ export const searchTMDB = (query) =>
 export const getTMDBMovie = (id) =>
   fetchAPI(`/api/tmdb/${id}`);
 
+export const getSimilarMovies = (tmdbId) =>
+  fetchAPI(`/api/tmdb/${tmdbId}/similar`);
+
 // Announce from wishlist
 export const announceFromWishlist = (wishlistId, scheduledAt) =>
   fetchAPI('/api/wishlists/announce', {

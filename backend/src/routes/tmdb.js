@@ -106,4 +106,85 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// Get similar movies with details
+router.get('/:id/similar', async (req, res) => {
+  const { id } = req.params;
+
+  if (!TMDB_API_KEY) {
+    return res.status(500).json({ error: 'TMDB API key not configured' });
+  }
+
+  try {
+    // First, get similar movies list
+    const similarResponse = await fetch(
+      `${TMDB_BASE_URL}/movie/${id}/similar?api_key=${TMDB_API_KEY}&page=1`
+    );
+
+    if (!similarResponse.ok) {
+      if (similarResponse.status === 404) {
+        return res.status(404).json({ error: 'Movie not found' });
+      }
+      return res.status(502).json({ error: 'TMDB API error' });
+    }
+
+    const similarData = await similarResponse.json();
+
+    // Take top 6 similar movies and fetch their details (for imdb_id and trailer)
+    const similarMovies = similarData.results.slice(0, 6);
+
+    const detailedMovies = await Promise.all(
+      similarMovies.map(async (movie) => {
+        try {
+          const [detailsRes, videosRes] = await Promise.all([
+            fetch(`${TMDB_BASE_URL}/movie/${movie.id}?api_key=${TMDB_API_KEY}`),
+            fetch(`${TMDB_BASE_URL}/movie/${movie.id}/videos?api_key=${TMDB_API_KEY}`)
+          ]);
+
+          let imdbId = null;
+          let trailerUrl = null;
+
+          if (detailsRes.ok) {
+            const details = await detailsRes.json();
+            imdbId = details.imdb_id || null;
+          }
+
+          if (videosRes.ok) {
+            const videosData = await videosRes.json();
+            const trailer = videosData.results?.find(v => v.type === 'Trailer' && v.site === 'YouTube' && v.official) ||
+                           videosData.results?.find(v => v.type === 'Trailer' && v.site === 'YouTube') ||
+                           videosData.results?.find(v => v.type === 'Teaser' && v.site === 'YouTube');
+            if (trailer) {
+              trailerUrl = `https://www.youtube.com/watch?v=${trailer.key}`;
+            }
+          }
+
+          return {
+            id: movie.id,
+            title: movie.title,
+            year: movie.release_date ? movie.release_date.split('-')[0] : null,
+            posterPath: movie.poster_path ? `${TMDB_IMAGE_BASE}${movie.poster_path}` : null,
+            imdbId,
+            trailerUrl
+          };
+        } catch {
+          // If individual movie fetch fails, return basic info
+          return {
+            id: movie.id,
+            title: movie.title,
+            year: movie.release_date ? movie.release_date.split('-')[0] : null,
+            posterPath: movie.poster_path ? `${TMDB_IMAGE_BASE}${movie.poster_path}` : null,
+            imdbId: null,
+            trailerUrl: null
+          };
+        }
+      })
+    );
+
+    res.json(detailedMovies);
+  } catch (err) {
+    console.error('TMDB similar movies error:', err);
+    res.status(500).json({ error: 'Failed to fetch similar movies' });
+  }
+});
+
 export default router;

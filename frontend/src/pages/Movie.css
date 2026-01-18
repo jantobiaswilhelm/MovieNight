@@ -397,6 +397,119 @@
   color: var(--warning);
 }
 
+/* Similar Movies Section */
+.similar-movies-section {
+  margin-top: 2rem;
+  position: relative;
+  z-index: 1;
+}
+
+.similar-movies-section h2 {
+  margin-bottom: 1rem;
+}
+
+.similar-loading,
+.similar-empty {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-secondary);
+  background: var(--bg-card);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+}
+
+.similar-movies-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1rem;
+}
+
+.similar-movie-card {
+  background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  transition: all 0.2s ease;
+}
+
+.similar-movie-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--accent-glow);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.similar-movie-poster {
+  width: 100%;
+  aspect-ratio: 2/3;
+  object-fit: cover;
+  display: block;
+}
+
+.similar-movie-no-poster {
+  width: 100%;
+  aspect-ratio: 2/3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.similar-movie-info {
+  padding: 0.75rem;
+}
+
+.similar-movie-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0 0 0.25rem 0;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.similar-movie-year {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.similar-movie-links {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.similar-link {
+  padding: 0.35rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 4px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.similar-link.imdb {
+  background: #f5c518;
+  color: #000;
+}
+
+.similar-link.imdb:hover {
+  background: #e0b015;
+}
+
+.similar-link.trailer {
+  background: #ff0000;
+  color: white;
+}
+
+.similar-link.trailer:hover {
+  background: #cc0000;
+}
+
 @media (max-width: 768px) {
   .movie-hero {
     height: 250px;
@@ -432,5 +545,18 @@
 
   .movie-meta-info {
     justify-content: center;
+  }
+
+  .similar-movies-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .similar-movie-info {
+    padding: 0.5rem;
+  }
+
+  .similar-movie-title {
+    font-size: 0.8rem;
   }
 }
