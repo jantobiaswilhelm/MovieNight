@@ -420,3 +420,26 @@ export const getUpcomingMovies = async (guildId) => {
   );
   return result.rows;
 };
+
+// Pending announcement operations
+export const getPendingAnnouncements = async () => {
+  const result = await pool.query(
+    `SELECT pa.*, u.username, u.discord_id
+     FROM pending_announcements pa
+     LEFT JOIN users u ON pa.user_id = u.id
+     WHERE pa.status = 'pending'
+     ORDER BY pa.created_at ASC`
+  );
+  return result.rows;
+};
+
+export const markAnnouncementProcessed = async (id, status = 'processed') => {
+  const result = await pool.query(
+    `UPDATE pending_announcements
+     SET status = $2, processed_at = CURRENT_TIMESTAMP
+     WHERE id = $1
+     RETURNING *`,
+    [id, status]
+  );
+  return result.rows[0];
+};

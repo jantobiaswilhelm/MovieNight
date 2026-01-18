@@ -3,6 +3,8 @@ import { useAuth } from '../context/AuthContext';
 import { getMyWishlist, getGuildWishlist } from '../api/client';
 import WishlistCard from '../components/WishlistCard';
 import AddToWishlistModal from '../components/AddToWishlistModal';
+import WishlistDetailModal from '../components/WishlistDetailModal';
+import AnnounceModal from '../components/AnnounceModal';
 import './WishlistPage.css';
 
 const WishlistPage = () => {
@@ -14,6 +16,8 @@ const WishlistPage = () => {
   const [sort, setSort] = useState('importance');
   const [groupByUser, setGroupByUser] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [showAnnounceModal, setShowAnnounceModal] = useState(false);
 
   const fetchWishlist = async () => {
     setLoading(true);
@@ -51,10 +55,31 @@ const WishlistPage = () => {
 
   const handleRemove = (id) => {
     setItems((prev) => prev.filter((item) => item.id !== id));
+    if (selectedItem?.id === id) {
+      setSelectedItem(null);
+    }
   };
 
   const handleAdded = () => {
     fetchWishlist();
+  };
+
+  const handleCardClick = (item) => {
+    setSelectedItem(item);
+  };
+
+  const handleAnnounce = (item) => {
+    setSelectedItem(null);
+    setShowAnnounceModal(true);
+    // Store the item for the announce modal
+    setSelectedItem(item);
+  };
+
+  const handleAnnounced = (item) => {
+    // Optionally remove from wishlist after announcing
+    // For now, just close the modal
+    setShowAnnounceModal(false);
+    setSelectedItem(null);
   };
 
   const groupedItems = groupByUser
@@ -173,6 +198,7 @@ const WishlistPage = () => {
                     showUser={false}
                     onUpdate={handleUpdate}
                     onRemove={handleRemove}
+                    onClick={() => handleCardClick(item)}
                   />
                 ))}
               </div>
@@ -189,6 +215,7 @@ const WishlistPage = () => {
               showUser={activeTab === 'guild'}
               onUpdate={handleUpdate}
               onRemove={handleRemove}
+              onClick={() => handleCardClick(item)}
             />
           ))}
         </div>
@@ -198,6 +225,24 @@ const WishlistPage = () => {
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
         onAdded={handleAdded}
+      />
+
+      <WishlistDetailModal
+        item={selectedItem}
+        isOpen={!!selectedItem && !showAnnounceModal}
+        onClose={() => setSelectedItem(null)}
+        onAnnounce={handleAnnounce}
+        canAnnounce={isAuthenticated}
+      />
+
+      <AnnounceModal
+        item={selectedItem}
+        isOpen={showAnnounceModal}
+        onClose={() => {
+          setShowAnnounceModal(false);
+          setSelectedItem(null);
+        }}
+        onAnnounced={handleAnnounced}
       />
     </div>
   );

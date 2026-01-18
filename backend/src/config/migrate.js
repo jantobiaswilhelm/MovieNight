@@ -200,6 +200,31 @@ const migrate = async () => {
       )
     `);
 
+    // Pending announcements table (for web-created announcements that bot will post)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS pending_announcements (
+        id SERIAL PRIMARY KEY,
+        guild_id VARCHAR(20) NOT NULL,
+        channel_id VARCHAR(20),
+        user_id INTEGER REFERENCES users(id),
+        title VARCHAR(255) NOT NULL,
+        image_url VARCHAR(500),
+        backdrop_url VARCHAR(500),
+        description TEXT,
+        tmdb_id INTEGER,
+        imdb_id VARCHAR(20),
+        tmdb_rating DECIMAL(3,1),
+        genres VARCHAR(255),
+        runtime INTEGER,
+        release_year INTEGER,
+        trailer_url VARCHAR(500),
+        scheduled_at TIMESTAMP NOT NULL,
+        status VARCHAR(20) DEFAULT 'pending',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        processed_at TIMESTAMP
+      )
+    `);
+
     // Indexes
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_ratings_movie ON ratings(movie_night_id)
@@ -224,6 +249,9 @@ const migrate = async () => {
     `);
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_wishlists_guild ON wishlists(guild_id)
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_pending_announcements_status ON pending_announcements(status)
     `);
 
     await client.query('COMMIT');
