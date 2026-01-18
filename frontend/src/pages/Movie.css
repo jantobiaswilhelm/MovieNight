@@ -397,6 +397,102 @@
   color: var(--warning);
 }
 
+/* Movie Attendance Section */
+.movie-attendance-section {
+  margin-top: 1.5rem;
+  padding: 1.25rem;
+  background: var(--bg-card);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+}
+
+.movie-attendance-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.movie-attendance-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+.btn-attend {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.btn-attend:hover:not(:disabled) {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+
+.btn-attend.attending {
+  background: var(--success);
+  border-color: var(--success);
+  color: white;
+}
+
+.btn-attend.attending:hover:not(:disabled) {
+  background: #16a34a;
+  border-color: #16a34a;
+}
+
+.btn-attend:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.movie-attendees-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.movie-attendee {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.75rem 0.4rem 0.4rem;
+  background: var(--bg-secondary);
+  border-radius: 20px;
+  border: 1px solid var(--border-color);
+  transition: all 0.2s ease;
+}
+
+.movie-attendee:hover {
+  border-color: var(--accent-glow);
+  transform: translateY(-2px);
+}
+
+.movie-attendee-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid var(--glass-border);
+}
+
+.movie-attendee-name {
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.movie-no-attendees {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
 /* Similar Movies Section */
 .similar-movies-section {
   margin-top: 2rem;

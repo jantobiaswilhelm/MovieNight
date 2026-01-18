@@ -277,6 +277,97 @@
   transform: translateY(-1px);
 }
 
+/* Attendance Section */
+.hero-attendance {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: var(--glass-bg);
+  backdrop-filter: blur(8px);
+  border-radius: 8px;
+  border: 1px solid var(--glass-border);
+}
+
+.attendance-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.attendance-avatars {
+  display: flex;
+  align-items: center;
+}
+
+.attendance-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  margin-left: -8px;
+  transition: transform 0.2s ease, z-index 0.2s ease;
+}
+
+.attendance-avatar:first-child {
+  margin-left: 0;
+}
+
+.attendance-avatar:hover {
+  transform: scale(1.15);
+  z-index: 10;
+  border-color: var(--accent);
+}
+
+.attendance-overflow {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin-left: 6px;
+  font-weight: 500;
+}
+
+.attendance-count {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.8);
+  white-space: nowrap;
+}
+
+.hero-btn-attend {
+  background: var(--glass-bg);
+  color: white;
+  border: 1px solid var(--glass-border);
+  padding: 0.4rem 1rem;
+  font-size: 0.8rem;
+}
+
+.hero-btn-attend:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 2px 8px var(--accent-glow);
+}
+
+.hero-btn-attending {
+  background: var(--success);
+  color: white;
+  border: 1px solid var(--success);
+  padding: 0.4rem 1rem;
+  font-size: 0.8rem;
+}
+
+.hero-btn-attending:hover {
+  background: #16a34a;
+  border-color: #16a34a;
+}
+
+.hero-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
 .hero-backdrop.hero-empty {
   border: 2px dashed var(--border-color);
   background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);

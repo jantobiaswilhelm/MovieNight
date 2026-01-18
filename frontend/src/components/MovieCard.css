@@ -255,3 +255,37 @@
 .movie-card--compact .movie-rating-compact {
   flex-shrink: 0;
 }
+
+/* Compact Attendees */
+.compact-attendees {
+  margin-top: 0.25rem;
+}
+
+.compact-attendee-avatars {
+  display: flex;
+  align-items: center;
+}
+
+.compact-attendee-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--bg-card);
+  margin-left: -6px;
+  transition: transform 0.2s ease;
+}
+
+.compact-attendee-avatar:first-child {
+  margin-left: 0;
+}
+
+.compact-attendee-avatar:hover {
+  transform: scale(1.15);
+  z-index: 10;
+}
+
+.compact-attendee-overflow {
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+  margin-left: 4px;
+}

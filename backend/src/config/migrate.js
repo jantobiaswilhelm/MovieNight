@@ -236,7 +236,24 @@ const migrate = async () => {
       END $$;
     `);
 
+    // Movie attendance table (who's attending a scheduled movie night)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS movie_attendance (
+        id SERIAL PRIMARY KEY,
+        movie_night_id INTEGER REFERENCES movie_nights(id) ON DELETE CASCADE,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(movie_night_id, user_id)
+      )
+    `);
+
     // Indexes
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_attendance_movie ON movie_attendance(movie_night_id)
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_attendance_user ON movie_attendance(user_id)
+    `);
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_ratings_movie ON ratings(movie_night_id)
     `);
