@@ -1,6 +1,12 @@
 import { useTheme } from '../context/ThemeContext';
 import './ThemeSwitcher.css';
 
+const themes = [
+  { id: 'netflix', label: 'Netflix', colors: ['#e50914'] },
+  { id: 'joker', label: 'Joker', colors: ['#a855f7', '#22c55e'] },
+  { id: 'forest', label: 'Forest', colors: ['#78716c', '#84a98c'] },
+];
+
 const ThemeSwitcher = () => {
   const { mode, theme, toggleMode, setTheme } = useTheme();
 
@@ -24,25 +30,26 @@ const ThemeSwitcher = () => {
         )}
       </button>
 
-      <div className="theme-buttons">
-        <button
-          className={`theme-btn ${theme === 'netflix' ? 'active' : ''}`}
-          onClick={() => setTheme('netflix')}
-          aria-label="Netflix theme"
-          title="Netflix theme"
+      <div className="theme-dropdown">
+        <select
+          value={theme}
+          onChange={(e) => setTheme(e.target.value)}
+          aria-label="Select theme"
         >
-          <span className="theme-color netflix-color"></span>
-          <span className="theme-label">Netflix</span>
-        </button>
-        <button
-          className={`theme-btn ${theme === 'joker' ? 'active' : ''}`}
-          onClick={() => setTheme('joker')}
-          aria-label="Joker theme"
-          title="Joker theme"
-        >
-          <span className="theme-color joker-color"></span>
-          <span className="theme-label">Joker</span>
-        </button>
+          {themes.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.label}
+            </option>
+          ))}
+        </select>
+        <span
+          className="theme-color-indicator"
+          style={{
+            background: themes.find(t => t.id === theme)?.colors.length > 1
+              ? `linear-gradient(135deg, ${themes.find(t => t.id === theme)?.colors[0]} 50%, ${themes.find(t => t.id === theme)?.colors[1]} 50%)`
+              : themes.find(t => t.id === theme)?.colors[0]
+          }}
+        ></span>
       </div>
     </div>
   );
