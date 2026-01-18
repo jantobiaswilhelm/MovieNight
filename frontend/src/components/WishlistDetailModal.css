@@ -21,8 +21,8 @@
   inset: 0;
   background: linear-gradient(
     to bottom,
-    rgba(61, 47, 51, 0.4) 0%,
-    rgba(61, 47, 51, 0.8) 50%,
+    rgba(26, 26, 29, 0.4) 0%,
+    rgba(26, 26, 29, 0.8) 50%,
     var(--bg-card) 100%
   );
 }
@@ -33,12 +33,20 @@
   right: 0.75rem;
   z-index: 10;
   background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
   border-radius: 50%;
   width: 32px;
   height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
+  border: 1px solid var(--glass-border);
+  transition: all 0.2s ease;
+}
+
+.wishlist-detail-modal .modal-close:hover {
+  background: rgba(0, 0, 0, 0.7);
+  border-color: var(--accent-glow);
 }
 
 .detail-content {
@@ -62,7 +70,8 @@
   object-fit: cover;
   border-radius: 8px;
   flex-shrink: 0;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--glass-border);
 }
 
 .detail-info {
@@ -98,13 +107,13 @@
 }
 
 .detail-genres .genre-tag {
-  background: var(--bg-secondary);
+  background: rgba(229, 9, 20, 0.15);
   color: var(--accent);
   padding: 0.2rem 0.6rem;
   border-radius: 20px;
   font-size: 0.75rem;
   font-weight: 500;
-  border: 1px solid var(--accent-glow);
+  border: 1px solid rgba(229, 9, 20, 0.3);
 }
 
 .detail-ratings {
@@ -166,7 +175,7 @@
   font-size: 0.85rem;
   font-weight: 600;
   text-decoration: none;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
 }
 
 .detail-link.imdb-link {
@@ -177,6 +186,7 @@
 .detail-link.imdb-link:hover {
   background: #e0b015;
   text-decoration: none;
+  transform: translateY(-1px);
 }
 
 .detail-link.trailer-link {
@@ -187,6 +197,7 @@
 .detail-link.trailer-link:hover {
   background: #cc0000;
   text-decoration: none;
+  transform: translateY(-1px);
 }
 
 .detail-added-by {
@@ -202,6 +213,7 @@
   width: 24px;
   height: 24px;
   border-radius: 50%;
+  border: 2px solid var(--glass-border);
 }
 
 .detail-description {
@@ -209,6 +221,7 @@
   padding: 1rem;
   border-radius: 8px;
   margin-bottom: 1rem;
+  border: 1px solid var(--border-color);
 }
 
 .detail-description h3 {

@@ -5,25 +5,53 @@
 }
 
 :root {
-  --bg-primary: #1c1517;
-  --bg-secondary: #2a2023;
-  --bg-card: #3d2f33;
-  --bg-card-hover: #4d3b40;
-  --text-primary: #f8f4f5;
-  --text-secondary: #c4b5b8;
-  --accent: #f43f5e;
-  --accent-hover: #e11d48;
-  --accent-glow: rgba(244, 63, 94, 0.4);
-  --success: #4ade80;
-  --warning: #fbbf24;
+  /* Background layers */
+  --bg-primary: #0a0a0b;
+  --bg-secondary: #141416;
+  --bg-card: #1a1a1d;
+  --bg-card-hover: #222226;
+  --bg-elevated: #2a2a2e;
+
+  /* Text colors */
+  --text-primary: #ffffff;
+  --text-secondary: #a1a1aa;
+  --text-muted: #71717a;
+
+  /* Accent colors */
+  --accent: #e50914;
+  --accent-hover: #f40612;
+  --accent-glow: rgba(229, 9, 20, 0.4);
+
+  /* Supporting colors */
+  --success: #22c55e;
+  --warning: #eab308;
   --danger: #ef4444;
-  --star-filled: #fbbf24;
-  --star-empty: #5c4f52;
-  --gradient-poster: linear-gradient(to top, rgba(28,21,23,0.95) 0%, rgba(28,21,23,0.5) 40%, transparent 100%);
-  --border-color: rgba(255,255,255,0.12);
+  --info: #3b82f6;
+
+  /* Star colors */
+  --star-filled: #eab308;
+  --star-empty: #3f3f46;
+
+  /* Glass effect */
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.1);
+
+  /* Gradients */
+  --gradient-poster: linear-gradient(to top, rgba(10, 10, 11, 0.95) 0%, rgba(10, 10, 11, 0.5) 40%, transparent 100%);
+  --gradient-hero: linear-gradient(to top, var(--bg-primary) 0%, transparent 100%);
+  --gradient-card: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
+
+  /* Border */
+  --border-color: rgba(255, 255, 255, 0.08);
+
+  /* Shadows */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 20px var(--accent-glow);
 }
 
-/* Animations */
+/* Base Animations */
 @keyframes shimmer {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
@@ -34,9 +62,29 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 5px var(--accent-glow); }
+  50% { box-shadow: 0 0 20px var(--accent-glow); }
 }
 
 body {
@@ -45,42 +93,58 @@ body {
   color: var(--text-primary);
   min-height: 100vh;
   line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 a {
   color: var(--accent);
   text-decoration: none;
+  transition: color 0.2s ease;
 }
 
 a:hover {
-  text-decoration: underline;
+  color: var(--accent-hover);
+  text-decoration: none;
 }
 
 button {
   cursor: pointer;
   border: none;
-  border-radius: 4px;
-  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  padding: 0.625rem 1.25rem;
   font-size: 1rem;
-  transition: background-color 0.2s;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+button:active {
+  transform: scale(0.98);
 }
 
 .btn-primary {
   background: var(--accent);
   color: white;
+  box-shadow: 0 2px 8px var(--accent-glow);
 }
 
 .btn-primary:hover {
   background: var(--accent-hover);
+  box-shadow: 0 4px 16px var(--accent-glow);
+  transform: translateY(-1px);
 }
 
 .btn-secondary {
-  background: var(--bg-card);
+  background: var(--glass-bg);
   color: var(--text-primary);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(8px);
 }
 
 .btn-secondary:hover {
-  background: #1a4a70;
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
 }
 
 .container {
@@ -91,9 +155,10 @@ button {
 
 .card {
   background: var(--bg-card);
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 1.5rem;
   margin-bottom: 1rem;
+  border: 1px solid var(--border-color);
 }
 
 .loading {
@@ -108,4 +173,29 @@ button {
   color: var(--danger);
   text-align: center;
   padding: 2rem;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bg-elevated);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3a3a3e;
+}
+
+/* Selection styling */
+::selection {
+  background: var(--accent);
+  color: white;
 }

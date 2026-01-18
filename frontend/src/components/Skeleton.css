@@ -7,14 +7,16 @@
   );
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
+  border-radius: 4px;
 }
 
 /* Movie Card Skeleton */
 .movie-card-skeleton {
   display: flex;
   background: var(--bg-card);
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
+  border: 1px solid var(--border-color);
 }
 
 .skeleton-poster {
@@ -38,6 +40,7 @@
   justify-content: space-between;
   align-items: center;
   min-height: 300px;
+  border: 1px solid var(--border-color);
 }
 
 .hero-skeleton-content {
@@ -64,6 +67,11 @@
 
 .movie-grid-skeleton.horizontal .movie-card-skeleton {
   flex: 0 0 300px;
+}
+
+/* Pulse variant */
+.skeleton--pulse {
+  animation: pulse 1.5s infinite;
 }
 
 @media (max-width: 768px) {

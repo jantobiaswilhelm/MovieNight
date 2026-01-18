@@ -1,38 +1,40 @@
 .movie-card {
   display: flex;
-  background: var(--bg-card);
+  background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
   border-radius: 12px;
   overflow: hidden;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   text-decoration: none;
   color: inherit;
-  border: 1px solid transparent;
+  border: 1px solid var(--border-color);
   animation: fadeIn 0.4s ease-out;
 }
 
 .movie-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--accent-glow);
-  border-color: var(--accent-glow);
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--accent-glow);
+  border-color: rgba(229, 9, 20, 0.3);
   text-decoration: none;
-  background: var(--bg-card-hover);
+  background: linear-gradient(135deg, var(--bg-card-hover) 0%, var(--bg-card) 100%);
 }
 
 /* Poster Container */
 .poster-container {
   position: relative;
   flex-shrink: 0;
+  overflow: hidden;
 }
 
 .movie-poster {
   width: 120px;
   height: 180px;
   object-fit: cover;
-  transition: transform 0.3s ease;
+  transition: all 0.3s ease;
 }
 
 .movie-card:hover .movie-poster {
   transform: scale(1.05);
+  filter: brightness(1.1);
 }
 
 .movie-poster-placeholder {
@@ -42,7 +44,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   font-size: 0.875rem;
 }
 
@@ -57,7 +59,7 @@
   border-radius: 6px;
   font-weight: 700;
   font-size: 0.875rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
   z-index: 2;
 }
 
@@ -85,7 +87,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  box-shadow: 0 2px 8px rgba(244, 63, 94, 0.4);
+  box-shadow: 0 2px 8px var(--accent-glow);
   z-index: 2;
 }
 
@@ -108,6 +110,11 @@
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  transition: color 0.2s ease;
+}
+
+.movie-card:hover .movie-title {
+  color: #fff;
 }
 
 .movie-date {
@@ -129,7 +136,7 @@
 }
 
 .no-ratings {
-  color: var(--text-secondary);
+  color: var(--text-muted);
   font-style: italic;
   font-size: 0.875rem;
 }

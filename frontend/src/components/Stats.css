@@ -6,20 +6,31 @@
 }
 
 .stat-card {
-  background: var(--bg-card);
-  border-radius: 8px;
+  background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
+  border-radius: 12px;
   padding: 1.5rem;
   text-align: center;
+  border: 1px solid var(--border-color);
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  border-color: var(--accent-glow);
 }
 
 .stat-value {
   font-size: 2.5rem;
   font-weight: bold;
   color: var(--accent);
+  line-height: 1;
 }
 
 .stat-label {
   color: var(--text-secondary);
   font-size: 0.875rem;
   margin-top: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }

@@ -1,5 +1,6 @@
 .wishlist-page {
   padding: 1rem 0;
+  animation: fadeIn 0.4s ease-out;
 }
 
 .wishlist-header {
@@ -33,6 +34,7 @@
   background: var(--bg-card);
   border-radius: 8px;
   overflow: hidden;
+  border: 1px solid var(--border-color);
 }
 
 .tab-btn {
@@ -43,16 +45,17 @@
   cursor: pointer;
   font-size: 0.9rem;
   font-weight: 500;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
 }
 
 .tab-btn:hover {
   color: var(--text-primary);
+  background: var(--glass-bg);
 }
 
 .tab-btn.active {
   background: var(--accent);
-  color: var(--bg-primary);
+  color: white;
 }
 
 .filter-controls {
@@ -69,6 +72,7 @@
   border: 1px solid var(--border-color);
   border-radius: 8px;
   cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .filter-select:hover {
@@ -78,6 +82,7 @@
 .filter-select:focus {
   outline: none;
   border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
 }
 
 .group-checkbox {
@@ -87,6 +92,11 @@
   cursor: pointer;
   font-size: 0.9rem;
   color: var(--text-secondary);
+  transition: color 0.2s ease;
+}
+
+.group-checkbox:hover {
+  color: var(--text-primary);
 }
 
 .group-checkbox input {
@@ -103,10 +113,11 @@
   background: var(--bg-card);
   border-radius: 12px;
   color: var(--text-secondary);
+  border: 1px solid var(--border-color);
 }
 
 .error-state {
-  color: #dc3545;
+  color: var(--danger);
 }
 
 .wishlist-grid {
@@ -134,6 +145,7 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
+  border: 2px solid var(--glass-border);
 }
 
 .group-username {
