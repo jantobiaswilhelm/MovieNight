@@ -44,6 +44,10 @@ const Home = () => {
   const [searching, setSearching] = useState(false);
   const [addingMovie, setAddingMovie] = useState(null);
 
+  // Vote result state
+  const [voteResult, setVoteResult] = useState(null);
+  const [showVoteResultModal, setShowVoteResultModal] = useState(false);
+
   // Next movie with attendees
   const [nextMovieWithAttendees, setNextMovieWithAttendees] = useState(null);
   const [upcomingWithAttendees, setUpcomingWithAttendees] = useState([]);
@@ -139,12 +143,26 @@ const Home = () => {
 
     setEndingVote(true);
     try {
-      await closeVotingSession(voting.id, true);
-      const votingData = await getActiveVoting();
+      const result = await closeVotingSession(voting.id, true);
+
+      // Show the result modal with winner info
+      if (result.winner) {
+        setVoteResult(result);
+        setShowVoteResultModal(true);
+      }
+
+      // Refresh all data
+      const [votingData, moviesData, nextMovieData, upcomingData] = await Promise.all([
+        getActiveVoting().catch(() => null),
+        getMovies(100, 0),
+        getNextMovieWithAttendees().catch(() => null),
+        getUpcomingMoviesWithAttendees(5).catch(() => [])
+      ]);
+
       setVoting(votingData);
-      // Refresh movies list
-      const moviesData = await getMovies(100, 0);
       setMovies(moviesData);
+      setNextMovieWithAttendees(nextMovieData);
+      setUpcomingWithAttendees(upcomingData);
     } catch (err) {
       console.error('Error ending vote:', err);
       alert('Failed to end vote: ' + err.message);
@@ -747,6 +765,56 @@ const Home = () => {
                 ))}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Vote Result Modal */}
+      {showVoteResultModal && voteResult && (
+        <div className="modal-overlay" onClick={() => setShowVoteResultModal(false)}>
+          <div className="modal-content vote-result-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Voting Complete!</h2>
+              <button className="modal-close" onClick={() => setShowVoteResultModal(false)}>×</button>
+            </div>
+            <div className="vote-result-content">
+              <div className="vote-result-trophy">🏆</div>
+              <h3 className="vote-result-label">The Winner Is</h3>
+              <div className="vote-result-winner">
+                {voteResult.winner.image_url && (
+                  <img
+                    src={voteResult.winner.image_url}
+                    alt={voteResult.winner.title}
+                    className="vote-result-poster"
+                  />
+                )}
+                <div className="vote-result-info">
+                  <h2 className="vote-result-title">{voteResult.winner.title}</h2>
+                  {voteResult.winner.release_year && (
+                    <span className="vote-result-year">{voteResult.winner.release_year}</span>
+                  )}
+                  <span className="vote-result-votes">
+                    {voteResult.winner.vote_count} votes
+                  </span>
+                  <span className="vote-result-suggested">
+                    Suggested by {voteResult.winner.suggested_by_name}
+                  </span>
+                </div>
+              </div>
+              {voteResult.movie_created && (
+                <p className="vote-result-scheduled">
+                  Movie night has been scheduled!
+                </p>
+              )}
+            </div>
+            <div className="modal-actions">
+              <button
+                className="btn-primary"
+                onClick={() => setShowVoteResultModal(false)}
+              >
+                Awesome!
+              </button>
+            </div>
           </div>
         </div>
       )}
