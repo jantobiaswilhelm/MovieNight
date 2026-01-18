@@ -4,7 +4,9 @@
   padding: 0;
 }
 
-:root {
+/* ===== DEFAULT THEME: Netflix Dark ===== */
+:root,
+[data-theme="netflix"][data-mode="dark"] {
   /* Background layers */
   --bg-primary: #0a0a0b;
   --bg-secondary: #141416;
@@ -48,6 +50,150 @@
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 20px var(--accent-glow);
+}
+
+/* ===== Netflix Light ===== */
+[data-theme="netflix"][data-mode="light"] {
+  /* Background layers */
+  --bg-primary: #f5f5f5;
+  --bg-secondary: #ffffff;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f0f0f0;
+  --bg-elevated: #e8e8e8;
+
+  /* Text colors */
+  --text-primary: #141414;
+  --text-secondary: #525252;
+  --text-muted: #737373;
+
+  /* Accent colors */
+  --accent: #e50914;
+  --accent-hover: #b20710;
+  --accent-glow: rgba(229, 9, 20, 0.25);
+
+  /* Supporting colors */
+  --success: #16a34a;
+  --warning: #ca8a04;
+  --danger: #dc2626;
+  --info: #2563eb;
+
+  /* Star colors */
+  --star-filled: #ca8a04;
+  --star-empty: #d4d4d8;
+
+  /* Glass effect */
+  --glass-bg: rgba(0, 0, 0, 0.03);
+  --glass-border: rgba(0, 0, 0, 0.08);
+
+  /* Gradients */
+  --gradient-poster: linear-gradient(to top, rgba(245, 245, 245, 0.95) 0%, rgba(245, 245, 245, 0.5) 40%, transparent 100%);
+  --gradient-hero: linear-gradient(to top, var(--bg-primary) 0%, transparent 100%);
+  --gradient-card: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
+
+  /* Border */
+  --border-color: rgba(0, 0, 0, 0.08);
+
+  /* Shadows */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
+  --shadow-glow: 0 0 20px var(--accent-glow);
+}
+
+/* ===== Joker Dark ===== */
+[data-theme="joker"][data-mode="dark"] {
+  /* Background layers */
+  --bg-primary: #0c0a14;
+  --bg-secondary: #14111f;
+  --bg-card: #1a1625;
+  --bg-card-hover: #241e32;
+  --bg-elevated: #2e2640;
+
+  /* Text colors */
+  --text-primary: #ffffff;
+  --text-secondary: #a8a3b8;
+  --text-muted: #6e6880;
+
+  /* Accent colors */
+  --accent: #9333ea;
+  --accent-hover: #a855f7;
+  --accent-glow: rgba(147, 51, 234, 0.4);
+
+  /* Supporting colors */
+  --success: #22c55e;
+  --warning: #eab308;
+  --danger: #ef4444;
+  --info: #3b82f6;
+
+  /* Star colors */
+  --star-filled: #22c55e;
+  --star-empty: #3f3a4a;
+
+  /* Glass effect */
+  --glass-bg: rgba(147, 51, 234, 0.08);
+  --glass-border: rgba(147, 51, 234, 0.15);
+
+  /* Gradients */
+  --gradient-poster: linear-gradient(to top, rgba(12, 10, 20, 0.95) 0%, rgba(12, 10, 20, 0.5) 40%, transparent 100%);
+  --gradient-hero: linear-gradient(to top, var(--bg-primary) 0%, transparent 100%);
+  --gradient-card: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
+
+  /* Border */
+  --border-color: rgba(147, 51, 234, 0.12);
+
+  /* Shadows */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
+  --shadow-glow: 0 0 20px var(--accent-glow);
+}
+
+/* ===== Joker Light ===== */
+[data-theme="joker"][data-mode="light"] {
+  /* Background layers */
+  --bg-primary: #faf5ff;
+  --bg-secondary: #ffffff;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f3e8ff;
+  --bg-elevated: #ede5f7;
+
+  /* Text colors */
+  --text-primary: #1e1b2e;
+  --text-secondary: #5b5470;
+  --text-muted: #7c7590;
+
+  /* Accent colors */
+  --accent: #9333ea;
+  --accent-hover: #7c22c9;
+  --accent-glow: rgba(147, 51, 234, 0.25);
+
+  /* Supporting colors */
+  --success: #16a34a;
+  --warning: #ca8a04;
+  --danger: #dc2626;
+  --info: #2563eb;
+
+  /* Star colors */
+  --star-filled: #16a34a;
+  --star-empty: #d8d3e0;
+
+  /* Glass effect */
+  --glass-bg: rgba(147, 51, 234, 0.05);
+  --glass-border: rgba(147, 51, 234, 0.12);
+
+  /* Gradients */
+  --gradient-poster: linear-gradient(to top, rgba(250, 245, 255, 0.95) 0%, rgba(250, 245, 255, 0.5) 40%, transparent 100%);
+  --gradient-hero: linear-gradient(to top, var(--bg-primary) 0%, transparent 100%);
+  --gradient-card: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
+
+  /* Border */
+  --border-color: rgba(147, 51, 234, 0.1);
+
+  /* Shadows */
+  --shadow-sm: 0 2px 8px rgba(147, 51, 234, 0.06);
+  --shadow-md: 0 4px 16px rgba(147, 51, 234, 0.08);
+  --shadow-lg: 0 8px 32px rgba(147, 51, 234, 0.1);
   --shadow-glow: 0 0 20px var(--accent-glow);
 }
 
