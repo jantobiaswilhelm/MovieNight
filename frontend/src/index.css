@@ -197,6 +197,102 @@
   --shadow-glow: 0 0 20px var(--accent-glow);
 }
 
+/* ===== Forest Dark ===== */
+[data-theme="forest"][data-mode="dark"] {
+  /* Background layers - earthy dark browns */
+  --bg-primary: #1c1917;
+  --bg-secondary: #292524;
+  --bg-card: #352f2b;
+  --bg-card-hover: #44403c;
+  --bg-elevated: #57534e;
+
+  /* Text colors - warm neutrals */
+  --text-primary: #fafaf9;
+  --text-secondary: #d6d3d1;
+  --text-muted: #a8a29e;
+
+  /* Accent colors - sage green */
+  --accent: #84a98c;
+  --accent-hover: #9cb8a3;
+  --accent-glow: rgba(132, 169, 140, 0.4);
+
+  /* Supporting colors */
+  --success: #84a98c;
+  --warning: #d97706;
+  --danger: #dc2626;
+  --info: #78716c;
+
+  /* Star colors - warm amber */
+  --star-filled: #d97706;
+  --star-empty: #44403c;
+
+  /* Glass effect - warm brown */
+  --glass-bg: rgba(120, 113, 108, 0.12);
+  --glass-border: rgba(168, 162, 158, 0.2);
+
+  /* Gradients */
+  --gradient-poster: linear-gradient(to top, rgba(28, 25, 23, 0.95) 0%, rgba(28, 25, 23, 0.5) 40%, transparent 100%);
+  --gradient-hero: linear-gradient(to top, var(--bg-primary) 0%, transparent 100%);
+  --gradient-card: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
+
+  /* Border - sage green tinted */
+  --border-color: rgba(132, 169, 140, 0.2);
+
+  /* Shadows */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 20px var(--accent-glow);
+}
+
+/* ===== Forest Light ===== */
+[data-theme="forest"][data-mode="light"] {
+  /* Background layers - warm creams and beiges */
+  --bg-primary: #faf7f5;
+  --bg-secondary: #f5f0eb;
+  --bg-card: #ffffff;
+  --bg-card-hover: #e8e0d8;
+  --bg-elevated: #d6cdc4;
+
+  /* Text colors - earthy browns */
+  --text-primary: #292524;
+  --text-secondary: #57534e;
+  --text-muted: #78716c;
+
+  /* Accent colors - sage green */
+  --accent: #52796f;
+  --accent-hover: #3a5a50;
+  --accent-glow: rgba(82, 121, 111, 0.25);
+
+  /* Supporting colors */
+  --success: #52796f;
+  --warning: #b45309;
+  --danger: #dc2626;
+  --info: #78716c;
+
+  /* Star colors - warm amber */
+  --star-filled: #b45309;
+  --star-empty: #d6cdc4;
+
+  /* Glass effect - warm */
+  --glass-bg: rgba(120, 113, 108, 0.06);
+  --glass-border: rgba(120, 113, 108, 0.15);
+
+  /* Gradients */
+  --gradient-poster: linear-gradient(to top, rgba(250, 247, 245, 0.95) 0%, rgba(250, 247, 245, 0.5) 40%, transparent 100%);
+  --gradient-hero: linear-gradient(to top, var(--bg-primary) 0%, transparent 100%);
+  --gradient-card: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
+
+  /* Border - sage green tinted */
+  --border-color: rgba(82, 121, 111, 0.15);
+
+  /* Shadows - warm */
+  --shadow-sm: 0 2px 8px rgba(41, 37, 36, 0.06);
+  --shadow-md: 0 4px 16px rgba(41, 37, 36, 0.08);
+  --shadow-lg: 0 8px 32px rgba(41, 37, 36, 0.1);
+  --shadow-glow: 0 0 20px var(--accent-glow);
+}
+
 /* Base Animations */
 @keyframes shimmer {
   0% { background-position: -200% 0; }

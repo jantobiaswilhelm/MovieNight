@@ -38,7 +38,7 @@ export const ThemeProvider = ({ children }) => {
   };
 
   const setThemeByName = (themeName) => {
-    if (themeName === 'netflix' || themeName === 'joker') {
+    if (['netflix', 'joker', 'forest'].includes(themeName)) {
       setTheme(themeName);
     }
   };
