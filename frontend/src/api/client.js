@@ -156,3 +156,15 @@ export const announceFromWishlist = (wishlistId, scheduledAt) =>
     method: 'POST',
     body: JSON.stringify({ wishlist_id: wishlistId, scheduled_at: scheduledAt })
   });
+
+// Attendance
+export const toggleAttendance = (movieId) =>
+  fetchAPI(`/api/movies/${movieId}/attend`, {
+    method: 'POST'
+  });
+
+export const getNextMovieWithAttendees = () =>
+  fetchAPI(`/api/movies/next/with-attendees?guild_id=${GUILD_ID}`);
+
+export const getUpcomingMoviesWithAttendees = (limit = 10) =>
+  fetchAPI(`/api/movies/upcoming/with-attendees?guild_id=${GUILD_ID}&limit=${limit}`);

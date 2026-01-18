@@ -11,7 +11,10 @@ import {
   deleteVotingSession,
   submitSuggestion,
   searchTMDB,
-  getTMDBMovie
+  getTMDBMovie,
+  getNextMovieWithAttendees,
+  getUpcomingMoviesWithAttendees,
+  toggleAttendance
 } from '../api/client';
 import MovieCard from '../components/MovieCard';
 import StarRating from '../components/StarRating';
@@ -41,15 +44,24 @@ const Home = () => {
   const [searching, setSearching] = useState(false);
   const [addingMovie, setAddingMovie] = useState(null);
 
+  // Next movie with attendees
+  const [nextMovieWithAttendees, setNextMovieWithAttendees] = useState(null);
+  const [upcomingWithAttendees, setUpcomingWithAttendees] = useState([]);
+  const [togglingAttendance, setTogglingAttendance] = useState(false);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [moviesData, votingData] = await Promise.all([
+        const [moviesData, votingData, nextMovieData, upcomingData] = await Promise.all([
           getMovies(100, 0),
-          getActiveVoting().catch(() => null)
+          getActiveVoting().catch(() => null),
+          getNextMovieWithAttendees().catch(() => null),
+          getUpcomingMoviesWithAttendees(5).catch(() => [])
         ]);
         setMovies(moviesData);
         setVoting(votingData);
+        setNextMovieWithAttendees(nextMovieData);
+        setUpcomingWithAttendees(upcomingData);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -173,6 +185,26 @@ const Home = () => {
     }
   };
 
+  const handleToggleAttendance = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isAuthenticated || !nextMovieWithAttendees) return;
+
+    setTogglingAttendance(true);
+    try {
+      const result = await toggleAttendance(nextMovieWithAttendees.id);
+      setNextMovieWithAttendees(prev => ({
+        ...prev,
+        attendees: result.attendees,
+        is_attending: result.attending
+      }));
+    } catch (err) {
+      console.error('Error toggling attendance:', err);
+    } finally {
+      setTogglingAttendance(false);
+    }
+  };
+
   const handleAddMovieToVote = async (movie) => {
     if (!voting) return;
 
@@ -236,8 +268,8 @@ const Home = () => {
   // Calculate total votes for percentage
   const totalVotes = voting?.suggestions?.reduce((sum, s) => sum + parseInt(s.vote_count), 0) || 0;
 
-  // Get the next upcoming movie for the hero
-  const nextMovie = upcomingMovies[0];
+  // Get the next upcoming movie for the hero (use the one with attendees if available)
+  const nextMovie = nextMovieWithAttendees || upcomingMovies[0];
 
   const formatDate = (dateStr) => {
     const date = new Date(dateStr);
@@ -318,6 +350,46 @@ const Home = () => {
                     <p className="hero-date">{formatDate(nextMovie.scheduled_at)}</p>
                     {nextMovie.announced_by_name && (
                       <p className="hero-picker">Picked by {nextMovie.announced_by_name}</p>
+                    )}
+                  </div>
+                  {/* Attendance Section */}
+                  <div className="hero-attendance">
+                    <div className="attendance-info">
+                      {nextMovie.attendees && nextMovie.attendees.length > 0 ? (
+                        <>
+                          <div className="attendance-avatars">
+                            {nextMovie.attendees.slice(0, 8).map((attendee) => (
+                              <img
+                                key={attendee.discord_id}
+                                src={attendee.avatar
+                                  ? `https://cdn.discordapp.com/avatars/${attendee.discord_id}/${attendee.avatar}.png?size=32`
+                                  : `https://cdn.discordapp.com/embed/avatars/${parseInt(attendee.discord_id) % 5}.png`
+                                }
+                                alt={attendee.username}
+                                title={attendee.username}
+                                className="attendance-avatar"
+                              />
+                            ))}
+                            {nextMovie.attendees.length > 8 && (
+                              <span className="attendance-overflow">+{nextMovie.attendees.length - 8}</span>
+                            )}
+                          </div>
+                          <span className="attendance-count">
+                            {nextMovie.attendees.length} attending
+                          </span>
+                        </>
+                      ) : (
+                        <span className="attendance-count">No one attending yet</span>
+                      )}
+                    </div>
+                    {isAuthenticated && (
+                      <button
+                        className={`hero-btn ${nextMovie.is_attending ? 'hero-btn-attending' : 'hero-btn-attend'}`}
+                        onClick={handleToggleAttendance}
+                        disabled={togglingAttendance}
+                      >
+                        {togglingAttendance ? '...' : nextMovie.is_attending ? '✓ Attending' : '+ Attend'}
+                      </button>
                     )}
                   </div>
                   {(nextMovie.trailer_url || nextMovie.imdb_id) && (
@@ -529,13 +601,13 @@ const Home = () => {
                 <div className="upcoming-compact">
                   <MovieCardSkeleton />
                 </div>
-              ) : upcomingMovies.length <= 1 ? (
+              ) : upcomingWithAttendees.length <= 1 ? (
                 <div className="empty-state compact">
                   <p>No more upcoming movies.</p>
                 </div>
               ) : (
                 <div className="upcoming-compact">
-                  {upcomingMovies.slice(1, 4).map((movie) => (
+                  {upcomingWithAttendees.slice(1, 4).map((movie) => (
                     <MovieCard key={movie.id} movie={movie} variant="compact" />
                   ))}
                 </div>

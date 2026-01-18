@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getMovie, submitRating, getMyRating, deleteMovie, getSimilarMovies } from '../api/client';
+import { getMovie, submitRating, getMyRating, deleteMovie, getSimilarMovies, toggleAttendance } from '../api/client';
 import RatingInput from '../components/RatingInput';
 import StarRating from '../components/StarRating';
 import './Movie.css';
@@ -18,6 +18,7 @@ const Movie = () => {
   const [deleting, setDeleting] = useState(false);
   const [similarMovies, setSimilarMovies] = useState([]);
   const [loadingSimilar, setLoadingSimilar] = useState(false);
+  const [togglingAttendance, setTogglingAttendance] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -90,6 +91,24 @@ const Movie = () => {
     } catch (err) {
       alert('Failed to delete movie: ' + err.message);
       setDeleting(false);
+    }
+  };
+
+  const handleToggleAttendance = async () => {
+    if (!isAuthenticated) return;
+
+    setTogglingAttendance(true);
+    try {
+      const result = await toggleAttendance(id);
+      setMovie(prev => ({
+        ...prev,
+        attendees: result.attendees,
+        is_attending: result.attending
+      }));
+    } catch (err) {
+      console.error('Error toggling attendance:', err);
+    } finally {
+      setTogglingAttendance(false);
     }
   };
 
@@ -219,10 +238,49 @@ const Movie = () => {
             )}
           </div>
 
-          <p className="movie-date">Watched on {formatDate(movie.scheduled_at)}</p>
+          <p className="movie-date">
+            {movie.started_at ? 'Watched on' : 'Scheduled for'} {formatDate(movie.scheduled_at)}
+          </p>
 
           {movie.announced_by_name && (
             <p className="movie-announcer">Picked by {movie.announced_by_name}</p>
+          )}
+
+          {/* Attendance Section - only for upcoming movies */}
+          {!movie.started_at && (
+            <div className="movie-attendance-section">
+              <div className="movie-attendance-header">
+                <h3>Who's Attending?</h3>
+                {isAuthenticated && (
+                  <button
+                    className={`btn-attend ${movie.is_attending ? 'attending' : ''}`}
+                    onClick={handleToggleAttendance}
+                    disabled={togglingAttendance}
+                  >
+                    {togglingAttendance ? '...' : movie.is_attending ? '✓ Attending' : '+ Attend'}
+                  </button>
+                )}
+              </div>
+              {movie.attendees && movie.attendees.length > 0 ? (
+                <div className="movie-attendees-list">
+                  {movie.attendees.map((attendee) => (
+                    <div key={attendee.discord_id} className="movie-attendee">
+                      <img
+                        src={attendee.avatar
+                          ? `https://cdn.discordapp.com/avatars/${attendee.discord_id}/${attendee.avatar}.png?size=64`
+                          : `https://cdn.discordapp.com/embed/avatars/${parseInt(attendee.discord_id) % 5}.png`
+                        }
+                        alt={attendee.username}
+                        className="movie-attendee-avatar"
+                      />
+                      <span className="movie-attendee-name">{attendee.username}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="movie-no-attendees">No one has confirmed attendance yet.</p>
+              )}
+            </div>
           )}
 
           {isAdmin && (

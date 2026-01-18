@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import StarRating from './StarRating';
 import './MovieCard.css';
 
-const MovieCard = ({ movie, variant = 'horizontal' }) => {
+const MovieCard = ({ movie, variant = 'horizontal', attendees = null }) => {
   const formatDate = (dateStr) => {
     const date = new Date(dateStr);
     return date.toLocaleDateString('en-US', {
@@ -44,6 +44,7 @@ const MovieCard = ({ movie, variant = 'horizontal' }) => {
   }
 
   if (variant === 'compact') {
+    const movieAttendees = attendees || movie.attendees;
     return (
       <Link to={`/movie/${movie.id}`} className="movie-card movie-card--compact">
         {movie.image_url && (
@@ -52,6 +53,27 @@ const MovieCard = ({ movie, variant = 'horizontal' }) => {
         <div className="movie-info-compact">
           <h3 className="movie-title">{movie.title}</h3>
           <p className="movie-date">{formatDate(movie.scheduled_at)}</p>
+          {movieAttendees && movieAttendees.length > 0 && (
+            <div className="compact-attendees">
+              <div className="compact-attendee-avatars">
+                {movieAttendees.slice(0, 4).map((attendee) => (
+                  <img
+                    key={attendee.discord_id}
+                    src={attendee.avatar
+                      ? `https://cdn.discordapp.com/avatars/${attendee.discord_id}/${attendee.avatar}.png?size=32`
+                      : `https://cdn.discordapp.com/embed/avatars/${parseInt(attendee.discord_id) % 5}.png`
+                    }
+                    alt={attendee.username}
+                    title={attendee.username}
+                    className="compact-attendee-avatar"
+                  />
+                ))}
+                {movieAttendees.length > 4 && (
+                  <span className="compact-attendee-overflow">+{movieAttendees.length - 4}</span>
+                )}
+              </div>
+            </div>
+          )}
         </div>
         {avgRating > 0 && (
           <div className="movie-rating-compact">
