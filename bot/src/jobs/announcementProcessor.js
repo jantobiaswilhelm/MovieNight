@@ -6,8 +6,8 @@ import { createAnnouncementEmbed } from '../utils/embeds.js';
 const DEFAULT_CHANNEL_ID = process.env.ANNOUNCEMENT_CHANNEL_ID;
 
 export const startAnnouncementProcessorJob = (client) => {
-  // Run every 30 seconds
-  cron.schedule('*/30 * * * * *', async () => {
+  // Run every 2 minutes
+  cron.schedule('*/2 * * * *', async () => {
     try {
       const pendingAnnouncements = await getPendingAnnouncements();
 
@@ -68,7 +68,7 @@ export const startAnnouncementProcessorJob = (client) => {
     }
   });
 
-  console.log('Announcement processor job scheduled (runs every 30 seconds)');
+  console.log('Announcement processor job scheduled (runs every 2 minutes)');
 };
 
 async function processAnnouncement(client, announcement, channel) {
