@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getMovie, submitRating, getMyRating, deleteMovie } from '../api/client';
+import { getMovie, submitRating, getMyRating, deleteMovie, getSimilarMovies } from '../api/client';
 import RatingInput from '../components/RatingInput';
 import StarRating from '../components/StarRating';
 import './Movie.css';
@@ -16,6 +16,8 @@ const Movie = () => {
   const [error, setError] = useState(null);
   const [ratingMessage, setRatingMessage] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [similarMovies, setSimilarMovies] = useState([]);
+  const [loadingSimilar, setLoadingSimilar] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -40,6 +42,25 @@ const Movie = () => {
 
     fetchData();
   }, [id, isAuthenticated]);
+
+  // Fetch similar movies when movie data is available
+  useEffect(() => {
+    const fetchSimilar = async () => {
+      if (!movie?.tmdb_id) return;
+
+      setLoadingSimilar(true);
+      try {
+        const similar = await getSimilarMovies(movie.tmdb_id);
+        setSimilarMovies(similar);
+      } catch (err) {
+        console.error('Failed to fetch similar movies:', err);
+      } finally {
+        setLoadingSimilar(false);
+      }
+    };
+
+    fetchSimilar();
+  }, [movie?.tmdb_id]);
 
   const handleSubmitRating = async (score) => {
     try {
@@ -277,6 +298,62 @@ const Movie = () => {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Similar Movies Section */}
+      {movie.tmdb_id && (
+        <div className="similar-movies-section">
+          <h2>Similar Movies</h2>
+          {loadingSimilar ? (
+            <div className="similar-loading">Loading similar movies...</div>
+          ) : similarMovies.length > 0 ? (
+            <div className="similar-movies-grid">
+              {similarMovies.map((similar) => (
+                <div key={similar.id} className="similar-movie-card">
+                  {similar.posterPath ? (
+                    <img
+                      src={similar.posterPath}
+                      alt={similar.title}
+                      className="similar-movie-poster"
+                    />
+                  ) : (
+                    <div className="similar-movie-no-poster">No Image</div>
+                  )}
+                  <div className="similar-movie-info">
+                    <h3 className="similar-movie-title">{similar.title}</h3>
+                    {similar.year && (
+                      <span className="similar-movie-year">{similar.year}</span>
+                    )}
+                    <div className="similar-movie-links">
+                      {similar.imdbId && (
+                        <a
+                          href={`https://www.imdb.com/title/${similar.imdbId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="similar-link imdb"
+                        >
+                          IMDb
+                        </a>
+                      )}
+                      {similar.trailerUrl && (
+                        <a
+                          href={similar.trailerUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="similar-link trailer"
+                        >
+                          Trailer
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="similar-empty">No similar movies found</div>
+          )}
         </div>
       )}
     </div>
