@@ -149,6 +149,7 @@ router.post('/announce', authenticateToken, async (req, res) => {
       guildId: wishlistItem.guild_id,
       channelId: null, // Bot will use default channel
       userId: req.user.id,
+      wishlistId: parseInt(wishlist_id),
       title: wishlistItem.release_year
         ? `${wishlistItem.title} (${wishlistItem.release_year})`
         : wishlistItem.title,
@@ -164,6 +165,9 @@ router.post('/announce', authenticateToken, async (req, res) => {
       trailerUrl: wishlistItem.trailer_url,
       scheduledAt: scheduledDate
     });
+
+    // Remove from wishlist immediately to prevent duplicate scheduling
+    await db.removeFromWishlistById(parseInt(wishlist_id));
 
     res.json(announcement);
   } catch (err) {

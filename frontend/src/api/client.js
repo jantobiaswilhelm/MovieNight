@@ -70,10 +70,27 @@ export const getUserStats = (userId) => fetchAPI(`/api/stats/user/${userId}`);
 export const getActiveVoting = () =>
   fetchAPI(`/api/voting/active?guild_id=${GUILD_ID}`);
 
-export const submitSuggestion = (sessionId, title, imageUrl) =>
+export const createVotingSession = (scheduledAt) =>
+  fetchAPI('/api/voting', {
+    method: 'POST',
+    body: JSON.stringify({ scheduled_at: scheduledAt, guild_id: GUILD_ID })
+  });
+
+export const closeVotingSession = (sessionId, createMovie = true) =>
+  fetchAPI(`/api/voting/${sessionId}/close`, {
+    method: 'POST',
+    body: JSON.stringify({ create_movie: createMovie })
+  });
+
+export const deleteVotingSession = (sessionId) =>
+  fetchAPI(`/api/voting/${sessionId}`, {
+    method: 'DELETE'
+  });
+
+export const submitSuggestion = (sessionId, title, imageUrl, tmdbData = null) =>
   fetchAPI(`/api/voting/${sessionId}/suggestions`, {
     method: 'POST',
-    body: JSON.stringify({ title, image_url: imageUrl })
+    body: JSON.stringify({ title, image_url: imageUrl, tmdb_data: tmdbData })
   });
 
 export const castVote = (suggestionId) =>

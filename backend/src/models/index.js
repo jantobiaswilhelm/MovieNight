@@ -317,12 +317,13 @@ export const updateVotingSessionSchedule = async (id, scheduledAt) => {
 };
 
 // Suggestion operations
-export const createSuggestion = async (votingSessionId, title, imageUrl, suggestedBy) => {
+export const createSuggestion = async (votingSessionId, title, imageUrl, suggestedBy, tmdbData = {}) => {
+  const { description, tmdbId, tmdbRating, genres, runtime, releaseYear, backdropUrl, tagline, imdbId, originalLanguage, collectionName, trailerUrl } = tmdbData;
   const result = await pool.query(
-    `INSERT INTO movie_suggestions (voting_session_id, title, image_url, suggested_by)
-     VALUES ($1, $2, $3, $4)
+    `INSERT INTO movie_suggestions (voting_session_id, title, image_url, suggested_by, description, tmdb_id, tmdb_rating, genres, runtime, release_year, backdrop_url, tagline, imdb_id, original_language, collection_name, trailer_url)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
      RETURNING *`,
-    [votingSessionId, title, imageUrl, suggestedBy]
+    [votingSessionId, title, imageUrl, suggestedBy, description || null, tmdbId || null, tmdbRating || null, genres || null, runtime || null, releaseYear || null, backdropUrl || null, tagline || null, imdbId || null, originalLanguage || null, collectionName || null, trailerUrl || null]
   );
   return result.rows[0];
 };
@@ -421,6 +422,23 @@ export const deleteSuggestion = async (suggestionId) => {
   const result = await pool.query(
     'DELETE FROM movie_suggestions WHERE id = $1 RETURNING *',
     [suggestionId]
+  );
+  return result.rows[0];
+};
+
+export const deleteVotingSession = async (sessionId) => {
+  // Delete all votes for suggestions in this session
+  await pool.query(
+    `DELETE FROM votes WHERE suggestion_id IN
+     (SELECT id FROM movie_suggestions WHERE voting_session_id = $1)`,
+    [sessionId]
+  );
+  // Delete all suggestions
+  await pool.query('DELETE FROM movie_suggestions WHERE voting_session_id = $1', [sessionId]);
+  // Delete the session
+  const result = await pool.query(
+    'DELETE FROM voting_sessions WHERE id = $1 RETURNING *',
+    [sessionId]
   );
   return result.rows[0];
 };
@@ -533,6 +551,14 @@ export const removeFromWishlist = async (id, userId) => {
   return result.rows[0];
 };
 
+export const removeFromWishlistById = async (id) => {
+  const result = await pool.query(
+    `DELETE FROM wishlists WHERE id = $1 RETURNING *`,
+    [id]
+  );
+  return result.rows[0];
+};
+
 export const getWishlistItem = async (userId, tmdbId, guildId) => {
   const result = await pool.query(
     `SELECT * FROM wishlists WHERE user_id = $1 AND tmdb_id = $2 AND guild_id = $3`,
@@ -555,10 +581,10 @@ export const getWishlistById = async (id) => {
 // Pending announcement operations
 export const createPendingAnnouncement = async (data) => {
   const result = await pool.query(
-    `INSERT INTO pending_announcements (guild_id, channel_id, user_id, title, image_url, backdrop_url, description, tmdb_id, imdb_id, tmdb_rating, genres, runtime, release_year, trailer_url, scheduled_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+    `INSERT INTO pending_announcements (guild_id, channel_id, user_id, wishlist_id, title, image_url, backdrop_url, description, tmdb_id, imdb_id, tmdb_rating, genres, runtime, release_year, trailer_url, scheduled_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
      RETURNING *`,
-    [data.guildId, data.channelId, data.userId, data.title, data.imageUrl, data.backdropUrl, data.description, data.tmdbId, data.imdbId, data.tmdbRating, data.genres, data.runtime, data.releaseYear, data.trailerUrl, data.scheduledAt]
+    [data.guildId, data.channelId, data.userId, data.wishlistId || null, data.title, data.imageUrl, data.backdropUrl, data.description, data.tmdbId, data.imdbId, data.tmdbRating, data.genres, data.runtime, data.releaseYear, data.trailerUrl, data.scheduledAt]
   );
   return result.rows[0];
 };

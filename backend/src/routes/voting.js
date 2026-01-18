@@ -1,8 +1,19 @@
 import { Router } from 'express';
 import { authenticateToken, optionalAuth } from '../middleware/auth.js';
+import { isAdmin } from '../utils/admin.js';
 import * as db from '../models/index.js';
 
 const router = Router();
+
+const GUILD_ID = process.env.GUILD_ID;
+
+// Admin middleware
+const requireAdmin = (req, res, next) => {
+  if (!req.user || !isAdmin(req.user.discord_id)) {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+  next();
+};
 
 // Get active voting session for a guild
 router.get('/active', optionalAuth, async (req, res) => {
@@ -86,10 +97,132 @@ router.get('/:id', optionalAuth, async (req, res) => {
   }
 });
 
+// Create a new voting session (admin only)
+router.post('/', authenticateToken, requireAdmin, async (req, res) => {
+  const { scheduled_at, guild_id } = req.body;
+
+  const guildId = guild_id || GUILD_ID;
+  if (!guildId) {
+    return res.status(400).json({ error: 'guild_id is required' });
+  }
+
+  if (!scheduled_at) {
+    return res.status(400).json({ error: 'scheduled_at is required' });
+  }
+
+  const scheduledDate = new Date(scheduled_at);
+  if (isNaN(scheduledDate.getTime())) {
+    return res.status(400).json({ error: 'Invalid scheduled_at date' });
+  }
+
+  try {
+    // Check if there's already an active voting session
+    const existingSession = await db.getActiveVotingSession(guildId);
+    if (existingSession) {
+      return res.status(400).json({ error: 'An active voting session already exists' });
+    }
+
+    // Create the voting session (no message_id since it's from web)
+    const session = await db.createVotingSession(
+      guildId,
+      null, // channel_id - not applicable for web
+      null, // message_id - not applicable for web
+      scheduledDate,
+      req.user.id
+    );
+
+    res.json(session);
+  } catch (err) {
+    console.error('Error creating voting session:', err);
+    res.status(500).json({ error: 'Failed to create voting session' });
+  }
+});
+
+// Close voting and optionally create movie night (admin only)
+router.post('/:id/close', authenticateToken, requireAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { create_movie } = req.body;
+
+  try {
+    const session = await db.getVotingSessionById(parseInt(id));
+
+    if (!session) {
+      return res.status(404).json({ error: 'Voting session not found' });
+    }
+
+    if (session.status !== 'open') {
+      return res.status(400).json({ error: 'Voting session is already closed' });
+    }
+
+    // Get the winner (most voted suggestion)
+    const winner = await db.getWinningSuggestion(parseInt(id));
+
+    if (!winner) {
+      // No suggestions, just close the session
+      await db.closeVotingSession(parseInt(id), null);
+      return res.json({ success: true, message: 'Voting closed with no winner', winner: null });
+    }
+
+    // Close the session with the winner
+    await db.closeVotingSession(parseInt(id), winner.id);
+
+    // Optionally create a movie night from the winner
+    if (create_movie && winner) {
+      await db.createPendingAnnouncement({
+        guildId: session.guild_id,
+        channelId: null,
+        userId: winner.suggested_by,
+        title: winner.release_year
+          ? `${winner.title} (${winner.release_year})`
+          : winner.title,
+        imageUrl: winner.image_url,
+        backdropUrl: winner.backdrop_url,
+        description: winner.description,
+        tmdbId: winner.tmdb_id,
+        imdbId: winner.imdb_id,
+        tmdbRating: winner.tmdb_rating,
+        genres: winner.genres,
+        runtime: winner.runtime,
+        releaseYear: winner.release_year,
+        trailerUrl: winner.trailer_url,
+        scheduledAt: session.scheduled_at
+      });
+    }
+
+    res.json({
+      success: true,
+      winner: winner,
+      movie_created: create_movie && winner ? true : false
+    });
+  } catch (err) {
+    console.error('Error closing voting session:', err);
+    res.status(500).json({ error: 'Failed to close voting session' });
+  }
+});
+
+// Delete/cancel a voting session (admin only)
+router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const session = await db.getVotingSessionById(parseInt(id));
+
+    if (!session) {
+      return res.status(404).json({ error: 'Voting session not found' });
+    }
+
+    await db.deleteVotingSession(parseInt(id));
+    res.json({ success: true, deleted: session });
+  } catch (err) {
+    console.error('Error deleting voting session:', err);
+    res.status(500).json({ error: 'Failed to delete voting session' });
+  }
+});
+
 // Submit a suggestion (requires auth)
 router.post('/:id/suggestions', authenticateToken, async (req, res) => {
   const { id } = req.params;
-  const { title, image_url } = req.body;
+  const { title, image_url, tmdb_data } = req.body;
 
   if (!title) {
     return res.status(400).json({ error: 'Title is required' });
@@ -114,7 +247,8 @@ router.post('/:id/suggestions', authenticateToken, async (req, res) => {
       parseInt(id),
       title,
       image_url,
-      req.user.id
+      req.user.id,
+      tmdb_data || {}
     );
 
     res.json(suggestion);

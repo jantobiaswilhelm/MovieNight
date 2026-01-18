@@ -1,7 +1,18 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getMovies, getActiveVoting, castVote, deleteSuggestion } from '../api/client';
+import {
+  getMovies,
+  getActiveVoting,
+  castVote,
+  deleteSuggestion,
+  createVotingSession,
+  closeVotingSession,
+  deleteVotingSession,
+  submitSuggestion,
+  searchTMDB,
+  getTMDBMovie
+} from '../api/client';
 import MovieCard from '../components/MovieCard';
 import StarRating from '../components/StarRating';
 import { MovieCardSkeleton } from '../components/Skeleton';
@@ -15,6 +26,20 @@ const Home = () => {
   const [error, setError] = useState(null);
   const [votingLoading, setVotingLoading] = useState(false);
   const [deletingSuggestion, setDeletingSuggestion] = useState(null);
+
+  // Voting management state
+  const [showStartVoteModal, setShowStartVoteModal] = useState(false);
+  const [showAddMovieModal, setShowAddMovieModal] = useState(false);
+  const [voteDate, setVoteDate] = useState('');
+  const [voteTime, setVoteTime] = useState('20:00');
+  const [creatingVote, setCreatingVote] = useState(false);
+  const [endingVote, setEndingVote] = useState(false);
+
+  // Movie search state
+  const [movieSearch, setMovieSearch] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const [addingMovie, setAddingMovie] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -69,6 +94,120 @@ const Home = () => {
       alert('Failed to delete suggestion');
     } finally {
       setDeletingSuggestion(null);
+    }
+  };
+
+  const handleStartVote = async (e) => {
+    e.preventDefault();
+    if (!voteDate) {
+      alert('Please select a date');
+      return;
+    }
+
+    setCreatingVote(true);
+    try {
+      const scheduledAt = new Date(`${voteDate}T${voteTime}`);
+      await createVotingSession(scheduledAt.toISOString());
+      const votingData = await getActiveVoting();
+      setVoting(votingData);
+      setShowStartVoteModal(false);
+      setVoteDate('');
+      setVoteTime('20:00');
+    } catch (err) {
+      console.error('Error creating vote:', err);
+      alert('Failed to create vote: ' + err.message);
+    } finally {
+      setCreatingVote(false);
+    }
+  };
+
+  const handleEndVote = async () => {
+    if (!voting) return;
+    if (!confirm('End voting and schedule the winning movie?')) return;
+
+    setEndingVote(true);
+    try {
+      await closeVotingSession(voting.id, true);
+      const votingData = await getActiveVoting();
+      setVoting(votingData);
+      // Refresh movies list
+      const moviesData = await getMovies(100, 0);
+      setMovies(moviesData);
+    } catch (err) {
+      console.error('Error ending vote:', err);
+      alert('Failed to end vote: ' + err.message);
+    } finally {
+      setEndingVote(false);
+    }
+  };
+
+  const handleCancelVote = async () => {
+    if (!voting) return;
+    if (!confirm('Cancel voting? This will delete all suggestions and votes.')) return;
+
+    setEndingVote(true);
+    try {
+      await deleteVotingSession(voting.id);
+      setVoting(null);
+    } catch (err) {
+      console.error('Error canceling vote:', err);
+      alert('Failed to cancel vote: ' + err.message);
+    } finally {
+      setEndingVote(false);
+    }
+  };
+
+  const handleSearchMovies = async (e) => {
+    e.preventDefault();
+    if (!movieSearch.trim()) return;
+
+    setSearching(true);
+    try {
+      const results = await searchTMDB(movieSearch);
+      setSearchResults(results);
+    } catch (err) {
+      console.error('Error searching movies:', err);
+      alert('Failed to search movies');
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const handleAddMovieToVote = async (movie) => {
+    if (!voting) return;
+
+    setAddingMovie(movie.id);
+    try {
+      // Get full movie details
+      const details = await getTMDBMovie(movie.id);
+
+      // Submit suggestion with TMDB data
+      await submitSuggestion(voting.id, details.title, details.posterPath, {
+        description: details.overview,
+        tmdbId: details.id,
+        tmdbRating: details.rating,
+        genres: details.genres,
+        runtime: details.runtime,
+        releaseYear: details.year,
+        backdropUrl: details.backdropPath,
+        tagline: details.tagline,
+        imdbId: details.imdbId,
+        originalLanguage: details.originalLanguage,
+        collectionName: details.collectionName,
+        trailerUrl: details.trailerUrl
+      });
+
+      // Refresh voting data
+      const votingData = await getActiveVoting();
+      setVoting(votingData);
+      setShowAddMovieModal(false);
+      setMovieSearch('');
+      setSearchResults([]);
+    } catch (err) {
+      console.error('Error adding movie:', err);
+      alert('Failed to add movie: ' + err.message);
+    } finally {
+      setAddingMovie(null);
     }
   };
 
@@ -231,15 +370,43 @@ const Home = () => {
             <section className="home-section voting-section">
               <div className="section-header">
                 <h2>Vote for Next Movie</h2>
-                {voting.scheduled_at && (
-                  <span className="voting-date">
-                    {new Date(voting.scheduled_at).toLocaleDateString('en-US', {
-                      weekday: 'short',
-                      month: 'short',
-                      day: 'numeric'
-                    })}
-                  </span>
-                )}
+                <div className="voting-header-actions">
+                  {voting.scheduled_at && (
+                    <span className="voting-date">
+                      {new Date(voting.scheduled_at).toLocaleDateString('en-US', {
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric'
+                      })}
+                    </span>
+                  )}
+                  {isAuthenticated && (
+                    <button
+                      className="btn-secondary btn-small"
+                      onClick={() => setShowAddMovieModal(true)}
+                    >
+                      + Add Movie
+                    </button>
+                  )}
+                  {isAdmin && (
+                    <>
+                      <button
+                        className="btn-primary btn-small"
+                        onClick={handleEndVote}
+                        disabled={endingVote}
+                      >
+                        {endingVote ? 'Ending...' : 'End Vote'}
+                      </button>
+                      <button
+                        className="btn-danger btn-small"
+                        onClick={handleCancelVote}
+                        disabled={endingVote}
+                      >
+                        Cancel
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
               <div className="voting-active">
                 {voting.suggestions && voting.suggestions.length > 0 ? (
@@ -304,7 +471,16 @@ const Home = () => {
                   </div>
                 ) : (
                   <div className="empty-state compact">
-                    <p>No suggestions yet! Use <code>/suggest</code> in Discord.</p>
+                    <p>No suggestions yet!</p>
+                    {isAuthenticated && (
+                      <button
+                        className="btn-primary"
+                        onClick={() => setShowAddMovieModal(true)}
+                        style={{ marginTop: '1rem' }}
+                      >
+                        + Add First Movie
+                      </button>
+                    )}
                   </div>
                 )}
                 {!isAuthenticated && voting.suggestions?.length > 0 && (
@@ -319,12 +495,24 @@ const Home = () => {
             <section className="home-section voting-section">
               <div className="section-header">
                 <h2>Vote for Next Movie</h2>
+                {isAdmin && (
+                  <button
+                    className="btn-primary btn-small"
+                    onClick={() => setShowStartVoteModal(true)}
+                  >
+                    Start Vote
+                  </button>
+                )}
               </div>
               <div className="voting-placeholder">
                 <div className="voting-card">
                   <div className="voting-icon">🗳️</div>
                   <h3>No Active Voting</h3>
-                  <p>Use <code>/startvote</code> in Discord to start!</p>
+                  {isAdmin ? (
+                    <p>Click "Start Vote" to begin a new voting session.</p>
+                  ) : (
+                    <p>Check back soon for the next vote!</p>
+                  )}
                 </div>
               </div>
             </section>
@@ -395,6 +583,101 @@ const Home = () => {
           </div>
         </div>
       </div>
+
+      {/* Start Vote Modal */}
+      {showStartVoteModal && (
+        <div className="modal-overlay" onClick={() => setShowStartVoteModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Start New Vote</h2>
+              <button className="modal-close" onClick={() => setShowStartVoteModal(false)}>×</button>
+            </div>
+            <form onSubmit={handleStartVote}>
+              <div className="form-group">
+                <label>Movie Night Date</label>
+                <input
+                  type="date"
+                  value={voteDate}
+                  onChange={(e) => setVoteDate(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Time</label>
+                <input
+                  type="time"
+                  value={voteTime}
+                  onChange={(e) => setVoteTime(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="modal-actions">
+                <button type="button" className="btn-secondary" onClick={() => setShowStartVoteModal(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary" disabled={creatingVote}>
+                  {creatingVote ? 'Creating...' : 'Start Vote'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Movie Modal */}
+      {showAddMovieModal && (
+        <div className="modal-overlay" onClick={() => setShowAddMovieModal(false)}>
+          <div className="modal-content modal-large" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Add Movie to Vote</h2>
+              <button className="modal-close" onClick={() => setShowAddMovieModal(false)}>×</button>
+            </div>
+            <form onSubmit={handleSearchMovies} className="search-form">
+              <input
+                type="text"
+                placeholder="Search for a movie..."
+                value={movieSearch}
+                onChange={(e) => setMovieSearch(e.target.value)}
+                autoFocus
+              />
+              <button type="submit" className="btn-primary" disabled={searching}>
+                {searching ? 'Searching...' : 'Search'}
+              </button>
+            </form>
+            {searchResults.length > 0 && (
+              <div className="search-results">
+                {searchResults.map((movie) => (
+                  <div
+                    key={movie.id}
+                    className="search-result-item"
+                    onClick={() => handleAddMovieToVote(movie)}
+                  >
+                    {movie.posterPath ? (
+                      <img src={movie.posterPath} alt="" className="result-poster" />
+                    ) : (
+                      <div className="result-poster no-poster">No Image</div>
+                    )}
+                    <div className="result-info">
+                      <span className="result-title">{movie.title}</span>
+                      <span className="result-year">{movie.year}</span>
+                      {movie.rating && (
+                        <span className="result-rating">TMDB: {movie.rating}</span>
+                      )}
+                    </div>
+                    <button
+                      className="btn-primary btn-small"
+                      disabled={addingMovie === movie.id}
+                    >
+                      {addingMovie === movie.id ? 'Adding...' : 'Add'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
