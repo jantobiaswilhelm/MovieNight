@@ -18,6 +18,8 @@ const WishlistPage = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [showAnnounceModal, setShowAnnounceModal] = useState(false);
+  const [randomMovie, setRandomMovie] = useState(null);
+  const [showRandomModal, setShowRandomModal] = useState(false);
 
   const fetchWishlist = async () => {
     setLoading(true);
@@ -76,10 +78,39 @@ const WishlistPage = () => {
   };
 
   const handleAnnounced = (item) => {
-    // Optionally remove from wishlist after announcing
-    // For now, just close the modal
+    // Remove from wishlist after announcing and close modal
+    if (item) {
+      handleRemove(item.id);
+    }
     setShowAnnounceModal(false);
     setSelectedItem(null);
+    setRandomMovie(null);
+    setShowRandomModal(false);
+  };
+
+  const pickRandomMovie = () => {
+    if (items.length === 0) return;
+    const randomIndex = Math.floor(Math.random() * items.length);
+    setRandomMovie(items[randomIndex]);
+    setShowRandomModal(true);
+  };
+
+  const rerollRandomMovie = () => {
+    if (items.length <= 1) return;
+    let newIndex;
+    let newMovie;
+    // Ensure we pick a different movie
+    do {
+      newIndex = Math.floor(Math.random() * items.length);
+      newMovie = items[newIndex];
+    } while (newMovie.id === randomMovie?.id && items.length > 1);
+    setRandomMovie(newMovie);
+  };
+
+  const handleScheduleRandom = () => {
+    setShowRandomModal(false);
+    setSelectedItem(randomMovie);
+    setShowAnnounceModal(true);
   };
 
   const groupedItems = groupByUser
@@ -108,14 +139,24 @@ const WishlistPage = () => {
       <div className="wishlist-header">
         <h1>Wishlist</h1>
 
-        {isAuthenticated && (
-          <button
-            className="btn-primary add-movie-btn"
-            onClick={() => setShowAddModal(true)}
-          >
-            + Add Movie
-          </button>
-        )}
+        <div className="wishlist-header-actions">
+          {items.length > 0 && (
+            <button
+              className="btn-secondary random-pick-btn"
+              onClick={pickRandomMovie}
+            >
+              🎲 Pick Random
+            </button>
+          )}
+          {isAuthenticated && (
+            <button
+              className="btn-primary add-movie-btn"
+              onClick={() => setShowAddModal(true)}
+            >
+              + Add Movie
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="wishlist-controls">
@@ -244,6 +285,66 @@ const WishlistPage = () => {
         }}
         onAnnounced={handleAnnounced}
       />
+
+      {/* Random Movie Picker Modal */}
+      {showRandomModal && randomMovie && (
+        <div className="modal-overlay" onClick={() => setShowRandomModal(false)}>
+          <div className="modal-content random-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>🎲 Random Pick</h2>
+              <button className="modal-close" onClick={() => setShowRandomModal(false)}>×</button>
+            </div>
+            <div className="random-movie-display">
+              {randomMovie.image_url && (
+                <img
+                  src={randomMovie.image_url}
+                  alt={randomMovie.title}
+                  className="random-movie-poster"
+                />
+              )}
+              <div className="random-movie-info">
+                <h3 className="random-movie-title">{randomMovie.title}</h3>
+                {randomMovie.release_year && (
+                  <span className="random-movie-year">{randomMovie.release_year}</span>
+                )}
+                {randomMovie.tmdb_rating && (
+                  <span className="random-movie-rating">⭐ {randomMovie.tmdb_rating.toFixed(1)}</span>
+                )}
+                {randomMovie.genres && (
+                  <div className="random-movie-genres">
+                    {randomMovie.genres.split(',').slice(0, 3).map((genre, i) => (
+                      <span key={i} className="genre-tag">{genre.trim()}</span>
+                    ))}
+                  </div>
+                )}
+                {randomMovie.description && (
+                  <p className="random-movie-description">{randomMovie.description}</p>
+                )}
+                {activeTab === 'guild' && randomMovie.username && (
+                  <span className="random-movie-user">Added by {randomMovie.username}</span>
+                )}
+              </div>
+            </div>
+            <div className="random-modal-actions">
+              <button
+                className="btn-secondary"
+                onClick={rerollRandomMovie}
+                disabled={items.length <= 1}
+              >
+                🎲 Reroll
+              </button>
+              {isAuthenticated && (
+                <button
+                  className="btn-primary"
+                  onClick={handleScheduleRandom}
+                >
+                  📅 Schedule This Movie
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

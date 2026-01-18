@@ -207,6 +207,7 @@ const migrate = async () => {
         guild_id VARCHAR(20) NOT NULL,
         channel_id VARCHAR(20),
         user_id INTEGER REFERENCES users(id),
+        wishlist_id INTEGER REFERENCES wishlists(id) ON DELETE SET NULL,
         title VARCHAR(255) NOT NULL,
         image_url VARCHAR(500),
         backdrop_url VARCHAR(500),
@@ -223,6 +224,16 @@ const migrate = async () => {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         processed_at TIMESTAMP
       )
+    `);
+
+    // Add wishlist_id column if it doesn't exist (for existing databases)
+    await client.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'pending_announcements' AND column_name = 'wishlist_id') THEN
+          ALTER TABLE pending_announcements ADD COLUMN wishlist_id INTEGER REFERENCES wishlists(id) ON DELETE SET NULL;
+        END IF;
+      END $$;
     `);
 
     // Indexes
