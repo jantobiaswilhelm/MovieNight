@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import ThemeSwitcher from './ThemeSwitcher';
 import './Header.css';
 
 const Header = () => {
@@ -25,6 +26,8 @@ const Header = () => {
           <Link to="/commands">Commands</Link>
           {isAuthenticated && <Link to="/profile">My Ratings</Link>}
         </nav>
+
+        <ThemeSwitcher />
 
         <div className="auth">
           {isAuthenticated ? (
