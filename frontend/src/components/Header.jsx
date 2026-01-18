@@ -14,13 +14,12 @@ const Header = () => {
     <header className="header">
       <div className="container header-content">
         <Link to="/" className="logo">
-          Movie Night
+          OnlyFans Movie Night
         </Link>
 
         <nav className="nav">
           <Link to="/">Home</Link>
           <Link to="/movies">Movies</Link>
-          <Link to="/calendar">Calendar</Link>
           <Link to="/wishlist">Wishlist</Link>
           <Link to="/stats">Stats</Link>
           <Link to="/commands">Commands</Link>

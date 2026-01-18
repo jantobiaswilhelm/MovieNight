@@ -23,6 +23,8 @@ const MoviesPage = () => {
   const [selectedMonth, setSelectedMonth] = useState('');
   const [sortBy, setSortBy] = useState('newest');
   const [deleting, setDeleting] = useState(null);
+  const [viewMode, setViewMode] = useState('list');
+  const [calendarDate, setCalendarDate] = useState(new Date());
 
   const fetchMovies = async () => {
     try {
@@ -135,6 +137,94 @@ const MoviesPage = () => {
     });
   };
 
+  // Calendar helpers
+  const getDaysInMonth = (date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    return new Date(year, month + 1, 0).getDate();
+  };
+
+  const getFirstDayOfMonth = (date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    return new Date(year, month, 1).getDay();
+  };
+
+  const getMoviesForDate = (day) => {
+    const year = calendarDate.getFullYear();
+    const month = calendarDate.getMonth();
+
+    return movies.filter(movie => {
+      const movieDate = new Date(movie.scheduled_at);
+      return movieDate.getFullYear() === year &&
+             movieDate.getMonth() === month &&
+             movieDate.getDate() === day;
+    });
+  };
+
+  const previousMonth = () => {
+    setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1));
+  };
+
+  const nextMonth = () => {
+    setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1));
+  };
+
+  const goToToday = () => {
+    setCalendarDate(new Date());
+  };
+
+  const formatMonthYear = (date) => {
+    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  };
+
+  const isToday = (day) => {
+    const today = new Date();
+    return today.getFullYear() === calendarDate.getFullYear() &&
+           today.getMonth() === calendarDate.getMonth() &&
+           today.getDate() === day;
+  };
+
+  const renderCalendar = () => {
+    const daysInMonth = getDaysInMonth(calendarDate);
+    const firstDay = getFirstDayOfMonth(calendarDate);
+    const days = [];
+
+    // Empty cells for days before the first day of the month
+    for (let i = 0; i < firstDay; i++) {
+      days.push(<div key={`empty-${i}`} className="calendar-day empty"></div>);
+    }
+
+    // Days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dayMovies = getMoviesForDate(day);
+      const hasMovies = dayMovies.length > 0;
+
+      days.push(
+        <div
+          key={day}
+          className={`calendar-day ${isToday(day) ? 'today' : ''} ${hasMovies ? 'has-movies' : ''}`}
+        >
+          <span className="day-number">{day}</span>
+          {dayMovies.map(movie => (
+            <Link
+              key={movie.id}
+              to={`/movie/${movie.id}`}
+              className="calendar-movie"
+            >
+              {movie.image_url && (
+                <img src={movie.image_url} alt="" className="calendar-movie-thumb" />
+              )}
+              <span className="calendar-movie-title">{movie.title}</span>
+            </Link>
+          ))}
+        </div>
+      );
+    }
+
+    return days;
+  };
+
   if (loading) {
     return <div className="loading">Loading movies...</div>;
   }
@@ -145,92 +235,136 @@ const MoviesPage = () => {
 
   return (
     <div className="movies-page">
-      <h1>All Movies</h1>
-
-      <div className="filters-bar">
-        <div className="search-box">
-          <input
-            type="text"
-            placeholder="Search movies..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="search-input"
-          />
-        </div>
-
-        <div className="filter-group">
-          <select
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-            className="filter-select"
+      <div className="movies-header">
+        <h1>All Movies</h1>
+        <div className="view-toggle">
+          <button
+            className={`view-btn ${viewMode === 'list' ? 'active' : ''}`}
+            onClick={() => setViewMode('list')}
           >
-            <option value="">All Months</option>
-            {availableMonths.map((m) => (
-              <option key={m} value={m}>{formatMonth(m)}</option>
-            ))}
-          </select>
-
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="filter-select"
+            List
+          </button>
+          <button
+            className={`view-btn ${viewMode === 'calendar' ? 'active' : ''}`}
+            onClick={() => setViewMode('calendar')}
           >
-            {SORT_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
+            Calendar
+          </button>
         </div>
       </div>
 
-      <div className="results-count">
-        {filteredAndSortedMovies.length} movie{filteredAndSortedMovies.length !== 1 ? 's' : ''} found
-      </div>
+      {viewMode === 'list' ? (
+        <>
+          <div className="filters-bar">
+            <div className="search-box">
+              <input
+                type="text"
+                placeholder="Search movies..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="search-input"
+              />
+            </div>
 
-      {filteredAndSortedMovies.length === 0 ? (
-        <div className="empty-state">
-          <p>No movies found matching your criteria.</p>
-        </div>
-      ) : (
-        <div className="movies-grid">
-          {filteredAndSortedMovies.map((movie) => (
-            <div key={movie.id} className="movie-card-wrapper">
-              <Link to={`/movie/${movie.id}`} className="movie-card">
-                <div className="movie-poster">
-                  {movie.image_url ? (
-                    <img src={movie.image_url} alt={movie.title} />
-                  ) : (
-                    <div className="no-poster">No Image</div>
+            <div className="filter-group">
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className="filter-select"
+              >
+                <option value="">All Months</option>
+                {availableMonths.map((m) => (
+                  <option key={m} value={m}>{formatMonth(m)}</option>
+                ))}
+              </select>
+
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="filter-select"
+              >
+                {SORT_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="results-count">
+            {filteredAndSortedMovies.length} movie{filteredAndSortedMovies.length !== 1 ? 's' : ''} found
+          </div>
+
+          {filteredAndSortedMovies.length === 0 ? (
+            <div className="empty-state">
+              <p>No movies found matching your criteria.</p>
+            </div>
+          ) : (
+            <div className="movies-grid">
+              {filteredAndSortedMovies.map((movie) => (
+                <div key={movie.id} className="movie-card-wrapper">
+                  <Link to={`/movie/${movie.id}`} className="movie-card">
+                    <div className="movie-poster">
+                      {movie.image_url ? (
+                        <img src={movie.image_url} alt={movie.title} />
+                      ) : (
+                        <div className="no-poster">No Image</div>
+                      )}
+                    </div>
+                    <div className="movie-details">
+                      <h3 className="movie-title">{movie.title}</h3>
+                      <div className="movie-meta">
+                        <span className="movie-date">{formatDate(movie.scheduled_at)}</span>
+                        <span className="movie-stats">
+                          {parseFloat(movie.avg_rating || 0) > 0 ? (
+                            <>
+                              <span className="rating">{parseFloat(movie.avg_rating).toFixed(1)}</span>
+                              <span className="votes">({movie.rating_count} votes)</span>
+                            </>
+                          ) : (
+                            <span className="no-rating">No ratings</span>
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                  {isAdmin && (
+                    <button
+                      className="delete-btn"
+                      onClick={(e) => handleDelete(e, movie.id, movie.title)}
+                      disabled={deleting === movie.id}
+                      title="Delete movie"
+                    >
+                      {deleting === movie.id ? '...' : '×'}
+                    </button>
                   )}
                 </div>
-                <div className="movie-details">
-                  <h3 className="movie-title">{movie.title}</h3>
-                  <div className="movie-meta">
-                    <span className="movie-date">{formatDate(movie.scheduled_at)}</span>
-                    <span className="movie-stats">
-                      {parseFloat(movie.avg_rating || 0) > 0 ? (
-                        <>
-                          <span className="rating">{parseFloat(movie.avg_rating).toFixed(1)}</span>
-                          <span className="votes">({movie.rating_count} votes)</span>
-                        </>
-                      ) : (
-                        <span className="no-rating">No ratings</span>
-                      )}
-                    </span>
-                  </div>
-                </div>
-              </Link>
-              {isAdmin && (
-                <button
-                  className="delete-btn"
-                  onClick={(e) => handleDelete(e, movie.id, movie.title)}
-                  disabled={deleting === movie.id}
-                  title="Delete movie"
-                >
-                  {deleting === movie.id ? '...' : '×'}
-                </button>
-              )}
+              ))}
             </div>
-          ))}
+          )}
+        </>
+      ) : (
+        <div className="calendar-view">
+          <div className="calendar-controls">
+            <button onClick={previousMonth} className="btn-secondary">← Prev</button>
+            <button onClick={goToToday} className="btn-secondary">Today</button>
+            <button onClick={nextMonth} className="btn-secondary">Next →</button>
+          </div>
+          <h2 className="current-month">{formatMonthYear(calendarDate)}</h2>
+
+          <div className="calendar-grid">
+            <div className="calendar-weekdays">
+              <div>Sun</div>
+              <div>Mon</div>
+              <div>Tue</div>
+              <div>Wed</div>
+              <div>Thu</div>
+              <div>Fri</div>
+              <div>Sat</div>
+            </div>
+            <div className="calendar-days">
+              {renderCalendar()}
+            </div>
+          </div>
         </div>
       )}
     </div>

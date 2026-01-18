@@ -43,12 +43,13 @@
   background-color: var(--bg-card);
   min-height: 400px;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border-color);
 }
 
 .hero-backdrop:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
   text-decoration: none;
 }
 
@@ -61,10 +62,10 @@
   inset: 0;
   background: linear-gradient(
     to right,
-    rgba(0, 0, 0, 0.95) 0%,
-    rgba(0, 0, 0, 0.8) 30%,
-    rgba(0, 0, 0, 0.4) 60%,
-    rgba(0, 0, 0, 0.2) 100%
+    rgba(10, 10, 11, 0.95) 0%,
+    rgba(10, 10, 11, 0.8) 30%,
+    rgba(10, 10, 11, 0.4) 60%,
+    rgba(10, 10, 11, 0.2) 100%
   );
   z-index: 1;
 }
@@ -84,7 +85,8 @@
   width: 160px;
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--glass-border);
 }
 
 .hero-poster-small .hero-poster {
@@ -102,7 +104,7 @@
   align-items: center;
   justify-content: center;
   background: var(--bg-secondary);
-  color: var(--text-secondary);
+  color: var(--text-muted);
   font-size: 0.9rem;
 }
 
@@ -116,14 +118,15 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 8px var(--accent-glow);
   margin-bottom: 0.5rem;
   width: fit-content;
 }
 
 .hero-badge.empty {
   background: var(--bg-secondary);
-  color: var(--text-secondary);
+  color: var(--text-muted);
+  box-shadow: none;
 }
 
 .hero-details {
@@ -168,15 +171,17 @@
   font-size: 0.8rem;
   color: rgba(255, 255, 255, 0.9);
   padding: 0.2rem 0.6rem;
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--glass-bg);
   backdrop-filter: blur(4px);
   border-radius: 4px;
+  border: 1px solid var(--glass-border);
 }
 
 .hero-meta-item.hero-tmdb {
   background: linear-gradient(135deg, #01b4e4 0%, #90cea1 100%);
   color: #032541;
   font-weight: 600;
+  border: none;
 }
 
 .hero-genres {
@@ -187,13 +192,13 @@
 }
 
 .hero-genre-tag {
-  background: rgba(244, 63, 94, 0.3);
-  color: #ff8fa3;
+  background: rgba(229, 9, 20, 0.2);
+  color: #ff6b7a;
   padding: 0.2rem 0.6rem;
   border-radius: 12px;
   font-size: 0.75rem;
   font-weight: 500;
-  border: 1px solid rgba(244, 63, 94, 0.4);
+  border: 1px solid rgba(229, 9, 20, 0.3);
   backdrop-filter: blur(4px);
 }
 
@@ -212,7 +217,7 @@
 .hero-footer {
   margin-top: 0.5rem;
   padding-top: 0.5rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .hero-date {
@@ -251,24 +256,24 @@
 .hero-btn-primary {
   background: var(--accent);
   color: white;
-  box-shadow: 0 2px 8px rgba(244, 63, 94, 0.4);
+  box-shadow: 0 2px 8px var(--accent-glow);
 }
 
 .hero-btn-primary:hover {
-  background: #e11d48;
+  background: var(--accent-hover);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.5);
+  box-shadow: 0 4px 12px var(--accent-glow);
 }
 
 .hero-btn-secondary {
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--glass-bg);
   color: white;
   backdrop-filter: blur(4px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--glass-border);
 }
 
 .hero-btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.15);
   transform: translateY(-1px);
 }
 
@@ -319,9 +324,10 @@
 
 .home-section {
   margin-bottom: 0;
-  background: var(--bg-card);
+  background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
   border-radius: 12px;
   padding: 1.25rem;
+  border: 1px solid var(--border-color);
 }
 
 .home-section .section-header {
@@ -450,13 +456,15 @@
 }
 
 .view-all {
-  color: var(--primary-color);
+  color: var(--accent);
   text-decoration: none;
   font-size: 0.9rem;
+  transition: color 0.2s ease;
 }
 
 .view-all:hover {
-  text-decoration: underline;
+  color: var(--accent-hover);
+  text-decoration: none;
 }
 
 .movie-grid {
@@ -478,9 +486,10 @@
 .empty-state {
   text-align: center;
   padding: 2rem;
-  background: var(--card-bg);
+  background: var(--bg-card);
   border-radius: 12px;
   color: var(--text-secondary);
+  border: 1px solid var(--border-color);
 }
 
 .empty-state code {
@@ -531,7 +540,7 @@
 }
 
 .best-rated-item:first-child .rank {
-  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  background: linear-gradient(135deg, #eab308 0%, #f59e0b 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -580,9 +589,10 @@
 }
 
 .voting-placeholder {
-  background: var(--card-bg);
+  background: var(--bg-card);
   border-radius: 12px;
   padding: 2rem;
+  border: 1px solid var(--border-color);
 }
 
 .voting-card {
@@ -613,9 +623,10 @@
 
 /* Active Voting */
 .voting-active {
-  background: var(--card-bg);
+  background: var(--bg-card);
   border-radius: 12px;
   padding: 1.5rem;
+  border: 1px solid var(--border-color);
 }
 
 .suggestions-list {
@@ -638,15 +649,15 @@
 }
 
 .suggestion-item:hover {
-  background: rgba(244, 63, 94, 0.15);
+  background: rgba(229, 9, 20, 0.1);
   transform: translateX(6px);
   border-color: var(--accent-glow);
 }
 
 .suggestion-item.voted {
-  background: rgba(244, 63, 94, 0.2);
+  background: rgba(229, 9, 20, 0.15);
   border: 2px solid var(--accent);
-  box-shadow: 0 0 20px rgba(244, 63, 94, 0.2);
+  box-shadow: 0 0 20px rgba(229, 9, 20, 0.2);
 }
 
 .suggestion-poster {
@@ -739,7 +750,7 @@
   top: 0.5rem;
   right: 0.5rem;
   font-size: 0.7rem;
-  background: var(--primary-color);
+  background: var(--accent);
   color: white;
   padding: 0.15rem 0.5rem;
   border-radius: 10px;
@@ -752,7 +763,7 @@
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: rgba(220, 53, 69, 0.9);
+  background: rgba(239, 68, 68, 0.9);
   color: white;
   border: none;
   font-size: 16px;
@@ -771,11 +782,11 @@
 }
 
 .suggestion-delete-btn:hover {
-  background: rgba(220, 53, 69, 1);
+  background: rgba(239, 68, 68, 1);
 }
 
 .suggestion-delete-btn:disabled {
-  background: rgba(108, 117, 125, 0.9);
+  background: rgba(113, 113, 122, 0.9);
   cursor: not-allowed;
 }
 

@@ -11,7 +11,7 @@
 
 .star {
   color: var(--star-empty);
-  transition: transform 0.2s, color 0.2s;
+  transition: transform 0.2s ease, color 0.2s ease;
 }
 
 .star--full {

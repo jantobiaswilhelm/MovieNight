@@ -1,6 +1,7 @@
 .movie-page {
   padding: 0;
   position: relative;
+  animation: fadeIn 0.4s ease-out;
 }
 
 /* Hero Backdrop */
@@ -20,22 +21,28 @@
   inset: 0;
   background: linear-gradient(
     to bottom,
-    rgba(28, 21, 23, 0.4) 0%,
-    rgba(28, 21, 23, 0.8) 50%,
+    rgba(10, 10, 11, 0.4) 0%,
+    rgba(10, 10, 11, 0.8) 50%,
     var(--bg-primary) 100%
   );
 }
 
 .back-link {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   margin: 1.5rem 0;
   color: var(--text-secondary);
   position: relative;
   z-index: 1;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
 }
 
 .back-link:hover {
-  color: var(--accent);
+  color: var(--text-primary);
+  background: var(--glass-bg);
 }
 
 .movie-header {
@@ -52,7 +59,8 @@
   object-fit: cover;
   border-radius: 12px;
   flex-shrink: 0;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--glass-border);
 }
 
 .movie-details {
@@ -88,13 +96,18 @@
 }
 
 .genre-tag {
-  background: var(--bg-card);
+  background: rgba(229, 9, 20, 0.15);
   color: var(--accent);
   padding: 0.25rem 0.75rem;
   border-radius: 20px;
   font-size: 0.8rem;
   font-weight: 500;
-  border: 1px solid var(--accent-glow);
+  border: 1px solid rgba(229, 9, 20, 0.3);
+  transition: all 0.2s ease;
+}
+
+.genre-tag:hover {
+  background: rgba(229, 9, 20, 0.25);
 }
 
 .movie-collection {
@@ -139,7 +152,7 @@
   font-size: 0.9rem;
   font-weight: 600;
   text-decoration: none;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
 }
 
 .imdb-link {
@@ -150,6 +163,7 @@
 .imdb-link:hover {
   background: #e0b015;
   text-decoration: none;
+  transform: translateY(-1px);
 }
 
 .trailer-link {
@@ -160,6 +174,7 @@
 .trailer-link:hover {
   background: #cc0000;
   text-decoration: none;
+  transform: translateY(-1px);
 }
 
 .movie-announcer {
@@ -183,7 +198,7 @@
 .meta-item:not(:last-child)::after {
   content: "•";
   margin-left: 0.5rem;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   opacity: 0.5;
 }
 
@@ -217,12 +232,13 @@
 }
 
 .movie-description {
-  background: var(--bg-card);
+  background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
   padding: 1.5rem;
   border-radius: 12px;
   margin-bottom: 2rem;
   position: relative;
   z-index: 1;
+  border: 1px solid var(--border-color);
 }
 
 .movie-description h2 {
@@ -237,7 +253,7 @@
 }
 
 .movie-stats {
-  display: none; /* Old layout - replaced by movie-ratings-row */
+  display: none;
 }
 
 .movie-stats-legacy {
@@ -249,22 +265,24 @@
 .btn-danger {
   margin-top: 1rem;
   padding: 0.5rem 1rem;
-  background: #dc3545;
+  background: var(--danger);
   color: white;
   border: none;
   border-radius: 6px;
   font-size: 0.9rem;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s ease;
 }
 
 .btn-danger:hover {
-  background: #c82333;
+  background: #dc2626;
+  transform: translateY(-1px);
 }
 
 .btn-danger:disabled {
-  background: #6c757d;
+  background: var(--text-muted);
   cursor: not-allowed;
+  transform: none;
 }
 
 .movie-stats .stat {
@@ -294,10 +312,11 @@
 }
 
 .login-prompt {
-  background: var(--bg-secondary);
+  background: var(--bg-card);
   padding: 1.5rem;
-  border-radius: 8px;
+  border-radius: 12px;
   text-align: center;
+  border: 1px solid var(--border-color);
 }
 
 .login-prompt p {
@@ -311,10 +330,11 @@
 }
 
 .not-started-message {
-  background: var(--bg-secondary);
+  background: var(--bg-card);
   padding: 1.5rem;
-  border-radius: 8px;
+  border-radius: 12px;
   text-align: center;
+  border: 1px solid var(--border-color);
 }
 
 .not-started-message p {
@@ -349,7 +369,14 @@
   align-items: center;
   padding: 0.75rem 1rem;
   background: var(--bg-card);
-  border-radius: 4px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  transition: all 0.2s ease;
+}
+
+.rating-item:hover {
+  background: var(--bg-card-hover);
+  transform: translateX(4px);
 }
 
 .rating-user {
@@ -362,6 +389,7 @@
   width: 24px;
   height: 24px;
   border-radius: 50%;
+  border: 2px solid var(--glass-border);
 }
 
 .rating-score {

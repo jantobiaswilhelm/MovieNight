@@ -5,7 +5,6 @@ import Movie from './pages/Movie';
 import MoviesPage from './pages/MoviesPage';
 import Profile from './pages/Profile';
 import StatsPage from './pages/StatsPage';
-import Calendar from './pages/Calendar';
 import Commands from './pages/Commands';
 import WishlistPage from './pages/WishlistPage';
 import AuthCallback from './pages/AuthCallback';
@@ -20,7 +19,6 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/movies" element={<MoviesPage />} />
           <Route path="/movie/:id" element={<Movie />} />
-          <Route path="/calendar" element={<Calendar />} />
           <Route path="/commands" element={<Commands />} />
           <Route path="/wishlist" element={<WishlistPage />} />
           <Route path="/profile" element={<Profile />} />

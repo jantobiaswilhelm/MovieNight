@@ -130,7 +130,7 @@ const WishlistPage = () => {
             className={`tab-btn ${activeTab === 'guild' ? 'active' : ''}`}
             onClick={() => setActiveTab('guild')}
           >
-            Guild Wishlist
+            OnlyFans Wishlist
           </button>
         </div>
 
