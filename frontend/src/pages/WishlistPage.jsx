@@ -4,7 +4,6 @@ import { getMyWishlist, getGuildWishlist } from '../api/client';
 import WishlistCard from '../components/WishlistCard';
 import AddToWishlistModal from '../components/AddToWishlistModal';
 import WishlistDetailModal from '../components/WishlistDetailModal';
-import AnnounceModal from '../components/AnnounceModal';
 import './WishlistPage.css';
 
 const WishlistPage = () => {
@@ -17,7 +16,6 @@ const WishlistPage = () => {
   const [groupByUser, setGroupByUser] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
-  const [showAnnounceModal, setShowAnnounceModal] = useState(false);
   const [randomMovie, setRandomMovie] = useState(null);
   const [showRandomModal, setShowRandomModal] = useState(false);
 
@@ -71,21 +69,11 @@ const WishlistPage = () => {
   };
 
   const handleAnnounce = (item) => {
-    setSelectedItem(null);
-    setShowAnnounceModal(true);
-    // Store the item for the announce modal
-    setSelectedItem(item);
-  };
-
-  const handleAnnounced = (item) => {
-    // Remove from wishlist after announcing and close modal
+    // Remove from wishlist after scheduling (called from WishlistDetailModal)
     if (item) {
       handleRemove(item.id);
     }
-    setShowAnnounceModal(false);
     setSelectedItem(null);
-    setRandomMovie(null);
-    setShowRandomModal(false);
   };
 
   const pickRandomMovie = () => {
@@ -108,9 +96,9 @@ const WishlistPage = () => {
   };
 
   const handleScheduleRandom = () => {
+    // Close random modal and open detail modal with the random movie
     setShowRandomModal(false);
     setSelectedItem(randomMovie);
-    setShowAnnounceModal(true);
   };
 
   const groupedItems = groupByUser
@@ -270,20 +258,10 @@ const WishlistPage = () => {
 
       <WishlistDetailModal
         item={selectedItem}
-        isOpen={!!selectedItem && !showAnnounceModal}
+        isOpen={!!selectedItem}
         onClose={() => setSelectedItem(null)}
         onAnnounce={handleAnnounce}
         canAnnounce={isAuthenticated}
-      />
-
-      <AnnounceModal
-        item={selectedItem}
-        isOpen={showAnnounceModal}
-        onClose={() => {
-          setShowAnnounceModal(false);
-          setSelectedItem(null);
-        }}
-        onAnnounced={handleAnnounced}
       />
 
       {/* Random Movie Picker Modal */}

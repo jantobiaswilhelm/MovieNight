@@ -14,7 +14,8 @@ import {
   getTMDBMovie,
   getNextMovieWithAttendees,
   getUpcomingMoviesWithAttendees,
-  toggleAttendance
+  toggleAttendance,
+  announceMovie
 } from '../api/client';
 import MovieCard from '../components/MovieCard';
 import StarRating from '../components/StarRating';
@@ -52,6 +53,17 @@ const Home = () => {
   const [nextMovieWithAttendees, setNextMovieWithAttendees] = useState(null);
   const [upcomingWithAttendees, setUpcomingWithAttendees] = useState([]);
   const [togglingAttendance, setTogglingAttendance] = useState(false);
+
+  // Direct announcement state
+  const [announceStep, setAnnounceStep] = useState('button'); // 'button' | 'search' | 'preview' | 'schedule'
+  const [selectedAnnounceMovie, setSelectedAnnounceMovie] = useState(null);
+  const [announceSearch, setAnnounceSearch] = useState('');
+  const [announceResults, setAnnounceResults] = useState([]);
+  const [announceSearching, setAnnounceSearching] = useState(false);
+  const [announceDate, setAnnounceDate] = useState('');
+  const [announceTime, setAnnounceTime] = useState('20:00');
+  const [announcing, setAnnouncing] = useState(false);
+  const [announceError, setAnnounceError] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -261,6 +273,85 @@ const Home = () => {
     }
   };
 
+  // Announcement flow handlers
+  const handleAnnounceSearch = async (e) => {
+    e.preventDefault();
+    if (!announceSearch.trim()) return;
+
+    setAnnounceSearching(true);
+    setAnnounceError(null);
+    try {
+      const results = await searchTMDB(announceSearch);
+      setAnnounceResults(results);
+    } catch (err) {
+      console.error('Error searching movies:', err);
+      setAnnounceError('Failed to search movies');
+    } finally {
+      setAnnounceSearching(false);
+    }
+  };
+
+  const handleSelectAnnounceMovie = async (movie) => {
+    setAnnounceSearching(true);
+    setAnnounceError(null);
+    try {
+      const details = await getTMDBMovie(movie.id);
+      setSelectedAnnounceMovie(details);
+      setAnnounceStep('preview');
+    } catch (err) {
+      console.error('Error fetching movie details:', err);
+      setAnnounceError('Failed to load movie details');
+    } finally {
+      setAnnounceSearching(false);
+    }
+  };
+
+  const handleAnnounceSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedAnnounceMovie || !announceDate || !announceTime) {
+      setAnnounceError('Please select a date and time');
+      return;
+    }
+
+    const scheduledAt = new Date(`${announceDate}T${announceTime}`);
+    if (scheduledAt <= new Date()) {
+      setAnnounceError('Scheduled time must be in the future');
+      return;
+    }
+
+    setAnnouncing(true);
+    setAnnounceError(null);
+    try {
+      await announceMovie(selectedAnnounceMovie, scheduledAt.toISOString());
+
+      // Refresh data
+      const [nextMovieData, upcomingData] = await Promise.all([
+        getNextMovieWithAttendees().catch(() => null),
+        getUpcomingMoviesWithAttendees(5).catch(() => [])
+      ]);
+      setNextMovieWithAttendees(nextMovieData);
+      setUpcomingWithAttendees(upcomingData);
+
+      // Reset announcement state
+      resetAnnounceState();
+    } catch (err) {
+      console.error('Error announcing movie:', err);
+      setAnnounceError(err.message || 'Failed to announce movie');
+    } finally {
+      setAnnouncing(false);
+    }
+  };
+
+  const resetAnnounceState = () => {
+    setAnnounceStep('button');
+    setSelectedAnnounceMovie(null);
+    setAnnounceSearch('');
+    setAnnounceResults([]);
+    setAnnounceDate('');
+    setAnnounceTime('20:00');
+    setAnnounceError(null);
+  };
+
   if (error) {
     return <div className="error">Error: {error}</div>;
   }
@@ -455,6 +546,154 @@ const Home = () => {
 
         {/* Right Side - All Content */}
         <div className="home-content-column">
+          {/* Quick Announce Section */}
+          {isAuthenticated && (
+            <section className="home-section announce-section">
+              {announceStep === 'button' && (
+                <button
+                  className="btn-primary announce-main-btn"
+                  onClick={() => setAnnounceStep('search')}
+                >
+                  + Announce New Movie Night
+                </button>
+              )}
+
+              {announceStep === 'search' && (
+                <div className="announce-flow">
+                  <div className="announce-flow-header">
+                    <h3>Announce New Movie Night</h3>
+                    <button className="btn-text" onClick={resetAnnounceState}>Cancel</button>
+                  </div>
+                  <form onSubmit={handleAnnounceSearch} className="announce-search-form">
+                    <input
+                      type="text"
+                      placeholder="Search for a movie..."
+                      value={announceSearch}
+                      onChange={(e) => setAnnounceSearch(e.target.value)}
+                      autoFocus
+                    />
+                    <button type="submit" className="btn-primary" disabled={announceSearching}>
+                      {announceSearching ? 'Searching...' : 'Search'}
+                    </button>
+                  </form>
+                  {announceError && <div className="announce-error">{announceError}</div>}
+                  {announceResults.length > 0 && (
+                    <div className="announce-results">
+                      {announceResults.slice(0, 6).map((movie) => (
+                        <div
+                          key={movie.id}
+                          className="announce-result-item"
+                          onClick={() => handleSelectAnnounceMovie(movie)}
+                        >
+                          {movie.posterPath ? (
+                            <img src={movie.posterPath} alt="" className="announce-result-poster" />
+                          ) : (
+                            <div className="announce-result-poster no-poster">No Image</div>
+                          )}
+                          <div className="announce-result-info">
+                            <span className="announce-result-title">{movie.title}</span>
+                            <span className="announce-result-year">{movie.year}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {announceStep === 'preview' && selectedAnnounceMovie && (
+                <div className="announce-flow">
+                  <div className="announce-flow-header">
+                    <h3>Announce New Movie Night</h3>
+                    <button className="btn-text" onClick={resetAnnounceState}>Cancel</button>
+                  </div>
+                  <div className="announce-preview">
+                    <div className="announce-preview-content">
+                      {selectedAnnounceMovie.posterPath && (
+                        <img src={selectedAnnounceMovie.posterPath} alt="" className="announce-preview-poster" />
+                      )}
+                      <div className="announce-preview-info">
+                        <h4>{selectedAnnounceMovie.title}</h4>
+                        <div className="announce-preview-meta">
+                          {selectedAnnounceMovie.year && <span>{selectedAnnounceMovie.year}</span>}
+                          {selectedAnnounceMovie.runtime && <span>{Math.floor(selectedAnnounceMovie.runtime / 60)}h {selectedAnnounceMovie.runtime % 60}m</span>}
+                          {selectedAnnounceMovie.rating && <span>TMDB {selectedAnnounceMovie.rating}</span>}
+                        </div>
+                        {selectedAnnounceMovie.genres && (
+                          <div className="announce-preview-genres">
+                            {selectedAnnounceMovie.genres.split(', ').slice(0, 3).map((genre, i) => (
+                              <span key={i} className="genre-tag">{genre}</span>
+                            ))}
+                          </div>
+                        )}
+                        {selectedAnnounceMovie.overview && (
+                          <p className="announce-preview-description">{selectedAnnounceMovie.overview}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="announce-preview-actions">
+                      <button className="btn-secondary" onClick={() => setAnnounceStep('search')}>
+                        Choose Different
+                      </button>
+                      <button className="btn-primary" onClick={() => setAnnounceStep('schedule')}>
+                        Schedule This Movie
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {announceStep === 'schedule' && selectedAnnounceMovie && (
+                <div className="announce-flow">
+                  <div className="announce-flow-header">
+                    <h3>Schedule Movie Night</h3>
+                    <button className="btn-text" onClick={resetAnnounceState}>Cancel</button>
+                  </div>
+                  <div className="announce-schedule">
+                    <div className="announce-schedule-movie">
+                      {selectedAnnounceMovie.posterPath && (
+                        <img src={selectedAnnounceMovie.posterPath} alt="" className="announce-schedule-poster" />
+                      )}
+                      <span className="announce-schedule-title">{selectedAnnounceMovie.title}</span>
+                    </div>
+                    <form onSubmit={handleAnnounceSubmit} className="announce-schedule-form">
+                      <div className="announce-schedule-fields">
+                        <div className="announce-field">
+                          <label>Date</label>
+                          <input
+                            type="date"
+                            value={announceDate}
+                            onChange={(e) => setAnnounceDate(e.target.value)}
+                            min={new Date().toISOString().split('T')[0]}
+                            required
+                          />
+                        </div>
+                        <div className="announce-field">
+                          <label>Time</label>
+                          <input
+                            type="time"
+                            value={announceTime}
+                            onChange={(e) => setAnnounceTime(e.target.value)}
+                            required
+                          />
+                        </div>
+                      </div>
+                      {announceError && <div className="announce-error">{announceError}</div>}
+                      <div className="announce-schedule-actions">
+                        <button type="button" className="btn-secondary" onClick={() => setAnnounceStep('preview')}>
+                          Back
+                        </button>
+                        <button type="submit" className="btn-primary" disabled={announcing}>
+                          {announcing ? 'Scheduling...' : 'Announce Movie Night'}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
+            </section>
+          )}
+
           {/* Voting Section */}
           {voting ? (
             <section className="home-section voting-section">
@@ -585,7 +824,7 @@ const Home = () => {
             <section className="home-section voting-section">
               <div className="section-header">
                 <h2>Vote for Next Movie</h2>
-                {isAdmin && (
+                {isAdmin && !showStartVoteModal && (
                   <button
                     className="btn-primary btn-small"
                     onClick={() => setShowStartVoteModal(true)}
@@ -594,17 +833,63 @@ const Home = () => {
                   </button>
                 )}
               </div>
-              <div className="voting-placeholder">
-                <div className="voting-card">
-                  <div className="voting-icon">🗳️</div>
-                  <h3>No Active Voting</h3>
-                  {isAdmin ? (
-                    <p>Click "Start Vote" to begin a new voting session.</p>
-                  ) : (
-                    <p>Check back soon for the next vote!</p>
-                  )}
+              {showStartVoteModal ? (
+                <div className="voting-inline-form">
+                  <h3>Start New Vote</h3>
+                  <p className="inline-form-description">Set the movie night date and time</p>
+                  <form onSubmit={handleStartVote}>
+                    <div className="inline-form-row">
+                      <div className="inline-form-field">
+                        <label>Date</label>
+                        <input
+                          type="date"
+                          value={voteDate}
+                          onChange={(e) => setVoteDate(e.target.value)}
+                          min={new Date().toISOString().split('T')[0]}
+                          required
+                        />
+                      </div>
+                      <div className="inline-form-field">
+                        <label>Time</label>
+                        <input
+                          type="time"
+                          value={voteTime}
+                          onChange={(e) => setVoteTime(e.target.value)}
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div className="inline-form-actions">
+                      <button
+                        type="button"
+                        className="btn-secondary"
+                        onClick={() => {
+                          setShowStartVoteModal(false);
+                          setVoteDate('');
+                          setVoteTime('20:00');
+                        }}
+                      >
+                        Cancel
+                      </button>
+                      <button type="submit" className="btn-primary" disabled={creatingVote}>
+                        {creatingVote ? 'Creating...' : 'Start Vote'}
+                      </button>
+                    </div>
+                  </form>
                 </div>
-              </div>
+              ) : (
+                <div className="voting-placeholder">
+                  <div className="voting-card">
+                    <div className="voting-icon">🗳️</div>
+                    <h3>No Active Voting</h3>
+                    {isAdmin ? (
+                      <p>Click "Start Vote" to begin a new voting session.</p>
+                    ) : (
+                      <p>Check back soon for the next vote!</p>
+                    )}
+                  </div>
+                </div>
+              )}
             </section>
           )}
 
@@ -673,47 +958,6 @@ const Home = () => {
           </div>
         </div>
       </div>
-
-      {/* Start Vote Modal */}
-      {showStartVoteModal && (
-        <div className="modal-overlay" onClick={() => setShowStartVoteModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Start New Vote</h2>
-              <button className="modal-close" onClick={() => setShowStartVoteModal(false)}>×</button>
-            </div>
-            <form onSubmit={handleStartVote}>
-              <div className="form-group">
-                <label>Movie Night Date</label>
-                <input
-                  type="date"
-                  value={voteDate}
-                  onChange={(e) => setVoteDate(e.target.value)}
-                  min={new Date().toISOString().split('T')[0]}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Time</label>
-                <input
-                  type="time"
-                  value={voteTime}
-                  onChange={(e) => setVoteTime(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="modal-actions">
-                <button type="button" className="btn-secondary" onClick={() => setShowStartVoteModal(false)}>
-                  Cancel
-                </button>
-                <button type="submit" className="btn-primary" disabled={creatingVote}>
-                  {creatingVote ? 'Creating...' : 'Start Vote'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* Add Movie Modal */}
       {showAddMovieModal && (

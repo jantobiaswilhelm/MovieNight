@@ -157,6 +157,13 @@ export const announceFromWishlist = (wishlistId, scheduledAt) =>
     body: JSON.stringify({ wishlist_id: wishlistId, scheduled_at: scheduledAt })
   });
 
+// Direct movie announcement
+export const announceMovie = (tmdbData, scheduledAt) =>
+  fetchAPI('/api/movies/announce', {
+    method: 'POST',
+    body: JSON.stringify({ tmdb_data: tmdbData, scheduled_at: scheduledAt, guild_id: GUILD_ID })
+  });
+
 // Attendance
 export const toggleAttendance = (movieId) =>
   fetchAPI(`/api/movies/${movieId}/attend`, {

@@ -61,6 +61,53 @@ router.get('/next/with-attendees', optionalAuth, async (req, res) => {
   }
 });
 
+// Announce movie directly (creates pending announcement for bot)
+router.post('/announce', authenticateToken, async (req, res) => {
+  const { tmdb_data, scheduled_at, guild_id } = req.body;
+
+  if (!tmdb_data || !scheduled_at || !guild_id) {
+    return res.status(400).json({ error: 'tmdb_data, scheduled_at, and guild_id are required' });
+  }
+
+  const scheduledDate = new Date(scheduled_at);
+  if (isNaN(scheduledDate.getTime())) {
+    return res.status(400).json({ error: 'Invalid scheduled_at date' });
+  }
+
+  if (scheduledDate <= new Date()) {
+    return res.status(400).json({ error: 'Scheduled time must be in the future' });
+  }
+
+  try {
+    // Create pending announcement with TMDB data
+    const announcement = await db.createPendingAnnouncement({
+      guildId: guild_id,
+      channelId: null, // Bot will use default channel
+      userId: req.user.id,
+      wishlistId: null, // Not from wishlist
+      title: tmdb_data.releaseYear
+        ? `${tmdb_data.title} (${tmdb_data.releaseYear})`
+        : tmdb_data.title,
+      imageUrl: tmdb_data.posterPath,
+      backdropUrl: tmdb_data.backdropPath,
+      description: tmdb_data.overview,
+      tmdbId: tmdb_data.id,
+      imdbId: tmdb_data.imdbId,
+      tmdbRating: tmdb_data.rating,
+      genres: tmdb_data.genres,
+      runtime: tmdb_data.runtime,
+      releaseYear: tmdb_data.releaseYear || tmdb_data.year,
+      trailerUrl: tmdb_data.trailerUrl,
+      scheduledAt: scheduledDate
+    });
+
+    res.json(announcement);
+  } catch (err) {
+    console.error('Error creating announcement:', err);
+    res.status(500).json({ error: 'Failed to create announcement' });
+  }
+});
+
 // Get single movie with ratings and attendance
 router.get('/:id', optionalAuth, async (req, res) => {
   const { id } = req.params;
