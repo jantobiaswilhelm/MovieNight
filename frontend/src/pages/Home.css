@@ -6,19 +6,20 @@
   flex-direction: column;
   justify-content: center;
   position: relative;
+  isolation: isolate;
 }
 
 /* Subtle background from top rated movie */
 .home-background {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  position: absolute;
+  top: -100px;
+  left: -50%;
+  right: -50%;
+  bottom: -100px;
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  opacity: 0.06;
+  opacity: 0.07;
   pointer-events: none;
   z-index: -1;
 }
