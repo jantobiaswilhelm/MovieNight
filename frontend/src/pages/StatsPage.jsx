@@ -183,36 +183,31 @@ const StatsPage = () => {
       </section>
 
       {/* Top Raters Section */}
-      <section className="stats-section">
-        <div className="stats-grid-2">
-          {stats.top_raters && stats.top_raters.length > 0 && (
-            <div className="stats-list-section">
-              <h3>Most Active Raters</h3>
-              <div className="rater-list">
-                {stats.top_raters.map((rater, index) => (
-                  <Link key={rater.discord_id} to={`/user/${rater.id}`} className="rater-item">
-                    <span className="rank">#{index + 1}</span>
-                    <div className="rater-info">
-                      {rater.avatar && (
-                        <img
-                          src={`https://cdn.discordapp.com/avatars/${rater.discord_id}/${rater.avatar}.png`}
-                          alt=""
-                          className="rater-avatar"
-                        />
-                      )}
-                      <span className="rater-name">{rater.username}</span>
-                    </div>
-                    <div className="rater-stats">
-                      <span className="rater-count">{rater.rating_count} ratings</span>
-                      <span className="rater-avg">avg: {parseFloat(rater.avg_rating).toFixed(1)}</span>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </section>
+      {stats.top_raters && stats.top_raters.length > 0 && (
+        <section className="stats-section">
+          <h2>Most Active Raters</h2>
+          <div className="raters-grid">
+            {stats.top_raters.map((rater, index) => (
+              <Link key={rater.discord_id} to={`/user/${rater.id}`} className="rater-card">
+                <span className="rank">#{index + 1}</span>
+                <img
+                  src={rater.avatar
+                    ? `https://cdn.discordapp.com/avatars/${rater.discord_id}/${rater.avatar}.png`
+                    : `https://cdn.discordapp.com/embed/avatars/${parseInt(rater.discord_id) % 5}.png`
+                  }
+                  alt=""
+                  className="rater-avatar"
+                />
+                <span className="rater-name">{rater.username}</span>
+                <div className="rater-stats">
+                  <span className="rater-count">{rater.rating_count} ratings</span>
+                  <span className="rater-avg">avg: {parseFloat(rater.avg_rating).toFixed(1)}</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 };
