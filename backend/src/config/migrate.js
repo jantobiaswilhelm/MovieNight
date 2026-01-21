@@ -256,6 +256,19 @@ const migrate = async () => {
       )
     `);
 
+    // User favorite movies table (user's top 5 picks)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS user_favorite_movies (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        movie_night_id INTEGER REFERENCES movie_nights(id) ON DELETE CASCADE,
+        position INTEGER CHECK (position >= 1 AND position <= 5),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user_id, movie_night_id),
+        UNIQUE(user_id, position)
+      )
+    `);
+
     // Indexes
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_attendance_movie ON movie_attendance(movie_night_id)
@@ -289,6 +302,9 @@ const migrate = async () => {
     `);
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_pending_announcements_status ON pending_announcements(status)
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_user_favorite_movies_user ON user_favorite_movies(user_id)
     `);
 
     await client.query('COMMIT');

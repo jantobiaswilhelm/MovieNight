@@ -677,3 +677,188 @@ export const getNextMovieWithAttendees = async (guildId) => {
   );
   return result.rows[0];
 };
+
+// Profile stats operations
+export const getUserRatingHistogram = async (userId) => {
+  const result = await pool.query(
+    `SELECT gs.score, COALESCE(counts.count, 0)::integer as count
+     FROM generate_series(1.0, 10.0, 0.5) as gs(score)
+     LEFT JOIN (
+       SELECT score, COUNT(*)::integer as count
+       FROM ratings
+       WHERE user_id = $1
+       GROUP BY score
+     ) counts ON gs.score = counts.score
+     ORDER BY gs.score`,
+    [userId]
+  );
+  return result.rows;
+};
+
+export const getUserVsGuildAverage = async (userId, guildId) => {
+  const result = await pool.query(
+    `SELECT
+       (SELECT COALESCE(AVG(score), 0) FROM ratings WHERE user_id = $1) as user_avg,
+       (SELECT COALESCE(AVG(r.score), 0)
+        FROM ratings r
+        JOIN movie_nights mn ON r.movie_night_id = mn.id
+        WHERE mn.guild_id = $2) as guild_avg`,
+    [userId, guildId]
+  );
+  return result.rows[0];
+};
+
+export const findRatingTwin = async (userId, guildId) => {
+  const result = await pool.query(
+    `WITH user_ratings AS (
+       SELECT movie_night_id, score
+       FROM ratings
+       WHERE user_id = $1
+     ),
+     other_users AS (
+       SELECT DISTINCT r.user_id
+       FROM ratings r
+       JOIN movie_nights mn ON r.movie_night_id = mn.id
+       WHERE mn.guild_id = $2 AND r.user_id != $1
+     ),
+     correlations AS (
+       SELECT
+         ou.user_id,
+         CORR(ur.score, r.score) as correlation,
+         COUNT(*) as shared_count
+       FROM other_users ou
+       JOIN ratings r ON r.user_id = ou.user_id
+       JOIN user_ratings ur ON ur.movie_night_id = r.movie_night_id
+       GROUP BY ou.user_id
+       HAVING COUNT(*) >= 5
+     )
+     SELECT c.user_id, c.correlation, c.shared_count,
+            u.username, u.discord_id, u.avatar
+     FROM correlations c
+     JOIN users u ON u.id = c.user_id
+     WHERE c.correlation IS NOT NULL
+     ORDER BY c.correlation DESC
+     LIMIT 1`,
+    [userId, guildId]
+  );
+  return result.rows[0];
+};
+
+export const getUserGenreStats = async (userId) => {
+  const result = await pool.query(
+    `SELECT
+       genre,
+       COUNT(*)::integer as count,
+       AVG(r.score) as avg_rating
+     FROM ratings r
+     JOIN movie_nights mn ON r.movie_night_id = mn.id
+     CROSS JOIN LATERAL unnest(string_to_array(mn.genres, ', ')) as genre
+     WHERE r.user_id = $1 AND mn.genres IS NOT NULL AND mn.genres != ''
+     GROUP BY genre
+     ORDER BY avg_rating DESC`,
+    [userId]
+  );
+  return result.rows;
+};
+
+export const getUserHotTakes = async (userId, limit = 5) => {
+  const result = await pool.query(
+    `SELECT
+       mn.id as movie_night_id,
+       mn.title,
+       mn.image_url,
+       r.score as user_score,
+       movie_avg.avg_score,
+       (r.score - movie_avg.avg_score) as difference,
+       ABS(r.score - movie_avg.avg_score) as abs_difference,
+       movie_avg.rating_count
+     FROM ratings r
+     JOIN movie_nights mn ON r.movie_night_id = mn.id
+     JOIN (
+       SELECT movie_night_id, AVG(score) as avg_score, COUNT(*)::integer as rating_count
+       FROM ratings
+       GROUP BY movie_night_id
+       HAVING COUNT(*) >= 3
+     ) movie_avg ON movie_avg.movie_night_id = mn.id
+     WHERE r.user_id = $1
+     ORDER BY abs_difference DESC
+     LIMIT $2`,
+    [userId, limit]
+  );
+  return result.rows;
+};
+
+export const getUserTotalWatchtime = async (userId) => {
+  const result = await pool.query(
+    `SELECT COALESCE(SUM(mn.runtime), 0)::integer as total_minutes
+     FROM ratings r
+     JOIN movie_nights mn ON r.movie_night_id = mn.id
+     WHERE r.user_id = $1 AND mn.runtime IS NOT NULL`,
+    [userId]
+  );
+  return result.rows[0];
+};
+
+export const getUserFavoriteMovies = async (userId) => {
+  const result = await pool.query(
+    `SELECT ufm.position, ufm.created_at,
+            mn.id as movie_night_id, mn.title, mn.image_url, mn.release_year
+     FROM user_favorite_movies ufm
+     JOIN movie_nights mn ON ufm.movie_night_id = mn.id
+     WHERE ufm.user_id = $1
+     ORDER BY ufm.position`,
+    [userId]
+  );
+  return result.rows;
+};
+
+export const setUserFavoriteMovie = async (userId, movieNightId, position) => {
+  // Use upsert - if position already has a movie, replace it
+  // First, delete any existing entry for this movie by this user (to handle re-positioning)
+  await pool.query(
+    `DELETE FROM user_favorite_movies WHERE user_id = $1 AND movie_night_id = $2`,
+    [userId, movieNightId]
+  );
+  // Then upsert at the new position
+  const result = await pool.query(
+    `INSERT INTO user_favorite_movies (user_id, movie_night_id, position)
+     VALUES ($1, $2, $3)
+     ON CONFLICT (user_id, position)
+     DO UPDATE SET movie_night_id = $2, created_at = CURRENT_TIMESTAMP
+     RETURNING *`,
+    [userId, movieNightId, position]
+  );
+  return result.rows[0];
+};
+
+export const removeUserFavoriteMovie = async (userId, position) => {
+  const result = await pool.query(
+    `DELETE FROM user_favorite_movies WHERE user_id = $1 AND position = $2 RETURNING *`,
+    [userId, position]
+  );
+  return result.rows[0];
+};
+
+export const getUserRatedMoviesForFavorites = async (userId) => {
+  const result = await pool.query(
+    `SELECT mn.id as movie_night_id, mn.title, mn.image_url, mn.release_year, r.score
+     FROM ratings r
+     JOIN movie_nights mn ON r.movie_night_id = mn.id
+     WHERE r.user_id = $1
+     ORDER BY r.score DESC, mn.title ASC`,
+    [userId]
+  );
+  return result.rows;
+};
+
+export const getUserWishlistPreview = async (userId, guildId, limit = 5) => {
+  const result = await pool.query(
+    `SELECT id, title, image_url, tmdb_rating, importance
+     FROM wishlists
+     WHERE user_id = $1 AND guild_id = $2
+     ORDER BY importance DESC, created_at DESC
+     LIMIT $3`,
+    [userId, guildId, limit]
+  );
+  return result.rows;
+};

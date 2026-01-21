@@ -4,6 +4,7 @@ import Home from './pages/Home';
 import Movie from './pages/Movie';
 import MoviesPage from './pages/MoviesPage';
 import Profile from './pages/Profile';
+import UserProfile from './pages/UserProfile';
 import StatsPage from './pages/StatsPage';
 import Commands from './pages/Commands';
 import WishlistPage from './pages/WishlistPage';
@@ -22,6 +23,7 @@ function App() {
           <Route path="/commands" element={<Commands />} />
           <Route path="/wishlist" element={<WishlistPage />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/user/:userId" element={<UserProfile />} />
           <Route path="/stats" element={<StatsPage />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
         </Routes>

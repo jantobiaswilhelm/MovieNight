@@ -80,4 +80,169 @@ router.get('/me', authenticateToken, async (req, res) => {
   }
 });
 
+// Get comprehensive profile stats
+router.get('/me/profile', authenticateToken, async (req, res) => {
+  const { guild_id } = req.query;
+
+  if (!guild_id) {
+    return res.status(400).json({ error: 'guild_id is required' });
+  }
+
+  try {
+    const [
+      basicStats,
+      histogram,
+      guildComparison,
+      ratingTwin,
+      genreStats,
+      hotTakes,
+      watchtime,
+      favoriteMovies,
+      wishlistPreview
+    ] = await Promise.all([
+      db.getUserStats(req.user.id),
+      db.getUserRatingHistogram(req.user.id),
+      db.getUserVsGuildAverage(req.user.id, guild_id),
+      db.findRatingTwin(req.user.id, guild_id),
+      db.getUserGenreStats(req.user.id),
+      db.getUserHotTakes(req.user.id, 5),
+      db.getUserTotalWatchtime(req.user.id),
+      db.getUserFavoriteMovies(req.user.id),
+      db.getUserWishlistPreview(req.user.id, guild_id, 5)
+    ]);
+
+    res.json({
+      basic_stats: basicStats,
+      histogram,
+      guild_comparison: guildComparison,
+      rating_twin: ratingTwin,
+      genre_stats: genreStats,
+      hot_takes: hotTakes,
+      watchtime: watchtime.total_minutes,
+      favorite_movies: favoriteMovies,
+      wishlist_preview: wishlistPreview
+    });
+  } catch (err) {
+    console.error('Error fetching profile stats:', err);
+    res.status(500).json({ error: 'Failed to fetch profile stats' });
+  }
+});
+
+// Get user's favorite movies
+router.get('/me/favorites', authenticateToken, async (req, res) => {
+  try {
+    const favorites = await db.getUserFavoriteMovies(req.user.id);
+    res.json(favorites);
+  } catch (err) {
+    console.error('Error fetching favorites:', err);
+    res.status(500).json({ error: 'Failed to fetch favorites' });
+  }
+});
+
+// Set a favorite movie
+router.post('/me/favorites', authenticateToken, async (req, res) => {
+  const { movie_night_id, position } = req.body;
+
+  if (!movie_night_id || !position) {
+    return res.status(400).json({ error: 'movie_night_id and position are required' });
+  }
+
+  if (position < 1 || position > 5) {
+    return res.status(400).json({ error: 'position must be between 1 and 5' });
+  }
+
+  try {
+    const favorite = await db.setUserFavoriteMovie(req.user.id, movie_night_id, position);
+    res.json(favorite);
+  } catch (err) {
+    console.error('Error setting favorite:', err);
+    res.status(500).json({ error: 'Failed to set favorite' });
+  }
+});
+
+// Remove a favorite movie
+router.delete('/me/favorites/:position', authenticateToken, async (req, res) => {
+  const position = parseInt(req.params.position);
+
+  if (position < 1 || position > 5) {
+    return res.status(400).json({ error: 'position must be between 1 and 5' });
+  }
+
+  try {
+    const removed = await db.removeUserFavoriteMovie(req.user.id, position);
+    if (!removed) {
+      return res.status(404).json({ error: 'No favorite at this position' });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error removing favorite:', err);
+    res.status(500).json({ error: 'Failed to remove favorite' });
+  }
+});
+
+// Get rated movies for favorite picker
+router.get('/me/rated-movies', authenticateToken, async (req, res) => {
+  try {
+    const movies = await db.getUserRatedMoviesForFavorites(req.user.id);
+    res.json(movies);
+  } catch (err) {
+    console.error('Error fetching rated movies:', err);
+    res.status(500).json({ error: 'Failed to fetch rated movies' });
+  }
+});
+
+// Get another user's profile (public preview)
+router.get('/user/:userId/profile', async (req, res) => {
+  const { userId } = req.params;
+  const { guild_id } = req.query;
+
+  if (!guild_id) {
+    return res.status(400).json({ error: 'guild_id is required' });
+  }
+
+  try {
+    const user = await db.getUserById(parseInt(userId));
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const [
+      basicStats,
+      histogram,
+      guildComparison,
+      genreStats,
+      hotTakes,
+      watchtime,
+      favoriteMovies
+    ] = await Promise.all([
+      db.getUserStats(parseInt(userId)),
+      db.getUserRatingHistogram(parseInt(userId)),
+      db.getUserVsGuildAverage(parseInt(userId), guild_id),
+      db.getUserGenreStats(parseInt(userId)),
+      db.getUserHotTakes(parseInt(userId), 5),
+      db.getUserTotalWatchtime(parseInt(userId)),
+      db.getUserFavoriteMovies(parseInt(userId))
+    ]);
+
+    res.json({
+      user: {
+        id: user.id,
+        username: user.username,
+        discord_id: user.discord_id,
+        avatar: user.avatar
+      },
+      basic_stats: basicStats,
+      histogram,
+      guild_comparison: guildComparison,
+      genre_stats: genreStats,
+      hot_takes: hotTakes,
+      watchtime: watchtime.total_minutes,
+      favorite_movies: favoriteMovies
+    });
+  } catch (err) {
+    console.error('Error fetching user profile:', err);
+    res.status(500).json({ error: 'Failed to fetch user profile' });
+  }
+});
+
 export default router;
