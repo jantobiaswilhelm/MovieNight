@@ -26,12 +26,12 @@
 
 .users-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(8, 1fr);
   gap: 1rem;
 }
 
 .users-grid.expanded {
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(8, 1fr);
 }
 
 .user-item {
@@ -119,8 +119,16 @@
   border-color: var(--accent-glow);
 }
 
+@media (max-width: 1200px) {
+  .users-grid,
+  .users-grid.expanded {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
 @media (max-width: 900px) {
-  .users-grid {
+  .users-grid,
+  .users-grid.expanded {
     grid-template-columns: repeat(4, 1fr);
   }
 }
