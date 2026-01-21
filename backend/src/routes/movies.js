@@ -175,6 +175,17 @@ router.post('/:id/ratings', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Movie has not started yet. Ratings will be available once the movie night begins.' });
     }
 
+    // Check if enough time has passed (runtime - 10 minutes)
+    const startTime = new Date(movie.started_at).getTime();
+    const runtime = movie.runtime || 90; // Default to 90 minutes if no runtime
+    const ratingDelayMinutes = Math.max(runtime - 10, 0);
+    const ratingsAvailableAt = startTime + (ratingDelayMinutes * 60 * 1000);
+
+    if (Date.now() < ratingsAvailableAt) {
+      const remainingMinutes = Math.ceil((ratingsAvailableAt - Date.now()) / (60 * 1000));
+      return res.status(400).json({ error: `Ratings will be available in ${remainingMinutes} minute${remainingMinutes !== 1 ? 's' : ''}.` });
+    }
+
     const rating = await db.upsertRating(parseInt(id), req.user.id, score);
     res.json(rating);
   } catch (err) {

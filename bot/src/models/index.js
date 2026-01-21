@@ -443,3 +443,30 @@ export const markAnnouncementProcessed = async (id, status = 'processed') => {
   );
   return result.rows[0];
 };
+
+// Rating notification operations
+export const getMoviesReadyForRatingNotification = async () => {
+  // Get movies that:
+  // 1. Have started (started_at IS NOT NULL)
+  // 2. Haven't had rating notification sent yet (rating_prompt_sent_at IS NULL)
+  // 3. Enough time has passed: current_time >= started_at + (runtime - 10) minutes
+  const result = await pool.query(
+    `SELECT * FROM movie_nights
+     WHERE started_at IS NOT NULL
+       AND rating_prompt_sent_at IS NULL
+       AND CURRENT_TIMESTAMP >= started_at + INTERVAL '1 minute' * GREATEST(COALESCE(runtime, 90) - 10, 0)
+     ORDER BY started_at ASC`
+  );
+  return result.rows;
+};
+
+export const markRatingPromptSent = async (movieId) => {
+  const result = await pool.query(
+    `UPDATE movie_nights
+     SET rating_prompt_sent_at = CURRENT_TIMESTAMP
+     WHERE id = $1
+     RETURNING *`,
+    [movieId]
+  );
+  return result.rows[0];
+};

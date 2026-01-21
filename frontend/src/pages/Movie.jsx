@@ -19,6 +19,8 @@ const Movie = () => {
   const [similarMovies, setSimilarMovies] = useState([]);
   const [loadingSimilar, setLoadingSimilar] = useState(false);
   const [togglingAttendance, setTogglingAttendance] = useState(false);
+  const [ratingsAvailable, setRatingsAvailable] = useState(false);
+  const [timeUntilRatings, setTimeUntilRatings] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -62,6 +64,49 @@ const Movie = () => {
 
     fetchSimilar();
   }, [movie?.tmdb_id]);
+
+  // Check if ratings are available (runtime - 10 minutes after start)
+  useEffect(() => {
+    if (!movie?.started_at) {
+      setRatingsAvailable(false);
+      setTimeUntilRatings(null);
+      return;
+    }
+
+    const checkRatingsAvailability = () => {
+      const startTime = new Date(movie.started_at).getTime();
+      const runtime = movie.runtime || 90; // Default to 90 minutes if no runtime
+      const ratingDelayMinutes = Math.max(runtime - 10, 0); // Show ratings 10 min before end
+      const ratingsAvailableAt = startTime + (ratingDelayMinutes * 60 * 1000);
+      const now = Date.now();
+
+      if (now >= ratingsAvailableAt) {
+        setRatingsAvailable(true);
+        setTimeUntilRatings(null);
+        return true;
+      } else {
+        setRatingsAvailable(false);
+        const remainingMs = ratingsAvailableAt - now;
+        const remainingMinutes = Math.ceil(remainingMs / (60 * 1000));
+        setTimeUntilRatings(remainingMinutes);
+        return false;
+      }
+    };
+
+    // Check immediately
+    const isAvailable = checkRatingsAvailability();
+
+    // If not yet available, set up interval to check periodically
+    if (!isAvailable) {
+      const interval = setInterval(() => {
+        if (checkRatingsAvailability()) {
+          clearInterval(interval);
+        }
+      }, 300000); // Check every 5 minutes
+
+      return () => clearInterval(interval);
+    }
+  }, [movie?.started_at, movie?.runtime]);
 
   const handleSubmitRating = async (score) => {
     try {
@@ -302,7 +347,7 @@ const Movie = () => {
         </div>
       )}
 
-      {movie.started_at ? (
+      {ratingsAvailable ? (
         <div className="rating-section">
           <h2>Your Rating</h2>
           {isAuthenticated ? (
@@ -330,13 +375,24 @@ const Movie = () => {
         <div className="rating-section">
           <h2>Rating</h2>
           <div className="not-started-message">
-            <p>This movie night hasn't started yet.</p>
-            <p className="not-started-hint">Ratings will be available once the movie begins.</p>
+            {movie.started_at ? (
+              <>
+                <p>The movie is still playing.</p>
+                <p className="not-started-hint">
+                  Ratings will be available in {timeUntilRatings} minute{timeUntilRatings !== 1 ? 's' : ''}.
+                </p>
+              </>
+            ) : (
+              <>
+                <p>This movie night hasn't started yet.</p>
+                <p className="not-started-hint">Ratings will be available near the end of the movie.</p>
+              </>
+            )}
           </div>
         </div>
       )}
 
-      {movie.started_at && movie.ratings && movie.ratings.length > 0 && (
+      {ratingsAvailable && movie.ratings && movie.ratings.length > 0 && (
         <div className="all-ratings">
           <h2>All Ratings</h2>
           <div className="ratings-list">
