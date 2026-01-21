@@ -1,0 +1,142 @@
+.users-section {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+}
+
+.users-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.users-section h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--text-primary);
+}
+
+.users-count {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.users-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+.users-grid.expanded {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.user-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.user-item:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--accent-glow);
+  transform: translateY(-2px);
+}
+
+.user-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2px solid var(--glass-border);
+  transition: all 0.2s ease;
+}
+
+.user-item:hover .user-avatar {
+  border-color: var(--accent);
+  box-shadow: 0 0 12px var(--accent-glow);
+}
+
+.user-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.user-rating-count {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.user-skeleton {
+  pointer-events: none;
+}
+
+.user-avatar-skeleton {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+}
+
+.user-name-skeleton {
+  width: 60px;
+  height: 14px;
+  border-radius: 4px;
+}
+
+.users-expand-btn {
+  display: block;
+  width: 100%;
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.users-expand-btn:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--accent-glow);
+}
+
+@media (max-width: 900px) {
+  .users-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .users-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+
+  .user-avatar {
+    width: 40px;
+    height: 40px;
+  }
+
+  .user-name {
+    font-size: 0.8rem;
+  }
+}

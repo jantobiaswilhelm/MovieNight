@@ -19,6 +19,7 @@ import {
 } from '../api/client';
 import MovieCard from '../components/MovieCard';
 import StarRating from '../components/StarRating';
+import UsersSection from '../components/UsersSection';
 import { MovieCardSkeleton } from '../components/Skeleton';
 import './Home.css';
 
@@ -1003,6 +1004,9 @@ const Home = () => {
           </div>
         </div>
       </div>
+
+      {/* Members Section */}
+      <UsersSection />
 
       {/* Add Movie Modal */}
       {showAddMovieModal && (
