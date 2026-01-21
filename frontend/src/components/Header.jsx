@@ -24,7 +24,7 @@ const Header = () => {
           <Link to="/wishlist">Wishlist</Link>
           <Link to="/stats">Stats</Link>
           <Link to="/commands">Commands</Link>
-          {isAuthenticated && <Link to="/profile">My Ratings</Link>}
+          {isAuthenticated && <Link to="/profile">My Profile</Link>}
         </nav>
 
         <ThemeSwitcher />

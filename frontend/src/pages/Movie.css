@@ -372,11 +372,14 @@
   border-radius: 8px;
   border: 1px solid var(--border-color);
   transition: all 0.2s ease;
+  text-decoration: none;
+  color: inherit;
 }
 
 .rating-item:hover {
   background: var(--bg-card-hover);
   transform: translateX(4px);
+  border-color: var(--accent-glow);
 }
 
 .rating-user {

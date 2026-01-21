@@ -33,7 +33,7 @@
 
 .profile-stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  grid-template-columns: repeat(6, 1fr);
   gap: 0.75rem;
   margin-bottom: 2rem;
 }
@@ -169,9 +169,16 @@
   }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 768px) {
   .profile-stats {
     grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .profile-stats {
+    grid-template-columns: repeat(2, 1fr);
     gap: 0.5rem;
   }
 

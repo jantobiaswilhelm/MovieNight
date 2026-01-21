@@ -257,17 +257,48 @@ const migrate = async () => {
     `);
 
     // User favorite movies table (user's top 5 picks)
+    // Can reference either a movie_night_id (watched) or store TMDB data directly (any movie)
     await client.query(`
       CREATE TABLE IF NOT EXISTS user_favorite_movies (
         id SERIAL PRIMARY KEY,
         user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-        movie_night_id INTEGER REFERENCES movie_nights(id) ON DELETE CASCADE,
+        movie_night_id INTEGER REFERENCES movie_nights(id) ON DELETE SET NULL,
+        tmdb_id INTEGER,
+        title VARCHAR(255),
+        image_url VARCHAR(500),
+        release_year INTEGER,
         position INTEGER CHECK (position >= 1 AND position <= 5),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE(user_id, movie_night_id),
         UNIQUE(user_id, position)
       )
     `);
+
+    // Add tmdb columns to user_favorite_movies if they don't exist (for existing databases)
+    const favColumns = [
+      { name: 'tmdb_id', type: 'INTEGER' },
+      { name: 'title', type: 'VARCHAR(255)' },
+      { name: 'image_url', type: 'VARCHAR(500)' },
+      { name: 'release_year', type: 'INTEGER' }
+    ];
+    for (const col of favColumns) {
+      const check = await client.query(`
+        SELECT column_name FROM information_schema.columns
+        WHERE table_name = 'user_favorite_movies' AND column_name = $1
+      `, [col.name]);
+      if (check.rows.length === 0) {
+        await client.query(`ALTER TABLE user_favorite_movies ADD COLUMN ${col.name} ${col.type}`);
+      }
+    }
+
+    // Make movie_night_id nullable if it isn't already
+    await client.query(`
+      ALTER TABLE user_favorite_movies ALTER COLUMN movie_night_id DROP NOT NULL
+    `).catch(() => {});
+
+    // Drop the old unique constraint on movie_night_id if it exists
+    await client.query(`
+      ALTER TABLE user_favorite_movies DROP CONSTRAINT IF EXISTS user_favorite_movies_user_id_movie_night_id_key
+    `).catch(() => {});
 
     // Indexes
     await client.query(`

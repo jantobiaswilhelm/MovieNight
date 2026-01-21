@@ -397,7 +397,7 @@ const Movie = () => {
           <h2>All Ratings</h2>
           <div className="ratings-list">
             {movie.ratings.map((rating) => (
-              <div key={rating.id} className="rating-item">
+              <Link key={rating.id} to={`/user/${rating.user_id}`} className="rating-item">
                 <div className="rating-user">
                   {rating.avatar && (
                     <img
@@ -409,7 +409,7 @@ const Movie = () => {
                   <span>{rating.username}</span>
                 </div>
                 <div className="rating-score">{parseFloat(rating.score).toFixed(1)}/10</div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>

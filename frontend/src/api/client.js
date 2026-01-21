@@ -186,10 +186,10 @@ export const getUserProfileStats = (userId) =>
 export const getMyFavoriteMovies = () =>
   fetchAPI('/api/stats/me/favorites');
 
-export const setFavoriteMovie = (movieNightId, position) =>
+export const setFavoriteMovie = (position, movieData) =>
   fetchAPI('/api/stats/me/favorites', {
     method: 'POST',
-    body: JSON.stringify({ movie_night_id: movieNightId, position })
+    body: JSON.stringify({ position, ...movieData })
   });
 
 export const removeFavoriteMovie = (position) =>
