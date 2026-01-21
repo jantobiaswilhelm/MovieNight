@@ -401,8 +401,20 @@ const Home = () => {
     });
   };
 
+  // Get background image from top rated movie this month
+  const topRatedMovie = bestRatedThisMonth[0];
+  const backgroundImage = topRatedMovie?.backdrop_url || topRatedMovie?.image_url;
+
   return (
     <div className="home">
+      {/* Subtle background from top rated movie */}
+      {backgroundImage && (
+        <div
+          className="home-background"
+          style={{ backgroundImage: `url(${backgroundImage})` }}
+        />
+      )}
+
       {/* Quick Announce Section - Full Width */}
       {isAuthenticated && (
         <section className="announce-section-fullwidth">
