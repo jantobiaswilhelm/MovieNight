@@ -106,7 +106,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Get similar movies with details
+// Get recommended movies with details
 router.get('/:id/similar', async (req, res) => {
   const { id } = req.params;
 
@@ -115,9 +115,9 @@ router.get('/:id/similar', async (req, res) => {
   }
 
   try {
-    // First, get similar movies list
+    // Use recommendations endpoint for better accuracy (based on user behavior patterns)
     const similarResponse = await fetch(
-      `${TMDB_BASE_URL}/movie/${id}/similar?api_key=${TMDB_API_KEY}&page=1`
+      `${TMDB_BASE_URL}/movie/${id}/recommendations?api_key=${TMDB_API_KEY}&page=1`
     );
 
     if (!similarResponse.ok) {
