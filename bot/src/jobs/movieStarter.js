@@ -1,6 +1,6 @@
 import cron from 'node-cron';
 import { getMoviesToStart, startMovieNight } from '../models/index.js';
-import { createStartingNowEmbed, createRatingButtons } from '../utils/embeds.js';
+import { createStartingNowEmbed } from '../utils/embeds.js';
 
 export const startMovieStarterJob = (client) => {
   // Run every minute
@@ -17,13 +17,11 @@ export const startMovieStarterJob = (client) => {
           const channel = await client.channels.fetch(movie.channel_id);
 
           if (channel) {
-            // Send "Starting Now" announcement with rating buttons
-            const embed = createStartingNowEmbed(movie.title, movie.image_url);
-            const buttons = createRatingButtons(movie.id);
+            // Send "Starting Now" announcement (rating buttons sent later based on runtime)
+            const embed = createStartingNowEmbed(movie.title, movie.image_url, movie.runtime);
 
             await channel.send({
-              embeds: [embed],
-              components: buttons
+              embeds: [embed]
             });
 
             console.log(`Started movie night: ${movie.title} (ID: ${movie.id})`);

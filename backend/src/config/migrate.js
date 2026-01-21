@@ -62,6 +62,15 @@ const migrate = async () => {
       await client.query(`ALTER TABLE movie_nights ADD COLUMN started_at TIMESTAMP`);
     }
 
+    // Add rating_prompt_sent_at column if it doesn't exist
+    const ratingPromptCheck = await client.query(`
+      SELECT column_name FROM information_schema.columns
+      WHERE table_name = 'movie_nights' AND column_name = 'rating_prompt_sent_at'
+    `);
+    if (ratingPromptCheck.rows.length === 0) {
+      await client.query(`ALTER TABLE movie_nights ADD COLUMN rating_prompt_sent_at TIMESTAMP`);
+    }
+
     // Add TMDB columns to movie_nights if they don't exist
     const tmdbColumns = [
       { name: 'description', type: 'TEXT' },
