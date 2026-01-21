@@ -190,7 +190,7 @@ const StatsPage = () => {
               <h3>Most Active Raters</h3>
               <div className="rater-list">
                 {stats.top_raters.map((rater, index) => (
-                  <div key={rater.discord_id} className="rater-item">
+                  <Link key={rater.discord_id} to={`/user/${rater.id}`} className="rater-item">
                     <span className="rank">#{index + 1}</span>
                     <div className="rater-info">
                       {rater.avatar && (
@@ -206,7 +206,7 @@ const StatsPage = () => {
                       <span className="rater-count">{rater.rating_count} ratings</span>
                       <span className="rater-avg">avg: {parseFloat(rater.avg_rating).toFixed(1)}</span>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             </div>

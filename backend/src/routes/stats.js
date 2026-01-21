@@ -141,10 +141,14 @@ router.get('/me/favorites', authenticateToken, async (req, res) => {
 
 // Set a favorite movie
 router.post('/me/favorites', authenticateToken, async (req, res) => {
-  const { movie_night_id, position } = req.body;
+  const { position, movie_night_id, tmdb_id, title, image_url, release_year } = req.body;
 
-  if (!movie_night_id || !position) {
-    return res.status(400).json({ error: 'movie_night_id and position are required' });
+  if (!position) {
+    return res.status(400).json({ error: 'position is required' });
+  }
+
+  if (!movie_night_id && !tmdb_id) {
+    return res.status(400).json({ error: 'Either movie_night_id or tmdb_id is required' });
   }
 
   if (position < 1 || position > 5) {
@@ -152,7 +156,14 @@ router.post('/me/favorites', authenticateToken, async (req, res) => {
   }
 
   try {
-    const favorite = await db.setUserFavoriteMovie(req.user.id, movie_night_id, position);
+    const movieData = {
+      movieNightId: movie_night_id,
+      tmdbId: tmdb_id,
+      title,
+      imageUrl: image_url,
+      releaseYear: release_year
+    };
+    const favorite = await db.setUserFavoriteMovie(req.user.id, position, movieData);
     res.json(favorite);
   } catch (err) {
     console.error('Error setting favorite:', err);

@@ -175,11 +175,14 @@
   border-radius: 8px;
   transition: all 0.2s ease;
   border: 1px solid transparent;
+  text-decoration: none;
+  color: inherit;
 }
 
 .rater-item:hover {
-  background: rgba(229, 9, 20, 0.05);
+  background: rgba(229, 9, 20, 0.1);
   border-color: var(--accent-glow);
+  transform: translateX(4px);
 }
 
 .rater-item .rank {

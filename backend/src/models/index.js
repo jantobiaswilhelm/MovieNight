@@ -801,10 +801,13 @@ export const getUserTotalWatchtime = async (userId) => {
 
 export const getUserFavoriteMovies = async (userId) => {
   const result = await pool.query(
-    `SELECT ufm.position, ufm.created_at,
-            mn.id as movie_night_id, mn.title, mn.image_url, mn.release_year
+    `SELECT ufm.position, ufm.created_at, ufm.tmdb_id,
+            COALESCE(ufm.title, mn.title) as title,
+            COALESCE(ufm.image_url, mn.image_url) as image_url,
+            COALESCE(ufm.release_year, mn.release_year) as release_year,
+            mn.id as movie_night_id
      FROM user_favorite_movies ufm
-     JOIN movie_nights mn ON ufm.movie_night_id = mn.id
+     LEFT JOIN movie_nights mn ON ufm.movie_night_id = mn.id
      WHERE ufm.user_id = $1
      ORDER BY ufm.position`,
     [userId]
@@ -812,21 +815,22 @@ export const getUserFavoriteMovies = async (userId) => {
   return result.rows;
 };
 
-export const setUserFavoriteMovie = async (userId, movieNightId, position) => {
-  // Use upsert - if position already has a movie, replace it
-  // First, delete any existing entry for this movie by this user (to handle re-positioning)
+export const setUserFavoriteMovie = async (userId, position, movieData) => {
+  // movieData can have: movieNightId (for watched movies) or tmdbId, title, imageUrl, releaseYear (for any movie)
+  const { movieNightId, tmdbId, title, imageUrl, releaseYear } = movieData;
+
+  // Delete any existing entry at this position
   await pool.query(
-    `DELETE FROM user_favorite_movies WHERE user_id = $1 AND movie_night_id = $2`,
-    [userId, movieNightId]
+    `DELETE FROM user_favorite_movies WHERE user_id = $1 AND position = $2`,
+    [userId, position]
   );
-  // Then upsert at the new position
+
+  // Insert new favorite
   const result = await pool.query(
-    `INSERT INTO user_favorite_movies (user_id, movie_night_id, position)
-     VALUES ($1, $2, $3)
-     ON CONFLICT (user_id, position)
-     DO UPDATE SET movie_night_id = $2, created_at = CURRENT_TIMESTAMP
+    `INSERT INTO user_favorite_movies (user_id, position, movie_night_id, tmdb_id, title, image_url, release_year)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
      RETURNING *`,
-    [userId, movieNightId, position]
+    [userId, position, movieNightId || null, tmdbId || null, title || null, imageUrl || null, releaseYear || null]
   );
   return result.rows[0];
 };

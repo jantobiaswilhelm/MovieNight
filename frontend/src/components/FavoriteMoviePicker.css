@@ -49,6 +49,46 @@
   border-bottom: 1px solid var(--border-color);
 }
 
+.picker-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.picker-tab {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 2px solid transparent;
+}
+
+.picker-tab:hover {
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+}
+
+.picker-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.picker-item-tmdb {
+  color: var(--warning);
+}
+
+.picker-item-added {
+  font-size: 0.75rem;
+  color: var(--success);
+  padding: 0.25rem 0.5rem;
+  background: rgba(34, 197, 94, 0.15);
+  border-radius: 4px;
+}
+
 .picker-header h3 {
   margin: 0;
   font-size: 1.1rem;
