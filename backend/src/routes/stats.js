@@ -202,6 +202,23 @@ router.get('/me/rated-movies', authenticateToken, async (req, res) => {
   }
 });
 
+// Get all guild users
+router.get('/users', async (req, res) => {
+  const { guild_id } = req.query;
+
+  if (!guild_id) {
+    return res.status(400).json({ error: 'guild_id is required' });
+  }
+
+  try {
+    const users = await db.getGuildUsers(guild_id);
+    res.json(users);
+  } catch (err) {
+    console.error('Error fetching guild users:', err);
+    res.status(500).json({ error: 'Failed to fetch users' });
+  }
+});
+
 // Get another user's profile (public preview)
 router.get('/user/:userId/profile', async (req, res) => {
   const { userId } = req.params;

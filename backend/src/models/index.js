@@ -866,3 +866,17 @@ export const getUserWishlistPreview = async (userId, guildId, limit = 5) => {
   );
   return result.rows;
 };
+
+export const getGuildUsers = async (guildId) => {
+  const result = await pool.query(
+    `SELECT DISTINCT u.id, u.username, u.discord_id, u.avatar, COUNT(r.id)::integer as rating_count
+     FROM users u
+     JOIN ratings r ON u.id = r.user_id
+     JOIN movie_nights mn ON r.movie_night_id = mn.id
+     WHERE mn.guild_id = $1
+     GROUP BY u.id
+     ORDER BY rating_count DESC`,
+    [guildId]
+  );
+  return result.rows;
+};

@@ -199,3 +199,7 @@ export const removeFavoriteMovie = (position) =>
 
 export const getMyRatedMoviesForFavorites = () =>
   fetchAPI('/api/stats/me/rated-movies');
+
+// Guild Users
+export const getGuildUsers = () =>
+  fetchAPI(`/api/stats/users?guild_id=${GUILD_ID}`);
