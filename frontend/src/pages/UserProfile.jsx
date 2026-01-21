@@ -1,61 +1,48 @@
 import { useState, useEffect } from 'react';
-import { Link, Navigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { getMyRatings, getMyProfileStats } from '../api/client';
+import { Link, useParams } from 'react-router-dom';
+import { getUserProfileStats, getUserRatings } from '../api/client';
 import RatingHistogram from '../components/RatingHistogram';
 import GenreBreakdown from '../components/GenreBreakdown';
 import HotTakes from '../components/HotTakes';
-import RatingTwin from '../components/RatingTwin';
 import FavoriteMovies from '../components/FavoriteMovies';
-import ProfileWishlist from '../components/ProfileWishlist';
 import './Profile.css';
 
-const Profile = () => {
-  const { user, isAuthenticated, loading: authLoading } = useAuth();
-  const [ratings, setRatings] = useState([]);
+const UserProfile = () => {
+  const { userId } = useParams();
   const [profileStats, setProfileStats] = useState(null);
+  const [ratings, setRatings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchData = async () => {
-    try {
-      const [ratingsData, profileData] = await Promise.all([
-        getMyRatings(100),
-        getMyProfileStats()
-      ]);
-      setRatings(ratingsData);
-      setProfileStats(profileData);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    if (!isAuthenticated) return;
+    const fetchData = async () => {
+      try {
+        const [profileData, ratingsData] = await Promise.all([
+          getUserProfileStats(userId),
+          getUserRatings(userId, 20)
+        ]);
+        setProfileStats(profileData);
+        setRatings(ratingsData);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchData();
-  }, [isAuthenticated]);
-
-  const handleFavoritesUpdate = () => {
-    // Refetch profile stats to update favorites
-    getMyProfileStats().then(setProfileStats).catch(console.error);
-  };
-
-  if (authLoading) {
-    return <div className="loading">Loading...</div>;
-  }
-
-  if (!isAuthenticated) {
-    return <Navigate to="/" replace />;
-  }
+  }, [userId]);
 
   if (loading) {
-    return <div className="loading">Loading your profile...</div>;
+    return <div className="loading">Loading profile...</div>;
   }
 
   if (error) {
     return <div className="error">Error: {error}</div>;
+  }
+
+  if (!profileStats?.user) {
+    return <div className="error">User not found</div>;
   }
 
   const formatDate = (dateStr) => {
@@ -76,12 +63,21 @@ const Profile = () => {
     return `${hours}h ${mins}m`;
   };
 
-  const basicStats = profileStats?.basic_stats;
-  const guildComparison = profileStats?.guild_comparison;
+  const { user, basic_stats: basicStats, guild_comparison: guildComparison } = profileStats;
+
+  const getAvatarUrl = () => {
+    if (!user.avatar) return null;
+    return `https://cdn.discordapp.com/avatars/${user.discord_id}/${user.avatar}.png`;
+  };
 
   return (
     <div className="profile">
-      <h1>{user.username}'s Profile</h1>
+      <div className="user-profile-header">
+        {getAvatarUrl() && (
+          <img src={getAvatarUrl()} alt={user.username} className="user-profile-avatar" />
+        )}
+        <h1>{user.username}'s Profile</h1>
+      </div>
 
       {/* Stats Row */}
       {basicStats && (
@@ -120,14 +116,15 @@ const Profile = () => {
         </div>
       )}
 
-      {/* Favorite Movies Section */}
-      <div className="profile-section">
-        <FavoriteMovies
-          favorites={profileStats?.favorite_movies || []}
-          onUpdate={handleFavoritesUpdate}
-          isOwner={true}
-        />
-      </div>
+      {/* Favorite Movies Section (read-only) */}
+      {profileStats?.favorite_movies?.length > 0 && (
+        <div className="profile-section">
+          <FavoriteMovies
+            favorites={profileStats.favorite_movies}
+            isOwner={false}
+          />
+        </div>
+      )}
 
       {/* Two Column Layout */}
       <div className="profile-grid">
@@ -136,21 +133,14 @@ const Profile = () => {
           <GenreBreakdown genreStats={profileStats?.genre_stats} />
         </div>
         <div className="profile-column">
-          <RatingTwin twin={profileStats?.rating_twin} />
           <HotTakes hotTakes={profileStats?.hot_takes} />
-          <ProfileWishlist wishlist={profileStats?.wishlist_preview} />
         </div>
       </div>
 
-      {/* Rating History */}
-      <div className="profile-section">
-        <h2>Rating History</h2>
-        {ratings.length === 0 ? (
-          <div className="empty-state">
-            <p>You haven't rated any movies yet.</p>
-            <p>Watch a movie night and rate it!</p>
-          </div>
-        ) : (
+      {/* Recent Ratings */}
+      {ratings.length > 0 && (
+        <div className="profile-section">
+          <h2>Recent Ratings</h2>
           <div className="ratings-table">
             <div className="ratings-header">
               <span>Movie</span>
@@ -169,10 +159,10 @@ const Profile = () => {
               </Link>
             ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };
 
-export default Profile;
+export default UserProfile;

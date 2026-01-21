@@ -1,0 +1,137 @@
+.rating-twin {
+  background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
+  border-radius: 12px;
+  padding: 1.25rem;
+  border: 1px solid var(--border-color);
+}
+
+.rating-twin h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+.rating-twin-empty {
+  text-align: center;
+  padding: 1.5rem 0;
+}
+
+.rating-twin-empty p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.rating-twin-hint {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 0.5rem;
+}
+
+.rating-twin-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border-radius: 10px;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.rating-twin-card:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--accent-glow);
+  transform: translateY(-2px);
+}
+
+.rating-twin-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--bg-primary);
+  border: 2px solid var(--accent);
+}
+
+.rating-twin-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.rating-twin-avatar .no-avatar {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--bg-secondary);
+}
+
+.rating-twin-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.rating-twin-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.rating-twin-shared {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.rating-twin-match {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  background: rgba(229, 9, 20, 0.15);
+  border-radius: 8px;
+}
+
+.match-percent {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.match-label {
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.rating-twin-description {
+  margin: 0.75rem 0 0 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .rating-twin-avatar {
+    width: 40px;
+    height: 40px;
+  }
+
+  .rating-twin-name {
+    font-size: 0.9rem;
+  }
+
+  .match-percent {
+    font-size: 1.1rem;
+  }
+}

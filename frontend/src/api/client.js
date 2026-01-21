@@ -175,3 +175,27 @@ export const getNextMovieWithAttendees = () =>
 
 export const getUpcomingMoviesWithAttendees = (limit = 10) =>
   fetchAPI(`/api/movies/upcoming/with-attendees?guild_id=${GUILD_ID}&limit=${limit}`);
+
+// Profile
+export const getMyProfileStats = () =>
+  fetchAPI(`/api/stats/me/profile?guild_id=${GUILD_ID}`);
+
+export const getUserProfileStats = (userId) =>
+  fetchAPI(`/api/stats/user/${userId}/profile?guild_id=${GUILD_ID}`);
+
+export const getMyFavoriteMovies = () =>
+  fetchAPI('/api/stats/me/favorites');
+
+export const setFavoriteMovie = (movieNightId, position) =>
+  fetchAPI('/api/stats/me/favorites', {
+    method: 'POST',
+    body: JSON.stringify({ movie_night_id: movieNightId, position })
+  });
+
+export const removeFavoriteMovie = (position) =>
+  fetchAPI(`/api/stats/me/favorites/${position}`, {
+    method: 'DELETE'
+  });
+
+export const getMyRatedMoviesForFavorites = () =>
+  fetchAPI('/api/stats/me/rated-movies');

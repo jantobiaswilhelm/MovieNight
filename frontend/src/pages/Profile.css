@@ -7,17 +7,41 @@
   margin-bottom: 2rem;
 }
 
+.user-profile-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.user-profile-header h1 {
+  margin-bottom: 0;
+}
+
+.user-profile-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 3px solid var(--accent);
+}
+
+.profile h2 {
+  margin: 0 0 1rem 0;
+  font-size: 1.25rem;
+  color: var(--text-primary);
+}
+
 .profile-stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 0.75rem;
   margin-bottom: 2rem;
 }
 
 .profile-stat {
   background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
   border-radius: 12px;
-  padding: 1.25rem;
+  padding: 1rem;
   text-align: center;
   border: 1px solid var(--border-color);
   transition: all 0.3s ease;
@@ -30,20 +54,45 @@
 }
 
 .profile-stat .stat-value {
-  font-size: 1.75rem;
+  font-size: 1.5rem;
   font-weight: bold;
   color: var(--accent);
   display: block;
   line-height: 1;
 }
 
+.profile-stat .stat-value.higher {
+  color: var(--success);
+}
+
+.profile-stat .stat-value.lower {
+  color: var(--error);
+}
+
 .profile-stat .stat-label {
   color: var(--text-secondary);
-  font-size: 0.75rem;
-  margin-top: 0.5rem;
+  font-size: 0.7rem;
+  margin-top: 0.4rem;
   display: block;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+}
+
+.profile-section {
+  margin-bottom: 2rem;
+}
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.profile-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
 .empty-state {
@@ -109,7 +158,35 @@
   text-align: right;
 }
 
+@media (max-width: 900px) {
+  .profile-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .profile-column {
+    gap: 1rem;
+  }
+}
+
 @media (max-width: 600px) {
+  .profile-stats {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+  }
+
+  .profile-stat {
+    padding: 0.75rem 0.5rem;
+  }
+
+  .profile-stat .stat-value {
+    font-size: 1.25rem;
+  }
+
+  .profile-stat .stat-label {
+    font-size: 0.6rem;
+  }
+
   .ratings-header {
     display: none;
   }
