@@ -26,13 +26,22 @@ const CommentsTicker = () => {
     return null;
   }
 
-  // Duplicate comments for seamless loop
-  const tickerContent = [...comments, ...comments];
+  // For seamless looping, we need enough items to fill the viewport
+  // With few comments, repeat them more times; with many, just duplicate once
+  const minItemsNeeded = 10;
+  const repeatCount = Math.max(2, Math.ceil(minItemsNeeded / comments.length));
+  const tickerContent = Array(repeatCount).fill(comments).flat();
+
+  // Animation needs to translate by exactly one set's worth for seamless loop
+  const translatePercent = 100 / repeatCount;
 
   return (
     <div className="comments-ticker-section">
       <div className="comments-ticker-wrapper">
-        <div className="comments-ticker-track">
+        <div
+          className="comments-ticker-track"
+          style={{ '--translate-percent': `-${translatePercent}%` }}
+        >
           {tickerContent.map((comment, index) => (
             <div key={index} className="ticker-item">
               <div className="ticker-quote">"{comment.comment}"</div>
