@@ -86,6 +86,8 @@ export const execute = async (interaction) => {
   if (interaction.isModalSubmit()) {
     if (interaction.customId === 'suggest_movie_modal' || interaction.customId.startsWith('suggest_movie_modal_')) {
       await handleSuggestModal(interaction);
+    } else if (interaction.customId.startsWith('rating_comment_modal_')) {
+      await handleRatingCommentModal(interaction);
     }
     return;
   }
@@ -122,6 +124,51 @@ async function handleRatingButton(interaction) {
       });
     }
 
+    // Show modal for optional comment
+    const modal = new ModalBuilder()
+      .setCustomId(`rating_comment_modal_${movieId}_${score}`)
+      .setTitle(`Rate: ${movie.title.slice(0, 30)}${movie.title.length > 30 ? '...' : ''}`);
+
+    const commentInput = new TextInputBuilder()
+      .setCustomId('rating_comment')
+      .setLabel(`Your rating: ${score}/10 - Add a comment? (optional)`)
+      .setPlaceholder('Share your thoughts about the movie...')
+      .setStyle(TextInputStyle.Paragraph)
+      .setRequired(false)
+      .setMaxLength(500);
+
+    modal.addComponents(
+      new ActionRowBuilder().addComponents(commentInput)
+    );
+
+    await interaction.showModal(modal);
+
+  } catch (err) {
+    console.error('Error handling rating button:', err);
+    await interaction.reply({
+      content: 'There was an error processing your rating.',
+      ephemeral: true
+    });
+  }
+}
+
+async function handleRatingCommentModal(interaction) {
+  // Parse movieId and score from customId: rating_comment_modal_{movieId}_{score}
+  const parts = interaction.customId.split('_');
+  const movieId = parseInt(parts[3]);
+  const score = parseInt(parts[4]);
+  const comment = interaction.fields.getTextInputValue('rating_comment')?.trim() || null;
+
+  try {
+    // Get movie
+    const movie = await getMovieNightById(movieId);
+    if (!movie) {
+      return interaction.reply({
+        content: 'Movie not found.',
+        ephemeral: true
+      });
+    }
+
     // Create or get user
     const user = await findOrCreateUser(
       interaction.user.id,
@@ -132,17 +179,23 @@ async function handleRatingButton(interaction) {
     // Check for existing rating
     const existingRating = await getUserRating(movieId, interaction.user.id);
 
-    // Save rating
-    await upsertRating(movieId, user.id, score);
+    // Save rating with optional comment
+    await upsertRating(movieId, user.id, score, comment);
 
     const action = existingRating ? 'updated' : 'submitted';
+    let replyContent = `Rating ${action}! You gave **${movie.title}** a **${score}/10**`;
+    if (comment) {
+      replyContent += `\n> "${comment}"`;
+    }
+    replyContent += '\n*Use /rate for half-point ratings like 7.5*';
+
     await interaction.reply({
-      content: `Rating ${action}! You gave **${movie.title}** a **${score}/10**\n*Use /rate for half-point ratings like 7.5*`,
+      content: replyContent,
       ephemeral: true
     });
 
   } catch (err) {
-    console.error('Error handling rating button:', err);
+    console.error('Error handling rating comment modal:', err);
     await interaction.reply({
       content: 'There was an error saving your rating.',
       ephemeral: true

@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import './RatingInput.css';
 
-const RatingInput = ({ currentRating, onSubmit, disabled }) => {
+const RatingInput = ({ currentRating, currentComment, onSubmit, disabled }) => {
   const [score, setScore] = useState(currentRating ? parseFloat(currentRating) : 7);
+  const [comment, setComment] = useState(currentComment || '');
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async () => {
     setSubmitting(true);
     try {
-      await onSubmit(score);
+      await onSubmit(score, comment.trim() || null);
     } finally {
       setSubmitting(false);
     }
@@ -36,6 +37,20 @@ const RatingInput = ({ currentRating, onSubmit, disabled }) => {
           ))}
         </select>
         <span className="rating-display">{score.toFixed(1)}/10</span>
+      </div>
+
+      <div className="rating-comment">
+        <label htmlFor="comment">Comment (optional):</label>
+        <textarea
+          id="comment"
+          value={comment}
+          onChange={(e) => setComment(e.target.value.slice(0, 500))}
+          placeholder="Share your thoughts about the movie..."
+          disabled={disabled || submitting}
+          maxLength={500}
+          rows={3}
+        />
+        <span className="comment-counter">{comment.length}/500</span>
       </div>
 
       <button

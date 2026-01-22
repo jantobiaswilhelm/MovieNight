@@ -219,6 +219,23 @@ router.get('/users', async (req, res) => {
   }
 });
 
+// Get random comments for homepage ticker
+router.get('/comments/random', async (req, res) => {
+  const { guild_id, limit = 10 } = req.query;
+
+  if (!guild_id) {
+    return res.status(400).json({ error: 'guild_id is required' });
+  }
+
+  try {
+    const comments = await db.getRandomComments(guild_id, parseInt(limit));
+    res.json(comments);
+  } catch (err) {
+    console.error('Error fetching random comments:', err);
+    res.status(500).json({ error: 'Failed to fetch comments' });
+  }
+});
+
 // Get another user's profile (public preview)
 router.get('/user/:userId/profile', async (req, res) => {
   const { userId } = req.params;

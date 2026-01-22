@@ -300,6 +300,15 @@ const migrate = async () => {
       ALTER TABLE user_favorite_movies DROP CONSTRAINT IF EXISTS user_favorite_movies_user_id_movie_night_id_key
     `).catch(() => {});
 
+    // Add comment column to ratings table if it doesn't exist
+    const commentColumnCheck = await client.query(`
+      SELECT column_name FROM information_schema.columns
+      WHERE table_name = 'ratings' AND column_name = 'comment'
+    `);
+    if (commentColumnCheck.rows.length === 0) {
+      await client.query(`ALTER TABLE ratings ADD COLUMN comment TEXT`);
+    }
+
     // Indexes
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_attendance_movie ON movie_attendance(movie_night_id)

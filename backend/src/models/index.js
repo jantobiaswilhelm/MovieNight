@@ -86,14 +86,14 @@ export const getRecentMovieNightsForRating = async (guildId, limit = 10) => {
 };
 
 // Rating operations
-export const upsertRating = async (movieNightId, userId, score) => {
+export const upsertRating = async (movieNightId, userId, score, comment = null) => {
   const result = await pool.query(
-    `INSERT INTO ratings (movie_night_id, user_id, score)
-     VALUES ($1, $2, $3)
+    `INSERT INTO ratings (movie_night_id, user_id, score, comment)
+     VALUES ($1, $2, $3, $4)
      ON CONFLICT (movie_night_id, user_id)
-     DO UPDATE SET score = $3, updated_at = CURRENT_TIMESTAMP
+     DO UPDATE SET score = $3, comment = $4, updated_at = CURRENT_TIMESTAMP
      RETURNING *`,
-    [movieNightId, userId, score]
+    [movieNightId, userId, score, comment]
   );
   return result.rows[0];
 };
@@ -112,7 +112,8 @@ export const getRatingsForMovie = async (movieNightId) => {
 
 export const getUserRatings = async (userId, limit = 20) => {
   const result = await pool.query(
-    `SELECT r.*, mn.title, mn.scheduled_at, mn.image_url
+    `SELECT r.id, r.movie_night_id, r.user_id, r.score, r.comment, r.created_at, r.updated_at,
+            mn.title, mn.scheduled_at, mn.image_url
      FROM ratings r
      JOIN movie_nights mn ON r.movie_night_id = mn.id
      WHERE r.user_id = $1
@@ -877,6 +878,20 @@ export const getGuildUsers = async (guildId) => {
      GROUP BY u.id
      ORDER BY rating_count DESC`,
     [guildId]
+  );
+  return result.rows;
+};
+
+export const getRandomComments = async (guildId, limit = 10) => {
+  const result = await pool.query(
+    `SELECT r.comment, r.score, mn.title as movie_title, u.username, u.discord_id, u.avatar
+     FROM ratings r
+     JOIN movie_nights mn ON r.movie_night_id = mn.id
+     JOIN users u ON r.user_id = u.id
+     WHERE mn.guild_id = $1 AND r.comment IS NOT NULL AND r.comment != ''
+     ORDER BY RANDOM()
+     LIMIT $2`,
+    [guildId, limit]
   );
   return result.rows;
 };

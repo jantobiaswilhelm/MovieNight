@@ -20,6 +20,7 @@ import {
 import MovieCard from '../components/MovieCard';
 import StarRating from '../components/StarRating';
 import UsersSection from '../components/UsersSection';
+import CommentsTicker from '../components/CommentsTicker';
 import { MovieCardSkeleton } from '../components/Skeleton';
 import './Home.css';
 
@@ -1016,6 +1017,9 @@ const Home = () => {
           </div>
         </div>
       </div>
+
+      {/* Comments Ticker */}
+      <CommentsTicker />
 
       {/* Members Section */}
       <UsersSection />

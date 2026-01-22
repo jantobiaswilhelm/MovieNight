@@ -12,6 +12,7 @@ const Movie = () => {
   const { user, isAuthenticated, isAdmin, login } = useAuth();
   const [movie, setMovie] = useState(null);
   const [myRating, setMyRating] = useState(null);
+  const [myComment, setMyComment] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [ratingMessage, setRatingMessage] = useState(null);
@@ -32,6 +33,7 @@ const Movie = () => {
           try {
             const rating = await getMyRating(id);
             setMyRating(rating?.score || null);
+            setMyComment(rating?.comment || null);
           } catch {
             // No rating yet
           }
@@ -108,10 +110,11 @@ const Movie = () => {
     }
   }, [movie?.started_at, movie?.runtime]);
 
-  const handleSubmitRating = async (score) => {
+  const handleSubmitRating = async (score, comment) => {
     try {
-      await submitRating(id, score);
+      await submitRating(id, score, comment);
       setMyRating(score);
+      setMyComment(comment);
       setRatingMessage('Rating saved!');
 
       // Refresh movie data
@@ -354,6 +357,7 @@ const Movie = () => {
             <>
               <RatingInput
                 currentRating={myRating}
+                currentComment={myComment}
                 onSubmit={handleSubmitRating}
               />
               {ratingMessage && (
@@ -397,19 +401,26 @@ const Movie = () => {
           <h2>All Ratings</h2>
           <div className="ratings-list">
             {movie.ratings.map((rating) => (
-              <Link key={rating.id} to={`/user/${rating.user_id}`} className="rating-item">
-                <div className="rating-user">
-                  {rating.avatar && (
-                    <img
-                      src={`https://cdn.discordapp.com/avatars/${rating.discord_id}/${rating.avatar}.png`}
-                      alt=""
-                      className="rating-avatar"
-                    />
-                  )}
-                  <span>{rating.username}</span>
-                </div>
-                <div className="rating-score">{parseFloat(rating.score).toFixed(1)}/10</div>
-              </Link>
+              <div key={rating.id} className="rating-item-container">
+                <Link to={`/user/${rating.user_id}`} className="rating-item">
+                  <div className="rating-user">
+                    {rating.avatar && (
+                      <img
+                        src={`https://cdn.discordapp.com/avatars/${rating.discord_id}/${rating.avatar}.png`}
+                        alt=""
+                        className="rating-avatar"
+                      />
+                    )}
+                    <span>{rating.username}</span>
+                  </div>
+                  <div className="rating-score">{parseFloat(rating.score).toFixed(1)}/10</div>
+                </Link>
+                {rating.comment && (
+                  <div className="rating-comment-display">
+                    <p>"{rating.comment}"</p>
+                  </div>
+                )}
+              </div>
             ))}
           </div>
         </div>
