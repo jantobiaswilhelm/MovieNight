@@ -152,7 +152,7 @@ router.get('/:id', optionalAuth, async (req, res) => {
 // Submit or update rating
 router.post('/:id/ratings', authenticateToken, async (req, res) => {
   const { id } = req.params;
-  const { score } = req.body;
+  const { score, comment } = req.body;
 
   if (!score || score < 1 || score > 10) {
     return res.status(400).json({ error: 'Score must be between 1 and 10' });
@@ -161,6 +161,11 @@ router.post('/:id/ratings', authenticateToken, async (req, res) => {
   // Validate 0.5 increments
   if ((score * 2) % 1 !== 0) {
     return res.status(400).json({ error: 'Score must be in 0.5 increments' });
+  }
+
+  // Validate comment length if provided
+  if (comment && comment.length > 500) {
+    return res.status(400).json({ error: 'Comment must be 500 characters or less' });
   }
 
   try {
@@ -186,7 +191,7 @@ router.post('/:id/ratings', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: `Ratings will be available in ${remainingMinutes} minute${remainingMinutes !== 1 ? 's' : ''}.` });
     }
 
-    const rating = await db.upsertRating(parseInt(id), req.user.id, score);
+    const rating = await db.upsertRating(parseInt(id), req.user.id, score, comment || null);
     res.json(rating);
   } catch (err) {
     console.error('Error saving rating:', err);

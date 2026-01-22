@@ -14,7 +14,12 @@ export const data = new SlashCommandBuilder()
       .setDescription('Your rating (1-10, can use .5 like 7.5)')
       .setRequired(true)
       .setMinValue(1)
-      .setMaxValue(10));
+      .setMaxValue(10))
+  .addStringOption(option =>
+    option.setName('comment')
+      .setDescription('Add a comment about the movie (optional)')
+      .setRequired(false)
+      .setMaxLength(500));
 
 export const autocomplete = async (interaction) => {
   const focusedValue = interaction.options.getFocused().toLowerCase();
@@ -41,6 +46,7 @@ export const autocomplete = async (interaction) => {
 export const execute = async (interaction) => {
   const movieId = interaction.options.getInteger('movie');
   const score = interaction.options.getNumber('score');
+  const comment = interaction.options.getString('comment') || null;
 
   // Validate score is in 0.5 increments
   if ((score * 2) % 1 !== 0) {
@@ -86,12 +92,17 @@ export const execute = async (interaction) => {
     // Check for existing rating
     const existingRating = await getUserRating(movieId, interaction.user.id);
 
-    // Save rating
-    await upsertRating(movieId, user.id, score);
+    // Save rating with optional comment
+    await upsertRating(movieId, user.id, score, comment);
 
     const action = existingRating ? 'updated' : 'submitted';
+    let replyContent = `Rating ${action}! You gave **${movie.title}** a **${score}/10**`;
+    if (comment) {
+      replyContent += `\n> "${comment}"`;
+    }
+
     await interaction.reply({
-      content: `Rating ${action}! You gave **${movie.title}** a **${score}/10**`,
+      content: replyContent,
       ephemeral: false
     });
 

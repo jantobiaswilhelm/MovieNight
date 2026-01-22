@@ -74,14 +74,14 @@ export const getRecentMovieNightsForRating = async (guildId, limit = 10) => {
 };
 
 // Rating operations
-export const upsertRating = async (movieNightId, userId, score) => {
+export const upsertRating = async (movieNightId, userId, score, comment = null) => {
   const result = await pool.query(
-    `INSERT INTO ratings (movie_night_id, user_id, score)
-     VALUES ($1, $2, $3)
+    `INSERT INTO ratings (movie_night_id, user_id, score, comment)
+     VALUES ($1, $2, $3, $4)
      ON CONFLICT (movie_night_id, user_id)
-     DO UPDATE SET score = $3, updated_at = CURRENT_TIMESTAMP
+     DO UPDATE SET score = $3, comment = $4, updated_at = CURRENT_TIMESTAMP
      RETURNING *`,
-    [movieNightId, userId, score]
+    [movieNightId, userId, score, comment]
   );
   return result.rows[0];
 };
@@ -100,7 +100,8 @@ export const getRatingsForMovie = async (movieNightId) => {
 
 export const getUserRatings = async (discordId, limit = 10) => {
   const result = await pool.query(
-    `SELECT r.*, mn.title, mn.scheduled_at
+    `SELECT r.id, r.movie_night_id, r.user_id, r.score, r.comment, r.created_at, r.updated_at,
+            mn.title, mn.scheduled_at
      FROM ratings r
      JOIN users u ON r.user_id = u.id
      JOIN movie_nights mn ON r.movie_night_id = mn.id

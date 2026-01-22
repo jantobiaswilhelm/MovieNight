@@ -167,7 +167,13 @@ export const createMyRatingsEmbed = (ratings, username) => {
 
   const description = ratings.map((r, i) => {
     const date = new Date(r.scheduled_at);
-    return `**${i + 1}. ${r.title}** - ${parseFloat(r.score).toFixed(1)}/10\n<t:${Math.floor(date.getTime() / 1000)}:D>`;
+    let entry = `**${i + 1}. ${r.title}** - ${parseFloat(r.score).toFixed(1)}/10\n<t:${Math.floor(date.getTime() / 1000)}:D>`;
+    if (r.comment) {
+      // Truncate comment if too long
+      const truncatedComment = r.comment.length > 100 ? r.comment.slice(0, 97) + '...' : r.comment;
+      entry += `\n> "${truncatedComment}"`;
+    }
+    return entry;
   }).join('\n\n');
 
   embed.setDescription(description);

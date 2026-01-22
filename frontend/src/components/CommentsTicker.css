@@ -1,0 +1,124 @@
+.comments-ticker-section {
+  width: 100%;
+  overflow: hidden;
+  padding: 1rem 0;
+  background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+  margin: 2rem 0;
+}
+
+.comments-ticker-wrapper {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+.comments-ticker-track {
+  display: flex;
+  gap: 3rem;
+  animation: ticker-scroll 60s linear infinite;
+  width: fit-content;
+}
+
+.comments-ticker-track:hover {
+  animation-play-state: paused;
+}
+
+@keyframes ticker-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.ticker-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background: var(--bg-primary);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  min-width: 280px;
+  max-width: 400px;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.ticker-item:hover {
+  border-color: var(--accent-glow);
+  transform: translateY(-2px);
+}
+
+.ticker-quote {
+  font-style: italic;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.ticker-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.ticker-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid var(--glass-border);
+}
+
+.ticker-user {
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: var(--text-primary);
+}
+
+.ticker-separator {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.ticker-movie {
+  font-size: 0.8rem;
+  color: var(--accent);
+  max-width: 120px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ticker-score {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--warning);
+  background: rgba(234, 179, 8, 0.15);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+}
+
+@media (max-width: 768px) {
+  .ticker-item {
+    min-width: 250px;
+    max-width: 300px;
+    padding: 0.6rem 1rem;
+  }
+
+  .ticker-quote {
+    font-size: 0.85rem;
+  }
+
+  .comments-ticker-track {
+    animation-duration: 45s;
+  }
+}

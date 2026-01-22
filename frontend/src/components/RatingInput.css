@@ -45,6 +45,49 @@
   color: var(--warning);
 }
 
+.rating-comment {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.rating-comment label {
+  color: var(--text-secondary);
+}
+
+.rating-comment textarea {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 80px;
+  transition: all 0.2s ease;
+}
+
+.rating-comment textarea:hover {
+  border-color: var(--accent);
+}
+
+.rating-comment textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.rating-comment textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.comment-counter {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-align: right;
+}
+
 .rating-input button {
   align-self: flex-start;
 }

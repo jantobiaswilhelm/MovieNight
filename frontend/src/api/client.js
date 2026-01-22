@@ -39,10 +39,10 @@ export const getMovies = (limit = 20, offset = 0) =>
 
 export const getMovie = (id) => fetchAPI(`/api/movies/${id}`);
 
-export const submitRating = (movieId, score) =>
+export const submitRating = (movieId, score, comment = null) =>
   fetchAPI(`/api/movies/${movieId}/ratings`, {
     method: 'POST',
-    body: JSON.stringify({ score })
+    body: JSON.stringify({ score, comment })
   });
 
 export const getMyRating = (movieId) =>
@@ -203,3 +203,7 @@ export const getMyRatedMoviesForFavorites = () =>
 // Guild Users
 export const getGuildUsers = () =>
   fetchAPI(`/api/stats/users?guild_id=${GUILD_ID}`);
+
+// Random Comments for homepage ticker
+export const getRandomComments = (limit = 10) =>
+  fetchAPI(`/api/stats/comments/random?guild_id=${GUILD_ID}&limit=${limit}`);
