@@ -8,6 +8,7 @@ import HotTakes from '../components/HotTakes';
 import RatingTwin from '../components/RatingTwin';
 import FavoriteMovies from '../components/FavoriteMovies';
 import ProfileWishlist from '../components/ProfileWishlist';
+import TopRatedMovies from '../components/TopRatedMovies';
 import './Profile.css';
 
 const Profile = () => {
@@ -127,6 +128,11 @@ const Profile = () => {
           onUpdate={handleFavoritesUpdate}
           isOwner={true}
         />
+      </div>
+
+      {/* Top 10 Movies Section */}
+      <div className="profile-section">
+        <TopRatedMovies movies={profileStats?.top_rated_movies} />
       </div>
 
       {/* Two Column Layout */}

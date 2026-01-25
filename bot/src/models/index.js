@@ -113,6 +113,25 @@ export const getUserRatings = async (discordId, limit = 10) => {
   return result.rows;
 };
 
+export const getUserTopRatedMovies = async (discordId, limit = 10) => {
+  const result = await pool.query(
+    `SELECT r.id, r.movie_night_id, r.score, r.comment,
+            mn.title, mn.scheduled_at, mn.image_url,
+            ROUND(AVG(r2.score)::numeric, 1) as community_avg,
+            COUNT(r2.id)::integer as rating_count
+     FROM ratings r
+     JOIN users u ON r.user_id = u.id
+     JOIN movie_nights mn ON r.movie_night_id = mn.id
+     LEFT JOIN ratings r2 ON r2.movie_night_id = mn.id
+     WHERE u.discord_id = $1
+     GROUP BY r.id, mn.id
+     ORDER BY r.score DESC, mn.scheduled_at DESC
+     LIMIT $2`,
+    [discordId, limit]
+  );
+  return result.rows;
+};
+
 export const getUserRating = async (movieNightId, discordId) => {
   const result = await pool.query(
     `SELECT r.* FROM ratings r
