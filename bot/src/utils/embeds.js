@@ -184,3 +184,34 @@ export const createMyRatingsEmbed = (ratings, username) => {
 
   return embed;
 };
+
+export const createTop10Embed = (movies, username) => {
+  const embed = new EmbedBuilder()
+    .setTitle(`${username}'s Top 10 Movies`)
+    .setColor(0xFFD700);
+
+  if (movies.length === 0) {
+    embed.setDescription('No ratings yet! Watch some movies and rate them to see your top 10.');
+    return embed;
+  }
+
+  const medals = ['🥇', '🥈', '🥉'];
+  const description = movies.map((m, i) => {
+    const medal = medals[i] || `**${i + 1}.**`;
+    const communityAvg = m.community_avg ? ` (avg: ${parseFloat(m.community_avg).toFixed(1)})` : '';
+    return `${medal} **${m.title}** - ${parseFloat(m.score).toFixed(1)}/10${communityAvg}`;
+  }).join('\n');
+
+  embed.setDescription(description);
+
+  // Set thumbnail to the top movie's poster if available
+  if (movies[0]?.image_url) {
+    embed.setThumbnail(movies[0].image_url);
+  }
+
+  // Calculate average of top 10
+  const avgRating = movies.reduce((sum, m) => sum + parseFloat(m.score), 0) / movies.length;
+  embed.setFooter({ text: `Top ${movies.length} average: ${avgRating.toFixed(1)}/10` });
+
+  return embed;
+};

@@ -5,6 +5,7 @@ import RatingHistogram from '../components/RatingHistogram';
 import GenreBreakdown from '../components/GenreBreakdown';
 import HotTakes from '../components/HotTakes';
 import FavoriteMovies from '../components/FavoriteMovies';
+import TopRatedMovies from '../components/TopRatedMovies';
 import './Profile.css';
 
 const UserProfile = () => {
@@ -125,6 +126,11 @@ const UserProfile = () => {
           />
         </div>
       )}
+
+      {/* Top 10 Movies Section */}
+      <div className="profile-section">
+        <TopRatedMovies movies={profileStats?.top_rated_movies} />
+      </div>
 
       {/* Two Column Layout */}
       <div className="profile-grid">

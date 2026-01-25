@@ -98,7 +98,8 @@ router.get('/me/profile', authenticateToken, async (req, res) => {
       hotTakes,
       watchtime,
       favoriteMovies,
-      wishlistPreview
+      wishlistPreview,
+      topRatedMovies
     ] = await Promise.all([
       db.getUserStats(req.user.id),
       db.getUserRatingHistogram(req.user.id),
@@ -108,7 +109,8 @@ router.get('/me/profile', authenticateToken, async (req, res) => {
       db.getUserHotTakes(req.user.id, 5),
       db.getUserTotalWatchtime(req.user.id),
       db.getUserFavoriteMovies(req.user.id),
-      db.getUserWishlistPreview(req.user.id, guild_id, 5)
+      db.getUserWishlistPreview(req.user.id, guild_id, 5),
+      db.getUserTopRatedMovies(req.user.id, 10)
     ]);
 
     res.json({
@@ -120,7 +122,8 @@ router.get('/me/profile', authenticateToken, async (req, res) => {
       hot_takes: hotTakes,
       watchtime: watchtime.total_minutes,
       favorite_movies: favoriteMovies,
-      wishlist_preview: wishlistPreview
+      wishlist_preview: wishlistPreview,
+      top_rated_movies: topRatedMovies
     });
   } catch (err) {
     console.error('Error fetching profile stats:', err);
@@ -258,7 +261,8 @@ router.get('/user/:userId/profile', async (req, res) => {
       genreStats,
       hotTakes,
       watchtime,
-      favoriteMovies
+      favoriteMovies,
+      topRatedMovies
     ] = await Promise.all([
       db.getUserStats(parseInt(userId)),
       db.getUserRatingHistogram(parseInt(userId)),
@@ -266,7 +270,8 @@ router.get('/user/:userId/profile', async (req, res) => {
       db.getUserGenreStats(parseInt(userId)),
       db.getUserHotTakes(parseInt(userId), 5),
       db.getUserTotalWatchtime(parseInt(userId)),
-      db.getUserFavoriteMovies(parseInt(userId))
+      db.getUserFavoriteMovies(parseInt(userId)),
+      db.getUserTopRatedMovies(parseInt(userId), 10)
     ]);
 
     res.json({
@@ -282,7 +287,8 @@ router.get('/user/:userId/profile', async (req, res) => {
       genre_stats: genreStats,
       hot_takes: hotTakes,
       watchtime: watchtime.total_minutes,
-      favorite_movies: favoriteMovies
+      favorite_movies: favoriteMovies,
+      top_rated_movies: topRatedMovies
     });
   } catch (err) {
     console.error('Error fetching user profile:', err);
