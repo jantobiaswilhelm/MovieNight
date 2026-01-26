@@ -4,6 +4,7 @@ import { createAnnouncementEmbed } from '../utils/embeds.js';
 
 // Default announcement channel ID (can be overridden per guild)
 const DEFAULT_CHANNEL_ID = process.env.ANNOUNCEMENT_CHANNEL_ID;
+const MOVIE_NIGHT_ROLE_ID = process.env.MOVIE_NIGHT_ROLE_ID;
 
 export const startAnnouncementProcessorJob = (client) => {
   // Run every 5 minutes
@@ -83,8 +84,9 @@ async function processAnnouncement(client, announcement, channel) {
     announcerName
   );
 
-  // Send the announcement
-  const reply = await channel.send({ embeds: [embed] });
+  // Send the announcement with role ping
+  const content = MOVIE_NIGHT_ROLE_ID ? `<@&${MOVIE_NIGHT_ROLE_ID}>` : undefined;
+  const reply = await channel.send({ content, embeds: [embed] });
 
   // Get or create the user (if we have their discord_id)
   let userId = announcement.user_id;

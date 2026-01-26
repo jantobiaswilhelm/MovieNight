@@ -125,6 +125,7 @@ export const getUserTopRatedMovies = async (discordId, limit = 10) => {
      LEFT JOIN ratings r2 ON r2.movie_night_id = mn.id
      WHERE u.discord_id = $1
      GROUP BY r.id, mn.id
+     HAVING COUNT(r2.id) >= 3
      ORDER BY r.score DESC, mn.scheduled_at DESC
      LIMIT $2`,
     [discordId, limit]
