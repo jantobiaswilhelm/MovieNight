@@ -2,6 +2,8 @@ import cron from 'node-cron';
 import { getMoviesToStart, startMovieNight } from '../models/index.js';
 import { createStartingNowEmbed } from '../utils/embeds.js';
 
+const MOVIE_NIGHT_ROLE_ID = process.env.MOVIE_NIGHT_ROLE_ID;
+
 export const startMovieStarterJob = (client) => {
   // Run every minute
   cron.schedule('* * * * *', async () => {
@@ -17,10 +19,12 @@ export const startMovieStarterJob = (client) => {
           const channel = await client.channels.fetch(movie.channel_id);
 
           if (channel) {
-            // Send "Starting Now" announcement (rating buttons sent later based on runtime)
+            // Send "Starting Now" announcement with role ping (rating buttons sent later based on runtime)
             const embed = createStartingNowEmbed(movie.title, movie.image_url, movie.runtime);
+            const content = MOVIE_NIGHT_ROLE_ID ? `<@&${MOVIE_NIGHT_ROLE_ID}>` : undefined;
 
             await channel.send({
+              content,
               embeds: [embed]
             });
 
