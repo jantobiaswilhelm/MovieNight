@@ -1,6 +1,7 @@
 .stats-page {
   padding: 1rem 0;
   animation: fadeIn 0.4s ease-out;
+  max-width: 1400px;
 }
 
 .stats-page h1 {
@@ -25,14 +26,14 @@
 /* Grid layouts for desktop */
 .stats-grid-3 {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
 }
 
 .stats-grid-2 {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1rem;
 }
 
 /* List sections */
@@ -234,7 +235,7 @@
 /* Raters Grid - Full Width */
 .raters-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 1rem;
 }
 
@@ -308,15 +309,7 @@
 /* Responsive: tablet */
 @media (max-width: 1024px) {
   .stats-grid-3 {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .stats-grid-3 > *:last-child {
-    grid-column: span 2;
-  }
-
-  .raters-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   }
 }
 
