@@ -64,6 +64,7 @@
 /* Dropdown Container */
 .nav-dropdown {
   position: relative;
+  padding: 0.25rem 0;
 }
 
 .nav-dropdown-trigger {
@@ -106,7 +107,7 @@
 /* Dropdown Menu */
 .nav-dropdown-menu {
   position: absolute;
-  top: calc(100% + 0.5rem);
+  top: calc(100% + 0.25rem);
   left: 50%;
   transform: translateX(-50%);
   min-width: 240px;
@@ -123,10 +124,20 @@
   animation: dropdownFadeIn 0.15s ease-out;
 }
 
+/* Bridge to prevent gap between trigger and menu */
+.nav-dropdown-menu::after {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: 0;
+  right: 0;
+  height: 10px;
+}
+
 @keyframes dropdownFadeIn {
   from {
     opacity: 0;
-    transform: translateX(-50%) translateY(-8px);
+    transform: translateX(-50%) translateY(-4px);
   }
   to {
     opacity: 1;

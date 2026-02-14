@@ -35,8 +35,12 @@ const Header = () => {
     setOpenDropdown(null);
   }, [location.pathname]);
 
-  const toggleDropdown = (name) => {
-    setOpenDropdown(openDropdown === name ? null : name);
+  const handleMouseEnter = (name) => {
+    setOpenDropdown(name);
+  };
+
+  const handleMouseLeave = () => {
+    setOpenDropdown(null);
   };
 
   const isActiveInGroup = (paths) => {
@@ -77,10 +81,11 @@ const Header = () => {
           <div
             className="nav-dropdown"
             ref={el => dropdownRefs.current.browse = el}
+            onMouseEnter={() => handleMouseEnter('browse')}
+            onMouseLeave={handleMouseLeave}
           >
             <button
               className={`nav-dropdown-trigger ${isActiveInGroup(['/movies', '/collections', '/wishlist', '/lists']) ? 'active' : ''}`}
-              onClick={() => toggleDropdown('browse')}
             >
               Browse
               <svg className={`dropdown-arrow ${openDropdown === 'browse' ? 'open' : ''}`} viewBox="0 0 12 12">
@@ -106,10 +111,11 @@ const Header = () => {
           <div
             className="nav-dropdown"
             ref={el => dropdownRefs.current.social = el}
+            onMouseEnter={() => handleMouseEnter('social')}
+            onMouseLeave={handleMouseLeave}
           >
             <button
               className={`nav-dropdown-trigger ${isActiveInGroup(['/feed', '/stats', '/achievements']) ? 'active' : ''}`}
-              onClick={() => toggleDropdown('social')}
             >
               Social
               <svg className={`dropdown-arrow ${openDropdown === 'social' ? 'open' : ''}`} viewBox="0 0 12 12">
@@ -136,10 +142,11 @@ const Header = () => {
             <div
               className="nav-dropdown"
               ref={el => dropdownRefs.current.mystuff = el}
+              onMouseEnter={() => handleMouseEnter('mystuff')}
+              onMouseLeave={handleMouseLeave}
             >
               <button
                 className={`nav-dropdown-trigger ${isActiveInGroup(['/my-movies', '/profile']) ? 'active' : ''}`}
-                onClick={() => toggleDropdown('mystuff')}
               >
                 My Stuff
                 <svg className={`dropdown-arrow ${openDropdown === 'mystuff' ? 'open' : ''}`} viewBox="0 0 12 12">
