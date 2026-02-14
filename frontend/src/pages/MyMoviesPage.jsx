@@ -452,12 +452,19 @@ const ImportModal = ({ isOpen, onClose, onImported }) => {
           {!results ? (
             <>
               <div className="import-instructions">
-                <p>Export your data from Letterboxd:</p>
+                <h3>How to export from Letterboxd</h3>
                 <ol>
-                  <li>Go to <strong>letterboxd.com/settings/data</strong></li>
-                  <li>Click <strong>Export Your Data</strong></li>
-                  <li>Extract the ZIP and upload the CSV files below</li>
+                  <li>Go to <a href="https://letterboxd.com/settings/data/" target="_blank" rel="noopener noreferrer">letterboxd.com/settings/data</a></li>
+                  <li>Scroll down to <strong>Export Your Data</strong></li>
+                  <li>Click the <strong>Export Your Data</strong> button</li>
+                  <li>Download and extract the ZIP file</li>
+                  <li>Upload the CSV files below:</li>
                 </ol>
+                <ul className="file-list">
+                  <li><code>ratings.csv</code> - your ratings</li>
+                  <li><code>diary.csv</code> - watch dates</li>
+                  <li><code>reviews.csv</code> - your reviews</li>
+                </ul>
               </div>
 
               <div className="import-files">

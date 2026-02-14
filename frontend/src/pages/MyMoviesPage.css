@@ -577,22 +577,58 @@
 
 .import-instructions {
   margin-bottom: 1.5rem;
+  background: var(--bg-secondary);
+  padding: 1.25rem;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
 }
 
-.import-instructions p {
-  margin: 0 0 0.75rem 0;
-  color: var(--text-secondary);
-}
-
-.import-instructions ol {
-  margin: 0;
-  padding-left: 1.25rem;
+.import-instructions h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
   color: var(--text-primary);
 }
 
-.import-instructions li {
+.import-instructions ol {
+  margin: 0 0 1rem 0;
+  padding-left: 1.5rem;
+  color: var(--text-primary);
+}
+
+.import-instructions ol li {
   margin-bottom: 0.5rem;
   line-height: 1.5;
+}
+
+.import-instructions a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.import-instructions a:hover {
+  text-decoration: underline;
+}
+
+.import-instructions .file-list {
+  margin: 0;
+  padding-left: 1.5rem;
+  list-style: none;
+}
+
+.import-instructions .file-list li {
+  margin-bottom: 0.35rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.import-instructions .file-list code {
+  background: var(--bg-card);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  color: var(--accent);
+  font-family: monospace;
 }
 
 .import-files {
