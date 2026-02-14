@@ -2,6 +2,7 @@
   padding: 2rem 0;
   animation: fadeIn 0.4s ease-out;
   max-width: 1200px;
+  margin: 0 auto;
 }
 
 .profile h1 {
