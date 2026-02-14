@@ -1,6 +1,8 @@
 .movies-page {
   padding: 1rem 0;
   animation: fadeIn 0.4s ease-out;
+  width: 100%;
+  max-width: 100%;
 }
 
 .movies-header {
@@ -126,8 +128,9 @@
 /* Movies Grid */
 .movies-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1.25rem;
+  width: 100%;
 }
 
 .movie-card-wrapper {
