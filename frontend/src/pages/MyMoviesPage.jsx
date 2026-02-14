@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { getPersonalMovies, addPersonalMovie, updatePersonalMovie, deletePersonalMovie, searchTMDB, getTMDBMovie } from '../api/client';
+import { getPersonalMovies, addPersonalMovie, updatePersonalMovie, deletePersonalMovie, searchTMDB, getTMDBMovie, importLetterboxd } from '../api/client';
 import './MyMoviesPage.css';
 
 const StarRating = ({ value, editable, onChange, size = 'normal' }) => {
@@ -394,6 +394,170 @@ const AddEditMovieModal = ({ isOpen, onClose, onSave, editingMovie }) => {
   );
 };
 
+const ImportModal = ({ isOpen, onClose, onImported }) => {
+  const [ratingsFile, setRatingsFile] = useState(null);
+  const [diaryFile, setDiaryFile] = useState(null);
+  const [reviewsFile, setReviewsFile] = useState(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const [results, setResults] = useState(null);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setRatingsFile(null);
+      setDiaryFile(null);
+      setReviewsFile(null);
+      setResults(null);
+      setError(null);
+    }
+  }, [isOpen]);
+
+  const handleImport = async () => {
+    if (!ratingsFile && !diaryFile) {
+      setError('Please select at least a ratings.csv or diary.csv file');
+      return;
+    }
+
+    setIsImporting(true);
+    setError(null);
+
+    try {
+      const importResults = await importLetterboxd({
+        ratings: ratingsFile,
+        diary: diaryFile,
+        reviews: reviewsFile
+      });
+      setResults(importResults);
+      if (importResults.imported > 0) {
+        onImported();
+      }
+    } catch (err) {
+      setError(err.message || 'Import failed');
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content import-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>Import from Letterboxd</h2>
+          <button className="modal-close" onClick={onClose}>x</button>
+        </div>
+
+        <div className="modal-body">
+          {!results ? (
+            <>
+              <div className="import-instructions">
+                <p>Export your data from Letterboxd:</p>
+                <ol>
+                  <li>Go to <strong>letterboxd.com/settings/data</strong></li>
+                  <li>Click <strong>Export Your Data</strong></li>
+                  <li>Extract the ZIP and upload the CSV files below</li>
+                </ol>
+              </div>
+
+              <div className="import-files">
+                <div className="file-input-group">
+                  <label className="file-label">
+                    ratings.csv {ratingsFile && <span className="file-selected">{ratingsFile.name}</span>}
+                  </label>
+                  <input
+                    type="file"
+                    accept=".csv"
+                    onChange={(e) => setRatingsFile(e.target.files[0])}
+                    className="file-input"
+                  />
+                </div>
+
+                <div className="file-input-group">
+                  <label className="file-label">
+                    diary.csv <span className="optional">(for watch dates)</span>
+                    {diaryFile && <span className="file-selected">{diaryFile.name}</span>}
+                  </label>
+                  <input
+                    type="file"
+                    accept=".csv"
+                    onChange={(e) => setDiaryFile(e.target.files[0])}
+                    className="file-input"
+                  />
+                </div>
+
+                <div className="file-input-group">
+                  <label className="file-label">
+                    reviews.csv <span className="optional">(optional)</span>
+                    {reviewsFile && <span className="file-selected">{reviewsFile.name}</span>}
+                  </label>
+                  <input
+                    type="file"
+                    accept=".csv"
+                    onChange={(e) => setReviewsFile(e.target.files[0])}
+                    className="file-input"
+                  />
+                </div>
+              </div>
+
+              <div className="import-note">
+                <p>Ratings will be converted from Letterboxd's 0.5-5 scale to 1-10.</p>
+              </div>
+
+              {error && <div className="modal-error">{error}</div>}
+
+              <button
+                className="btn-primary import-btn"
+                onClick={handleImport}
+                disabled={isImporting || (!ratingsFile && !diaryFile)}
+              >
+                {isImporting ? 'Importing... (this may take a while)' : 'Import Movies'}
+              </button>
+            </>
+          ) : (
+            <div className="import-results">
+              <div className="results-summary">
+                <div className="result-stat success">
+                  <span className="stat-number">{results.imported}</span>
+                  <span className="stat-label">Imported</span>
+                </div>
+                <div className="result-stat skipped">
+                  <span className="stat-number">{results.skipped}</span>
+                  <span className="stat-label">Skipped</span>
+                </div>
+                <div className="result-stat total">
+                  <span className="stat-number">{results.total}</span>
+                  <span className="stat-label">Total</span>
+                </div>
+              </div>
+
+              {results.failed.length > 0 && (
+                <div className="failed-list">
+                  <h4>Could not import:</h4>
+                  <ul>
+                    {results.failed.slice(0, 10).map((item, i) => (
+                      <li key={i}>
+                        {item.title} {item.year && `(${item.year})`} - {item.reason}
+                      </li>
+                    ))}
+                    {results.failed.length > 10 && (
+                      <li className="more">...and {results.failed.length - 10} more</li>
+                    )}
+                  </ul>
+                </div>
+              )}
+
+              <button className="btn-primary" onClick={onClose}>
+                Done
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const MyMoviesPage = () => {
   const { isAuthenticated } = useAuth();
   const [movies, setMovies] = useState([]);
@@ -401,6 +565,7 @@ const MyMoviesPage = () => {
   const [error, setError] = useState(null);
   const [sort, setSort] = useState('newest');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [editingMovie, setEditingMovie] = useState(null);
 
   const fetchMovies = async () => {
@@ -457,12 +622,20 @@ const MyMoviesPage = () => {
     <div className="my-movies-page">
       <div className="my-movies-header">
         <h1>My Movies</h1>
-        <button
-          className="btn-primary add-movie-btn"
-          onClick={() => setShowAddModal(true)}
-        >
-          + Add Movie
-        </button>
+        <div className="header-actions">
+          <button
+            className="btn-secondary import-btn"
+            onClick={() => setShowImportModal(true)}
+          >
+            Import from Letterboxd
+          </button>
+          <button
+            className="btn-primary add-movie-btn"
+            onClick={() => setShowAddModal(true)}
+          >
+            + Add Movie
+          </button>
+        </div>
       </div>
 
       <div className="my-movies-controls">
@@ -486,12 +659,20 @@ const MyMoviesPage = () => {
       ) : movies.length === 0 ? (
         <div className="empty-state">
           <p>No movies yet. Start tracking movies you've watched!</p>
-          <button
-            className="btn-primary"
-            onClick={() => setShowAddModal(true)}
-          >
-            Add Your First Movie
-          </button>
+          <div className="empty-actions">
+            <button
+              className="btn-primary"
+              onClick={() => setShowAddModal(true)}
+            >
+              Add Your First Movie
+            </button>
+            <button
+              className="btn-secondary"
+              onClick={() => setShowImportModal(true)}
+            >
+              Import from Letterboxd
+            </button>
+          </div>
         </div>
       ) : (
         <div className="personal-movies-grid">
@@ -511,6 +692,12 @@ const MyMoviesPage = () => {
         onClose={handleCloseModal}
         onSave={handleSave}
         editingMovie={editingMovie}
+      />
+
+      <ImportModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onImported={handleSave}
       />
     </div>
   );

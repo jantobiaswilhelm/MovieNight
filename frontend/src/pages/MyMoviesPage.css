@@ -16,6 +16,11 @@
   margin: 0;
 }
 
+.header-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
 .my-movies-controls {
   display: flex;
   justify-content: space-between;
@@ -43,6 +48,14 @@
 
 .empty-state .btn-primary {
   margin-top: 1rem;
+}
+
+.empty-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-top: 1rem;
+  flex-wrap: wrap;
 }
 
 .error-state {
@@ -553,6 +566,196 @@
   box-shadow: 0 0 0 3px var(--accent-glow);
 }
 
+/* Import Modal */
+.import-modal {
+  max-width: 500px;
+}
+
+.import-modal .modal-body {
+  padding: 1.5rem;
+}
+
+.import-instructions {
+  margin-bottom: 1.5rem;
+}
+
+.import-instructions p {
+  margin: 0 0 0.75rem 0;
+  color: var(--text-secondary);
+}
+
+.import-instructions ol {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: var(--text-primary);
+}
+
+.import-instructions li {
+  margin-bottom: 0.5rem;
+  line-height: 1.5;
+}
+
+.import-files {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.file-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.file-label {
+  font-weight: 500;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.file-label .optional {
+  color: var(--text-muted);
+  font-weight: 400;
+  font-size: 0.85rem;
+}
+
+.file-label .file-selected {
+  color: var(--accent);
+  font-weight: 400;
+  font-size: 0.85rem;
+}
+
+.file-input {
+  padding: 0.75rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.file-input:hover {
+  border-color: var(--accent);
+}
+
+.file-input::file-selector-button {
+  background: var(--accent);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-right: 1rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.file-input::file-selector-button:hover {
+  background: var(--accent-hover);
+}
+
+.import-note {
+  background: var(--bg-secondary);
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.import-note p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.import-btn {
+  width: 100%;
+  padding: 0.875rem;
+  font-size: 1rem;
+}
+
+/* Import Results */
+.import-results {
+  text-align: center;
+}
+
+.results-summary {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-bottom: 1.5rem;
+}
+
+.result-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.stat-number {
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.result-stat.success .stat-number {
+  color: var(--success);
+}
+
+.result-stat.skipped .stat-number {
+  color: var(--warning);
+}
+
+.result-stat.total .stat-number {
+  color: var(--text-primary);
+}
+
+.stat-label {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.failed-list {
+  text-align: left;
+  background: var(--bg-secondary);
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.failed-list h4 {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+.failed-list ul {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.failed-list li {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  margin-bottom: 0.35rem;
+}
+
+.failed-list li.more {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.import-results .btn-primary {
+  padding: 0.75rem 2rem;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .my-movies-header {
@@ -560,8 +763,26 @@
     align-items: stretch;
   }
 
+  .header-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .header-actions .btn-primary,
+  .header-actions .btn-secondary {
+    width: 100%;
+  }
+
   .add-movie-btn {
     width: 100%;
+  }
+
+  .results-summary {
+    gap: 1rem;
+  }
+
+  .stat-number {
+    font-size: 1.5rem;
   }
 
   .my-movies-controls {

@@ -228,3 +228,28 @@ export const deletePersonalMovie = (id) =>
   fetchAPI(`/api/personal-movies/${id}`, {
     method: 'DELETE'
   });
+
+export const importLetterboxd = async (files) => {
+  const token = localStorage.getItem('token');
+  const formData = new FormData();
+
+  if (files.ratings) formData.append('ratings', files.ratings);
+  if (files.diary) formData.append('diary', files.diary);
+  if (files.reviews) formData.append('reviews', files.reviews);
+
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+  const response = await fetch(`${API_URL}/api/personal-movies/import/letterboxd`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`
+    },
+    body: formData
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: 'Import failed' }));
+    throw new Error(error.error || 'Import failed');
+  }
+
+  return response.json();
+};
