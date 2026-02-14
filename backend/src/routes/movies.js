@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { authenticateToken, optionalAuth } from '../middleware/auth.js';
 import * as db from '../models/index.js';
+import { checkAndUnlockAchievements, checkRatingAchievements } from '../services/achievementChecker.js';
+import { logRatingActivity, logAchievementActivity } from '../services/activityService.js';
 
 const router = Router();
 
@@ -192,7 +194,39 @@ router.post('/:id/ratings', authenticateToken, async (req, res) => {
     }
 
     const rating = await db.upsertRating(parseInt(id), req.user.id, score, comment || null);
-    res.json(rating);
+
+    // Update user's streak
+    const streakResult = await db.updateUserStreak(req.user.id, parseInt(id), movie.guild_id);
+
+    // Check and unlock achievements
+    let newAchievements = [];
+    try {
+      const [generalAchievements, ratingAchievements] = await Promise.all([
+        checkAndUnlockAchievements(req.user.id, movie.guild_id),
+        checkRatingAchievements(req.user.id, score)
+      ]);
+      newAchievements = [...generalAchievements, ...ratingAchievements];
+
+      // Log activity for each unlocked achievement
+      for (const achievement of newAchievements) {
+        await logAchievementActivity(req.user.id, movie.guild_id, achievement.code, achievement.name);
+      }
+    } catch (achievementErr) {
+      console.error('Error checking achievements:', achievementErr);
+    }
+
+    // Log rating activity
+    try {
+      await logRatingActivity(req.user.id, movie.guild_id, parseInt(id), movie.title, score);
+    } catch (activityErr) {
+      console.error('Error logging activity:', activityErr);
+    }
+
+    res.json({
+      ...rating,
+      streak: streakResult,
+      newAchievements
+    });
   } catch (err) {
     console.error('Error saving rating:', err);
     res.status(500).json({ error: 'Failed to save rating' });

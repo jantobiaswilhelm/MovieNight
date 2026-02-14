@@ -23,7 +23,9 @@ router.get('/', async (req, res) => {
       worstMonth,
       worstYear,
       worstAllTime,
-      availableMonths
+      availableMonths,
+      totalRuntime,
+      streakLeaderboard
     ] = await Promise.all([
       db.getGuildStats(guild_id),
       db.getTopRatedMovies(guild_id, 5),
@@ -34,7 +36,9 @@ router.get('/', async (req, res) => {
       db.getWorstRatedMoviesByPeriod(guild_id, 'month', 5, 3, month || null),
       db.getWorstRatedMoviesByPeriod(guild_id, 'year', 5, 3),
       db.getWorstRatedMoviesByPeriod(guild_id, 'all', 5, 3),
-      db.getAvailableMonths(guild_id)
+      db.getAvailableMonths(guild_id),
+      db.getGuildTotalRuntime(guild_id),
+      db.getStreakLeaderboard(guild_id, 5)
     ]);
 
     res.json({
@@ -48,7 +52,9 @@ router.get('/', async (req, res) => {
       worst_year: worstYear,
       worst_all_time: worstAllTime,
       available_months: availableMonths,
-      selected_month: month || null
+      selected_month: month || null,
+      total_runtime: totalRuntime.total_minutes,
+      streak_leaderboard: streakLeaderboard
     });
   } catch (err) {
     console.error('Error fetching stats:', err);
@@ -99,7 +105,10 @@ router.get('/me/profile', authenticateToken, async (req, res) => {
       watchtime,
       favoriteMovies,
       wishlistPreview,
-      topRatedMovies
+      topRatedMovies,
+      streak,
+      favoriteDirectors,
+      favoriteActors
     ] = await Promise.all([
       db.getUserStats(req.user.id),
       db.getUserRatingHistogram(req.user.id),
@@ -110,7 +119,10 @@ router.get('/me/profile', authenticateToken, async (req, res) => {
       db.getUserTotalWatchtime(req.user.id),
       db.getUserFavoriteMovies(req.user.id),
       db.getUserWishlistPreview(req.user.id, guild_id, 5),
-      db.getUserTopRatedMovies(req.user.id, 10)
+      db.getUserTopRatedMovies(req.user.id, 10),
+      db.getUserStreak(req.user.id),
+      db.getUserFavoriteDirectors(req.user.id, 5),
+      db.getUserFavoriteActors(req.user.id, 5)
     ]);
 
     res.json({
@@ -123,7 +135,10 @@ router.get('/me/profile', authenticateToken, async (req, res) => {
       watchtime: watchtime.total_minutes,
       favorite_movies: favoriteMovies,
       wishlist_preview: wishlistPreview,
-      top_rated_movies: topRatedMovies
+      top_rated_movies: topRatedMovies,
+      streak,
+      favorite_directors: favoriteDirectors,
+      favorite_actors: favoriteActors
     });
   } catch (err) {
     console.error('Error fetching profile stats:', err);
@@ -262,7 +277,10 @@ router.get('/user/:userId/profile', async (req, res) => {
       hotTakes,
       watchtime,
       favoriteMovies,
-      topRatedMovies
+      topRatedMovies,
+      streak,
+      favoriteDirectors,
+      favoriteActors
     ] = await Promise.all([
       db.getUserStats(parseInt(userId)),
       db.getUserRatingHistogram(parseInt(userId)),
@@ -271,7 +289,10 @@ router.get('/user/:userId/profile', async (req, res) => {
       db.getUserHotTakes(parseInt(userId), 5),
       db.getUserTotalWatchtime(parseInt(userId)),
       db.getUserFavoriteMovies(parseInt(userId)),
-      db.getUserTopRatedMovies(parseInt(userId), 10)
+      db.getUserTopRatedMovies(parseInt(userId), 10),
+      db.getUserStreak(parseInt(userId)),
+      db.getUserFavoriteDirectors(parseInt(userId), 5),
+      db.getUserFavoriteActors(parseInt(userId), 5)
     ]);
 
     res.json({
@@ -288,7 +309,10 @@ router.get('/user/:userId/profile', async (req, res) => {
       hot_takes: hotTakes,
       watchtime: watchtime.total_minutes,
       favorite_movies: favoriteMovies,
-      top_rated_movies: topRatedMovies
+      top_rated_movies: topRatedMovies,
+      streak,
+      favorite_directors: favoriteDirectors,
+      favorite_actors: favoriteActors
     });
   } catch (err) {
     console.error('Error fetching user profile:', err);

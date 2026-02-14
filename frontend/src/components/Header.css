@@ -78,6 +78,12 @@
   width: calc(100% - 2rem);
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .auth {
   display: flex;
   align-items: center;

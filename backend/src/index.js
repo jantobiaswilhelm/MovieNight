@@ -11,6 +11,11 @@ import adminRoutes from './routes/admin.js';
 import wishlistRoutes from './routes/wishlists.js';
 import tmdbRoutes from './routes/tmdb.js';
 import personalMovieRoutes from './routes/personal-movies.js';
+import collectionsRoutes from './routes/collections.js';
+import listsRoutes from './routes/lists.js';
+import achievementsRoutes from './routes/achievements.js';
+import notificationsRoutes from './routes/notifications.js';
+import socialRoutes from './routes/social.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -32,6 +37,11 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/wishlists', wishlistRoutes);
 app.use('/api/tmdb', tmdbRoutes);
 app.use('/api/personal-movies', personalMovieRoutes);
+app.use('/api/collections', collectionsRoutes);
+app.use('/api/lists', listsRoutes);
+app.use('/api/achievements', achievementsRoutes);
+app.use('/api/notifications', notificationsRoutes);
+app.use('/api/social', socialRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

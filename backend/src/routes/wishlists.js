@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { authenticateToken, optionalAuth } from '../middleware/auth.js';
 import * as db from '../models/index.js';
+import { logWishlistActivity } from '../services/activityService.js';
 
 const router = Router();
 
@@ -71,6 +72,14 @@ router.post('/', authenticateToken, async (req, res) => {
       trailerUrl: trailer_url,
       importance
     });
+
+    // Log activity
+    try {
+      await logWishlistActivity(req.user.id, guild_id, tmdb_id, title);
+    } catch (activityErr) {
+      console.error('Error logging wishlist activity:', activityErr);
+    }
+
     res.json(item);
   } catch (err) {
     console.error('Error adding to wishlist:', err);

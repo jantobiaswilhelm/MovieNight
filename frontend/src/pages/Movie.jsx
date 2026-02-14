@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getMovie, submitRating, getMyRating, deleteMovie, getSimilarMovies, toggleAttendance } from '../api/client';
+import { getMovie, submitRating, getMyRating, deleteMovie, getSimilarMovies, toggleAttendance, getMovieCredits } from '../api/client';
 import RatingInput from '../components/RatingInput';
 import StarRating from '../components/StarRating';
+import RatingReactions from '../components/RatingReactions';
+import QuickAddToWishlist from '../components/QuickAddToWishlist';
 import './Movie.css';
 
 const Movie = () => {
@@ -19,9 +21,11 @@ const Movie = () => {
   const [deleting, setDeleting] = useState(false);
   const [similarMovies, setSimilarMovies] = useState([]);
   const [loadingSimilar, setLoadingSimilar] = useState(false);
+  const [credits, setCredits] = useState(null);
   const [togglingAttendance, setTogglingAttendance] = useState(false);
   const [ratingsAvailable, setRatingsAvailable] = useState(false);
   const [timeUntilRatings, setTimeUntilRatings] = useState(null);
+  const [quickAddMovie, setQuickAddMovie] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -48,23 +52,27 @@ const Movie = () => {
     fetchData();
   }, [id, isAuthenticated]);
 
-  // Fetch similar movies when movie data is available
+  // Fetch similar movies and credits when movie data is available
   useEffect(() => {
-    const fetchSimilar = async () => {
+    const fetchSimilarAndCredits = async () => {
       if (!movie?.tmdb_id) return;
 
       setLoadingSimilar(true);
       try {
-        const similar = await getSimilarMovies(movie.tmdb_id);
+        const [similar, creditsData] = await Promise.all([
+          getSimilarMovies(movie.tmdb_id),
+          getMovieCredits(movie.tmdb_id)
+        ]);
         setSimilarMovies(similar);
+        setCredits(creditsData);
       } catch (err) {
-        console.error('Failed to fetch similar movies:', err);
+        console.error('Failed to fetch similar movies or credits:', err);
       } finally {
         setLoadingSimilar(false);
       }
     };
 
-    fetchSimilar();
+    fetchSimilarAndCredits();
   }, [movie?.tmdb_id]);
 
   // Check if ratings are available (runtime - 10 minutes after start)
@@ -350,6 +358,51 @@ const Movie = () => {
         </div>
       )}
 
+      {/* Cast & Crew Section */}
+      {credits && (credits.directors?.length > 0 || credits.cast?.length > 0) && (
+        <div className="movie-credits-section">
+          {credits.directors?.length > 0 && (
+            <div className="credits-group">
+              <h3>Director{credits.directors.length > 1 ? 's' : ''}</h3>
+              <div className="credits-list directors-list">
+                {credits.directors.map((person, i) => (
+                  <div key={`director-${i}`} className="credit-person">
+                    {person.profilePath ? (
+                      <img src={person.profilePath} alt={person.name} className="credit-photo" />
+                    ) : (
+                      <div className="credit-photo-placeholder" />
+                    )}
+                    <span className="credit-name">{person.name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {credits.cast?.length > 0 && (
+            <div className="credits-group">
+              <h3>Cast</h3>
+              <div className="credits-list cast-list">
+                {credits.cast.map((person, i) => (
+                  <div key={`actor-${i}`} className="credit-person">
+                    {person.profilePath ? (
+                      <img src={person.profilePath} alt={person.name} className="credit-photo" />
+                    ) : (
+                      <div className="credit-photo-placeholder" />
+                    )}
+                    <div className="credit-info">
+                      <span className="credit-name">{person.name}</span>
+                      {person.characterName && (
+                        <span className="credit-character">{person.characterName}</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {ratingsAvailable ? (
         <div className="rating-section">
           <h2>Your Rating</h2>
@@ -420,6 +473,11 @@ const Movie = () => {
                     <p>"{rating.comment}"</p>
                   </div>
                 )}
+                <RatingReactions
+                  ratingId={rating.id}
+                  currentUserId={user?.id}
+                  ratingUserId={rating.user_id}
+                />
               </div>
             ))}
           </div>
@@ -471,6 +529,14 @@ const Movie = () => {
                           Trailer
                         </a>
                       )}
+                      {isAuthenticated && (
+                        <button
+                          className="similar-link add-wishlist"
+                          onClick={() => setQuickAddMovie(similar)}
+                        >
+                          + Wishlist
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -480,6 +546,15 @@ const Movie = () => {
             <div className="similar-empty">No similar movies found</div>
           )}
         </div>
+      )}
+
+      {/* Quick Add to Wishlist Modal */}
+      {quickAddMovie && (
+        <QuickAddToWishlist
+          movie={quickAddMovie}
+          onClose={() => setQuickAddMovie(null)}
+          onSuccess={() => setQuickAddMovie(null)}
+        />
       )}
     </div>
   );

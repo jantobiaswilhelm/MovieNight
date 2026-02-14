@@ -1,0 +1,134 @@
+.rating-reactions {
+  margin-top: 0.5rem;
+  padding-left: 0.5rem;
+}
+
+.reactions-display {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.reaction-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+}
+
+.reaction-badge:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--accent-glow);
+}
+
+.reaction-badge.active {
+  background: rgba(229, 9, 20, 0.15);
+  border-color: var(--accent);
+}
+
+.reaction-badge:disabled {
+  cursor: default;
+}
+
+.reaction-emoji {
+  font-size: 1rem;
+}
+
+.reaction-count {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.reaction-badge.active .reaction-count {
+  color: var(--accent);
+}
+
+.add-reaction-container {
+  position: relative;
+}
+
+.add-reaction-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.add-reaction-btn:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.reaction-picker {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.5rem;
+  display: flex;
+  gap: 0.25rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+  margin-bottom: 0.5rem;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.picker-emoji {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.picker-emoji:hover {
+  background: var(--bg-secondary);
+  transform: scale(1.15);
+}
+
+.picker-emoji.active {
+  background: rgba(229, 9, 20, 0.2);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 600px) {
+  .reaction-picker {
+    left: auto;
+    right: 0;
+  }
+}

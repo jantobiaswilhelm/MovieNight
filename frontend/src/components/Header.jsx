@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import ThemeSwitcher from './ThemeSwitcher';
+import NotificationBell from './NotificationBell';
 import './Header.css';
 
 const Header = () => {
@@ -22,13 +23,19 @@ const Header = () => {
           <Link to="/">Home</Link>
           <Link to="/movies">Movies</Link>
           <Link to="/wishlist">Wishlist</Link>
+          <Link to="/collections">Collections</Link>
+          <Link to="/lists">Lists</Link>
           <Link to="/stats">Stats</Link>
-          <Link to="/commands">Commands</Link>
+          {isAuthenticated && <Link to="/feed">Feed</Link>}
+          {isAuthenticated && <Link to="/achievements">Achievements</Link>}
           {isAuthenticated && <Link to="/my-movies">My Movies</Link>}
           {isAuthenticated && <Link to="/profile">My Profile</Link>}
         </nav>
 
-        <ThemeSwitcher />
+        <div className="header-actions">
+          <ThemeSwitcher />
+          {isAuthenticated && <NotificationBell />}
+        </div>
 
         <div className="auth">
           {isAuthenticated ? (

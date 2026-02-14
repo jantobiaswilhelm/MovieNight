@@ -11,6 +11,20 @@ const formatMonth = (monthStr) => {
   return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 };
 
+const formatRuntime = (minutes) => {
+  if (!minutes) return '0h';
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  if (hours >= 24) {
+    const days = Math.floor(hours / 24);
+    const remainingHours = hours % 24;
+    return `${days}d ${remainingHours}h`;
+  }
+  if (hours === 0) return `${mins}m`;
+  if (mins === 0) return `${hours}h`;
+  return `${hours}h ${mins}m`;
+};
+
 const MovieList = ({ title, movies, emptyMessage }) => {
   if (!movies || movies.length === 0) {
     return (
@@ -182,6 +196,19 @@ const StatsPage = () => {
         </div>
       </section>
 
+      {/* Total Runtime */}
+      {stats.total_runtime > 0 && (
+        <section className="stats-section stats-highlight">
+          <div className="total-runtime">
+            <span className="runtime-icon">&#128249;</span>
+            <div className="runtime-text">
+              <span className="runtime-value">{formatRuntime(stats.total_runtime)}</span>
+              <span className="runtime-label">Total Watch Time</span>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Top Raters Section */}
       {stats.top_raters && stats.top_raters.length > 0 && (
         <section className="stats-section">
@@ -202,6 +229,33 @@ const StatsPage = () => {
                 <div className="rater-stats">
                   <span className="rater-count">{rater.rating_count} ratings</span>
                   <span className="rater-avg">avg: {parseFloat(rater.avg_rating).toFixed(1)}</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Streak Leaderboard */}
+      {stats.streak_leaderboard && stats.streak_leaderboard.length > 0 && (
+        <section className="stats-section">
+          <h2>&#x1F525; Streak Leaderboard</h2>
+          <div className="raters-grid">
+            {stats.streak_leaderboard.map((user, index) => (
+              <Link key={user.discord_id} to={`/user/${user.id}`} className="rater-card streak-card">
+                <span className="rank">#{index + 1}</span>
+                <img
+                  src={user.avatar
+                    ? `https://cdn.discordapp.com/avatars/${user.discord_id}/${user.avatar}.png`
+                    : `https://cdn.discordapp.com/embed/avatars/${parseInt(user.discord_id) % 5}.png`
+                  }
+                  alt=""
+                  className="rater-avatar"
+                />
+                <span className="rater-name">{user.username}</span>
+                <div className="rater-stats">
+                  <span className="rater-count streak-value">&#x1F525; {user.longest_streak} best</span>
+                  <span className="rater-avg">{user.current_streak > 0 ? `${user.current_streak} current` : 'no active streak'}</span>
                 </div>
               </Link>
             ))}

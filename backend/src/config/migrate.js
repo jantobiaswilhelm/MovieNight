@@ -347,6 +347,266 @@ const migrate = async () => {
       CREATE INDEX IF NOT EXISTS idx_user_favorite_movies_user ON user_favorite_movies(user_id)
     `);
 
+    // Add streak columns to users table
+    const streakColumns = [
+      { name: 'current_streak', type: 'INTEGER DEFAULT 0' },
+      { name: 'longest_streak', type: 'INTEGER DEFAULT 0' },
+      { name: 'last_rated_movie_night_id', type: 'INTEGER' }
+    ];
+    for (const col of streakColumns) {
+      const check = await client.query(`
+        SELECT column_name FROM information_schema.columns
+        WHERE table_name = 'users' AND column_name = $1
+      `, [col.name]);
+      if (check.rows.length === 0) {
+        await client.query(`ALTER TABLE users ADD COLUMN ${col.name} ${col.type}`);
+      }
+    }
+
+    // Rating reactions table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS rating_reactions (
+        id SERIAL PRIMARY KEY,
+        rating_id INTEGER REFERENCES ratings(id) ON DELETE CASCADE,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        emoji VARCHAR(20) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(rating_id, user_id, emoji)
+      )
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_rating_reactions_rating ON rating_reactions(rating_id)
+    `);
+
+    // Movie credits table (directors, actors, etc.)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS movie_credits (
+        id SERIAL PRIMARY KEY,
+        movie_night_id INTEGER REFERENCES movie_nights(id) ON DELETE CASCADE,
+        person_name VARCHAR(255) NOT NULL,
+        person_tmdb_id INTEGER,
+        role VARCHAR(20) NOT NULL,
+        character_name VARCHAR(255),
+        credit_order INTEGER,
+        profile_path VARCHAR(255),
+        UNIQUE(movie_night_id, person_tmdb_id, role)
+      )
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_credits_person ON movie_credits(person_tmdb_id)
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_credits_movie ON movie_credits(movie_night_id)
+    `);
+
+    // Custom lists table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS custom_lists (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        guild_id VARCHAR(20) NOT NULL,
+        name VARCHAR(100) NOT NULL,
+        description TEXT,
+        is_public BOOLEAN DEFAULT true,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_custom_lists_user ON custom_lists(user_id)
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_custom_lists_guild ON custom_lists(guild_id)
+    `);
+
+    // Custom list items table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS custom_list_items (
+        id SERIAL PRIMARY KEY,
+        list_id INTEGER REFERENCES custom_lists(id) ON DELETE CASCADE,
+        tmdb_id INTEGER NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        image_url VARCHAR(500),
+        release_year INTEGER,
+        position INTEGER,
+        note TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(list_id, tmdb_id)
+      )
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_custom_list_items_list ON custom_list_items(list_id)
+    `);
+
+    // Achievements table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS achievements (
+        id SERIAL PRIMARY KEY,
+        code VARCHAR(50) UNIQUE NOT NULL,
+        name VARCHAR(100) NOT NULL,
+        description TEXT NOT NULL,
+        icon VARCHAR(50),
+        category VARCHAR(30),
+        points INTEGER DEFAULT 10,
+        is_hidden BOOLEAN DEFAULT false
+      )
+    `);
+
+    // User achievements table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS user_achievements (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        achievement_id INTEGER REFERENCES achievements(id) ON DELETE CASCADE,
+        unlocked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user_id, achievement_id)
+      )
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_user_achievements_user ON user_achievements(user_id)
+    `);
+
+    // Seed achievements if table is empty
+    const achievementCount = await client.query('SELECT COUNT(*) FROM achievements');
+    if (parseInt(achievementCount.rows[0].count) === 0) {
+      await client.query(`
+        INSERT INTO achievements (code, name, description, icon, category, points, is_hidden) VALUES
+        ('first_rating', 'First Blood', 'Rate your first movie', 'star', 'ratings', 10, false),
+        ('ratings_10', 'Dedicated Viewer', 'Rate 10 movies', 'film', 'ratings', 25, false),
+        ('ratings_25', 'Movie Enthusiast', 'Rate 25 movies', 'film', 'ratings', 50, false),
+        ('ratings_50', 'Movie Buff', 'Rate 50 movies', 'trophy', 'ratings', 100, false),
+        ('ratings_100', 'Cinephile', 'Rate 100 movies', 'award', 'ratings', 200, false),
+        ('streak_5', 'On Fire', 'Achieve a 5 movie rating streak', 'flame', 'streaks', 25, false),
+        ('streak_10', 'Unstoppable', 'Achieve a 10 movie rating streak', 'flame', 'streaks', 50, false),
+        ('streak_25', 'Legend', 'Achieve a 25 movie rating streak', 'flame', 'streaks', 100, false),
+        ('hot_take', 'Hot Take', 'Give a rating that differs 3+ from the average', 'zap', 'special', 15, false),
+        ('contrarian', 'Contrarian', 'Have 5 hot takes', 'zap', 'special', 50, false),
+        ('harsh_critic', 'Harsh Critic', 'Have an average rating below 5', 'thumbs-down', 'special', 25, true),
+        ('easy_grader', 'Easy Grader', 'Have an average rating above 8', 'thumbs-up', 'special', 25, true),
+        ('marathon', 'Marathon Viewer', 'Watch 20+ hours of movies', 'clock', 'watchtime', 50, false),
+        ('binge_master', 'Binge Master', 'Watch 50+ hours of movies', 'clock', 'watchtime', 100, false),
+        ('collection_fan', 'Collection Fan', 'Watch 3 movies from the same collection', 'folder', 'collections', 25, false),
+        ('completionist', 'Completionist', 'Watch an entire movie collection', 'check-circle', 'collections', 100, false),
+        ('early_adopter', 'Early Adopter', 'Be among the first 10 users to rate', 'rocket', 'special', 50, true),
+        ('night_owl', 'Night Owl', 'Rate a movie after midnight', 'moon', 'special', 15, true),
+        ('perfect_ten', 'Perfect 10', 'Give a movie a perfect 10 rating', 'star', 'ratings', 15, false),
+        ('tough_crowd', 'Tough Crowd', 'Give a movie a 1 rating', 'thumbs-down', 'ratings', 15, false)
+      `);
+    }
+
+    // Notifications table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS notifications (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        type VARCHAR(50) NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        message TEXT,
+        link VARCHAR(500),
+        data JSONB,
+        is_read BOOLEAN DEFAULT false,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON notifications(user_id, is_read)
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_notifications_created ON notifications(created_at DESC)
+    `);
+
+    // User follows table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS user_follows (
+        id SERIAL PRIMARY KEY,
+        follower_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        following_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(follower_id, following_id)
+      )
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_user_follows_follower ON user_follows(follower_id)
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_user_follows_following ON user_follows(following_id)
+    `);
+
+    // Activity feed table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS activity_feed (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        guild_id VARCHAR(20) NOT NULL,
+        activity_type VARCHAR(50) NOT NULL,
+        reference_id INTEGER,
+        data JSONB,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_activity_created ON activity_feed(created_at DESC)
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_activity_user ON activity_feed(user_id)
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_activity_guild ON activity_feed(guild_id)
+    `);
+
+    // Shared wishlists table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS shared_wishlists (
+        id SERIAL PRIMARY KEY,
+        owner_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        guild_id VARCHAR(20) NOT NULL,
+        name VARCHAR(100) NOT NULL,
+        description TEXT,
+        is_collaborative BOOLEAN DEFAULT false,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_shared_wishlists_owner ON shared_wishlists(owner_id)
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_shared_wishlists_guild ON shared_wishlists(guild_id)
+    `);
+
+    // Shared wishlist members table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS shared_wishlist_members (
+        id SERIAL PRIMARY KEY,
+        wishlist_id INTEGER REFERENCES shared_wishlists(id) ON DELETE CASCADE,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        can_edit BOOLEAN DEFAULT false,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(wishlist_id, user_id)
+      )
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_shared_wishlist_members_wishlist ON shared_wishlist_members(wishlist_id)
+    `);
+
+    // Shared wishlist items table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS shared_wishlist_items (
+        id SERIAL PRIMARY KEY,
+        wishlist_id INTEGER REFERENCES shared_wishlists(id) ON DELETE CASCADE,
+        added_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        tmdb_id INTEGER NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        image_url VARCHAR(500),
+        importance INTEGER DEFAULT 3,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(wishlist_id, tmdb_id)
+      )
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_shared_wishlist_items_wishlist ON shared_wishlist_items(wishlist_id)
+    `);
+
     // Personal movies table (movies watched independently, not during movie nights)
     await client.query(`
       CREATE TABLE IF NOT EXISTS personal_movies (

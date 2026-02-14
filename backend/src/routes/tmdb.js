@@ -187,4 +187,67 @@ router.get('/:id/similar', async (req, res) => {
   }
 });
 
+// Get movie credits (cast and crew)
+router.get('/:id/credits', async (req, res) => {
+  const { id } = req.params;
+
+  if (!TMDB_API_KEY) {
+    return res.status(500).json({ error: 'TMDB API key not configured' });
+  }
+
+  try {
+    const creditsResponse = await fetch(
+      `${TMDB_BASE_URL}/movie/${id}/credits?api_key=${TMDB_API_KEY}`
+    );
+
+    if (!creditsResponse.ok) {
+      if (creditsResponse.status === 404) {
+        return res.status(404).json({ error: 'Movie not found' });
+      }
+      return res.status(502).json({ error: 'TMDB API error' });
+    }
+
+    const creditsData = await creditsResponse.json();
+
+    // Get top 10 cast members
+    const cast = creditsData.cast?.slice(0, 10).map((person, index) => ({
+      name: person.name,
+      tmdbId: person.id,
+      role: 'actor',
+      characterName: person.character || null,
+      creditOrder: index,
+      profilePath: person.profile_path ? `${TMDB_IMAGE_BASE}${person.profile_path}` : null
+    })) || [];
+
+    // Get directors and writers from crew
+    const directors = creditsData.crew?.filter(p => p.job === 'Director').map((person, index) => ({
+      name: person.name,
+      tmdbId: person.id,
+      role: 'director',
+      characterName: null,
+      creditOrder: index,
+      profilePath: person.profile_path ? `${TMDB_IMAGE_BASE}${person.profile_path}` : null
+    })) || [];
+
+    const writers = creditsData.crew?.filter(p => p.job === 'Writer' || p.job === 'Screenplay').slice(0, 3).map((person, index) => ({
+      name: person.name,
+      tmdbId: person.id,
+      role: 'writer',
+      characterName: null,
+      creditOrder: index,
+      profilePath: person.profile_path ? `${TMDB_IMAGE_BASE}${person.profile_path}` : null
+    })) || [];
+
+    res.json({
+      cast,
+      directors,
+      writers,
+      all: [...directors, ...writers, ...cast]
+    });
+  } catch (err) {
+    console.error('TMDB credits error:', err);
+    res.status(500).json({ error: 'Failed to fetch movie credits' });
+  }
+});
+
 export default router;

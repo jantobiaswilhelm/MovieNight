@@ -970,3 +970,741 @@ export const deletePersonalMovie = async (id, userId) => {
   );
   return result.rows[0];
 };
+
+// ============================================
+// STREAK OPERATIONS
+// ============================================
+
+export const updateUserStreak = async (userId, movieNightId, guildId) => {
+  // Get the previous movie night that the user should have rated
+  const prevMovieResult = await pool.query(
+    `SELECT mn.id
+     FROM movie_nights mn
+     WHERE mn.guild_id = $1
+       AND mn.started_at IS NOT NULL
+       AND mn.scheduled_at < (SELECT scheduled_at FROM movie_nights WHERE id = $2)
+     ORDER BY mn.scheduled_at DESC
+     LIMIT 1`,
+    [guildId, movieNightId]
+  );
+
+  // Get user's current streak info
+  const userResult = await pool.query(
+    `SELECT current_streak, longest_streak, last_rated_movie_night_id FROM users WHERE id = $1`,
+    [userId]
+  );
+  const user = userResult.rows[0];
+
+  let newStreak = 1;
+
+  if (prevMovieResult.rows.length > 0) {
+    const prevMovieId = prevMovieResult.rows[0].id;
+
+    // Check if user rated the previous movie
+    const prevRatingResult = await pool.query(
+      `SELECT id FROM ratings WHERE movie_night_id = $1 AND user_id = $2`,
+      [prevMovieId, userId]
+    );
+
+    if (prevRatingResult.rows.length > 0 && user.last_rated_movie_night_id === prevMovieId) {
+      // User rated the previous movie, increment streak
+      newStreak = (user.current_streak || 0) + 1;
+    }
+  }
+
+  const newLongestStreak = Math.max(newStreak, user.longest_streak || 0);
+
+  // Update user's streak
+  await pool.query(
+    `UPDATE users
+     SET current_streak = $2, longest_streak = $3, last_rated_movie_night_id = $4
+     WHERE id = $1`,
+    [userId, newStreak, newLongestStreak, movieNightId]
+  );
+
+  return { current_streak: newStreak, longest_streak: newLongestStreak };
+};
+
+export const getUserStreak = async (userId) => {
+  const result = await pool.query(
+    `SELECT current_streak, longest_streak FROM users WHERE id = $1`,
+    [userId]
+  );
+  return result.rows[0] || { current_streak: 0, longest_streak: 0 };
+};
+
+export const getStreakLeaderboard = async (guildId, limit = 10) => {
+  const result = await pool.query(
+    `SELECT DISTINCT u.id, u.username, u.discord_id, u.avatar, u.current_streak, u.longest_streak
+     FROM users u
+     JOIN ratings r ON u.id = r.user_id
+     JOIN movie_nights mn ON r.movie_night_id = mn.id
+     WHERE mn.guild_id = $1 AND u.longest_streak > 0
+     ORDER BY u.longest_streak DESC, u.current_streak DESC
+     LIMIT $2`,
+    [guildId, limit]
+  );
+  return result.rows;
+};
+
+// ============================================
+// GUILD RUNTIME STATS
+// ============================================
+
+export const getGuildTotalRuntime = async (guildId) => {
+  const result = await pool.query(
+    `SELECT COALESCE(SUM(runtime), 0)::integer as total_minutes
+     FROM movie_nights
+     WHERE guild_id = $1 AND started_at IS NOT NULL AND runtime IS NOT NULL`,
+    [guildId]
+  );
+  return result.rows[0];
+};
+
+// ============================================
+// RATING REACTIONS
+// ============================================
+
+export const addReaction = async (ratingId, userId, emoji) => {
+  const allowedEmojis = ['thumbsup', 'thumbsdown', 'heart', 'fire', 'laugh', 'thinking'];
+  if (!allowedEmojis.includes(emoji)) {
+    throw new Error('Invalid emoji');
+  }
+
+  const result = await pool.query(
+    `INSERT INTO rating_reactions (rating_id, user_id, emoji)
+     VALUES ($1, $2, $3)
+     ON CONFLICT (rating_id, user_id, emoji) DO NOTHING
+     RETURNING *`,
+    [ratingId, userId, emoji]
+  );
+  return result.rows[0];
+};
+
+export const removeReaction = async (ratingId, userId, emoji) => {
+  const result = await pool.query(
+    `DELETE FROM rating_reactions WHERE rating_id = $1 AND user_id = $2 AND emoji = $3 RETURNING *`,
+    [ratingId, userId, emoji]
+  );
+  return result.rows[0];
+};
+
+export const getReactionsForRating = async (ratingId) => {
+  const result = await pool.query(
+    `SELECT emoji, COUNT(*)::integer as count,
+            json_agg(json_build_object('user_id', user_id)) as users
+     FROM rating_reactions
+     WHERE rating_id = $1
+     GROUP BY emoji`,
+    [ratingId]
+  );
+  return result.rows;
+};
+
+export const getReactionsForRatings = async (ratingIds) => {
+  if (!ratingIds || ratingIds.length === 0) return {};
+
+  const result = await pool.query(
+    `SELECT rating_id, emoji, COUNT(*)::integer as count,
+            json_agg(user_id) as user_ids
+     FROM rating_reactions
+     WHERE rating_id = ANY($1)
+     GROUP BY rating_id, emoji`,
+    [ratingIds]
+  );
+
+  // Group by rating_id
+  const grouped = {};
+  for (const row of result.rows) {
+    if (!grouped[row.rating_id]) {
+      grouped[row.rating_id] = [];
+    }
+    grouped[row.rating_id].push({
+      emoji: row.emoji,
+      count: row.count,
+      user_ids: row.user_ids
+    });
+  }
+  return grouped;
+};
+
+// ============================================
+// COLLECTIONS
+// ============================================
+
+export const getCollections = async (guildId) => {
+  const result = await pool.query(
+    `SELECT collection_name,
+            COUNT(*)::integer as movie_count,
+            AVG(r.score) as avg_rating,
+            json_agg(DISTINCT mn.image_url) FILTER (WHERE mn.image_url IS NOT NULL) as posters
+     FROM movie_nights mn
+     LEFT JOIN ratings r ON mn.id = r.movie_night_id
+     WHERE mn.guild_id = $1 AND mn.collection_name IS NOT NULL AND mn.collection_name != ''
+     GROUP BY mn.collection_name
+     ORDER BY movie_count DESC`,
+    [guildId]
+  );
+  return result.rows;
+};
+
+export const getCollectionMovies = async (guildId, collectionName) => {
+  const result = await pool.query(
+    `SELECT mn.*, AVG(r.score) as avg_rating, COUNT(r.id)::integer as rating_count
+     FROM movie_nights mn
+     LEFT JOIN ratings r ON mn.id = r.movie_night_id
+     WHERE mn.guild_id = $1 AND mn.collection_name = $2
+     GROUP BY mn.id
+     ORDER BY mn.release_year ASC, mn.scheduled_at ASC`,
+    [guildId, collectionName]
+  );
+  return result.rows;
+};
+
+// ============================================
+// MOVIE CREDITS
+// ============================================
+
+export const saveMovieCredits = async (movieNightId, credits) => {
+  // Delete existing credits for this movie
+  await pool.query('DELETE FROM movie_credits WHERE movie_night_id = $1', [movieNightId]);
+
+  // Insert new credits
+  for (const credit of credits) {
+    await pool.query(
+      `INSERT INTO movie_credits (movie_night_id, person_name, person_tmdb_id, role, character_name, credit_order, profile_path)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       ON CONFLICT (movie_night_id, person_tmdb_id, role) DO NOTHING`,
+      [movieNightId, credit.name, credit.tmdbId, credit.role, credit.character, credit.order, credit.profilePath]
+    );
+  }
+};
+
+export const getMovieCredits = async (movieNightId) => {
+  const result = await pool.query(
+    `SELECT * FROM movie_credits WHERE movie_night_id = $1 ORDER BY role, credit_order`,
+    [movieNightId]
+  );
+  return result.rows;
+};
+
+export const getUserFavoriteDirectors = async (userId, limit = 5) => {
+  const result = await pool.query(
+    `SELECT mc.person_name, mc.person_tmdb_id, mc.profile_path,
+            COUNT(DISTINCT mn.id)::integer as movie_count,
+            AVG(r.score) as avg_rating
+     FROM movie_credits mc
+     JOIN movie_nights mn ON mc.movie_night_id = mn.id
+     JOIN ratings r ON mn.id = r.movie_night_id AND r.user_id = $1
+     WHERE mc.role = 'director'
+     GROUP BY mc.person_name, mc.person_tmdb_id, mc.profile_path
+     HAVING COUNT(DISTINCT mn.id) >= 2
+     ORDER BY avg_rating DESC, movie_count DESC
+     LIMIT $2`,
+    [userId, limit]
+  );
+  return result.rows;
+};
+
+export const getUserFavoriteActors = async (userId, limit = 5) => {
+  const result = await pool.query(
+    `SELECT mc.person_name, mc.person_tmdb_id, mc.profile_path,
+            COUNT(DISTINCT mn.id)::integer as movie_count,
+            AVG(r.score) as avg_rating
+     FROM movie_credits mc
+     JOIN movie_nights mn ON mc.movie_night_id = mn.id
+     JOIN ratings r ON mn.id = r.movie_night_id AND r.user_id = $1
+     WHERE mc.role = 'actor'
+     GROUP BY mc.person_name, mc.person_tmdb_id, mc.profile_path
+     HAVING COUNT(DISTINCT mn.id) >= 2
+     ORDER BY avg_rating DESC, movie_count DESC
+     LIMIT $2`,
+    [userId, limit]
+  );
+  return result.rows;
+};
+
+// ============================================
+// CUSTOM LISTS
+// ============================================
+
+export const createCustomList = async (userId, guildId, name, description, isPublic = true) => {
+  const result = await pool.query(
+    `INSERT INTO custom_lists (user_id, guild_id, name, description, is_public)
+     VALUES ($1, $2, $3, $4, $5)
+     RETURNING *`,
+    [userId, guildId, name, description, isPublic]
+  );
+  return result.rows[0];
+};
+
+export const getUserLists = async (userId) => {
+  const result = await pool.query(
+    `SELECT cl.*, COUNT(cli.id)::integer as item_count
+     FROM custom_lists cl
+     LEFT JOIN custom_list_items cli ON cl.id = cli.list_id
+     WHERE cl.user_id = $1
+     GROUP BY cl.id
+     ORDER BY cl.updated_at DESC`,
+    [userId]
+  );
+  return result.rows;
+};
+
+export const getPublicLists = async (guildId) => {
+  const result = await pool.query(
+    `SELECT cl.*, u.username, u.discord_id, u.avatar, COUNT(cli.id)::integer as item_count
+     FROM custom_lists cl
+     JOIN users u ON cl.user_id = u.id
+     LEFT JOIN custom_list_items cli ON cl.id = cli.list_id
+     WHERE cl.guild_id = $1 AND cl.is_public = true
+     GROUP BY cl.id, u.id
+     ORDER BY cl.updated_at DESC`,
+    [guildId]
+  );
+  return result.rows;
+};
+
+export const getListById = async (listId) => {
+  const result = await pool.query(
+    `SELECT cl.*, u.username, u.discord_id, u.avatar
+     FROM custom_lists cl
+     JOIN users u ON cl.user_id = u.id
+     WHERE cl.id = $1`,
+    [listId]
+  );
+  return result.rows[0];
+};
+
+export const getListItems = async (listId) => {
+  const result = await pool.query(
+    `SELECT * FROM custom_list_items WHERE list_id = $1 ORDER BY position, created_at`,
+    [listId]
+  );
+  return result.rows;
+};
+
+export const updateList = async (listId, userId, data) => {
+  const { name, description, isPublic } = data;
+  const result = await pool.query(
+    `UPDATE custom_lists
+     SET name = COALESCE($3, name),
+         description = COALESCE($4, description),
+         is_public = COALESCE($5, is_public),
+         updated_at = CURRENT_TIMESTAMP
+     WHERE id = $1 AND user_id = $2
+     RETURNING *`,
+    [listId, userId, name, description, isPublic]
+  );
+  return result.rows[0];
+};
+
+export const deleteList = async (listId, userId) => {
+  // Delete items first
+  await pool.query('DELETE FROM custom_list_items WHERE list_id = $1', [listId]);
+  const result = await pool.query(
+    'DELETE FROM custom_lists WHERE id = $1 AND user_id = $2 RETURNING *',
+    [listId, userId]
+  );
+  return result.rows[0];
+};
+
+export const addListItem = async (listId, item) => {
+  // Get max position
+  const posResult = await pool.query(
+    'SELECT COALESCE(MAX(position), 0) + 1 as next_pos FROM custom_list_items WHERE list_id = $1',
+    [listId]
+  );
+  const position = posResult.rows[0].next_pos;
+
+  const result = await pool.query(
+    `INSERT INTO custom_list_items (list_id, tmdb_id, title, image_url, release_year, position, note)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
+     ON CONFLICT (list_id, tmdb_id) DO UPDATE SET note = $7
+     RETURNING *`,
+    [listId, item.tmdbId, item.title, item.imageUrl, item.releaseYear, position, item.note]
+  );
+
+  // Update list updated_at
+  await pool.query('UPDATE custom_lists SET updated_at = CURRENT_TIMESTAMP WHERE id = $1', [listId]);
+
+  return result.rows[0];
+};
+
+export const removeListItem = async (listId, itemId) => {
+  const result = await pool.query(
+    'DELETE FROM custom_list_items WHERE id = $1 AND list_id = $2 RETURNING *',
+    [itemId, listId]
+  );
+  return result.rows[0];
+};
+
+// ============================================
+// ACHIEVEMENTS
+// ============================================
+
+export const getAllAchievements = async () => {
+  const result = await pool.query(
+    `SELECT * FROM achievements ORDER BY category, points`
+  );
+  return result.rows;
+};
+
+export const getUserAchievements = async (userId) => {
+  const result = await pool.query(
+    `SELECT a.*, ua.unlocked_at
+     FROM achievements a
+     LEFT JOIN user_achievements ua ON a.id = ua.achievement_id AND ua.user_id = $1
+     ORDER BY a.category, a.points`,
+    [userId]
+  );
+  return result.rows;
+};
+
+export const unlockAchievement = async (userId, achievementCode) => {
+  const achievement = await pool.query(
+    'SELECT id FROM achievements WHERE code = $1',
+    [achievementCode]
+  );
+
+  if (achievement.rows.length === 0) return null;
+
+  const result = await pool.query(
+    `INSERT INTO user_achievements (user_id, achievement_id)
+     VALUES ($1, $2)
+     ON CONFLICT (user_id, achievement_id) DO NOTHING
+     RETURNING *`,
+    [userId, achievement.rows[0].id]
+  );
+
+  if (result.rows.length > 0) {
+    // Return the full achievement info for newly unlocked
+    const full = await pool.query(
+      'SELECT * FROM achievements WHERE id = $1',
+      [achievement.rows[0].id]
+    );
+    return full.rows[0];
+  }
+  return null;
+};
+
+export const getAchievementProgress = async (userId, guildId) => {
+  // Get various stats for progress calculation
+  const [ratingCount, streak, avgRating, watchtime, hotTakeCount] = await Promise.all([
+    pool.query('SELECT COUNT(*)::integer as count FROM ratings WHERE user_id = $1', [userId]),
+    pool.query('SELECT current_streak, longest_streak FROM users WHERE id = $1', [userId]),
+    pool.query('SELECT AVG(score) as avg FROM ratings WHERE user_id = $1', [userId]),
+    pool.query(`SELECT COALESCE(SUM(mn.runtime), 0)::integer as minutes
+                FROM ratings r JOIN movie_nights mn ON r.movie_night_id = mn.id
+                WHERE r.user_id = $1`, [userId]),
+    pool.query(`SELECT COUNT(*)::integer as count FROM (
+                  SELECT r.id FROM ratings r
+                  JOIN (SELECT movie_night_id, AVG(score) as avg FROM ratings GROUP BY movie_night_id HAVING COUNT(*) >= 3) ma
+                  ON r.movie_night_id = ma.movie_night_id
+                  WHERE r.user_id = $1 AND ABS(r.score - ma.avg) >= 3
+                ) hot`, [userId])
+  ]);
+
+  return {
+    rating_count: ratingCount.rows[0].count,
+    current_streak: streak.rows[0]?.current_streak || 0,
+    longest_streak: streak.rows[0]?.longest_streak || 0,
+    avg_rating: parseFloat(avgRating.rows[0]?.avg || 0),
+    watchtime_minutes: watchtime.rows[0].minutes,
+    hot_take_count: hotTakeCount.rows[0].count
+  };
+};
+
+// ============================================
+// NOTIFICATIONS
+// ============================================
+
+export const createNotification = async (userId, type, title, message, link = null, data = null) => {
+  const result = await pool.query(
+    `INSERT INTO notifications (user_id, type, title, message, link, data)
+     VALUES ($1, $2, $3, $4, $5, $6)
+     RETURNING *`,
+    [userId, type, title, message, link, data ? JSON.stringify(data) : null]
+  );
+  return result.rows[0];
+};
+
+export const createBulkNotifications = async (userIds, type, title, message, link = null, data = null) => {
+  if (!userIds || userIds.length === 0) return [];
+
+  const values = userIds.map((_, i) => `($${i * 6 + 1}, $${i * 6 + 2}, $${i * 6 + 3}, $${i * 6 + 4}, $${i * 6 + 5}, $${i * 6 + 6})`).join(', ');
+  const params = userIds.flatMap(uid => [uid, type, title, message, link, data ? JSON.stringify(data) : null]);
+
+  const result = await pool.query(
+    `INSERT INTO notifications (user_id, type, title, message, link, data)
+     VALUES ${values}
+     RETURNING *`,
+    params
+  );
+  return result.rows;
+};
+
+export const getUserNotifications = async (userId, limit = 20, offset = 0) => {
+  const result = await pool.query(
+    `SELECT * FROM notifications
+     WHERE user_id = $1
+     ORDER BY created_at DESC
+     LIMIT $2 OFFSET $3`,
+    [userId, limit, offset]
+  );
+  return result.rows;
+};
+
+export const getUnreadNotificationCount = async (userId) => {
+  const result = await pool.query(
+    `SELECT COUNT(*)::integer as count FROM notifications WHERE user_id = $1 AND is_read = false`,
+    [userId]
+  );
+  return result.rows[0].count;
+};
+
+export const markNotificationRead = async (notificationId, userId) => {
+  const result = await pool.query(
+    `UPDATE notifications SET is_read = true WHERE id = $1 AND user_id = $2 RETURNING *`,
+    [notificationId, userId]
+  );
+  return result.rows[0];
+};
+
+export const markAllNotificationsRead = async (userId) => {
+  await pool.query(
+    `UPDATE notifications SET is_read = true WHERE user_id = $1 AND is_read = false`,
+    [userId]
+  );
+};
+
+// ============================================
+// SOCIAL: FOLLOWS
+// ============================================
+
+export const followUser = async (followerId, followingId) => {
+  if (followerId === followingId) {
+    throw new Error('Cannot follow yourself');
+  }
+
+  const result = await pool.query(
+    `INSERT INTO user_follows (follower_id, following_id)
+     VALUES ($1, $2)
+     ON CONFLICT (follower_id, following_id) DO NOTHING
+     RETURNING *`,
+    [followerId, followingId]
+  );
+  return result.rows[0];
+};
+
+export const unfollowUser = async (followerId, followingId) => {
+  const result = await pool.query(
+    `DELETE FROM user_follows WHERE follower_id = $1 AND following_id = $2 RETURNING *`,
+    [followerId, followingId]
+  );
+  return result.rows[0];
+};
+
+export const getFollowers = async (userId) => {
+  const result = await pool.query(
+    `SELECT u.id, u.username, u.discord_id, u.avatar, uf.created_at as followed_at
+     FROM user_follows uf
+     JOIN users u ON uf.follower_id = u.id
+     WHERE uf.following_id = $1
+     ORDER BY uf.created_at DESC`,
+    [userId]
+  );
+  return result.rows;
+};
+
+export const getFollowing = async (userId) => {
+  const result = await pool.query(
+    `SELECT u.id, u.username, u.discord_id, u.avatar, uf.created_at as followed_at
+     FROM user_follows uf
+     JOIN users u ON uf.following_id = u.id
+     WHERE uf.follower_id = $1
+     ORDER BY uf.created_at DESC`,
+    [userId]
+  );
+  return result.rows;
+};
+
+export const isFollowing = async (followerId, followingId) => {
+  const result = await pool.query(
+    `SELECT id FROM user_follows WHERE follower_id = $1 AND following_id = $2`,
+    [followerId, followingId]
+  );
+  return result.rows.length > 0;
+};
+
+export const getFollowCounts = async (userId) => {
+  const result = await pool.query(
+    `SELECT
+       (SELECT COUNT(*)::integer FROM user_follows WHERE following_id = $1) as followers,
+       (SELECT COUNT(*)::integer FROM user_follows WHERE follower_id = $1) as following`,
+    [userId]
+  );
+  return result.rows[0];
+};
+
+// ============================================
+// SOCIAL: ACTIVITY FEED
+// ============================================
+
+export const logActivity = async (userId, guildId, activityType, referenceId = null, data = null) => {
+  const result = await pool.query(
+    `INSERT INTO activity_feed (user_id, guild_id, activity_type, reference_id, data)
+     VALUES ($1, $2, $3, $4, $5)
+     RETURNING *`,
+    [userId, guildId, activityType, referenceId, data ? JSON.stringify(data) : null]
+  );
+  return result.rows[0];
+};
+
+export const getActivityFeed = async (userId, guildId, limit = 20, offset = 0) => {
+  // Get activities from users that this user follows
+  const result = await pool.query(
+    `SELECT af.*, u.username, u.discord_id, u.avatar
+     FROM activity_feed af
+     JOIN users u ON af.user_id = u.id
+     JOIN user_follows uf ON af.user_id = uf.following_id
+     WHERE uf.follower_id = $1 AND af.guild_id = $2
+     ORDER BY af.created_at DESC
+     LIMIT $3 OFFSET $4`,
+    [userId, guildId, limit, offset]
+  );
+  return result.rows;
+};
+
+export const getUserActivity = async (userId, limit = 20) => {
+  const result = await pool.query(
+    `SELECT af.*, u.username, u.discord_id, u.avatar
+     FROM activity_feed af
+     JOIN users u ON af.user_id = u.id
+     WHERE af.user_id = $1
+     ORDER BY af.created_at DESC
+     LIMIT $2`,
+    [userId, limit]
+  );
+  return result.rows;
+};
+
+// ============================================
+// SOCIAL: SHARED WISHLISTS
+// ============================================
+
+export const createSharedWishlist = async (ownerId, guildId, name, description, isCollaborative = false) => {
+  const result = await pool.query(
+    `INSERT INTO shared_wishlists (owner_id, guild_id, name, description, is_collaborative)
+     VALUES ($1, $2, $3, $4, $5)
+     RETURNING *`,
+    [ownerId, guildId, name, description, isCollaborative]
+  );
+  return result.rows[0];
+};
+
+export const getSharedWishlists = async (guildId) => {
+  const result = await pool.query(
+    `SELECT sw.*, u.username, u.discord_id, u.avatar,
+            COUNT(swi.id)::integer as item_count
+     FROM shared_wishlists sw
+     JOIN users u ON sw.owner_id = u.id
+     LEFT JOIN shared_wishlist_items swi ON sw.id = swi.wishlist_id
+     WHERE sw.guild_id = $1
+     GROUP BY sw.id, u.id
+     ORDER BY sw.updated_at DESC`,
+    [guildId]
+  );
+  return result.rows;
+};
+
+export const getSharedWishlistById = async (wishlistId) => {
+  const result = await pool.query(
+    `SELECT sw.*, u.username, u.discord_id, u.avatar
+     FROM shared_wishlists sw
+     JOIN users u ON sw.owner_id = u.id
+     WHERE sw.id = $1`,
+    [wishlistId]
+  );
+  return result.rows[0];
+};
+
+export const getSharedWishlistItems = async (wishlistId) => {
+  const result = await pool.query(
+    `SELECT swi.*, u.username as added_by_name
+     FROM shared_wishlist_items swi
+     LEFT JOIN users u ON swi.added_by = u.id
+     WHERE swi.wishlist_id = $1
+     ORDER BY swi.importance DESC, swi.created_at DESC`,
+    [wishlistId]
+  );
+  return result.rows;
+};
+
+export const getSharedWishlistMembers = async (wishlistId) => {
+  const result = await pool.query(
+    `SELECT swm.*, u.username, u.discord_id, u.avatar
+     FROM shared_wishlist_members swm
+     JOIN users u ON swm.user_id = u.id
+     WHERE swm.wishlist_id = $1`,
+    [wishlistId]
+  );
+  return result.rows;
+};
+
+export const addSharedWishlistMember = async (wishlistId, userId, canEdit = false) => {
+  const result = await pool.query(
+    `INSERT INTO shared_wishlist_members (wishlist_id, user_id, can_edit)
+     VALUES ($1, $2, $3)
+     ON CONFLICT (wishlist_id, user_id) DO UPDATE SET can_edit = $3
+     RETURNING *`,
+    [wishlistId, userId, canEdit]
+  );
+  return result.rows[0];
+};
+
+export const removeSharedWishlistMember = async (wishlistId, userId) => {
+  const result = await pool.query(
+    `DELETE FROM shared_wishlist_members WHERE wishlist_id = $1 AND user_id = $2 RETURNING *`,
+    [wishlistId, userId]
+  );
+  return result.rows[0];
+};
+
+export const addSharedWishlistItem = async (wishlistId, addedBy, item) => {
+  const result = await pool.query(
+    `INSERT INTO shared_wishlist_items (wishlist_id, added_by, tmdb_id, title, image_url, importance)
+     VALUES ($1, $2, $3, $4, $5, $6)
+     ON CONFLICT (wishlist_id, tmdb_id) DO UPDATE SET importance = $6
+     RETURNING *`,
+    [wishlistId, addedBy, item.tmdbId, item.title, item.imageUrl, item.importance || 3]
+  );
+
+  // Update wishlist updated_at
+  await pool.query('UPDATE shared_wishlists SET updated_at = CURRENT_TIMESTAMP WHERE id = $1', [wishlistId]);
+
+  return result.rows[0];
+};
+
+export const removeSharedWishlistItem = async (wishlistId, itemId) => {
+  const result = await pool.query(
+    `DELETE FROM shared_wishlist_items WHERE id = $1 AND wishlist_id = $2 RETURNING *`,
+    [itemId, wishlistId]
+  );
+  return result.rows[0];
+};
+
+export const canEditSharedWishlist = async (wishlistId, userId) => {
+  // Check if user is owner or has edit permission
+  const result = await pool.query(
+    `SELECT 1 FROM shared_wishlists WHERE id = $1 AND owner_id = $2
+     UNION
+     SELECT 1 FROM shared_wishlist_members WHERE wishlist_id = $1 AND user_id = $2 AND can_edit = true
+     UNION
+     SELECT 1 FROM shared_wishlists sw
+     JOIN shared_wishlist_members swm ON sw.id = swm.wishlist_id
+     WHERE sw.id = $1 AND sw.is_collaborative = true AND swm.user_id = $2`,
+    [wishlistId, userId]
+  );
+  return result.rows.length > 0;
+};

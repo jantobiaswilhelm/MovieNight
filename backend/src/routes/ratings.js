@@ -31,4 +31,57 @@ router.get('/me', authenticateToken, async (req, res) => {
   }
 });
 
+// Add reaction to a rating
+router.post('/:ratingId/reactions', authenticateToken, async (req, res) => {
+  const { ratingId } = req.params;
+  const { emoji } = req.body;
+
+  if (!emoji) {
+    return res.status(400).json({ error: 'emoji is required' });
+  }
+
+  try {
+    const reaction = await db.addReaction(parseInt(ratingId), req.user.id, emoji);
+    if (!reaction) {
+      return res.json({ message: 'Reaction already exists' });
+    }
+    res.json(reaction);
+  } catch (err) {
+    if (err.message === 'Invalid emoji') {
+      return res.status(400).json({ error: 'Invalid emoji. Allowed: thumbsup, thumbsdown, heart, fire, laugh, thinking' });
+    }
+    console.error('Error adding reaction:', err);
+    res.status(500).json({ error: 'Failed to add reaction' });
+  }
+});
+
+// Remove reaction from a rating
+router.delete('/:ratingId/reactions/:emoji', authenticateToken, async (req, res) => {
+  const { ratingId, emoji } = req.params;
+
+  try {
+    const removed = await db.removeReaction(parseInt(ratingId), req.user.id, emoji);
+    if (!removed) {
+      return res.status(404).json({ error: 'Reaction not found' });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error removing reaction:', err);
+    res.status(500).json({ error: 'Failed to remove reaction' });
+  }
+});
+
+// Get reactions for a rating
+router.get('/:ratingId/reactions', async (req, res) => {
+  const { ratingId } = req.params;
+
+  try {
+    const reactions = await db.getReactionsForRating(parseInt(ratingId));
+    res.json(reactions);
+  } catch (err) {
+    console.error('Error fetching reactions:', err);
+    res.status(500).json({ error: 'Failed to fetch reactions' });
+  }
+});
+
 export default router;

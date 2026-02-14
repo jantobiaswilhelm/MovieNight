@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { getUserProfileStats, getUserRatings } from '../api/client';
+import { useAuth } from '../context/AuthContext';
+import { getUserProfileStats, getUserRatings, getFollowStatus, followUser, unfollowUser } from '../api/client';
 import RatingHistogram from '../components/RatingHistogram';
 import GenreBreakdown from '../components/GenreBreakdown';
 import HotTakes from '../components/HotTakes';
@@ -10,10 +11,15 @@ import './Profile.css';
 
 const UserProfile = () => {
   const { userId } = useParams();
+  const { user: currentUser, isAuthenticated } = useAuth();
   const [profileStats, setProfileStats] = useState(null);
   const [ratings, setRatings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
+
+  const isOwnProfile = currentUser && currentUser.id === parseInt(userId);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -24,6 +30,16 @@ const UserProfile = () => {
         ]);
         setProfileStats(profileData);
         setRatings(ratingsData);
+
+        // Check follow status if logged in and not own profile
+        if (isAuthenticated && !isOwnProfile) {
+          try {
+            const status = await getFollowStatus(userId);
+            setIsFollowing(status.following);
+          } catch {
+            // Ignore errors for follow status
+          }
+        }
       } catch (err) {
         setError(err.message);
       } finally {
@@ -32,7 +48,26 @@ const UserProfile = () => {
     };
 
     fetchData();
-  }, [userId]);
+  }, [userId, isAuthenticated, isOwnProfile]);
+
+  const handleFollowToggle = async () => {
+    if (!isAuthenticated || isOwnProfile) return;
+
+    setFollowLoading(true);
+    try {
+      if (isFollowing) {
+        await unfollowUser(userId);
+        setIsFollowing(false);
+      } else {
+        await followUser(userId);
+        setIsFollowing(true);
+      }
+    } catch (err) {
+      console.error('Follow/unfollow failed:', err);
+    } finally {
+      setFollowLoading(false);
+    }
+  };
 
   if (loading) {
     return <div className="loading">Loading profile...</div>;
@@ -77,7 +112,18 @@ const UserProfile = () => {
         {getAvatarUrl() && (
           <img src={getAvatarUrl()} alt={user.username} className="user-profile-avatar" />
         )}
-        <h1>{user.username}'s Profile</h1>
+        <div className="user-profile-header-content">
+          <h1>{user.username}'s Profile</h1>
+          {isAuthenticated && !isOwnProfile && (
+            <button
+              className={`follow-btn ${isFollowing ? 'following' : ''}`}
+              onClick={handleFollowToggle}
+              disabled={followLoading}
+            >
+              {followLoading ? '...' : isFollowing ? 'Following' : 'Follow'}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Stats Row */}

@@ -521,6 +521,106 @@
   margin: 0;
 }
 
+/* Cast & Crew Section */
+.movie-credits-section {
+  margin-bottom: 2rem;
+  position: relative;
+  z-index: 1;
+}
+
+.credits-group {
+  margin-bottom: 1.5rem;
+}
+
+.credits-group:last-child {
+  margin-bottom: 0;
+}
+
+.credits-group h3 {
+  font-size: 1.1rem;
+  margin: 0 0 1rem 0;
+  color: var(--text-primary);
+}
+
+.credits-list {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) transparent;
+}
+
+.credits-list::-webkit-scrollbar {
+  height: 6px;
+}
+
+.credits-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.credits-list::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+.credit-person {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 100px;
+  text-align: center;
+}
+
+.credit-photo {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border-color);
+  transition: all 0.2s ease;
+}
+
+.credit-photo:hover {
+  border-color: var(--accent);
+  transform: scale(1.05);
+}
+
+.credit-photo-placeholder {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: var(--bg-secondary);
+  border: 2px solid var(--border-color);
+}
+
+.credit-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.credit-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.credit-character {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.directors-list .credit-person {
+  min-width: 120px;
+}
+
+.cast-list .credit-person {
+  min-width: 100px;
+}
+
 /* Similar Movies Section */
 .similar-movies-section {
   margin-top: 2rem;
@@ -632,6 +732,17 @@
 
 .similar-link.trailer:hover {
   background: #cc0000;
+}
+
+.similar-link.add-wishlist {
+  background: var(--success);
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.similar-link.add-wishlist:hover {
+  background: #16a34a;
 }
 
 @media (max-width: 768px) {

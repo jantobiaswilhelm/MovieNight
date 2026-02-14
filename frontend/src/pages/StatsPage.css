@@ -307,6 +307,49 @@
   font-size: 0.75rem;
 }
 
+/* Total Runtime Highlight */
+.stats-highlight {
+  background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid var(--border-color);
+}
+
+.total-runtime {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.runtime-icon {
+  font-size: 2.5rem;
+}
+
+.runtime-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.runtime-value {
+  font-size: 2rem;
+  font-weight: bold;
+  color: var(--accent);
+}
+
+.runtime-label {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Streak cards */
+.streak-card .streak-value {
+  color: var(--warning) !important;
+  font-weight: bold;
+}
+
 /* Responsive: tablet */
 @media (max-width: 1024px) {
   .stats-grid-3 {

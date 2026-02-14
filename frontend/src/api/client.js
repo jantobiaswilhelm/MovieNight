@@ -150,6 +150,9 @@ export const getTMDBMovie = (id) =>
 export const getSimilarMovies = (tmdbId) =>
   fetchAPI(`/api/tmdb/${tmdbId}/similar`);
 
+export const getMovieCredits = (tmdbId) =>
+  fetchAPI(`/api/tmdb/${tmdbId}/credits`);
+
 // Announce from wishlist
 export const announceFromWishlist = (wishlistId, scheduledAt) =>
   fetchAPI('/api/wishlists/announce', {
@@ -253,3 +256,176 @@ export const importLetterboxd = async (files) => {
 
   return response.json();
 };
+
+// ============================================
+// RATING REACTIONS
+// ============================================
+
+export const addReaction = (ratingId, emoji) =>
+  fetchAPI(`/api/ratings/${ratingId}/reactions`, {
+    method: 'POST',
+    body: JSON.stringify({ emoji })
+  });
+
+export const removeReaction = (ratingId, emoji) =>
+  fetchAPI(`/api/ratings/${ratingId}/reactions/${emoji}`, {
+    method: 'DELETE'
+  });
+
+export const getReactions = (ratingId) =>
+  fetchAPI(`/api/ratings/${ratingId}/reactions`);
+
+// ============================================
+// COLLECTIONS
+// ============================================
+
+export const getCollections = () =>
+  fetchAPI(`/api/collections?guild_id=${GUILD_ID}`);
+
+export const getCollectionMovies = (collectionName) =>
+  fetchAPI(`/api/collections/${encodeURIComponent(collectionName)}?guild_id=${GUILD_ID}`);
+
+// ============================================
+// CUSTOM LISTS
+// ============================================
+
+export const getMyLists = () =>
+  fetchAPI('/api/lists/me');
+
+export const getPublicLists = () =>
+  fetchAPI(`/api/lists/public?guild_id=${GUILD_ID}`);
+
+export const createList = (name, description, isPublic = true) =>
+  fetchAPI('/api/lists', {
+    method: 'POST',
+    body: JSON.stringify({ name, description, is_public: isPublic, guild_id: GUILD_ID })
+  });
+
+export const getList = (listId) =>
+  fetchAPI(`/api/lists/${listId}`);
+
+export const updateList = (listId, data) =>
+  fetchAPI(`/api/lists/${listId}`, {
+    method: 'PUT',
+    body: JSON.stringify(data)
+  });
+
+export const deleteList = (listId) =>
+  fetchAPI(`/api/lists/${listId}`, {
+    method: 'DELETE'
+  });
+
+export const addListItem = (listId, item) =>
+  fetchAPI(`/api/lists/${listId}/items`, {
+    method: 'POST',
+    body: JSON.stringify(item)
+  });
+
+export const removeListItem = (listId, itemId) =>
+  fetchAPI(`/api/lists/${listId}/items/${itemId}`, {
+    method: 'DELETE'
+  });
+
+// ============================================
+// ACHIEVEMENTS
+// ============================================
+
+export const getAllAchievements = () =>
+  fetchAPI('/api/achievements');
+
+export const getMyAchievements = () =>
+  fetchAPI(`/api/achievements/me?guild_id=${GUILD_ID}`);
+
+export const getUserAchievements = (userId) =>
+  fetchAPI(`/api/achievements/user/${userId}`);
+
+// ============================================
+// NOTIFICATIONS
+// ============================================
+
+export const getNotifications = (limit = 20, offset = 0) =>
+  fetchAPI(`/api/notifications?limit=${limit}&offset=${offset}`);
+
+export const getUnreadNotificationCount = () =>
+  fetchAPI('/api/notifications/unread/count');
+
+export const markNotificationRead = (notificationId) =>
+  fetchAPI(`/api/notifications/${notificationId}/read`, {
+    method: 'PUT'
+  });
+
+export const markAllNotificationsRead = () =>
+  fetchAPI('/api/notifications/read-all', {
+    method: 'PUT'
+  });
+
+// ============================================
+// SOCIAL - FOLLOWS
+// ============================================
+
+export const getMyFollowers = () =>
+  fetchAPI('/api/social/followers');
+
+export const getMyFollowing = () =>
+  fetchAPI('/api/social/following');
+
+export const followUser = (userId) =>
+  fetchAPI(`/api/social/follow/${userId}`, {
+    method: 'POST'
+  });
+
+export const unfollowUser = (userId) =>
+  fetchAPI(`/api/social/follow/${userId}`, {
+    method: 'DELETE'
+  });
+
+export const getFollowStatus = (userId) =>
+  fetchAPI(`/api/social/following/${userId}`);
+
+// ============================================
+// SOCIAL - ACTIVITY FEED
+// ============================================
+
+export const getActivityFeed = (limit = 20, offset = 0) =>
+  fetchAPI(`/api/social/feed?guild_id=${GUILD_ID}&limit=${limit}&offset=${offset}`);
+
+export const getUserActivity = (userId, limit = 20) =>
+  fetchAPI(`/api/social/activity/${userId}?limit=${limit}`);
+
+// ============================================
+// SOCIAL - SHARED WISHLISTS
+// ============================================
+
+export const getSharedWishlists = () =>
+  fetchAPI(`/api/social/wishlists?guild_id=${GUILD_ID}`);
+
+export const createSharedWishlist = (name, description, isCollaborative = false) =>
+  fetchAPI('/api/social/wishlists', {
+    method: 'POST',
+    body: JSON.stringify({ name, description, is_collaborative: isCollaborative, guild_id: GUILD_ID })
+  });
+
+export const getSharedWishlist = (wishlistId) =>
+  fetchAPI(`/api/social/wishlists/${wishlistId}`);
+
+export const addSharedWishlistItem = (wishlistId, item) =>
+  fetchAPI(`/api/social/wishlists/${wishlistId}/items`, {
+    method: 'POST',
+    body: JSON.stringify(item)
+  });
+
+export const removeSharedWishlistItem = (wishlistId, itemId) =>
+  fetchAPI(`/api/social/wishlists/${wishlistId}/items/${itemId}`, {
+    method: 'DELETE'
+  });
+
+export const addSharedWishlistMember = (wishlistId, userId, canEdit = false) =>
+  fetchAPI(`/api/social/wishlists/${wishlistId}/members`, {
+    method: 'POST',
+    body: JSON.stringify({ user_id: userId, can_edit: canEdit })
+  });
+
+export const removeSharedWishlistMember = (wishlistId, userId) =>
+  fetchAPI(`/api/social/wishlists/${wishlistId}/members/${userId}`, {
+    method: 'DELETE'
+  });

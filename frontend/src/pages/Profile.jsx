@@ -106,6 +106,14 @@ const Profile = () => {
               <span className="stat-label">vs Server</span>
             </div>
           )}
+          {profileStats?.streak && profileStats.streak.current_streak > 0 && (
+            <div className="profile-stat streak-stat">
+              <span className="stat-value">
+                <span className="streak-fire">&#x1F525;</span> {profileStats.streak.current_streak}
+              </span>
+              <span className="stat-label">Streak</span>
+            </div>
+          )}
           <div className="profile-stat">
             <span className="stat-value">{formatWatchtime(profileStats?.watchtime)}</span>
             <span className="stat-label">Watchtime</span>
