@@ -347,6 +347,29 @@ const migrate = async () => {
       CREATE INDEX IF NOT EXISTS idx_user_favorite_movies_user ON user_favorite_movies(user_id)
     `);
 
+    // Personal movies table (movies watched independently, not during movie nights)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS personal_movies (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        tmdb_id INTEGER NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        image_url VARCHAR(500),
+        release_year INTEGER,
+        runtime INTEGER,
+        genres VARCHAR(255),
+        score DECIMAL(3,1) CHECK (score >= 1 AND score <= 10),
+        comment TEXT,
+        watched_at DATE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user_id, tmdb_id)
+      )
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_personal_movies_user ON personal_movies(user_id)
+    `);
+
     await client.query('COMMIT');
     console.log('Migration completed successfully!');
   } catch (err) {

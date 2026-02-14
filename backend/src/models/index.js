@@ -914,3 +914,59 @@ export const getRandomComments = async (guildId, limit = 10) => {
   );
   return result.rows;
 };
+
+// Personal movies operations
+export const addPersonalMovie = async (userId, movieData) => {
+  const { tmdbId, title, imageUrl, releaseYear, runtime, genres, score, comment, watchedAt } = movieData;
+  const result = await pool.query(
+    `INSERT INTO personal_movies (user_id, tmdb_id, title, image_url, release_year, runtime, genres, score, comment, watched_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+     ON CONFLICT (user_id, tmdb_id)
+     DO UPDATE SET score = COALESCE($8, personal_movies.score),
+                   comment = COALESCE($9, personal_movies.comment),
+                   watched_at = COALESCE($10, personal_movies.watched_at),
+                   updated_at = CURRENT_TIMESTAMP
+     RETURNING *`,
+    [userId, tmdbId, title, imageUrl, releaseYear, runtime, genres, score, comment, watchedAt]
+  );
+  return result.rows[0];
+};
+
+export const getUserPersonalMovies = async (userId, sort = 'newest') => {
+  let orderBy = 'pm.created_at DESC';
+  if (sort === 'oldest') orderBy = 'pm.created_at ASC';
+  else if (sort === 'rating') orderBy = 'pm.score DESC NULLS LAST, pm.created_at DESC';
+  else if (sort === 'alphabetical') orderBy = 'pm.title ASC';
+
+  const result = await pool.query(
+    `SELECT pm.*
+     FROM personal_movies pm
+     WHERE pm.user_id = $1
+     ORDER BY ${orderBy}`,
+    [userId]
+  );
+  return result.rows;
+};
+
+export const updatePersonalMovie = async (id, userId, data) => {
+  const { score, comment, watchedAt } = data;
+  const result = await pool.query(
+    `UPDATE personal_movies
+     SET score = COALESCE($3, score),
+         comment = COALESCE($4, comment),
+         watched_at = COALESCE($5, watched_at),
+         updated_at = CURRENT_TIMESTAMP
+     WHERE id = $1 AND user_id = $2
+     RETURNING *`,
+    [id, userId, score, comment, watchedAt]
+  );
+  return result.rows[0];
+};
+
+export const deletePersonalMovie = async (id, userId) => {
+  const result = await pool.query(
+    `DELETE FROM personal_movies WHERE id = $1 AND user_id = $2 RETURNING *`,
+    [id, userId]
+  );
+  return result.rows[0];
+};

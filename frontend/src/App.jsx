@@ -8,6 +8,7 @@ import UserProfile from './pages/UserProfile';
 import StatsPage from './pages/StatsPage';
 import Commands from './pages/Commands';
 import WishlistPage from './pages/WishlistPage';
+import MyMoviesPage from './pages/MyMoviesPage';
 import AuthCallback from './pages/AuthCallback';
 import './App.css';
 
@@ -23,6 +24,7 @@ function App() {
           <Route path="/commands" element={<Commands />} />
           <Route path="/wishlist" element={<WishlistPage />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/my-movies" element={<MyMoviesPage />} />
           <Route path="/user/:userId" element={<UserProfile />} />
           <Route path="/stats" element={<StatsPage />} />
           <Route path="/auth/callback" element={<AuthCallback />} />

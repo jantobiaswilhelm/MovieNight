@@ -10,6 +10,7 @@ import votingRoutes from './routes/voting.js';
 import adminRoutes from './routes/admin.js';
 import wishlistRoutes from './routes/wishlists.js';
 import tmdbRoutes from './routes/tmdb.js';
+import personalMovieRoutes from './routes/personal-movies.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -30,6 +31,7 @@ app.use('/api/voting', votingRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/wishlists', wishlistRoutes);
 app.use('/api/tmdb', tmdbRoutes);
+app.use('/api/personal-movies', personalMovieRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

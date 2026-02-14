@@ -207,3 +207,24 @@ export const getGuildUsers = () =>
 // Random Comments for homepage ticker
 export const getRandomComments = (limit = 10) =>
   fetchAPI(`/api/stats/comments/random?guild_id=${GUILD_ID}&limit=${limit}`);
+
+// Personal Movies
+export const getPersonalMovies = (sort = 'newest') =>
+  fetchAPI(`/api/personal-movies?sort=${sort}`);
+
+export const addPersonalMovie = (data) =>
+  fetchAPI('/api/personal-movies', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
+
+export const updatePersonalMovie = (id, data) =>
+  fetchAPI(`/api/personal-movies/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data)
+  });
+
+export const deletePersonalMovie = (id) =>
+  fetchAPI(`/api/personal-movies/${id}`, {
+    method: 'DELETE'
+  });
