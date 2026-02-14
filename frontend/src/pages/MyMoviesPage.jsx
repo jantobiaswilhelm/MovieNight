@@ -394,11 +394,19 @@ const AddEditMovieModal = ({ isOpen, onClose, onSave, editingMovie }) => {
   );
 };
 
+// Parse CSV to count movies
+const parseCSVCount = (content) => {
+  const lines = content.split('\n').filter(line => line.trim());
+  return Math.max(0, lines.length - 1); // Subtract header row
+};
+
 const ImportModal = ({ isOpen, onClose, onImported }) => {
   const [ratingsFile, setRatingsFile] = useState(null);
   const [diaryFile, setDiaryFile] = useState(null);
   const [reviewsFile, setReviewsFile] = useState(null);
   const [isImporting, setIsImporting] = useState(false);
+  const [importStatus, setImportStatus] = useState('');
+  const [movieCount, setMovieCount] = useState(0);
   const [results, setResults] = useState(null);
   const [error, setError] = useState(null);
 
@@ -409,8 +417,45 @@ const ImportModal = ({ isOpen, onClose, onImported }) => {
       setReviewsFile(null);
       setResults(null);
       setError(null);
+      setImportStatus('');
+      setMovieCount(0);
     }
   }, [isOpen]);
+
+  // Count movies when files are selected
+  useEffect(() => {
+    const countMovies = async () => {
+      let count = 0;
+      const seen = new Set();
+
+      if (ratingsFile) {
+        const text = await ratingsFile.text();
+        const lines = text.split('\n').slice(1).filter(line => line.trim());
+        lines.forEach(line => {
+          const parts = line.split(',');
+          if (parts[1]) seen.add(`${parts[1]}|${parts[2] || ''}`);
+        });
+      }
+
+      if (diaryFile) {
+        const text = await diaryFile.text();
+        const lines = text.split('\n').slice(1).filter(line => line.trim());
+        lines.forEach(line => {
+          const parts = line.split(',');
+          if (parts[1]) seen.add(`${parts[1]}|${parts[2] || ''}`);
+        });
+      }
+
+      count = seen.size || (ratingsFile || diaryFile ? 0 : 0);
+      setMovieCount(count);
+    };
+
+    if (ratingsFile || diaryFile) {
+      countMovies();
+    } else {
+      setMovieCount(0);
+    }
+  }, [ratingsFile, diaryFile]);
 
   const handleImport = async () => {
     if (!ratingsFile && !diaryFile) {
@@ -420,21 +465,35 @@ const ImportModal = ({ isOpen, onClose, onImported }) => {
 
     setIsImporting(true);
     setError(null);
+    setImportStatus('Uploading files...');
 
     try {
+      // Simulate status updates since we can't get real progress from the server
+      const statusInterval = setInterval(() => {
+        setImportStatus(prev => {
+          if (prev === 'Uploading files...') return 'Parsing CSV data...';
+          if (prev === 'Parsing CSV data...') return 'Searching TMDB for movies...';
+          if (prev === 'Searching TMDB for movies...') return 'Importing movies (this takes ~0.25s per movie)...';
+          return prev;
+        });
+      }, 1500);
+
       const importResults = await importLetterboxd({
         ratings: ratingsFile,
         diary: diaryFile,
         reviews: reviewsFile
       });
+
+      clearInterval(statusInterval);
       setResults(importResults);
       if (importResults.imported > 0) {
         onImported();
       }
     } catch (err) {
-      setError(err.message || 'Import failed');
+      setError(err.message || 'Import failed. Please check your CSV files and try again.');
     } finally {
       setIsImporting(false);
+      setImportStatus('');
     }
   };
 
@@ -511,15 +570,33 @@ const ImportModal = ({ isOpen, onClose, onImported }) => {
                 <p>Ratings will be converted from Letterboxd's 0.5-5 scale to 1-10.</p>
               </div>
 
+              {movieCount > 0 && !isImporting && (
+                <div className="movie-count-preview">
+                  Found approximately <strong>{movieCount}</strong> unique movies to import
+                </div>
+              )}
+
               {error && <div className="modal-error">{error}</div>}
 
-              <button
-                className="btn-primary import-btn"
-                onClick={handleImport}
-                disabled={isImporting || (!ratingsFile && !diaryFile)}
-              >
-                {isImporting ? 'Importing... (this may take a while)' : 'Import Movies'}
-              </button>
+              {isImporting ? (
+                <div className="import-progress">
+                  <div className="spinner"></div>
+                  <div className="import-status">{importStatus}</div>
+                  {movieCount > 0 && (
+                    <div className="import-estimate">
+                      Estimated time: ~{Math.ceil(movieCount * 0.3 / 60)} minutes for {movieCount} movies
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <button
+                  className="btn-primary import-btn"
+                  onClick={handleImport}
+                  disabled={!ratingsFile && !diaryFile}
+                >
+                  Import Movies
+                </button>
+              )}
             </>
           ) : (
             <div className="import-results">

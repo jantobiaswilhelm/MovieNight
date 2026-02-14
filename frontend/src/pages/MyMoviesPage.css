@@ -715,6 +715,56 @@
   font-size: 1rem;
 }
 
+.movie-count-preview {
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: var(--success);
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  text-align: center;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.import-progress {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 2rem 1rem;
+  background: var(--bg-secondary);
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid var(--border-color);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.import-status {
+  color: var(--text-primary);
+  font-weight: 500;
+  font-size: 1rem;
+  text-align: center;
+}
+
+.import-estimate {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
 /* Import Results */
 .import-results {
   text-align: center;
