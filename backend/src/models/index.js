@@ -44,7 +44,8 @@ export const createMovieNight = async (title, scheduledAt, announcedBy, guildId,
   return result.rows[0];
 };
 
-export const getMovieNights = async (guildId, limit = 20, offset = 0) => {
+export const getMovieNights = async (guildId, limit = 20, offset = 0, includeTest = false) => {
+  const testFilter = includeTest ? '' : 'AND (mn.is_test = false OR mn.is_test IS NULL)';
   const result = await pool.query(
     `SELECT mn.*, u.username as announced_by_name, u.discord_id as announced_by_discord_id,
             COALESCE(AVG(r.score), 0) as avg_rating,
@@ -52,7 +53,7 @@ export const getMovieNights = async (guildId, limit = 20, offset = 0) => {
      FROM movie_nights mn
      LEFT JOIN users u ON mn.announced_by = u.id
      LEFT JOIN ratings r ON mn.id = r.movie_night_id
-     WHERE mn.guild_id = $1
+     WHERE mn.guild_id = $1 ${testFilter}
      GROUP BY mn.id, u.username, u.discord_id
      ORDER BY mn.scheduled_at DESC
      LIMIT $2 OFFSET $3`,
@@ -168,7 +169,7 @@ export const getGuildStats = async (guildId) => {
        COUNT(r.id) as total_ratings
      FROM movie_nights mn
      LEFT JOIN ratings r ON mn.id = r.movie_night_id
-     WHERE mn.guild_id = $1`,
+     WHERE mn.guild_id = $1 AND (mn.is_test = false OR mn.is_test IS NULL)`,
     [guildId]
   );
   return result.rows[0];
@@ -181,7 +182,7 @@ export const getTopRatedMovies = async (guildId, limit = 5) => {
             COUNT(r.id) as rating_count
      FROM movie_nights mn
      JOIN ratings r ON mn.id = r.movie_night_id
-     WHERE mn.guild_id = $1
+     WHERE mn.guild_id = $1 AND (mn.is_test = false OR mn.is_test IS NULL)
      GROUP BY mn.id
      HAVING COUNT(r.id) >= 1
      ORDER BY avg_rating DESC
@@ -210,7 +211,7 @@ export const getTopRatedMoviesByPeriod = async (guildId, period, limit = 5, minV
             COUNT(r.id) as rating_count
      FROM movie_nights mn
      JOIN ratings r ON mn.id = r.movie_night_id
-     WHERE mn.guild_id = $1 ${dateFilter}
+     WHERE mn.guild_id = $1 AND (mn.is_test = false OR mn.is_test IS NULL) ${dateFilter}
      GROUP BY mn.id
      HAVING COUNT(r.id) >= $3
      ORDER BY avg_rating DESC
@@ -239,7 +240,7 @@ export const getWorstRatedMoviesByPeriod = async (guildId, period, limit = 5, mi
             COUNT(r.id) as rating_count
      FROM movie_nights mn
      JOIN ratings r ON mn.id = r.movie_night_id
-     WHERE mn.guild_id = $1 ${dateFilter}
+     WHERE mn.guild_id = $1 AND (mn.is_test = false OR mn.is_test IS NULL) ${dateFilter}
      GROUP BY mn.id
      HAVING COUNT(r.id) >= $3
      ORDER BY avg_rating ASC
@@ -253,7 +254,7 @@ export const getAvailableMonths = async (guildId) => {
   const result = await pool.query(
     `SELECT DISTINCT TO_CHAR(scheduled_at, 'YYYY-MM') as month
      FROM movie_nights
-     WHERE guild_id = $1 AND scheduled_at IS NOT NULL
+     WHERE guild_id = $1 AND scheduled_at IS NOT NULL AND (is_test = false OR is_test IS NULL)
      ORDER BY month DESC`,
     [guildId]
   );
@@ -282,7 +283,7 @@ export const getMostActiveRaters = async (guildId, limit = 5) => {
      FROM users u
      JOIN ratings r ON u.id = r.user_id
      JOIN movie_nights mn ON r.movie_night_id = mn.id
-     WHERE mn.guild_id = $1
+     WHERE mn.guild_id = $1 AND (mn.is_test = false OR mn.is_test IS NULL)
      GROUP BY u.id
      ORDER BY rating_count DESC
      LIMIT $2`,
@@ -610,10 +611,10 @@ export const getWishlistById = async (id) => {
 // Pending announcement operations
 export const createPendingAnnouncement = async (data) => {
   const result = await pool.query(
-    `INSERT INTO pending_announcements (guild_id, channel_id, user_id, wishlist_id, title, image_url, backdrop_url, description, tmdb_id, imdb_id, tmdb_rating, genres, runtime, release_year, trailer_url, scheduled_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+    `INSERT INTO pending_announcements (guild_id, channel_id, user_id, wishlist_id, title, image_url, backdrop_url, description, tmdb_id, imdb_id, tmdb_rating, genres, runtime, release_year, trailer_url, scheduled_at, is_test)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
      RETURNING *`,
-    [data.guildId, data.channelId, data.userId, data.wishlistId || null, data.title, data.imageUrl, data.backdropUrl, data.description, data.tmdbId, data.imdbId, data.tmdbRating, data.genres, data.runtime, data.releaseYear, data.trailerUrl, data.scheduledAt]
+    [data.guildId, data.channelId, data.userId, data.wishlistId || null, data.title, data.imageUrl, data.backdropUrl, data.description, data.tmdbId, data.imdbId, data.tmdbRating, data.genres, data.runtime, data.releaseYear, data.trailerUrl, data.scheduledAt, data.isTest || false]
   );
   return result.rows[0];
 };
@@ -677,6 +678,7 @@ export const getUpcomingMoviesWithAttendees = async (guildId, limit = 10) => {
      LEFT JOIN movie_attendance ma ON mn.id = ma.movie_night_id
      LEFT JOIN users att_u ON ma.user_id = att_u.id
      WHERE mn.guild_id = $1 AND mn.started_at IS NULL AND mn.scheduled_at > CURRENT_TIMESTAMP
+       AND (mn.is_test = false OR mn.is_test IS NULL)
      GROUP BY mn.id, u.username, u.discord_id
      ORDER BY mn.scheduled_at ASC
      LIMIT $2`,
@@ -699,6 +701,7 @@ export const getNextMovieWithAttendees = async (guildId) => {
      LEFT JOIN movie_attendance ma ON mn.id = ma.movie_night_id
      LEFT JOIN users att_u ON ma.user_id = att_u.id
      WHERE mn.guild_id = $1 AND mn.started_at IS NULL AND mn.scheduled_at > CURRENT_TIMESTAMP
+       AND (mn.is_test = false OR mn.is_test IS NULL)
      GROUP BY mn.id, u.username, u.discord_id
      ORDER BY mn.scheduled_at ASC
      LIMIT 1`,
@@ -1064,7 +1067,8 @@ export const getGuildTotalRuntime = async (guildId) => {
   const result = await pool.query(
     `SELECT COALESCE(SUM(runtime), 0)::integer as total_minutes
      FROM movie_nights
-     WHERE guild_id = $1 AND started_at IS NOT NULL AND runtime IS NOT NULL`,
+     WHERE guild_id = $1 AND started_at IS NOT NULL AND runtime IS NOT NULL
+       AND (is_test = false OR is_test IS NULL)`,
     [guildId]
   );
   return result.rows[0];
@@ -1150,6 +1154,7 @@ export const getCollections = async (guildId) => {
      FROM movie_nights mn
      LEFT JOIN ratings r ON mn.id = r.movie_night_id
      WHERE mn.guild_id = $1 AND mn.collection_name IS NOT NULL AND mn.collection_name != ''
+       AND (mn.is_test = false OR mn.is_test IS NULL)
      GROUP BY mn.collection_name
      ORDER BY movie_count DESC`,
     [guildId]
@@ -1163,6 +1168,7 @@ export const getCollectionMovies = async (guildId, collectionName) => {
      FROM movie_nights mn
      LEFT JOIN ratings r ON mn.id = r.movie_night_id
      WHERE mn.guild_id = $1 AND mn.collection_name = $2
+       AND (mn.is_test = false OR mn.is_test IS NULL)
      GROUP BY mn.id
      ORDER BY mn.release_year ASC, mn.scheduled_at ASC`,
     [guildId, collectionName]
@@ -1716,4 +1722,71 @@ export const canEditSharedWishlist = async (wishlistId, userId) => {
     [wishlistId, userId]
   );
   return result.rows.length > 0;
+};
+
+// ============================================
+// GUILD SETTINGS & CHANNELS (Admin Test Mode)
+// ============================================
+
+export const getGuildChannels = async (guildId) => {
+  const result = await pool.query(
+    `SELECT channel_id, channel_name, position, parent_name
+     FROM guild_channels
+     WHERE guild_id = $1
+     ORDER BY position ASC`,
+    [guildId]
+  );
+  return result.rows;
+};
+
+export const getGuildSettings = async (guildId) => {
+  const result = await pool.query(
+    `SELECT test_mode, test_channel_id FROM guild_settings WHERE guild_id = $1`,
+    [guildId]
+  );
+  return result.rows[0] || { test_mode: false, test_channel_id: null };
+};
+
+export const upsertGuildSettings = async (guildId, testMode, testChannelId) => {
+  const result = await pool.query(
+    `INSERT INTO guild_settings (guild_id, test_mode, test_channel_id)
+     VALUES ($1, $2, $3)
+     ON CONFLICT (guild_id)
+     DO UPDATE SET test_mode = $2, test_channel_id = $3, updated_at = CURRENT_TIMESTAMP
+     RETURNING *`,
+    [guildId, testMode, testChannelId || null]
+  );
+  return result.rows[0];
+};
+
+export const deleteTestMovies = async (guildId) => {
+  // Delete ratings, attendance, and credits for test movies first
+  await pool.query(
+    `DELETE FROM ratings WHERE movie_night_id IN
+     (SELECT id FROM movie_nights WHERE guild_id = $1 AND is_test = true)`,
+    [guildId]
+  );
+  await pool.query(
+    `DELETE FROM movie_attendance WHERE movie_night_id IN
+     (SELECT id FROM movie_nights WHERE guild_id = $1 AND is_test = true)`,
+    [guildId]
+  );
+  await pool.query(
+    `DELETE FROM movie_credits WHERE movie_night_id IN
+     (SELECT id FROM movie_nights WHERE guild_id = $1 AND is_test = true)`,
+    [guildId]
+  );
+  const result = await pool.query(
+    `DELETE FROM movie_nights WHERE guild_id = $1 AND is_test = true RETURNING id`,
+    [guildId]
+  );
+  return result.rows.length;
+};
+
+export const getTestMovieCount = async (guildId) => {
+  const result = await pool.query(
+    `SELECT COUNT(*)::integer as count FROM movie_nights WHERE guild_id = $1 AND is_test = true`,
+    [guildId]
+  );
+  return result.rows[0].count;
 };

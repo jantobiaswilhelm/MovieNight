@@ -19,7 +19,8 @@ router.get('/', optionalAuth, async (req, res) => {
   }
 
   try {
-    const movies = await db.getMovieNights(guild_id, limit, offset);
+    const includeTest = req.query.include_test === 'true' && req.user && isAdmin(req.user.discord_id);
+    const movies = await db.getMovieNights(guild_id, limit, offset, includeTest);
     res.json(movies);
   } catch (err) {
     console.error('Error fetching movies:', err);
@@ -90,10 +91,15 @@ router.post('/announce', authenticateToken, async (req, res) => {
   }
 
   try {
+    // Check test mode settings
+    const settings = await db.getGuildSettings(guild_id);
+    const isTest = settings.test_mode === true;
+    const channelId = isTest ? settings.test_channel_id : null;
+
     // Create pending announcement with TMDB data
     const announcement = await db.createPendingAnnouncement({
       guildId: guild_id,
-      channelId: null, // Bot will use default channel
+      channelId, // Test channel or null (bot uses default)
       userId: req.user.id,
       wishlistId: null, // Not from wishlist
       title: tmdb_data.releaseYear
@@ -109,7 +115,8 @@ router.post('/announce', authenticateToken, async (req, res) => {
       runtime: tmdb_data.runtime,
       releaseYear: tmdb_data.releaseYear || tmdb_data.year,
       trailerUrl: tmdb_data.trailerUrl,
-      scheduledAt: scheduledDate
+      scheduledAt: scheduledDate,
+      isTest
     });
 
     res.json(announcement);
@@ -191,10 +198,12 @@ router.post('/:id/ratings', validateIntParams('id'), authenticateToken, async (r
       return res.status(400).json({ error: 'Movie has not started yet. Ratings will be available once the movie night begins.' });
     }
 
-    // Check if enough time has passed (runtime - 10 minutes)
+    // Check if enough time has passed (runtime minus buffer before movie ends)
+    const RATING_BUFFER_MINUTES = 10;
+    const DEFAULT_RUNTIME_MINUTES = 90;
     const startTime = new Date(movie.started_at).getTime();
-    const runtime = movie.runtime || 90; // Default to 90 minutes if no runtime
-    const ratingDelayMinutes = Math.max(runtime - 10, 0);
+    const runtime = movie.runtime || DEFAULT_RUNTIME_MINUTES;
+    const ratingDelayMinutes = Math.max(runtime - RATING_BUFFER_MINUTES, 0);
     const ratingsAvailableAt = startTime + (ratingDelayMinutes * 60 * 1000);
 
     if (Date.now() < ratingsAvailableAt) {

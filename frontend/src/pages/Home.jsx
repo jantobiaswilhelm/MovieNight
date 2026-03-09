@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { sanitizeUrl, sanitizeImdbId, sanitizeImageUrl } from '../utils/sanitizeUrl';
+import { formatDate } from '../utils/helpers';
 import {
   getMovies,
   getActiveVoting,
@@ -16,7 +17,11 @@ import {
   getNextMovieWithAttendees,
   getUpcomingMoviesWithAttendees,
   toggleAttendance,
-  announceMovie
+  announceMovie,
+  getGuildChannels,
+  getGuildSettings,
+  updateGuildSettings,
+  deleteTestMovies
 } from '../api/client';
 import MovieCard from '../components/MovieCard';
 import StarRating from '../components/StarRating';
@@ -70,6 +75,16 @@ const Home = () => {
   const [announceError, setAnnounceError] = useState(null);
   const [announcedMovieTitle, setAnnouncedMovieTitle] = useState('');
 
+  // Admin settings state
+  const [showAdminSettings, setShowAdminSettings] = useState(false);
+  const [testMode, setTestMode] = useState(false);
+  const [testChannelId, setTestChannelId] = useState('');
+  const [channels, setChannels] = useState([]);
+  const [testMovieCount, setTestMovieCount] = useState(0);
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [deletingTestMovies, setDeletingTestMovies] = useState(false);
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -92,6 +107,68 @@ const Home = () => {
 
     fetchData();
   }, []);
+
+  // Load admin settings when panel is toggled open
+  useEffect(() => {
+    if (!showAdminSettings || !isAdmin || settingsLoaded) return;
+
+    const loadAdminSettings = async () => {
+      try {
+        const [channelsData, settingsData] = await Promise.all([
+          getGuildChannels(),
+          getGuildSettings()
+        ]);
+        setChannels(channelsData);
+        setTestMode(settingsData.test_mode || false);
+        setTestChannelId(settingsData.test_channel_id || '');
+        setTestMovieCount(settingsData.test_movie_count || 0);
+        setSettingsLoaded(true);
+      } catch (err) {
+        console.error('Error loading admin settings:', err);
+      }
+    };
+
+    loadAdminSettings();
+  }, [showAdminSettings, isAdmin, settingsLoaded]);
+
+  const handleSaveSettings = async () => {
+    setSavingSettings(true);
+    try {
+      await updateGuildSettings({
+        test_mode: testMode,
+        test_channel_id: testChannelId || null
+      });
+    } catch (err) {
+      console.error('Error saving settings:', err);
+      alert('Failed to save settings');
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
+  const handleDeleteTestMovies = async () => {
+    if (!confirm(`Delete all ${testMovieCount} test movies? This cannot be undone.`)) return;
+
+    setDeletingTestMovies(true);
+    try {
+      const result = await deleteTestMovies();
+      setTestMovieCount(0);
+      // Refresh movie data
+      const [moviesData, nextMovieData, upcomingData] = await Promise.all([
+        getMovies(100, 0),
+        getNextMovieWithAttendees().catch(() => null),
+        getUpcomingMoviesWithAttendees(5).catch(() => [])
+      ]);
+      setMovies(moviesData);
+      setNextMovieWithAttendees(nextMovieData);
+      setUpcomingWithAttendees(upcomingData);
+    } catch (err) {
+      console.error('Error deleting test movies:', err);
+      alert('Failed to delete test movies');
+    } finally {
+      setDeletingTestMovies(false);
+    }
+  };
 
   const handleVote = async (suggestionId) => {
     if (!isAuthenticated) return;
@@ -392,17 +469,6 @@ const Home = () => {
   // Get the next upcoming movie for the hero (use the one with attendees if available)
   const nextMovie = nextMovieWithAttendees || upcomingMovies[0];
 
-  const formatDate = (dateStr) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit'
-    });
-  };
-
   // Get background image from top rated movie this month
   const topRatedMovie = bestRatedThisMonth[0];
   const backgroundImage = sanitizeImageUrl(topRatedMovie?.backdrop_url) || sanitizeImageUrl(topRatedMovie?.image_url);
@@ -415,6 +481,75 @@ const Home = () => {
           className="home-background"
           style={{ backgroundImage: `url(${backgroundImage})` }}
         />
+      )}
+
+      {/* Admin Settings Panel */}
+      {isAdmin && (
+        <section className="admin-settings-section">
+          <button
+            className="admin-settings-toggle"
+            onClick={() => setShowAdminSettings(!showAdminSettings)}
+          >
+            Admin Settings {showAdminSettings ? '▲' : '▼'}
+          </button>
+
+          {showAdminSettings && (
+            <div className="admin-settings-panel">
+              <div className="admin-setting-row">
+                <label className="admin-setting-label">Test Mode</label>
+                <button
+                  className={`toggle-btn ${testMode ? 'toggle-on' : 'toggle-off'}`}
+                  onClick={() => setTestMode(!testMode)}
+                >
+                  {testMode ? 'ON' : 'OFF'}
+                </button>
+              </div>
+
+              <div className="admin-setting-row">
+                <label className="admin-setting-label">Test Channel</label>
+                <select
+                  className="admin-channel-select"
+                  value={testChannelId}
+                  onChange={(e) => setTestChannelId(e.target.value)}
+                  disabled={!testMode}
+                >
+                  <option value="">Select a channel...</option>
+                  {channels.map((ch) => (
+                    <option key={ch.channel_id} value={ch.channel_id}>
+                      #{ch.channel_name} {ch.parent_name ? `(${ch.parent_name})` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="admin-setting-actions">
+                <button
+                  className="btn-primary btn-small"
+                  onClick={handleSaveSettings}
+                  disabled={savingSettings}
+                >
+                  {savingSettings ? 'Saving...' : 'Save Settings'}
+                </button>
+
+                {testMovieCount > 0 && (
+                  <button
+                    className="btn-danger btn-small"
+                    onClick={handleDeleteTestMovies}
+                    disabled={deletingTestMovies}
+                  >
+                    {deletingTestMovies ? 'Deleting...' : `Delete All Test Movies (${testMovieCount})`}
+                  </button>
+                )}
+              </div>
+
+              {testMode && (
+                <div className="test-mode-indicator">
+                  Test mode is active - announcements will go to the test channel and movies will be flagged as test data
+                </div>
+              )}
+            </div>
+          )}
+        </section>
       )}
 
       {/* Quick Announce Section - Full Width */}
@@ -457,7 +592,7 @@ const Home = () => {
                       onClick={() => handleSelectAnnounceMovie(movie)}
                     >
                       {movie.posterPath ? (
-                        <img src={movie.posterPath} alt="" className="announce-result-poster" />
+                        <img src={movie.posterPath} alt={movie.title} className="announce-result-poster" loading="lazy" />
                       ) : (
                         <div className="announce-result-poster no-poster">No Image</div>
                       )}
@@ -481,7 +616,7 @@ const Home = () => {
               <div className="announce-preview">
                 <div className="announce-preview-content">
                   {selectedAnnounceMovie.posterPath && (
-                    <img src={selectedAnnounceMovie.posterPath} alt="" className="announce-preview-poster" />
+                    <img src={selectedAnnounceMovie.posterPath} alt={selectedAnnounceMovie.title} className="announce-preview-poster" loading="lazy" />
                   )}
                   <div className="announce-preview-info">
                     <h4>{selectedAnnounceMovie.title}</h4>
@@ -523,7 +658,7 @@ const Home = () => {
               <div className="announce-schedule">
                 <div className="announce-schedule-movie">
                   {selectedAnnounceMovie.posterPath && (
-                    <img src={selectedAnnounceMovie.posterPath} alt="" className="announce-schedule-poster" />
+                    <img src={selectedAnnounceMovie.posterPath} alt={selectedAnnounceMovie.title} className="announce-schedule-poster" loading="lazy" />
                   )}
                   <span className="announce-schedule-title">{selectedAnnounceMovie.title}</span>
                 </div>
@@ -603,7 +738,7 @@ const Home = () => {
               <div className="hero-content">
                 <div className="hero-poster-small">
                   {nextMovie.image_url ? (
-                    <img src={nextMovie.image_url} alt={nextMovie.title} className="hero-poster" />
+                    <img src={nextMovie.image_url} alt={nextMovie.title} className="hero-poster" loading="lazy" />
                   ) : (
                     <div className="hero-poster-placeholder">No Poster</div>
                   )}
@@ -636,7 +771,7 @@ const Home = () => {
                     <p className="hero-description">{nextMovie.description}</p>
                   )}
                   <div className="hero-footer">
-                    <p className="hero-date">{formatDate(nextMovie.scheduled_at)}</p>
+                    <p className="hero-date">{formatDate(nextMovie.scheduled_at, 'long')}</p>
                     {nextMovie.announced_by_name && (
                       <p className="hero-picker">Picked by {nextMovie.announced_by_name}</p>
                     )}
@@ -657,6 +792,7 @@ const Home = () => {
                                 alt={attendee.username}
                                 title={attendee.username}
                                 className="attendance-avatar"
+                                loading="lazy"
                               />
                             ))}
                             {nextMovie.attendees.length > 8 && (
@@ -812,7 +948,7 @@ const Home = () => {
                           onClick={() => !votingLoading && isAuthenticated && handleVote(suggestion.id)}
                         >
                           {suggestion.image_url && (
-                            <img src={suggestion.image_url} alt="" className="suggestion-poster" />
+                            <img src={suggestion.image_url} alt={suggestion.title} className="suggestion-poster" loading="lazy" />
                           )}
                           <div className="suggestion-info">
                             <span className="suggestion-title">{suggestion.title}</span>
@@ -835,6 +971,7 @@ const Home = () => {
                                     alt={voter.username}
                                     title={voter.username}
                                     className="voter-avatar"
+                                    loading="lazy"
                                   />
                                 ))}
                                 {suggestion.voters.length > 5 && (
@@ -1004,7 +1141,7 @@ const Home = () => {
                     <Link to={`/movie/${movie.id}`} key={movie.id} className="best-rated-item">
                       <span className="rank">#{index + 1}</span>
                       {movie.image_url && (
-                        <img src={movie.image_url} alt="" className="best-rated-poster" />
+                        <img src={movie.image_url} alt={movie.title} className="best-rated-poster" loading="lazy" />
                       )}
                       <div className="best-rated-info">
                         <span className="best-rated-title">{movie.title}</span>
@@ -1054,7 +1191,7 @@ const Home = () => {
                     onClick={() => handleAddMovieToVote(movie)}
                   >
                     {movie.posterPath ? (
-                      <img src={movie.posterPath} alt="" className="result-poster" />
+                      <img src={movie.posterPath} alt={movie.title} className="result-poster" loading="lazy" />
                     ) : (
                       <div className="result-poster no-poster">No Image</div>
                     )}
@@ -1096,6 +1233,7 @@ const Home = () => {
                     src={voteResult.winner.image_url}
                     alt={voteResult.winner.title}
                     className="vote-result-poster"
+                    loading="lazy"
                   />
                 )}
                 <div className="vote-result-info">

@@ -162,10 +162,15 @@ router.post('/announce', authenticateToken, async (req, res) => {
       return res.status(403).json({ error: 'You can only announce your own wishlist items' });
     }
 
+    // Check test mode settings
+    const settings = await db.getGuildSettings(wishlistItem.guild_id);
+    const isTest = settings.test_mode === true;
+    const channelId = isTest ? settings.test_channel_id : null;
+
     // Create pending announcement
     const announcement = await db.createPendingAnnouncement({
       guildId: wishlistItem.guild_id,
-      channelId: null, // Bot will use default channel
+      channelId, // Test channel or null (bot uses default)
       userId: req.user.id,
       wishlistId: parseInt(wishlist_id),
       title: wishlistItem.release_year
@@ -181,7 +186,8 @@ router.post('/announce', authenticateToken, async (req, res) => {
       runtime: wishlistItem.runtime,
       releaseYear: wishlistItem.release_year,
       trailerUrl: wishlistItem.trailer_url,
-      scheduledAt: scheduledDate
+      scheduledAt: scheduledDate,
+      isTest
     });
 
     // Remove from wishlist immediately to prevent duplicate scheduling

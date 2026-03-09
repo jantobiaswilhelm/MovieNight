@@ -1,17 +1,9 @@
 import { Link } from 'react-router-dom';
 import StarRating from './StarRating';
+import { formatDate } from '../utils/helpers';
 import './MovieCard.css';
 
 const MovieCard = ({ movie, variant = 'horizontal', attendees = null }) => {
-  const formatDate = (dateStr) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
   const avgRating = parseFloat(movie.avg_rating) || 0;
   const isUpcoming = new Date(movie.scheduled_at) > new Date();
 
@@ -20,7 +12,7 @@ const MovieCard = ({ movie, variant = 'horizontal', attendees = null }) => {
       <Link to={`/movie/${movie.id}`} className="movie-card movie-card--poster">
         <div className="poster-container">
           {movie.image_url ? (
-            <img src={movie.image_url} alt={movie.title} className="movie-poster" />
+            <img src={movie.image_url} alt={movie.title} className="movie-poster" loading="lazy" />
           ) : (
             <div className="movie-poster-placeholder">
               <span>No Image</span>
@@ -38,6 +30,9 @@ const MovieCard = ({ movie, variant = 'horizontal', attendees = null }) => {
           {isUpcoming && (
             <div className="upcoming-badge">Upcoming</div>
           )}
+          {movie.is_test && (
+            <div className="test-badge">TEST</div>
+          )}
         </div>
       </Link>
     );
@@ -48,10 +43,13 @@ const MovieCard = ({ movie, variant = 'horizontal', attendees = null }) => {
     return (
       <Link to={`/movie/${movie.id}`} className="movie-card movie-card--compact">
         {movie.image_url && (
-          <img src={movie.image_url} alt={movie.title} className="movie-poster-small" />
+          <img src={movie.image_url} alt={movie.title} className="movie-poster-small" loading="lazy" />
         )}
         <div className="movie-info-compact">
-          <h3 className="movie-title">{movie.title}</h3>
+          <h3 className="movie-title">
+            {movie.is_test && <span className="test-badge-inline">TEST</span>}
+            {movie.title}
+          </h3>
           <p className="movie-date">{formatDate(movie.scheduled_at)}</p>
           {movieAttendees && movieAttendees.length > 0 && (
             <div className="compact-attendees">
@@ -66,6 +64,7 @@ const MovieCard = ({ movie, variant = 'horizontal', attendees = null }) => {
                     alt={attendee.username}
                     title={attendee.username}
                     className="compact-attendee-avatar"
+                    loading="lazy"
                   />
                 ))}
                 {movieAttendees.length > 4 && (
@@ -88,7 +87,7 @@ const MovieCard = ({ movie, variant = 'horizontal', attendees = null }) => {
     <Link to={`/movie/${movie.id}`} className="movie-card movie-card--horizontal">
       <div className="poster-container">
         {movie.image_url ? (
-          <img src={movie.image_url} alt={movie.title} className="movie-poster" />
+          <img src={movie.image_url} alt={movie.title} className="movie-poster" loading="lazy" />
         ) : (
           <div className="movie-poster-placeholder">
             <span>No Image</span>
@@ -102,7 +101,10 @@ const MovieCard = ({ movie, variant = 'horizontal', attendees = null }) => {
       </div>
 
       <div className="movie-info">
-        <h3 className="movie-title">{movie.title}</h3>
+        <h3 className="movie-title">
+          {movie.is_test && <span className="test-badge-inline">TEST</span>}
+          {movie.title}
+        </h3>
         <p className="movie-date">{formatDate(movie.scheduled_at)}</p>
 
         <div className="movie-rating">

@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getMovie, submitRating, getMyRating, deleteMovie, getSimilarMovies, toggleAttendance, getMovieCredits } from '../api/client';
 import { sanitizeUrl, sanitizeImdbId, sanitizeImageUrl } from '../utils/sanitizeUrl';
+import { formatDate, formatRuntime, getLanguageName } from '../utils/helpers';
 import RatingInput from '../components/RatingInput';
 import StarRating from '../components/StarRating';
 import RatingReactions from '../components/RatingReactions';
@@ -85,9 +86,11 @@ const Movie = () => {
     }
 
     const checkRatingsAvailability = () => {
+      const RATING_BUFFER_MINUTES = 10;
+      const DEFAULT_RUNTIME_MINUTES = 90;
       const startTime = new Date(movie.started_at).getTime();
-      const runtime = movie.runtime || 90; // Default to 90 minutes if no runtime
-      const ratingDelayMinutes = Math.max(runtime - 10, 0); // Show ratings 10 min before end
+      const runtime = movie.runtime || DEFAULT_RUNTIME_MINUTES;
+      const ratingDelayMinutes = Math.max(runtime - RATING_BUFFER_MINUTES, 0);
       const ratingsAvailableAt = startTime + (ratingDelayMinutes * 60 * 1000);
       const now = Date.now();
 
@@ -181,35 +184,6 @@ const Movie = () => {
     return <div className="error">Movie not found</div>;
   }
 
-  const formatDate = (dateStr) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit'
-    });
-  };
-
-  const formatRuntime = (minutes) => {
-    if (!minutes) return null;
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
-  };
-
-  const getLanguageName = (code) => {
-    const languages = {
-      en: 'English', es: 'Spanish', fr: 'French', de: 'German', it: 'Italian',
-      ja: 'Japanese', ko: 'Korean', zh: 'Chinese', pt: 'Portuguese', ru: 'Russian',
-      hi: 'Hindi', ar: 'Arabic', nl: 'Dutch', sv: 'Swedish', no: 'Norwegian',
-      da: 'Danish', fi: 'Finnish', pl: 'Polish', tr: 'Turkish', th: 'Thai'
-    };
-    return languages[code] || code?.toUpperCase();
-  };
-
   return (
     <div className="movie-page">
       {/* Hero Section with Backdrop */}
@@ -221,9 +195,15 @@ const Movie = () => {
 
       <Link to="/movies" className="back-link">&larr; Back to Movies</Link>
 
+      {movie.is_test && (
+        <div className="test-mode-banner">
+          TEST MODE - This movie was created in test mode
+        </div>
+      )}
+
       <div className="movie-header">
         {movie.image_url && (
-          <img src={movie.image_url} alt={movie.title} className="movie-poster-large" />
+          <img src={movie.image_url} alt={movie.title} className="movie-poster-large" loading="lazy" />
         )}
 
         <div className="movie-details">
@@ -296,7 +276,7 @@ const Movie = () => {
           </div>
 
           <p className="movie-date">
-            {movie.started_at ? 'Watched on' : 'Scheduled for'} {formatDate(movie.scheduled_at)}
+            {movie.started_at ? 'Watched on' : 'Scheduled for'} {formatDate(movie.scheduled_at, 'long')}
           </p>
 
           {movie.announced_by_name && (
@@ -329,6 +309,7 @@ const Movie = () => {
                         }
                         alt={attendee.username}
                         className="movie-attendee-avatar"
+                        loading="lazy"
                       />
                       <span className="movie-attendee-name">{attendee.username}</span>
                     </div>
@@ -369,7 +350,7 @@ const Movie = () => {
                 {credits.directors.map((person, i) => (
                   <div key={`director-${i}`} className="credit-person">
                     {person.profilePath ? (
-                      <img src={person.profilePath} alt={person.name} className="credit-photo" />
+                      <img src={person.profilePath} alt={person.name} className="credit-photo" loading="lazy" />
                     ) : (
                       <div className="credit-photo-placeholder" />
                     )}
@@ -386,7 +367,7 @@ const Movie = () => {
                 {credits.cast.map((person, i) => (
                   <div key={`actor-${i}`} className="credit-person">
                     {person.profilePath ? (
-                      <img src={person.profilePath} alt={person.name} className="credit-photo" />
+                      <img src={person.profilePath} alt={person.name} className="credit-photo" loading="lazy" />
                     ) : (
                       <div className="credit-photo-placeholder" />
                     )}
@@ -461,8 +442,9 @@ const Movie = () => {
                     {rating.avatar && (
                       <img
                         src={`https://cdn.discordapp.com/avatars/${rating.discord_id}/${rating.avatar}.png`}
-                        alt=""
+                        alt={rating.username}
                         className="rating-avatar"
+                        loading="lazy"
                       />
                     )}
                     <span>{rating.username}</span>
@@ -500,6 +482,7 @@ const Movie = () => {
                       src={similar.posterPath}
                       alt={similar.title}
                       className="similar-movie-poster"
+                      loading="lazy"
                     />
                   ) : (
                     <div className="similar-movie-no-poster">No Image</div>

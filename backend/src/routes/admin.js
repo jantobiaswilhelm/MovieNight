@@ -55,4 +55,69 @@ router.delete('/suggestions/:id', validateIntParams('id'), authenticateToken, re
   }
 });
 
+// Get cached guild channels
+router.get('/channels', authenticateToken, requireAdmin, async (req, res) => {
+  const { guild_id } = req.query;
+  if (!guild_id) {
+    return res.status(400).json({ error: 'guild_id is required' });
+  }
+
+  try {
+    const channels = await db.getGuildChannels(guild_id);
+    res.json(channels);
+  } catch (err) {
+    console.error('Error fetching guild channels:', err);
+    res.status(500).json({ error: 'Failed to fetch channels' });
+  }
+});
+
+// Get guild settings
+router.get('/settings', authenticateToken, requireAdmin, async (req, res) => {
+  const { guild_id } = req.query;
+  if (!guild_id) {
+    return res.status(400).json({ error: 'guild_id is required' });
+  }
+
+  try {
+    const settings = await db.getGuildSettings(guild_id);
+    const testMovieCount = await db.getTestMovieCount(guild_id);
+    res.json({ ...settings, test_movie_count: testMovieCount });
+  } catch (err) {
+    console.error('Error fetching guild settings:', err);
+    res.status(500).json({ error: 'Failed to fetch settings' });
+  }
+});
+
+// Update guild settings
+router.put('/settings', authenticateToken, requireAdmin, async (req, res) => {
+  const { guild_id, test_mode, test_channel_id } = req.body;
+  if (!guild_id) {
+    return res.status(400).json({ error: 'guild_id is required' });
+  }
+
+  try {
+    const settings = await db.upsertGuildSettings(guild_id, test_mode, test_channel_id);
+    res.json(settings);
+  } catch (err) {
+    console.error('Error updating guild settings:', err);
+    res.status(500).json({ error: 'Failed to update settings' });
+  }
+});
+
+// Delete all test movies for a guild
+router.delete('/test-movies', authenticateToken, requireAdmin, async (req, res) => {
+  const { guild_id } = req.query;
+  if (!guild_id) {
+    return res.status(400).json({ error: 'guild_id is required' });
+  }
+
+  try {
+    const deletedCount = await db.deleteTestMovies(guild_id);
+    res.json({ success: true, deleted_count: deletedCount });
+  } catch (err) {
+    console.error('Error deleting test movies:', err);
+    res.status(500).json({ error: 'Failed to delete test movies' });
+  }
+});
+
 export default router;

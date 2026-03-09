@@ -22,13 +22,13 @@ export const getUserByDiscordId = async (discordId) => {
 };
 
 // Movie night operations
-export const createMovieNight = async (title, scheduledAt, announcedBy, guildId, channelId, messageId, imageUrl, tmdbData = {}) => {
+export const createMovieNight = async (title, scheduledAt, announcedBy, guildId, channelId, messageId, imageUrl, tmdbData = {}, isTest = false) => {
   const { description, tmdbId, tmdbRating, genres, runtime, releaseYear, backdropUrl, tagline, imdbId, originalLanguage, collectionName, trailerUrl } = tmdbData;
   const result = await pool.query(
-    `INSERT INTO movie_nights (title, scheduled_at, announced_by, guild_id, channel_id, message_id, image_url, description, tmdb_id, tmdb_rating, genres, runtime, release_year, backdrop_url, tagline, imdb_id, original_language, collection_name, trailer_url)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+    `INSERT INTO movie_nights (title, scheduled_at, announced_by, guild_id, channel_id, message_id, image_url, description, tmdb_id, tmdb_rating, genres, runtime, release_year, backdrop_url, tagline, imdb_id, original_language, collection_name, trailer_url, is_test)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
      RETURNING *`,
-    [title, scheduledAt, announcedBy, guildId, channelId, messageId, imageUrl, description || null, tmdbId || null, tmdbRating || null, genres || null, runtime || null, releaseYear || null, backdropUrl || null, tagline || null, imdbId || null, originalLanguage || null, collectionName || null, trailerUrl || null]
+    [title, scheduledAt, announcedBy, guildId, channelId, messageId, imageUrl, description || null, tmdbId || null, tmdbRating || null, genres || null, runtime || null, releaseYear || null, backdropUrl || null, tagline || null, imdbId || null, originalLanguage || null, collectionName || null, trailerUrl || null, isTest]
   );
   return result.rows[0];
 };
@@ -501,6 +501,31 @@ export const getMoviesReadyForRatingNotification = async () => {
      ORDER BY started_at ASC`
   );
   return result.rows;
+};
+
+// Guild channel sync operations
+export const upsertGuildChannel = async (guildId, channelId, channelName, position, parentName) => {
+  const result = await pool.query(
+    `INSERT INTO guild_channels (guild_id, channel_id, channel_name, position, parent_name, updated_at)
+     VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP)
+     ON CONFLICT (guild_id, channel_id)
+     DO UPDATE SET channel_name = $3, position = $4, parent_name = $5, updated_at = CURRENT_TIMESTAMP
+     RETURNING *`,
+    [guildId, channelId, channelName, position, parentName]
+  );
+  return result.rows[0];
+};
+
+export const removeStaleGuildChannels = async (guildId, currentChannelIds) => {
+  if (!currentChannelIds || currentChannelIds.length === 0) {
+    // Remove all channels for this guild if none are current
+    await pool.query('DELETE FROM guild_channels WHERE guild_id = $1', [guildId]);
+    return;
+  }
+  await pool.query(
+    `DELETE FROM guild_channels WHERE guild_id = $1 AND channel_id != ALL($2)`,
+    [guildId, currentChannelIds]
+  );
 };
 
 export const markRatingPromptSent = async (movieId) => {

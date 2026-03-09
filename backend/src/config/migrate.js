@@ -2,9 +2,17 @@ import 'dotenv/config';
 import pg from 'pg';
 const { Pool } = pg;
 
+const sslConfig = (() => {
+  if (process.env.NODE_ENV !== 'production') return false;
+  if (process.env.DATABASE_CA_CERT) {
+    return { rejectUnauthorized: true, ca: process.env.DATABASE_CA_CERT };
+  }
+  return { rejectUnauthorized: false };
+})();
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  ssl: sslConfig
 });
 
 const migrate = async () => {
@@ -326,6 +334,12 @@ const migrate = async () => {
       CREATE INDEX IF NOT EXISTS idx_movie_nights_guild ON movie_nights(guild_id)
     `);
     await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_movie_nights_scheduled ON movie_nights(scheduled_at)
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_movie_nights_announced_by ON movie_nights(announced_by)
+    `);
+    await client.query(`
       CREATE INDEX IF NOT EXISTS idx_voting_sessions_guild ON voting_sessions(guild_id)
     `);
     await client.query(`
@@ -629,6 +643,52 @@ const migrate = async () => {
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_personal_movies_user ON personal_movies(user_id)
     `);
+
+    // Guild channels table (cached Discord channel list, written by bot)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS guild_channels (
+        id SERIAL PRIMARY KEY,
+        guild_id VARCHAR(20) NOT NULL,
+        channel_id VARCHAR(20) NOT NULL,
+        channel_name VARCHAR(100) NOT NULL,
+        position INTEGER DEFAULT 0,
+        parent_name VARCHAR(100),
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(guild_id, channel_id)
+      )
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_guild_channels_guild ON guild_channels(guild_id)
+    `);
+
+    // Guild settings table (admin-configured settings per guild)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS guild_settings (
+        id SERIAL PRIMARY KEY,
+        guild_id VARCHAR(20) UNIQUE NOT NULL,
+        test_mode BOOLEAN DEFAULT false,
+        test_channel_id VARCHAR(20),
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Add is_test column to pending_announcements if it doesn't exist
+    const isTestPACheck = await client.query(`
+      SELECT column_name FROM information_schema.columns
+      WHERE table_name = 'pending_announcements' AND column_name = 'is_test'
+    `);
+    if (isTestPACheck.rows.length === 0) {
+      await client.query(`ALTER TABLE pending_announcements ADD COLUMN is_test BOOLEAN DEFAULT false`);
+    }
+
+    // Add is_test column to movie_nights if it doesn't exist
+    const isTestMNCheck = await client.query(`
+      SELECT column_name FROM information_schema.columns
+      WHERE table_name = 'movie_nights' AND column_name = 'is_test'
+    `);
+    if (isTestMNCheck.rows.length === 0) {
+      await client.query(`ALTER TABLE movie_nights ADD COLUMN is_test BOOLEAN DEFAULT false`);
+    }
 
     // Add discord_access_token to users for profile refresh
     const tokenCol = await client.query(`

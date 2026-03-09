@@ -126,6 +126,24 @@ export const deleteSuggestion = (suggestionId) =>
     method: 'DELETE'
   });
 
+// Admin Settings (Test Mode)
+export const getGuildChannels = () =>
+  fetchAPI(`/api/admin/channels?guild_id=${GUILD_ID}`);
+
+export const getGuildSettings = () =>
+  fetchAPI(`/api/admin/settings?guild_id=${GUILD_ID}`);
+
+export const updateGuildSettings = (settings) =>
+  fetchAPI('/api/admin/settings', {
+    method: 'PUT',
+    body: JSON.stringify({ guild_id: GUILD_ID, ...settings })
+  });
+
+export const deleteTestMovies = () =>
+  fetchAPI(`/api/admin/test-movies?guild_id=${GUILD_ID}`, {
+    method: 'DELETE'
+  });
+
 // Wishlists
 export const getMyWishlist = (sort = 'importance') =>
   fetchAPI(`/api/wishlists/me?guild_id=${GUILD_ID}&sort=${sort}`);

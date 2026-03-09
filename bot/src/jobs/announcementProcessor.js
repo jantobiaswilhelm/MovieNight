@@ -6,9 +6,10 @@ import { createAnnouncementEmbed } from '../utils/embeds.js';
 const DEFAULT_CHANNEL_ID = process.env.ANNOUNCEMENT_CHANNEL_ID;
 const MOVIE_NIGHT_ROLE_ID = process.env.MOVIE_NIGHT_ROLE_ID;
 
+const CRON_EVERY_5_MINUTES = '*/5 * * * *';
+
 export const startAnnouncementProcessorJob = (client) => {
-  // Run every 5 minutes
-  cron.schedule('*/5 * * * *', async () => {
+  cron.schedule(CRON_EVERY_5_MINUTES, async () => {
     try {
       const pendingAnnouncements = await getPendingAnnouncements();
 
@@ -110,7 +111,8 @@ async function processAnnouncement(client, announcement, channel) {
       backdropUrl: announcement.backdrop_url,
       imdbId: announcement.imdb_id,
       trailerUrl: announcement.trailer_url
-    }
+    },
+    announcement.is_test || false
   );
 
   // Mark as processed
