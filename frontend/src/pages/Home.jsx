@@ -42,7 +42,7 @@ const Home = () => {
   // Voting management state
   const [showStartVoteModal, setShowStartVoteModal] = useState(false);
   const [showAddMovieModal, setShowAddMovieModal] = useState(false);
-  const [voteDate, setVoteDate] = useState('');
+  const [voteDate, setVoteDate] = useState(new Date().toISOString().split('T')[0]);
   const [voteTime, setVoteTime] = useState('20:00');
   const [creatingVote, setCreatingVote] = useState(false);
   const [endingVote, setEndingVote] = useState(false);
@@ -69,7 +69,7 @@ const Home = () => {
   const [announceSearch, setAnnounceSearch] = useState('');
   const [announceResults, setAnnounceResults] = useState([]);
   const [announceSearching, setAnnounceSearching] = useState(false);
-  const [announceDate, setAnnounceDate] = useState('');
+  const [announceDate, setAnnounceDate] = useState(new Date().toISOString().split('T')[0]);
   const [announceTime, setAnnounceTime] = useState('20:00');
   const [announcing, setAnnouncing] = useState(false);
   const [announceError, setAnnounceError] = useState(null);
@@ -435,7 +435,7 @@ const Home = () => {
     setSelectedAnnounceMovie(null);
     setAnnounceSearch('');
     setAnnounceResults([]);
-    setAnnounceDate('');
+    setAnnounceDate(new Date().toISOString().split('T')[0]);
     setAnnounceTime('20:00');
     setAnnounceError(null);
     setAnnouncedMovieTitle('');
