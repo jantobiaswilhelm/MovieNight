@@ -5,6 +5,15 @@ import { findOrCreateUser } from '../models/index.js';
 
 const router = Router();
 
+// In-memory store for short-lived auth codes (code -> JWT, 30s TTL)
+const authCodes = new Map();
+function storeAuthCode(jwt) {
+  const code = crypto.randomBytes(32).toString('hex');
+  authCodes.set(code, jwt);
+  setTimeout(() => authCodes.delete(code), 30 * 1000);
+  return code;
+}
+
 // Redirect to Discord OAuth
 router.get('/discord', (req, res) => {
   // Generate OAuth state to prevent login CSRF
@@ -86,12 +95,31 @@ router.get('/callback', async (req, res) => {
       { expiresIn: '7d' }
     );
 
-    // Redirect to frontend with token
-    res.redirect(`${process.env.FRONTEND_URL}/auth/callback?token=${token}`);
+    // Store JWT behind a short-lived auth code and redirect with the code
+    const authCode = storeAuthCode(token);
+    res.redirect(`${process.env.FRONTEND_URL}/auth/callback?code=${authCode}`);
   } catch (err) {
     console.error('OAuth error:', err);
     res.redirect(`${process.env.FRONTEND_URL}?error=auth_failed`);
   }
+});
+
+// Exchange auth code for JWT
+router.post('/exchange', (req, res) => {
+  const { code } = req.body;
+
+  if (!code) {
+    return res.status(400).json({ error: 'code is required' });
+  }
+
+  const token = authCodes.get(code);
+  authCodes.delete(code);
+
+  if (!token) {
+    return res.status(400).json({ error: 'Invalid or expired code' });
+  }
+
+  res.json({ token });
 });
 
 // Get current user

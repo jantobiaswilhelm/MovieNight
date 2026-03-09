@@ -33,6 +33,12 @@ export const getMe = () => fetchAPI('/auth/me');
 
 export const getLoginUrl = () => `${API_URL}/auth/discord`;
 
+export const exchangeAuthCode = (code) =>
+  fetchAPI('/auth/exchange', {
+    method: 'POST',
+    body: JSON.stringify({ code })
+  });
+
 // Movies
 export const getMovies = (limit = 20, offset = 0) =>
   fetchAPI(`/api/movies?guild_id=${GUILD_ID}&limit=${limit}&offset=${offset}`);

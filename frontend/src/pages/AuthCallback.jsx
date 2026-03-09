@@ -8,10 +8,10 @@ const AuthCallback = () => {
   const { handleCallback } = useAuth();
 
   useEffect(() => {
-    const token = searchParams.get('token');
+    const code = searchParams.get('code');
 
-    if (token) {
-      handleCallback(token)
+    if (code) {
+      handleCallback(code)
         .then(() => navigate('/'))
         .catch(() => navigate('/?error=auth_failed'));
     } else {

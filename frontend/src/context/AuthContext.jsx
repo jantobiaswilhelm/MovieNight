@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { getMe, getLoginUrl, checkAdmin } from '../api/client';
+import { getMe, getLoginUrl, checkAdmin, exchangeAuthCode } from '../api/client';
 
 const AuthContext = createContext(null);
 
@@ -46,7 +46,8 @@ export const AuthProvider = ({ children }) => {
     setIsAdmin(false);
   };
 
-  const handleCallback = async (token) => {
+  const handleCallback = async (code) => {
+    const { token } = await exchangeAuthCode(code);
     localStorage.setItem('token', token);
     const userData = await getMe();
     setUser(userData);
