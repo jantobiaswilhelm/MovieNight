@@ -3,6 +3,7 @@ import { findOrCreateUser, createMovieNight } from '../models/index.js';
 import { createAnnouncementEmbed } from '../utils/embeds.js';
 import { searchMovies, getMovieDetails } from '../utils/tmdb.js';
 import { isAdmin } from '../utils/admin.js';
+import { shouldThrottle } from '../utils/throttle.js';
 
 export const data = new SlashCommandBuilder()
   .setName('announce')
@@ -21,7 +22,7 @@ export const data = new SlashCommandBuilder()
 export const autocomplete = async (interaction) => {
   const focusedValue = interaction.options.getFocused();
 
-  if (focusedValue.length < 2) {
+  if (focusedValue.length < 2 || shouldThrottle(interaction.user.id)) {
     return interaction.respond([]);
   }
 

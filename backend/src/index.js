@@ -95,15 +95,13 @@ app.use('/api/voting', votingRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/wishlists', wishlistRoutes);
 app.use('/api/tmdb', tmdbLimiter, tmdbRoutes);
+app.use('/api/personal-movies/import', importLimiter);
 app.use('/api/personal-movies', personalMovieRoutes);
 app.use('/api/collections', collectionsRoutes);
 app.use('/api/lists', listsRoutes);
 app.use('/api/achievements', achievementsRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/social', socialRoutes);
-
-// Import limiter applied to specific route
-app.use('/api/personal-movies/import', importLimiter);
 
 // Health check
 app.get('/health', (req, res) => {
