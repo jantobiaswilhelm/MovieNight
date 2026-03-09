@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getMovie, submitRating, getMyRating, deleteMovie, getSimilarMovies, toggleAttendance, getMovieCredits } from '../api/client';
+import { sanitizeUrl } from '../utils/sanitizeUrl';
 import RatingInput from '../components/RatingInput';
 import StarRating from '../components/StarRating';
 import RatingReactions from '../components/RatingReactions';
@@ -284,7 +285,7 @@ const Movie = () => {
             )}
             {movie.trailer_url && (
               <a
-                href={movie.trailer_url}
+                href={sanitizeUrl(movie.trailer_url)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="movie-link trailer-link"
@@ -521,7 +522,7 @@ const Movie = () => {
                       )}
                       {similar.trailerUrl && (
                         <a
-                          href={similar.trailerUrl}
+                          href={sanitizeUrl(similar.trailerUrl)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="similar-link trailer"

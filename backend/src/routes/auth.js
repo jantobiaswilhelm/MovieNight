@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { findOrCreateUser } from '../models/index.js';
 
@@ -6,12 +7,22 @@ const router = Router();
 
 // Redirect to Discord OAuth
 router.get('/discord', (req, res) => {
+  // Generate OAuth state to prevent login CSRF
+  const state = crypto.randomBytes(32).toString('hex');
+  res.cookie('oauth_state', state, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 10 * 60 * 1000 // 10 minutes
+  });
+
   const redirectUri = `${process.env.BACKEND_URL}/auth/callback`;
   const params = new URLSearchParams({
     client_id: process.env.DISCORD_CLIENT_ID,
     redirect_uri: redirectUri,
     response_type: 'code',
-    scope: 'identify'
+    scope: 'identify',
+    state
   });
 
   res.redirect(`https://discord.com/api/oauth2/authorize?${params}`);
@@ -19,7 +30,15 @@ router.get('/discord', (req, res) => {
 
 // OAuth callback
 router.get('/callback', async (req, res) => {
-  const { code } = req.query;
+  const { code, state } = req.query;
+
+  // Validate OAuth state
+  const storedState = req.cookies?.oauth_state;
+  res.clearCookie('oauth_state');
+
+  if (!state || !storedState || state !== storedState) {
+    return res.redirect(`${process.env.FRONTEND_URL}?error=invalid_state`);
+  }
 
   if (!code) {
     return res.redirect(`${process.env.FRONTEND_URL}?error=no_code`);

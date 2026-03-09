@@ -12,6 +12,11 @@ router.get('/', async (req, res) => {
     return res.status(400).json({ error: 'guild_id is required' });
   }
 
+  // Validate month format to prevent SQL injection
+  if (month && !/^\d{4}-\d{2}$/.test(month)) {
+    return res.status(400).json({ error: 'Invalid month format. Use YYYY-MM.' });
+  }
+
   try {
     const [
       stats,

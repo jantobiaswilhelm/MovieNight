@@ -1,11 +1,13 @@
-import { SlashCommandBuilder } from 'discord.js';
+import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
 import { findOrCreateUser, createMovieNight } from '../models/index.js';
 import { createAnnouncementEmbed } from '../utils/embeds.js';
 import { searchMovies, getMovieDetails } from '../utils/tmdb.js';
+import { isAdmin } from '../utils/admin.js';
 
 export const data = new SlashCommandBuilder()
   .setName('announce')
   .setDescription('Announce a new movie night')
+  .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
   .addStringOption(option =>
     option.setName('movie')
       .setDescription('Search for a movie by title')
@@ -36,6 +38,13 @@ export const autocomplete = async (interaction) => {
 };
 
 export const execute = async (interaction) => {
+  if (!isAdmin(interaction.user.id)) {
+    return interaction.reply({
+      content: 'You do not have permission to announce movie nights.',
+      ephemeral: true
+    });
+  }
+
   const movieValue = interaction.options.getString('movie');
   const datetimeStr = interaction.options.getString('datetime');
 

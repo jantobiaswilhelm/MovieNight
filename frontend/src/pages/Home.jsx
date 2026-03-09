@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { sanitizeUrl } from '../utils/sanitizeUrl';
 import {
   getMovies,
   getActiveVoting,
@@ -684,7 +685,7 @@ const Home = () => {
                     <div className="hero-actions">
                       {nextMovie.trailer_url && (
                         <a
-                          href={nextMovie.trailer_url}
+                          href={sanitizeUrl(nextMovie.trailer_url)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="hero-btn hero-btn-primary"

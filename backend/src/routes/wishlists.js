@@ -153,6 +153,11 @@ router.post('/announce', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Wishlist item not found' });
     }
 
+    // Verify ownership
+    if (wishlistItem.user_id !== req.user.id) {
+      return res.status(403).json({ error: 'You can only announce your own wishlist items' });
+    }
+
     // Create pending announcement
     const announcement = await db.createPendingAnnouncement({
       guildId: wishlistItem.guild_id,

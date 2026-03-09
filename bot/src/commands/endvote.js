@@ -1,4 +1,4 @@
-import { SlashCommandBuilder } from 'discord.js';
+import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
 import {
   findOrCreateUser,
   getActiveVotingSession,
@@ -9,16 +9,25 @@ import {
   createMovieNight
 } from '../models/index.js';
 import { createAnnouncementEmbed } from '../utils/embeds.js';
+import { isAdmin } from '../utils/admin.js';
 
 export const data = new SlashCommandBuilder()
   .setName('endvote')
   .setDescription('End the current voting session and announce the winner')
+  .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
   .addStringOption(option =>
     option.setName('datetime')
       .setDescription('Override the movie night date/time (optional)')
       .setRequired(false));
 
 export const execute = async (interaction) => {
+  if (!isAdmin(interaction.user.id)) {
+    return interaction.reply({
+      content: 'You do not have permission to end voting sessions.',
+      ephemeral: true
+    });
+  }
+
   const datetimeStr = interaction.options.getString('datetime');
 
   // Check if there's an active voting session

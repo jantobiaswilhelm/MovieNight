@@ -186,9 +186,10 @@ export const getTopRatedMovies = async (guildId, limit = 5) => {
 
 export const getTopRatedMoviesByPeriod = async (guildId, period, limit = 5, minVotes = 3, specificMonth = null) => {
   let dateFilter = '';
+  const params = [guildId, limit, minVotes];
   if (specificMonth) {
-    // specificMonth format: "2024-01" (year-month)
-    dateFilter = `AND TO_CHAR(mn.scheduled_at, 'YYYY-MM') = '${specificMonth}'`;
+    dateFilter = `AND TO_CHAR(mn.scheduled_at, 'YYYY-MM') = $4`;
+    params.push(specificMonth);
   } else if (period === 'month') {
     dateFilter = `AND mn.scheduled_at >= DATE_TRUNC('month', CURRENT_DATE)`;
   } else if (period === 'year') {
@@ -207,16 +208,17 @@ export const getTopRatedMoviesByPeriod = async (guildId, period, limit = 5, minV
      HAVING COUNT(r.id) >= $3
      ORDER BY avg_rating DESC
      LIMIT $2`,
-    [guildId, limit, minVotes]
+    params
   );
   return result.rows;
 };
 
 export const getWorstRatedMoviesByPeriod = async (guildId, period, limit = 5, minVotes = 3, specificMonth = null) => {
   let dateFilter = '';
+  const params = [guildId, limit, minVotes];
   if (specificMonth) {
-    // specificMonth format: "2024-01" (year-month)
-    dateFilter = `AND TO_CHAR(mn.scheduled_at, 'YYYY-MM') = '${specificMonth}'`;
+    dateFilter = `AND TO_CHAR(mn.scheduled_at, 'YYYY-MM') = $4`;
+    params.push(specificMonth);
   } else if (period === 'month') {
     dateFilter = `AND mn.scheduled_at >= DATE_TRUNC('month', CURRENT_DATE)`;
   } else if (period === 'year') {
@@ -235,7 +237,7 @@ export const getWorstRatedMoviesByPeriod = async (guildId, period, limit = 5, mi
      HAVING COUNT(r.id) >= $3
      ORDER BY avg_rating ASC
      LIMIT $2`,
-    [guildId, limit, minVotes]
+    params
   );
   return result.rows;
 };

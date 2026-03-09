@@ -1,16 +1,25 @@
-import { SlashCommandBuilder } from 'discord.js';
+import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
 import { findOrCreateUser, createVotingSession, getActiveVotingSession, getSuggestionsForSession } from '../models/index.js';
 import { buildVotingEmbed, buildVotingButtons } from '../utils/votingEmbed.js';
+import { isAdmin } from '../utils/admin.js';
 
 export const data = new SlashCommandBuilder()
   .setName('startvote')
   .setDescription('Start a new voting session for the next movie night')
+  .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
   .addStringOption(option =>
     option.setName('datetime')
       .setDescription('Planned movie night date/time (e.g., "Saturday 8pm")')
       .setRequired(true));
 
 export const execute = async (interaction) => {
+  if (!isAdmin(interaction.user.id)) {
+    return interaction.reply({
+      content: 'You do not have permission to start voting sessions.',
+      ephemeral: true
+    });
+  }
+
   const datetimeStr = interaction.options.getString('datetime');
 
   // Check if there's already an active voting session

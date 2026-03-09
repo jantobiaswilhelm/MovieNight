@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { announceFromWishlist } from '../api/client';
+import { sanitizeUrl } from '../utils/sanitizeUrl';
 import './WishlistDetailModal.css';
 
 const WishlistDetailModal = ({ item, isOpen, onClose, onAnnounce, canAnnounce }) => {
@@ -140,7 +141,7 @@ const WishlistDetailModal = ({ item, isOpen, onClose, onAnnounce, canAnnounce })
                 )}
                 {item.trailer_url && (
                   <a
-                    href={item.trailer_url}
+                    href={sanitizeUrl(item.trailer_url)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="detail-link trailer-link"
