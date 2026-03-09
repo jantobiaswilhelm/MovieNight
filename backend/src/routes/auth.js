@@ -81,11 +81,12 @@ router.get('/callback', async (req, res) => {
 
     const discordUser = await userResponse.json();
 
-    // Create or update user in database
+    // Create or update user in database (store access token for profile refresh)
     const user = await findOrCreateUser(
       discordUser.id,
       discordUser.username,
-      discordUser.avatar
+      discordUser.avatar,
+      tokenData.access_token
     );
 
     // Generate JWT
@@ -122,7 +123,7 @@ router.post('/exchange', (req, res) => {
   res.json({ token });
 });
 
-// Get current user
+// Get current user (refreshes Discord profile if stale)
 router.get('/me', async (req, res) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -134,10 +135,33 @@ router.get('/me', async (req, res) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const { getUserById } = await import('../models/index.js');
-    const user = await getUserById(decoded.userId);
+    let user = await getUserById(decoded.userId);
 
     if (!user) {
       return res.status(401).json({ error: 'User not found' });
+    }
+
+    // Refresh Discord profile if last update was more than 1 hour ago
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    if (user.discord_access_token && new Date(user.updated_at) < oneHourAgo) {
+      try {
+        const discordRes = await fetch('https://discord.com/api/users/@me', {
+          headers: { Authorization: `Bearer ${user.discord_access_token}` }
+        });
+        if (discordRes.ok) {
+          const discordUser = await discordRes.json();
+          if (discordUser.username !== user.username || discordUser.avatar !== user.avatar) {
+            user = await findOrCreateUser(
+              discordUser.id,
+              discordUser.username,
+              discordUser.avatar,
+              user.discord_access_token
+            );
+          }
+        }
+      } catch {
+        // Discord API unavailable — serve stale data
+      }
     }
 
     res.json({

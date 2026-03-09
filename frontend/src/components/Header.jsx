@@ -69,7 +69,7 @@ const Header = () => {
     <header className="header">
       <div className="container header-content">
         <Link to="/" className="logo">
-          OnlyFans Movie Night
+          Movie Night
         </Link>
 
         <nav className="nav">

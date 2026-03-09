@@ -5,7 +5,7 @@ export const createAnnouncementEmbed = (title, scheduledAt, imageUrl, announcerN
 
   const embed = new EmbedBuilder()
     .setTitle(`Movie Night: ${title}`)
-    .setDescription(`Get ready for movie night!\n\n**When:** <t:${timestamp}:F> (<t:${timestamp}:R>)\n\n[View on Website](https://onlyfansmovies.up.railway.app/)`)
+    .setDescription(`Get ready for movie night!\n\n**When:** <t:${timestamp}:F> (<t:${timestamp}:R>)${process.env.FRONTEND_URL ? `\n\n[View on Website](${process.env.FRONTEND_URL})` : ''}`)
     .setColor(0x5865F2)
     .setFooter({ text: `Announced by ${announcerName}` })
     .setTimestamp();

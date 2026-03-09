@@ -1,15 +1,22 @@
 import pool from '../config/database.js';
 
 // User operations
-export const findOrCreateUser = async (discordId, username, avatar) => {
-  const result = await pool.query(
-    `INSERT INTO users (discord_id, username, avatar)
-     VALUES ($1, $2, $3)
-     ON CONFLICT (discord_id)
-     DO UPDATE SET username = $2, avatar = $3, updated_at = CURRENT_TIMESTAMP
-     RETURNING *`,
-    [discordId, username, avatar]
-  );
+export const findOrCreateUser = async (discordId, username, avatar, discordAccessToken = null) => {
+  const query = discordAccessToken
+    ? `INSERT INTO users (discord_id, username, avatar, discord_access_token)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (discord_id)
+       DO UPDATE SET username = $2, avatar = $3, discord_access_token = $4, updated_at = CURRENT_TIMESTAMP
+       RETURNING *`
+    : `INSERT INTO users (discord_id, username, avatar)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (discord_id)
+       DO UPDATE SET username = $2, avatar = $3, updated_at = CURRENT_TIMESTAMP
+       RETURNING *`;
+  const params = discordAccessToken
+    ? [discordId, username, avatar, discordAccessToken]
+    : [discordId, username, avatar];
+  const result = await pool.query(query, params);
   return result.rows[0];
 };
 

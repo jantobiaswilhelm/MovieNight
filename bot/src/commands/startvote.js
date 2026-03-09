@@ -83,7 +83,7 @@ export const execute = async (interaction) => {
 
     // Send follow-up message with website link
     await interaction.followUp({
-      content: '🎬 **Vote for the next movie night!** Click the button above to add your suggestion.\n\n📱 You can also check out our website: https://onlyfansmovies.up.railway.app/'
+      content: `🎬 **Vote for the next movie night!** Click the button above to add your suggestion.${process.env.FRONTEND_URL ? `\n\n📱 You can also check out our website: ${process.env.FRONTEND_URL}` : ''}`
     });
 
   } catch (err) {

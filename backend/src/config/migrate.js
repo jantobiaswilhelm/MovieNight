@@ -630,6 +630,15 @@ const migrate = async () => {
       CREATE INDEX IF NOT EXISTS idx_personal_movies_user ON personal_movies(user_id)
     `);
 
+    // Add discord_access_token to users for profile refresh
+    const tokenCol = await client.query(`
+      SELECT column_name FROM information_schema.columns
+      WHERE table_name = 'users' AND column_name = 'discord_access_token'
+    `);
+    if (tokenCol.rows.length === 0) {
+      await client.query(`ALTER TABLE users ADD COLUMN discord_access_token TEXT`);
+    }
+
     await client.query('COMMIT');
     console.log('Migration completed successfully!');
   } catch (err) {
