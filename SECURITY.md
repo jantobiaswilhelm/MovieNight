@@ -1,8 +1,15 @@
 # Security Audit & Remediation Plan
 
 **Audit Date:** 2026-03-09
+**Last Updated:** 2026-03-09
+
+## Implementation Status
+
+Priorities 1-12 are completed (with Priority 7 implemented as auth code exchange rather than httpOnly cookies due to cross-origin constraints — see NF-3).
+Items 13-27 have mixed status — see individual items below.
 
 ## Priority 1: SQL Injection in `specificMonth` (CRITICAL)
+**Status:** DONE
 
 **Files:** `backend/src/models/index.js:191,219`
 
@@ -20,6 +27,7 @@ An attacker can inject arbitrary SQL through `?month=2024-01' OR 1=1--`.
 ---
 
 ## Priority 2: Add Security Headers (HIGH)
+**Status:** DONE
 
 **Files:** `backend/src/index.js`
 
@@ -33,6 +41,7 @@ An attacker can inject arbitrary SQL through `?month=2024-01' OR 1=1--`.
 ---
 
 ## Priority 3: Add Rate Limiting (HIGH)
+**Status:** DONE
 
 **Files:** `backend/src/index.js`, all route files
 
@@ -50,6 +59,7 @@ An attacker can inject arbitrary SQL through `?month=2024-01' OR 1=1--`.
 ---
 
 ## Priority 4: Fix CORS Wildcard Fallback (HIGH)
+**Status:** DONE
 
 **Files:** `backend/src/index.js:25`
 
@@ -63,6 +73,7 @@ An attacker can inject arbitrary SQL through `?month=2024-01' OR 1=1--`.
 ---
 
 ## Priority 5: Validate JWT_SECRET at Startup (HIGH)
+**Status:** DONE
 
 **Files:** `backend/src/middleware/auth.js:13`, `backend/src/routes/auth.js:64`
 
@@ -76,6 +87,7 @@ An attacker can inject arbitrary SQL through `?month=2024-01' OR 1=1--`.
 ---
 
 ## Priority 6: Fix SSL Certificate Validation (HIGH)
+**Status:** DONE
 
 **Files:** `backend/src/config/database.js:6`, `bot/src/config/database.js:6`
 
@@ -89,27 +101,25 @@ An attacker can inject arbitrary SQL through `?month=2024-01' OR 1=1--`.
 
 ---
 
-## Priority 7: Move JWT to httpOnly Cookie (HIGH)
+## Priority 7: Eliminate JWT from URL (HIGH)
+**Status:** DONE (implemented as auth code exchange — see note)
 
-**Files:** `backend/src/routes/auth.js:71`, `frontend/src/context/AuthContext.jsx`, `frontend/src/api/client.js`
+**Files:** `backend/src/routes/auth.js`, `frontend/src/context/AuthContext.jsx`, `frontend/src/api/client.js`, `frontend/src/pages/AuthCallback.jsx`
 
-**Problem:** JWT is stored in `localStorage` (vulnerable to XSS theft) and passed in the URL during OAuth callback (leaks in logs, browser history, Referer header).
+**Problem:** JWT was passed in the URL during OAuth callback (leaks in logs, browser history, Referer header).
 
-**Plan:**
-- **Backend changes:**
-  - After OAuth, set the JWT as an `httpOnly`, `Secure`, `SameSite=Strict` cookie instead of redirecting with `?token=`
-  - Redirect to `/auth/callback` with no token in the URL
-  - Update auth middleware to read token from cookie (fallback to Authorization header for API compatibility)
-- **Frontend changes:**
-  - Remove `localStorage.getItem('token')` / `setItem` logic
-  - Use `credentials: 'include'` on all fetch calls
-  - Update `AuthContext` to rely on `/auth/me` endpoint instead of reading token from storage
-  - Add a logout endpoint that clears the cookie server-side
-- **Migration:** Support both cookie and header auth during transition
+**What was implemented:** Auth code exchange flow (Option B) instead of httpOnly cookies, because frontend (`onlyfansmovies.up.railway.app`) and backend (`movienight-production.up.railway.app`) are on different public-suffix subdomains, making cross-origin cookies impossible.
+- Backend stores JWT behind a short-lived (30s) one-time auth code in memory
+- OAuth callback redirects with `?code=` instead of `?token=`
+- Frontend exchanges the code for JWT via `POST /auth/exchange`
+- JWT never appears in URLs
+
+**Remaining risk:** JWT still stored in `localStorage` (see NF-17). Mitigated by CSP and absence of XSS vectors. Would require a custom domain to fully resolve with httpOnly cookies.
 
 ---
 
 ## Priority 8: Validate URLs in `href`/`src` Attributes (HIGH)
+**Status:** DONE
 
 **Files:** `frontend/src/pages/Movie.jsx:216,287,524`, `frontend/src/pages/Home.jsx:687`, `frontend/src/components/WishlistDetailModal.jsx:143`
 
@@ -139,6 +149,7 @@ An attacker can inject arbitrary SQL through `?month=2024-01' OR 1=1--`.
 ---
 
 ## Priority 9: Add OAuth State Parameter (Login CSRF) (HIGH)
+**Status:** DONE
 
 **Files:** `backend/src/routes/auth.js`
 
@@ -154,6 +165,7 @@ An attacker can inject arbitrary SQL through `?month=2024-01' OR 1=1--`.
 ---
 
 ## Priority 10: Fix Wishlist IDOR — Missing Ownership Checks (HIGH)
+**Status:** DONE
 
 **Files:** `backend/src/routes/wishlists.js:132,150,179`, `backend/src/models/index.js:574`
 
@@ -167,6 +179,7 @@ An attacker can inject arbitrary SQL through `?month=2024-01' OR 1=1--`.
 ---
 
 ## Priority 11: Add Permission Checks to Bot Commands (MEDIUM)
+**Status:** DONE
 
 **Files:** `bot/src/commands/announce.js:38`, `bot/src/commands/endvote.js:21`, `bot/src/commands/startvote.js:13`
 
@@ -181,6 +194,7 @@ An attacker can inject arbitrary SQL through `?month=2024-01' OR 1=1--`.
 ---
 
 ## Priority 12: Add Content Security Policy (MEDIUM)
+**Status:** DONE
 
 **Files:** `backend/src/index.js` (via helmet)
 
@@ -211,22 +225,228 @@ An attacker can inject arbitrary SQL through `?month=2024-01' OR 1=1--`.
 
 ## Additional Findings (Lower Priority)
 
-These should be addressed after the top 12:
+| # | Issue | Severity | Status |
+|---|-------|----------|--------|
+| 13 | No input length validation on text fields (titles, comments) | MEDIUM | TODO |
+| 14 | TMDB proxy endpoints are unauthenticated | MEDIUM | TODO |
+| 15 | User enumeration via public profile endpoints | MEDIUM | TODO |
+| 16 | `uncaughtException` handler doesn't exit process | MEDIUM | **DONE** |
+| 17 | Bot rating buttons lack guild isolation | MEDIUM | TODO — see NF-5 |
+| 18 | Bot has no rate limiting on interactions | MEDIUM | **PARTIAL** — autocomplete throttled |
+| 19 | No global 401 handling on frontend | MEDIUM | TODO |
+| 20 | `parseInt()` without NaN checks | LOW | TODO |
+| 21 | No admin action audit logging | LOW | TODO |
+| 22 | CSV upload mimetype check is spoofable | LOW | Won't fix |
+| 23 | Verbose error logging may leak info in production | LOW | TODO |
+| 24 | No suggestion limits or duplicate prevention in bot | LOW | TODO |
+| 25 | No timeout on bot TMDB API calls | LOW | TODO |
+| 26 | No `package-lock.json` in frontend | LOW | TODO |
+| 27 | Raw backend errors shown to users in frontend | LOW | TODO |
 
-| # | Issue | Severity |
-|---|-------|----------|
-| 13 | No input length validation on text fields (titles, comments) | MEDIUM |
-| 14 | TMDB proxy endpoints are unauthenticated | MEDIUM |
-| 15 | User enumeration via public profile endpoints | MEDIUM |
-| 16 | `uncaughtException` handler doesn't exit process | MEDIUM |
-| 17 | Bot rating buttons lack guild isolation | MEDIUM |
-| 18 | Bot has no rate limiting on interactions | MEDIUM |
-| 19 | No global 401 handling on frontend | MEDIUM |
-| 20 | `parseInt()` without NaN checks | LOW |
-| 21 | No admin action audit logging | LOW |
-| 22 | CSV upload mimetype check is spoofable | LOW |
-| 23 | Verbose error logging may leak info in production | LOW |
-| 24 | No suggestion limits or duplicate prevention in bot | LOW |
-| 25 | No timeout on bot TMDB API calls | LOW |
-| 26 | No `package-lock.json` in frontend | LOW |
-| 27 | Raw backend errors shown to users in frontend | LOW |
+---
+
+## New Findings (Post-Remediation Audit)
+
+Identified during second audit pass. Includes findings from both our re-audit and Codex review.
+
+### HIGH
+
+#### NF-1: Multer CVEs — Update Required
+**Status:** TODO
+
+**Files:** `backend/package.json` (`multer: ^2.0.2`)
+
+**Problem:** Installed multer `2.0.2` has 3 HIGH-severity DoS advisories (GHSA-xf7r-hgr6-v32p, GHSA-v52c-386h-88mc, GHSA-5528-5vmv-3xc2). Fixed in `>=2.1.1`.
+
+**Plan:** Run `npm update multer` and verify lockfile pins `>=2.1.1`.
+
+#### NF-2: `BACKEND_URL` Not in Startup Validation
+**Status:** TODO
+
+**Files:** `backend/src/index.js:24`, `backend/src/routes/auth.js:28,58`
+
+**Problem:** `BACKEND_URL` is used in OAuth redirect URI construction but not validated at startup. If unset, the OAuth callback URI becomes `undefined/auth/callback`, silently breaking auth.
+
+**Plan:** Add `'BACKEND_URL'` to the `requiredEnvVars` array.
+
+#### NF-3: Unbounded `limit`/`offset` Pagination Parameters
+**Status:** TODO
+
+**Files:** `backend/src/routes/movies.js:11`, `ratings.js:9,22`, `notifications.js:9`, `social.js:100,118`, `stats.js:247,254`
+
+**Problem:** `limit` and `offset` from `req.query` are passed to SQL `LIMIT`/`OFFSET` with no upper bound. `?limit=999999999` causes excessive memory use and full-table scans.
+
+**Plan:** Cap limit at 100 and validate offset is non-negative across all paginated endpoints:
+```js
+const limit = Math.min(Math.max(parseInt(req.query.limit) || 20, 1), 100);
+const offset = Math.max(parseInt(req.query.offset) || 0, 0);
+```
+
+#### NF-4: No Authorization on `POST /api/movies/announce`
+**Status:** TODO
+
+**Files:** `backend/src/routes/movies.js:67-111`
+
+**Problem:** Any authenticated user can create a pending announcement for any `guild_id`. No admin check or guild membership verification.
+
+**Plan:** Add admin check (`isAdmin(req.user.discord_id)`) or restrict to verified guild members.
+
+#### NF-5: Cross-Guild Data Access on Bot Button Interactions
+**Status:** TODO
+
+**Files:** `bot/src/events/interactionCreate.js` (rating buttons :104-153, vote buttons :448-503, suggest buttons :206-262, TMDB select :358-446, delete suggestion :505-556)
+
+**Problem:** Button interactions parse IDs from `customId` and fetch data without verifying `guild_id === interaction.guildId`. A crafted or forwarded button from Guild A could rate movies, cast votes, or add suggestions in Guild B.
+
+**Plan:** After every `getMovieNightById`, `getVotingSessionById`, or `getSuggestionById` call in button handlers, add: `if (record.guild_id !== interaction.guildId) return;`
+
+#### NF-6: Missing `setDefaultMemberPermissions` on `/delete`, `/start`, `/reschedule`, `/admin`
+**Status:** TODO
+
+**Files:** `bot/src/commands/delete.js:6`, `start.js:6`, `reschedule.js:6`, `admin.js:6`
+
+**Problem:** These admin commands have runtime `isAdmin()` checks but lack `setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)`, making them visible to all users in the command picker. Inconsistent with announce/endvote/startvote which do set it.
+
+**Plan:** Add `.setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)` to all four command builders.
+
+#### NF-7: Bot Commands `/reschedule`, `/start`, `/delete` Lack Guild Check
+**Status:** TODO
+
+**Files:** `bot/src/commands/reschedule.js:60`, `start.js:42`, `delete.js:55`
+
+**Problem:** These commands call `getMovieNightById(movieId)` without verifying `movie.guild_id === interaction.guildId`. An admin who knows a movie ID from another guild could reschedule, start, or delete it.
+
+**Plan:** Add `if (movie.guild_id !== interaction.guildId)` check after fetching the movie in each command.
+
+### MEDIUM
+
+#### NF-8: Missing Global Express Error Handler
+**Status:** TODO
+
+**Files:** `backend/src/index.js`
+
+**Problem:** No global error handler. If middleware throws (e.g., multer parsing, JSON parse), Express's default handler may return stack traces.
+
+**Plan:** Add after all routes:
+```js
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(500).json({ error: 'Internal server error' });
+});
+```
+
+#### NF-9: Rate Limiter Behind Proxy Needs `trust proxy`
+**Status:** TODO
+
+**Files:** `backend/src/index.js`
+
+**Problem:** `express-rate-limit` uses `req.ip` which behind Railway's proxy is the proxy IP, not the client's. Without `app.set('trust proxy', 1)`, all users share one rate limit bucket or limits behave incorrectly.
+
+**Plan:** Add `app.set('trust proxy', 1)` before rate limiter middleware.
+
+#### NF-10: TMDB Route `:id` Not Validated as Numeric
+**Status:** TODO
+
+**Files:** `backend/src/routes/tmdb.js:52,110,191`
+
+**Problem:** The `:id` parameter is used directly in `fetch()` URL construction without validating it's numeric. Path traversal values (e.g., `../`) could cause unexpected HTTP requests.
+
+**Plan:** Validate `if (!/^\d+$/.test(id)) return res.status(400).json({error: 'Invalid ID'});`
+
+#### NF-11: IMDb Links Not Sanitized
+**Status:** TODO
+
+**Files:** `frontend/src/pages/Home.jsx:699`, `Movie.jsx:278,515`, `components/WishlistDetailModal.jsx:134`
+
+**Problem:** IMDb links are built via `` `https://www.imdb.com/title/${movie.imdb_id}` `` without validating `imdb_id` format. A crafted value could create an unexpected URL.
+
+**Plan:** Validate `imdb_id` matches `/^tt\d+$/` before rendering, or pass through `sanitizeUrl()`.
+
+#### NF-12: Emoji Not URL-Encoded in Reaction Deletion Path
+**Status:** TODO
+
+**Files:** `frontend/src/api/client.js:277`
+
+**Problem:** `emoji` is interpolated directly into the URL path without encoding. Crafted values could manipulate the request path.
+
+**Plan:** Use `encodeURIComponent(emoji)` in the URL template.
+
+#### NF-13: Notification `link` Not Validated in `<Link to>`
+**Status:** TODO
+
+**Files:** `frontend/src/components/NotificationBell.jsx:86`
+
+**Problem:** `notification.link` from the database is used as `<Link to={notification.link}>`. If it contained an external URL, it could redirect users.
+
+**Plan:** Validate that `notification.link` starts with `/` before using in `<Link>`.
+
+#### NF-14: CSS `backgroundImage` URLs Not Sanitized
+**Status:** TODO
+
+**Files:** `frontend/src/pages/Home.jsx:416,595-599`, `Movie.jsx:217`, `components/Hero.jsx:27`, `components/WishlistDetailModal.jsx:86`
+
+**Problem:** Inline `backgroundImage` styles use DB URLs directly. A URL containing `)` could break out of `url()` and inject CSS (tracking pixels, UI redressing). Not XSS but enables data exfiltration.
+
+**Plan:** Apply `sanitizeUrl()` to all `backgroundImage` URL values as defense-in-depth.
+
+#### NF-15: Auth Code Map + Throttle Map Unbounded Growth
+**Status:** TODO
+
+**Files:** `backend/src/routes/auth.js:8-15` (authCodes Map), `bot/src/utils/throttle.js:2-3` (lastCall Map)
+
+**Problem:** Both in-memory Maps grow without bound. Auth codes have TTL cleanup via `setTimeout` but no max size. Throttle map entries are never cleaned up.
+
+**Plan:** Add periodic cleanup to throttle map (prune entries older than THROTTLE_MS). Add max size check to authCodes Map.
+
+#### NF-16: Vote `castVote` / `endvote` Not Transactional
+**Status:** TODO
+
+**Files:** `bot/src/models/index.js:294-324`, `bot/src/commands/endvote.js:68-131`
+
+**Problem:** `castVote` does SELECT → DELETE → INSERT as separate queries (race condition). `endvote` reads winner, closes session, creates movie night without a transaction — concurrent vote could change winner, partial failure leaves orphaned data.
+
+**Plan:** Wrap both operations in `BEGIN/COMMIT` transactions.
+
+#### NF-17: Residual Token-at-Rest Risk in Frontend
+**Status:** Won't fix (architectural constraint)
+
+**Files:** `frontend/src/context/AuthContext.jsx`, `frontend/src/api/client.js`
+
+**Problem:** JWT persists in `localStorage`, vulnerable to XSS theft. httpOnly cookies cannot work because frontend (`onlyfansmovies.up.railway.app`) and backend (`movienight-production.up.railway.app`) are on different `railway.app` subdomains (public suffix — cookies cannot be shared).
+
+**Mitigations in place:** CSP restricts script execution, auth code exchange prevents JWT-in-URL leakage, no XSS vectors found (no `dangerouslySetInnerHTML`, no `innerHTML`). Would require a custom domain to fully resolve.
+
+#### NF-18: Missing Guild-Level Authorization on API
+**Status:** TODO
+
+**Files:** `backend/src/routes/movies.js`, `stats.js`, `voting.js`, `wishlists.js`
+
+**Problem:** Guild-scoped endpoints trust client-supplied `guild_id` without verifying the user belongs to that guild. OAuth scope is `identify` only, so guild membership is unknown server-side. An API caller could pass a different `guild_id` to access another guild's data.
+
+**Note:** The frontend hardcodes `VITE_GUILD_ID`, so this is API-level only. Exploitability requires knowing another guild's ID. Full fix requires requesting `guilds` OAuth scope and storing membership, which is a significant architectural change.
+
+**Plan:** Short-term — add rate limiting on guild-scoped endpoints. Long-term — request `guilds` scope and validate membership.
+
+### LOW
+
+#### NF-19: `parseInt()` Without NaN Check on Route Parameters
+**Status:** TODO
+
+**Problem:** `parseInt(req.params.id)` returns `NaN` for non-numeric input, causing 500 errors when passed to PostgreSQL.
+
+**Plan:** Add shared validation helper or middleware that returns 400 for non-numeric IDs.
+
+#### NF-20: No Duplicate Suggestion Prevention in Bot
+**Status:** TODO
+
+**Problem:** Same movie (same TMDB ID) can be suggested multiple times in a voting session, fragmenting votes.
+
+#### NF-21: Bot Rating Score from Button Not Range-Validated
+**Status:** TODO
+
+**Problem:** Score parsed from button `customId` is not validated within 1-10 before calling `upsertRating`.
+
+#### NF-22: `ADMIN_IDS` and `TMDB_API_KEY` Not in `.env.example`
+**Status:** TODO
+
+**Problem:** New configurable env vars are not documented in example env files.
