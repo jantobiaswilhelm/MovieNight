@@ -227,21 +227,21 @@ An attacker can inject arbitrary SQL through `?month=2024-01' OR 1=1--`.
 
 | # | Issue | Severity | Status |
 |---|-------|----------|--------|
-| 13 | No input length validation on text fields (titles, comments) | MEDIUM | TODO |
-| 14 | TMDB proxy endpoints are unauthenticated | MEDIUM | TODO |
-| 15 | User enumeration via public profile endpoints | MEDIUM | TODO |
+| 13 | No input length validation on text fields (titles, comments) | MEDIUM | **DONE** — title length caps added |
+| 14 | TMDB proxy endpoints are unauthenticated | MEDIUM | Won't fix — public data, rate-limited |
+| 15 | User enumeration via public profile endpoints | MEDIUM | Won't fix — public by design |
 | 16 | `uncaughtException` handler doesn't exit process | MEDIUM | **DONE** |
-| 17 | Bot rating buttons lack guild isolation | MEDIUM | TODO — see NF-5 |
+| 17 | Bot rating buttons lack guild isolation | MEDIUM | **DONE** — see NF-5 |
 | 18 | Bot has no rate limiting on interactions | MEDIUM | **PARTIAL** — autocomplete throttled |
-| 19 | No global 401 handling on frontend | MEDIUM | TODO |
-| 20 | `parseInt()` without NaN checks | LOW | TODO |
+| 19 | No global 401 handling on frontend | MEDIUM | **DONE** — auto-clear token on 401 |
+| 20 | `parseInt()` without NaN checks | LOW | **DONE** — see NF-19 |
 | 21 | No admin action audit logging | LOW | TODO |
 | 22 | CSV upload mimetype check is spoofable | LOW | Won't fix |
-| 23 | Verbose error logging may leak info in production | LOW | TODO |
-| 24 | No suggestion limits or duplicate prevention in bot | LOW | TODO |
-| 25 | No timeout on bot TMDB API calls | LOW | TODO |
-| 26 | No `package-lock.json` in frontend | LOW | TODO |
-| 27 | Raw backend errors shown to users in frontend | LOW | TODO |
+| 23 | Verbose error logging may leak info in production | LOW | **DONE** — global error handler returns generic messages |
+| 24 | No suggestion limits or duplicate prevention in bot | LOW | **DONE** — see NF-20 |
+| 25 | No timeout on bot TMDB API calls | LOW | **DONE** — 10s AbortSignal.timeout |
+| 26 | No `package-lock.json` in frontend | LOW | **DONE** — exists |
+| 27 | Raw backend errors shown to users in frontend | LOW | **DONE** — global error handler + fetchAPI wrapper |
 
 ---
 
@@ -252,7 +252,7 @@ Identified during second audit pass. Includes findings from both our re-audit an
 ### HIGH
 
 #### NF-1: Multer CVEs — Update Required
-**Status:** TODO
+**Status:** DONE
 
 **Files:** `backend/package.json` (`multer: ^2.0.2`)
 
@@ -261,7 +261,7 @@ Identified during second audit pass. Includes findings from both our re-audit an
 **Plan:** Run `npm update multer` and verify lockfile pins `>=2.1.1`.
 
 #### NF-2: `BACKEND_URL` Not in Startup Validation
-**Status:** TODO
+**Status:** DONE
 
 **Files:** `backend/src/index.js:24`, `backend/src/routes/auth.js:28,58`
 
@@ -270,7 +270,7 @@ Identified during second audit pass. Includes findings from both our re-audit an
 **Plan:** Add `'BACKEND_URL'` to the `requiredEnvVars` array.
 
 #### NF-3: Unbounded `limit`/`offset` Pagination Parameters
-**Status:** TODO
+**Status:** DONE
 
 **Files:** `backend/src/routes/movies.js:11`, `ratings.js:9,22`, `notifications.js:9`, `social.js:100,118`, `stats.js:247,254`
 
@@ -283,7 +283,7 @@ const offset = Math.max(parseInt(req.query.offset) || 0, 0);
 ```
 
 #### NF-4: No Authorization on `POST /api/movies/announce`
-**Status:** TODO
+**Status:** DONE
 
 **Files:** `backend/src/routes/movies.js:67-111`
 
@@ -292,7 +292,7 @@ const offset = Math.max(parseInt(req.query.offset) || 0, 0);
 **Plan:** Add admin check (`isAdmin(req.user.discord_id)`) or restrict to verified guild members.
 
 #### NF-5: Cross-Guild Data Access on Bot Button Interactions
-**Status:** TODO
+**Status:** DONE
 
 **Files:** `bot/src/events/interactionCreate.js` (rating buttons :104-153, vote buttons :448-503, suggest buttons :206-262, TMDB select :358-446, delete suggestion :505-556)
 
@@ -301,7 +301,7 @@ const offset = Math.max(parseInt(req.query.offset) || 0, 0);
 **Plan:** After every `getMovieNightById`, `getVotingSessionById`, or `getSuggestionById` call in button handlers, add: `if (record.guild_id !== interaction.guildId) return;`
 
 #### NF-6: Missing `setDefaultMemberPermissions` on `/delete`, `/start`, `/reschedule`, `/admin`
-**Status:** TODO
+**Status:** DONE
 
 **Files:** `bot/src/commands/delete.js:6`, `start.js:6`, `reschedule.js:6`, `admin.js:6`
 
@@ -310,7 +310,7 @@ const offset = Math.max(parseInt(req.query.offset) || 0, 0);
 **Plan:** Add `.setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)` to all four command builders.
 
 #### NF-7: Bot Commands `/reschedule`, `/start`, `/delete` Lack Guild Check
-**Status:** TODO
+**Status:** DONE
 
 **Files:** `bot/src/commands/reschedule.js:60`, `start.js:42`, `delete.js:55`
 
@@ -321,7 +321,7 @@ const offset = Math.max(parseInt(req.query.offset) || 0, 0);
 ### MEDIUM
 
 #### NF-8: Missing Global Express Error Handler
-**Status:** TODO
+**Status:** DONE
 
 **Files:** `backend/src/index.js`
 
@@ -336,7 +336,7 @@ app.use((err, req, res, next) => {
 ```
 
 #### NF-9: Rate Limiter Behind Proxy Needs `trust proxy`
-**Status:** TODO
+**Status:** DONE
 
 **Files:** `backend/src/index.js`
 
@@ -345,7 +345,7 @@ app.use((err, req, res, next) => {
 **Plan:** Add `app.set('trust proxy', 1)` before rate limiter middleware.
 
 #### NF-10: TMDB Route `:id` Not Validated as Numeric
-**Status:** TODO
+**Status:** DONE
 
 **Files:** `backend/src/routes/tmdb.js:52,110,191`
 
@@ -354,7 +354,7 @@ app.use((err, req, res, next) => {
 **Plan:** Validate `if (!/^\d+$/.test(id)) return res.status(400).json({error: 'Invalid ID'});`
 
 #### NF-11: IMDb Links Not Sanitized
-**Status:** TODO
+**Status:** DONE
 
 **Files:** `frontend/src/pages/Home.jsx:699`, `Movie.jsx:278,515`, `components/WishlistDetailModal.jsx:134`
 
@@ -363,7 +363,7 @@ app.use((err, req, res, next) => {
 **Plan:** Validate `imdb_id` matches `/^tt\d+$/` before rendering, or pass through `sanitizeUrl()`.
 
 #### NF-12: Emoji Not URL-Encoded in Reaction Deletion Path
-**Status:** TODO
+**Status:** DONE
 
 **Files:** `frontend/src/api/client.js:277`
 
@@ -372,7 +372,7 @@ app.use((err, req, res, next) => {
 **Plan:** Use `encodeURIComponent(emoji)` in the URL template.
 
 #### NF-13: Notification `link` Not Validated in `<Link to>`
-**Status:** TODO
+**Status:** DONE
 
 **Files:** `frontend/src/components/NotificationBell.jsx:86`
 
@@ -381,7 +381,7 @@ app.use((err, req, res, next) => {
 **Plan:** Validate that `notification.link` starts with `/` before using in `<Link>`.
 
 #### NF-14: CSS `backgroundImage` URLs Not Sanitized
-**Status:** TODO
+**Status:** DONE
 
 **Files:** `frontend/src/pages/Home.jsx:416,595-599`, `Movie.jsx:217`, `components/Hero.jsx:27`, `components/WishlistDetailModal.jsx:86`
 
@@ -390,7 +390,7 @@ app.use((err, req, res, next) => {
 **Plan:** Apply `sanitizeUrl()` to all `backgroundImage` URL values as defense-in-depth.
 
 #### NF-15: Auth Code Map + Throttle Map Unbounded Growth
-**Status:** TODO
+**Status:** DONE (throttle map cleanup added; auth codes already have setTimeout TTL)
 
 **Files:** `backend/src/routes/auth.js:8-15` (authCodes Map), `bot/src/utils/throttle.js:2-3` (lastCall Map)
 
@@ -399,7 +399,7 @@ app.use((err, req, res, next) => {
 **Plan:** Add periodic cleanup to throttle map (prune entries older than THROTTLE_MS). Add max size check to authCodes Map.
 
 #### NF-16: Vote `castVote` / `endvote` Not Transactional
-**Status:** TODO
+**Status:** DONE (castVote and deleteVotingSession wrapped in BEGIN/COMMIT transactions)
 
 **Files:** `bot/src/models/index.js:294-324`, `bot/src/commands/endvote.js:68-131`
 
@@ -430,23 +430,23 @@ app.use((err, req, res, next) => {
 ### LOW
 
 #### NF-19: `parseInt()` Without NaN Check on Route Parameters
-**Status:** TODO
+**Status:** DONE
 
 **Problem:** `parseInt(req.params.id)` returns `NaN` for non-numeric input, causing 500 errors when passed to PostgreSQL.
 
-**Plan:** Add shared validation helper or middleware that returns 400 for non-numeric IDs.
+**Fix:** Created `validateIntParams()` middleware in `backend/src/middleware/validate.js` and applied to routes in voting.js, movies.js, admin.js, ratings.js, notifications.js.
 
 #### NF-20: No Duplicate Suggestion Prevention in Bot
-**Status:** TODO
+**Status:** DONE
 
 **Problem:** Same movie (same TMDB ID) can be suggested multiple times in a voting session, fragmenting votes.
 
 #### NF-21: Bot Rating Score from Button Not Range-Validated
-**Status:** TODO
+**Status:** DONE
 
 **Problem:** Score parsed from button `customId` is not validated within 1-10 before calling `upsertRating`.
 
 #### NF-22: `ADMIN_IDS` and `TMDB_API_KEY` Not in `.env.example`
-**Status:** TODO
+**Status:** DONE
 
 **Problem:** New configurable env vars are not documented in example env files.

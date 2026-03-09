@@ -1,4 +1,4 @@
-import { SlashCommandBuilder } from 'discord.js';
+import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
 import { getUpcomingMovies, getMovieNightById, startMovieNight } from '../models/index.js';
 import { createStartingNowEmbed, createRatingButtons } from '../utils/embeds.js';
 import { isAdmin } from '../utils/admin.js';
@@ -6,6 +6,7 @@ import { isAdmin } from '../utils/admin.js';
 export const data = new SlashCommandBuilder()
   .setName('start')
   .setDescription('Manually start a movie night (admin only)')
+  .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
   .addIntegerOption(option =>
     option.setName('movie')
       .setDescription('The movie to start')
@@ -42,7 +43,7 @@ export const execute = async (interaction) => {
   try {
     const movie = await getMovieNightById(movieId);
 
-    if (!movie) {
+    if (!movie || movie.guild_id !== interaction.guildId) {
       return interaction.reply({
         content: 'Movie not found.',
         ephemeral: true

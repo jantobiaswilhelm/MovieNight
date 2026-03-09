@@ -21,6 +21,10 @@ const fetchAPI = async (endpoint, options = {}) => {
   });
 
   if (!response.ok) {
+    if (response.status === 401) {
+      // Clear invalid token and let AuthContext handle redirect
+      localStorage.removeItem('token');
+    }
     const error = await response.json().catch(() => ({ error: 'Request failed' }));
     throw new Error(error.error || 'Request failed');
   }
@@ -274,7 +278,7 @@ export const addReaction = (ratingId, emoji) =>
   });
 
 export const removeReaction = (ratingId, emoji) =>
-  fetchAPI(`/api/ratings/${ratingId}/reactions/${emoji}`, {
+  fetchAPI(`/api/ratings/${ratingId}/reactions/${encodeURIComponent(emoji)}`, {
     method: 'DELETE'
   });
 

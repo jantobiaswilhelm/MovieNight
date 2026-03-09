@@ -97,14 +97,16 @@ router.get('/following/:userId', authenticateToken, async (req, res) => {
 
 // Get activity feed (from followed users)
 router.get('/feed', authenticateToken, async (req, res) => {
-  const { guild_id, limit = 20, offset = 0 } = req.query;
+  const { guild_id } = req.query;
+  const limit = Math.min(Math.max(parseInt(req.query.limit) || 20, 1), 100);
+  const offset = Math.max(parseInt(req.query.offset) || 0, 0);
 
   if (!guild_id) {
     return res.status(400).json({ error: 'guild_id is required' });
   }
 
   try {
-    const activities = await db.getActivityFeed(req.user.id, guild_id, parseInt(limit), parseInt(offset));
+    const activities = await db.getActivityFeed(req.user.id, guild_id, limit, offset);
     res.json(activities);
   } catch (err) {
     console.error('Error fetching activity feed:', err);
@@ -115,10 +117,10 @@ router.get('/feed', authenticateToken, async (req, res) => {
 // Get a specific user's activity
 router.get('/activity/:userId', async (req, res) => {
   const { userId } = req.params;
-  const { limit = 20 } = req.query;
+  const limit = Math.min(Math.max(parseInt(req.query.limit) || 20, 1), 100);
 
   try {
-    const activities = await db.getUserActivity(parseInt(userId), parseInt(limit));
+    const activities = await db.getUserActivity(parseInt(userId), limit);
     res.json(activities);
   } catch (err) {
     console.error('Error fetching user activity:', err);

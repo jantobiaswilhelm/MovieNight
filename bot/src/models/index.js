@@ -292,35 +292,47 @@ export const getWinningSuggestion = async (votingSessionId) => {
 
 // Vote operations
 export const castVote = async (suggestionId, userId) => {
-  // First, get the voting session for this suggestion to remove any existing vote
-  const suggestionResult = await pool.query(
-    'SELECT voting_session_id FROM movie_suggestions WHERE id = $1',
-    [suggestionId]
-  );
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
 
-  if (suggestionResult.rows.length > 0) {
-    const sessionId = suggestionResult.rows[0].voting_session_id;
-
-    // Remove any existing vote for this user in this session
-    await pool.query(
-      `DELETE FROM votes v
-       USING movie_suggestions ms
-       WHERE v.suggestion_id = ms.id
-       AND ms.voting_session_id = $1
-       AND v.user_id = $2`,
-      [sessionId, userId]
+    // Get the voting session for this suggestion to remove any existing vote
+    const suggestionResult = await client.query(
+      'SELECT voting_session_id FROM movie_suggestions WHERE id = $1',
+      [suggestionId]
     );
-  }
 
-  // Now insert the new vote
-  const result = await pool.query(
-    `INSERT INTO votes (suggestion_id, user_id)
-     VALUES ($1, $2)
-     ON CONFLICT (suggestion_id, user_id) DO NOTHING
-     RETURNING *`,
-    [suggestionId, userId]
-  );
-  return result.rows[0];
+    if (suggestionResult.rows.length > 0) {
+      const sessionId = suggestionResult.rows[0].voting_session_id;
+
+      // Remove any existing vote for this user in this session
+      await client.query(
+        `DELETE FROM votes v
+         USING movie_suggestions ms
+         WHERE v.suggestion_id = ms.id
+         AND ms.voting_session_id = $1
+         AND v.user_id = $2`,
+        [sessionId, userId]
+      );
+    }
+
+    // Now insert the new vote
+    const result = await client.query(
+      `INSERT INTO votes (suggestion_id, user_id)
+       VALUES ($1, $2)
+       ON CONFLICT (suggestion_id, user_id) DO NOTHING
+       RETURNING *`,
+      [suggestionId, userId]
+    );
+
+    await client.query('COMMIT');
+    return result.rows[0];
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
 };
 
 export const getUserVoteForSession = async (votingSessionId, userId) => {
@@ -383,20 +395,30 @@ export const deleteMovieNight = async (movieId) => {
 };
 
 export const deleteVotingSession = async (sessionId) => {
-  // Delete all votes for suggestions in this session
-  await pool.query(
-    `DELETE FROM votes WHERE suggestion_id IN
-     (SELECT id FROM movie_suggestions WHERE voting_session_id = $1)`,
-    [sessionId]
-  );
-  // Delete all suggestions
-  await pool.query('DELETE FROM movie_suggestions WHERE voting_session_id = $1', [sessionId]);
-  // Delete the session
-  const result = await pool.query(
-    'DELETE FROM voting_sessions WHERE id = $1 RETURNING *',
-    [sessionId]
-  );
-  return result.rows[0];
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    // Delete all votes for suggestions in this session
+    await client.query(
+      `DELETE FROM votes WHERE suggestion_id IN
+       (SELECT id FROM movie_suggestions WHERE voting_session_id = $1)`,
+      [sessionId]
+    );
+    // Delete all suggestions
+    await client.query('DELETE FROM movie_suggestions WHERE voting_session_id = $1', [sessionId]);
+    // Delete the session
+    const result = await client.query(
+      'DELETE FROM voting_sessions WHERE id = $1 RETURNING *',
+      [sessionId]
+    );
+    await client.query('COMMIT');
+    return result.rows[0];
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
 };
 
 // Movie start operations

@@ -52,6 +52,10 @@ router.get('/search', async (req, res) => {
 router.get('/:id', async (req, res) => {
   const { id } = req.params;
 
+  if (!/^\d+$/.test(id)) {
+    return res.status(400).json({ error: 'Invalid movie ID' });
+  }
+
   if (!TMDB_API_KEY) {
     return res.status(500).json({ error: 'TMDB API key not configured' });
   }
@@ -109,6 +113,10 @@ router.get('/:id', async (req, res) => {
 // Get recommended movies with details
 router.get('/:id/similar', async (req, res) => {
   const { id } = req.params;
+
+  if (!/^\d+$/.test(id)) {
+    return res.status(400).json({ error: 'Invalid movie ID' });
+  }
 
   if (!TMDB_API_KEY) {
     return res.status(500).json({ error: 'TMDB API key not configured' });
@@ -190,6 +198,10 @@ router.get('/:id/similar', async (req, res) => {
 // Get movie credits (cast and crew)
 router.get('/:id/credits', async (req, res) => {
   const { id } = req.params;
+
+  if (!/^\d+$/.test(id)) {
+    return res.status(400).json({ error: 'Invalid movie ID' });
+  }
 
   if (!TMDB_API_KEY) {
     return res.status(500).json({ error: 'TMDB API key not configured' });

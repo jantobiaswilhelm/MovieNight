@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { authenticateToken, optionalAuth } from '../middleware/auth.js';
+import { validateIntParams } from '../middleware/validate.js';
 import * as db from '../models/index.js';
+import { isAdmin } from '../utils/admin.js';
 import { checkAndUnlockAchievements, checkRatingAchievements } from '../services/achievementChecker.js';
 import { logRatingActivity, logAchievementActivity } from '../services/activityService.js';
 
@@ -8,14 +10,16 @@ const router = Router();
 
 // Get all movie nights (requires guild_id query param)
 router.get('/', optionalAuth, async (req, res) => {
-  const { guild_id, limit = 20, offset = 0 } = req.query;
+  const { guild_id } = req.query;
+  const limit = Math.min(Math.max(parseInt(req.query.limit) || 20, 1), 100);
+  const offset = Math.max(parseInt(req.query.offset) || 0, 0);
 
   if (!guild_id) {
     return res.status(400).json({ error: 'guild_id is required' });
   }
 
   try {
-    const movies = await db.getMovieNights(guild_id, parseInt(limit), parseInt(offset));
+    const movies = await db.getMovieNights(guild_id, limit, offset);
     res.json(movies);
   } catch (err) {
     console.error('Error fetching movies:', err);
@@ -25,14 +29,15 @@ router.get('/', optionalAuth, async (req, res) => {
 
 // Get upcoming movies with attendees (must be before /:id)
 router.get('/upcoming/with-attendees', optionalAuth, async (req, res) => {
-  const { guild_id, limit = 10 } = req.query;
+  const { guild_id } = req.query;
+  const limit = Math.min(Math.max(parseInt(req.query.limit) || 10, 1), 100);
 
   if (!guild_id) {
     return res.status(400).json({ error: 'guild_id is required' });
   }
 
   try {
-    const movies = await db.getUpcomingMoviesWithAttendees(guild_id, parseInt(limit));
+    const movies = await db.getUpcomingMoviesWithAttendees(guild_id, limit);
     res.json(movies);
   } catch (err) {
     console.error('Error fetching upcoming movies:', err);
@@ -65,6 +70,10 @@ router.get('/next/with-attendees', optionalAuth, async (req, res) => {
 
 // Announce movie directly (creates pending announcement for bot)
 router.post('/announce', authenticateToken, async (req, res) => {
+  if (!isAdmin(req.user.discord_id)) {
+    return res.status(403).json({ error: 'Only admins can announce movies' });
+  }
+
   const { tmdb_data, scheduled_at, guild_id } = req.body;
 
   if (!tmdb_data || !scheduled_at || !guild_id) {
@@ -111,7 +120,7 @@ router.post('/announce', authenticateToken, async (req, res) => {
 });
 
 // Get single movie with ratings and attendance
-router.get('/:id', optionalAuth, async (req, res) => {
+router.get('/:id', validateIntParams('id'), optionalAuth, async (req, res) => {
   const { id } = req.params;
 
   try {
@@ -152,7 +161,7 @@ router.get('/:id', optionalAuth, async (req, res) => {
 });
 
 // Submit or update rating
-router.post('/:id/ratings', authenticateToken, async (req, res) => {
+router.post('/:id/ratings', validateIntParams('id'), authenticateToken, async (req, res) => {
   const { id } = req.params;
   const { score, comment } = req.body;
 
@@ -234,7 +243,7 @@ router.post('/:id/ratings', authenticateToken, async (req, res) => {
 });
 
 // Get user's rating for a movie
-router.get('/:id/ratings/me', authenticateToken, async (req, res) => {
+router.get('/:id/ratings/me', validateIntParams('id'), authenticateToken, async (req, res) => {
   const { id } = req.params;
 
   try {
@@ -247,7 +256,7 @@ router.get('/:id/ratings/me', authenticateToken, async (req, res) => {
 });
 
 // Toggle attendance for a movie
-router.post('/:id/attend', authenticateToken, async (req, res) => {
+router.post('/:id/attend', validateIntParams('id'), authenticateToken, async (req, res) => {
   const { id } = req.params;
 
   try {
@@ -278,7 +287,7 @@ router.post('/:id/attend', authenticateToken, async (req, res) => {
 });
 
 // Get attendees for a movie
-router.get('/:id/attendees', optionalAuth, async (req, res) => {
+router.get('/:id/attendees', validateIntParams('id'), optionalAuth, async (req, res) => {
   const { id } = req.params;
 
   try {

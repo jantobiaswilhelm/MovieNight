@@ -106,10 +106,18 @@ async function handleRatingButton(interaction) {
   const movieId = parseInt(parts[1]);
   const score = parseInt(parts[2]);
 
+  // Validate score range
+  if (isNaN(score) || score < 1 || score > 10) {
+    return interaction.reply({
+      content: 'Invalid rating score.',
+      ephemeral: true
+    });
+  }
+
   try {
     // Get movie
     const movie = await getMovieNightById(movieId);
-    if (!movie) {
+    if (!movie || movie.guild_id !== interaction.guildId) {
       return interaction.reply({
         content: 'Movie not found.',
         ephemeral: true
@@ -159,10 +167,18 @@ async function handleRatingCommentModal(interaction) {
   const score = parseInt(parts[4]);
   const comment = interaction.fields.getTextInputValue('rating_comment')?.trim() || null;
 
+  // Validate score range
+  if (isNaN(score) || score < 1 || score > 10) {
+    return interaction.reply({
+      content: 'Invalid rating score.',
+      ephemeral: true
+    });
+  }
+
   try {
     // Get movie
     const movie = await getMovieNightById(movieId);
-    if (!movie) {
+    if (!movie || movie.guild_id !== interaction.guildId) {
       return interaction.reply({
         content: 'Movie not found.',
         ephemeral: true
@@ -223,7 +239,7 @@ async function handleSuggestButton(interaction) {
 
     console.log('Session for modal:', session ? { id: session.id, status: session.status } : null);
 
-    if (!session || session.status !== 'open') {
+    if (!session || session.status !== 'open' || session.guild_id !== interaction.guildId) {
       return interaction.reply({
         content: 'This voting session has ended.',
         ephemeral: true
@@ -283,7 +299,7 @@ async function handleSuggestModal(interaction) {
 
     console.log('Session found:', session ? { id: session.id, status: session.status, channel_id: session.channel_id } : null);
 
-    if (!session || session.status !== 'open') {
+    if (!session || session.status !== 'open' || session.guild_id !== interaction.guildId) {
       return interaction.reply({
         content: 'This voting session has ended.',
         ephemeral: true
@@ -361,7 +377,7 @@ async function handleTmdbSelect(interaction) {
     const selectedValue = interaction.values[0];
 
     const session = await getVotingSessionById(sessionId);
-    if (!session || session.status !== 'open') {
+    if (!session || session.status !== 'open' || session.guild_id !== interaction.guildId) {
       return interaction.update({
         content: 'This voting session has ended.',
         embeds: [],
@@ -412,6 +428,19 @@ async function handleTmdbSelect(interaction) {
       };
     }
 
+    // Check for duplicate suggestion (same TMDB ID in this session)
+    if (tmdbData.tmdbId) {
+      const existingSuggestions = await getSuggestionsForSession(session.id);
+      const duplicate = existingSuggestions.find(s => s.tmdb_id && s.tmdb_id === tmdbData.tmdbId);
+      if (duplicate) {
+        return interaction.update({
+          content: `**${title}** has already been suggested in this voting session.`,
+          embeds: [],
+          components: []
+        });
+      }
+    }
+
     // Create suggestion
     await createSuggestion(session.id, title, imageUrl, user.id, tmdbData);
 
@@ -458,11 +487,19 @@ async function handleVoteButton(interaction) {
       });
     }
 
-    // Check if there's an active voting session
+    // Check if there's an active voting session (already scoped by guild)
     const session = await getActiveVotingSession(interaction.guildId);
     if (!session) {
       return interaction.reply({
         content: 'This voting session has ended.',
+        ephemeral: true
+      });
+    }
+
+    // Verify suggestion belongs to this session
+    if (suggestion.session_id !== session.id) {
+      return interaction.reply({
+        content: 'This suggestion does not belong to the current voting session.',
         ephemeral: true
       });
     }
@@ -523,11 +560,19 @@ async function handleDeleteSuggestionButton(interaction) {
       });
     }
 
-    // Check if there's an active voting session
+    // Check if there's an active voting session (already scoped by guild)
     const session = await getActiveVotingSession(interaction.guildId);
     if (!session) {
       return interaction.reply({
         content: 'This voting session has ended.',
+        ephemeral: true
+      });
+    }
+
+    // Verify suggestion belongs to this session
+    if (suggestion.session_id !== session.id) {
+      return interaction.reply({
+        content: 'This suggestion does not belong to the current voting session.',
         ephemeral: true
       });
     }

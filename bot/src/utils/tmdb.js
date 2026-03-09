@@ -4,6 +4,7 @@ const TMDB_API_KEY = process.env.TMDB_API_KEY;
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
 const TMDB_BACKDROP_BASE = 'https://image.tmdb.org/t/p/w1280';
+const TMDB_TIMEOUT_MS = 10000; // 10 second timeout
 
 export const searchMovies = async (query, limit = 10) => {
   if (!TMDB_API_KEY) {
@@ -13,7 +14,8 @@ export const searchMovies = async (query, limit = 10) => {
 
   try {
     const response = await fetch(
-      `${TMDB_BASE_URL}/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&include_adult=false`
+      `${TMDB_BASE_URL}/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&include_adult=false`,
+      { signal: AbortSignal.timeout(TMDB_TIMEOUT_MS) }
     );
 
     if (!response.ok) {
@@ -45,9 +47,10 @@ export const getMovieDetails = async (tmdbId) => {
 
   try {
     // Fetch movie details and videos in parallel
+    const fetchOpts = { signal: AbortSignal.timeout(TMDB_TIMEOUT_MS) };
     const [detailsResponse, videosResponse] = await Promise.all([
-      fetch(`${TMDB_BASE_URL}/movie/${tmdbId}?api_key=${TMDB_API_KEY}`),
-      fetch(`${TMDB_BASE_URL}/movie/${tmdbId}/videos?api_key=${TMDB_API_KEY}`)
+      fetch(`${TMDB_BASE_URL}/movie/${tmdbId}?api_key=${TMDB_API_KEY}`, fetchOpts),
+      fetch(`${TMDB_BASE_URL}/movie/${tmdbId}/videos?api_key=${TMDB_API_KEY}`, fetchOpts)
     ]);
 
     if (!detailsResponse.ok) {

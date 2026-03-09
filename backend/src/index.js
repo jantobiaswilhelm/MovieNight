@@ -21,7 +21,7 @@ import notificationsRoutes from './routes/notifications.js';
 import socialRoutes from './routes/social.js';
 
 // --- Startup validation ---
-const requiredEnvVars = ['FRONTEND_URL', 'JWT_SECRET', 'DATABASE_URL', 'DISCORD_CLIENT_ID', 'DISCORD_CLIENT_SECRET'];
+const requiredEnvVars = ['FRONTEND_URL', 'BACKEND_URL', 'JWT_SECRET', 'DATABASE_URL', 'DISCORD_CLIENT_ID', 'DISCORD_CLIENT_SECRET'];
 for (const envVar of requiredEnvVars) {
   if (!process.env[envVar]) {
     console.error(`FATAL: ${envVar} environment variable is not set. Exiting.`);
@@ -35,6 +35,9 @@ if (process.env.JWT_SECRET.length < 32) {
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// Trust first proxy (Railway) for correct client IP in rate limiting
+app.set('trust proxy', 1);
 
 // Security headers
 app.use(helmet({
@@ -106,6 +109,12 @@ app.use('/api/social', socialRoutes);
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
+});
+
+// Global error handler — prevents stack trace leakage
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(500).json({ error: 'Internal server error' });
 });
 
 // Catch unhandled errors

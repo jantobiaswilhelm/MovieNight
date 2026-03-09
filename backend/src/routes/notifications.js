@@ -1,15 +1,17 @@
 import { Router } from 'express';
 import { authenticateToken } from '../middleware/auth.js';
+import { validateIntParams } from '../middleware/validate.js';
 import * as db from '../models/index.js';
 
 const router = Router();
 
 // Get current user's notifications
 router.get('/', authenticateToken, async (req, res) => {
-  const { limit = 20, offset = 0 } = req.query;
+  const limit = Math.min(Math.max(parseInt(req.query.limit) || 20, 1), 100);
+  const offset = Math.max(parseInt(req.query.offset) || 0, 0);
 
   try {
-    const notifications = await db.getUserNotifications(req.user.id, parseInt(limit), parseInt(offset));
+    const notifications = await db.getUserNotifications(req.user.id, limit, offset);
     res.json(notifications);
   } catch (err) {
     console.error('Error fetching notifications:', err);
@@ -29,7 +31,7 @@ router.get('/unread/count', authenticateToken, async (req, res) => {
 });
 
 // Mark a notification as read
-router.put('/:id/read', authenticateToken, async (req, res) => {
+router.put('/:id/read', validateIntParams('id'), authenticateToken, async (req, res) => {
   const { id } = req.params;
 
   try {

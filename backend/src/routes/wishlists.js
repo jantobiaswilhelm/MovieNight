@@ -47,8 +47,12 @@ router.post('/', authenticateToken, async (req, res) => {
     return res.status(400).json({ error: 'guild_id is required' });
   }
 
-  if (!title || !tmdb_id) {
+  if (!title || typeof title !== 'string' || !tmdb_id) {
     return res.status(400).json({ error: 'title and tmdb_id are required' });
+  }
+
+  if (title.length > 500) {
+    return res.status(400).json({ error: 'Title too long (max 500 characters)' });
   }
 
   if (importance < 1 || importance > 5) {

@@ -1,11 +1,12 @@
-import { SlashCommandBuilder } from 'discord.js';
+import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
 import { getActiveVotingSession, getSuggestionsForSession } from '../models/index.js';
 import { buildVotingEmbed, buildVotingButtons } from '../utils/votingEmbed.js';
 import { isAdmin } from '../utils/admin.js';
 
 export const data = new SlashCommandBuilder()
   .setName('admin')
-  .setDescription('Show admin controls on the voting message (Admin only)');
+  .setDescription('Show admin controls on the voting message (Admin only)')
+  .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild);
 
 export const execute = async (interaction) => {
   // Check if user is admin

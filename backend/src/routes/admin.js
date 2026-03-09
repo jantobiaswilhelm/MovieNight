@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { authenticateToken } from '../middleware/auth.js';
+import { validateIntParams } from '../middleware/validate.js';
 import { isAdmin } from '../utils/admin.js';
 import * as db from '../models/index.js';
 
@@ -19,7 +20,7 @@ router.get('/check', authenticateToken, (req, res) => {
 });
 
 // Delete a movie
-router.delete('/movies/:id', authenticateToken, requireAdmin, async (req, res) => {
+router.delete('/movies/:id', validateIntParams('id'), authenticateToken, requireAdmin, async (req, res) => {
   const { id } = req.params;
 
   try {
@@ -37,7 +38,7 @@ router.delete('/movies/:id', authenticateToken, requireAdmin, async (req, res) =
 });
 
 // Delete a suggestion
-router.delete('/suggestions/:id', authenticateToken, requireAdmin, async (req, res) => {
+router.delete('/suggestions/:id', validateIntParams('id'), authenticateToken, requireAdmin, async (req, res) => {
   const { id } = req.params;
 
   try {

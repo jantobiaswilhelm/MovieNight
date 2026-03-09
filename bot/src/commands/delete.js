@@ -1,10 +1,11 @@
-import { SlashCommandBuilder } from 'discord.js';
+import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
 import { getMovieNightById, deleteMovieNight, getRecentMovieNightsForRating } from '../models/index.js';
 import { isAdmin } from '../utils/admin.js';
 
 export const data = new SlashCommandBuilder()
   .setName('delete')
   .setDescription('Delete a movie (Admin only)')
+  .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
   .addStringOption(option =>
     option.setName('movie')
       .setDescription('The movie to delete')
@@ -53,9 +54,16 @@ export const execute = async (interaction) => {
   }
 
   try {
-    // Get movie to verify it exists
+    // Get movie to verify it exists and belongs to this guild
     const movie = await getMovieNightById(movieId);
     if (!movie) {
+      return interaction.reply({
+        content: 'Movie not found.',
+        ephemeral: true
+      });
+    }
+
+    if (movie.guild_id !== interaction.guildId) {
       return interaction.reply({
         content: 'Movie not found.',
         ephemeral: true

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { authenticateToken, optionalAuth } from '../middleware/auth.js';
+import { validateIntParams } from '../middleware/validate.js';
 import { isAdmin } from '../utils/admin.js';
 import * as db from '../models/index.js';
 
@@ -69,7 +70,7 @@ router.get('/active', optionalAuth, async (req, res) => {
 });
 
 // Get voting session by ID
-router.get('/:id', optionalAuth, async (req, res) => {
+router.get('/:id', validateIntParams('id'), optionalAuth, async (req, res) => {
   const { id } = req.params;
 
   try {
@@ -139,7 +140,7 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
 });
 
 // Close voting and optionally create movie night (admin only)
-router.post('/:id/close', authenticateToken, requireAdmin, async (req, res) => {
+router.post('/:id/close', validateIntParams('id'), authenticateToken, requireAdmin, async (req, res) => {
   const { id } = req.params;
   const { create_movie } = req.body;
 
@@ -201,7 +202,7 @@ router.post('/:id/close', authenticateToken, requireAdmin, async (req, res) => {
 });
 
 // Delete/cancel a voting session (admin only)
-router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
+router.delete('/:id', validateIntParams('id'), authenticateToken, requireAdmin, async (req, res) => {
   const { id } = req.params;
 
   try {
@@ -220,12 +221,16 @@ router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
 });
 
 // Submit a suggestion (requires auth)
-router.post('/:id/suggestions', authenticateToken, async (req, res) => {
+router.post('/:id/suggestions', validateIntParams('id'), authenticateToken, async (req, res) => {
   const { id } = req.params;
   const { title, image_url, tmdb_data } = req.body;
 
-  if (!title) {
+  if (!title || typeof title !== 'string') {
     return res.status(400).json({ error: 'Title is required' });
+  }
+
+  if (title.length > 500) {
+    return res.status(400).json({ error: 'Title too long (max 500 characters)' });
   }
 
   if (!image_url) {
@@ -259,7 +264,7 @@ router.post('/:id/suggestions', authenticateToken, async (req, res) => {
 });
 
 // Cast a vote (requires auth)
-router.post('/suggestions/:suggestionId/vote', authenticateToken, async (req, res) => {
+router.post('/suggestions/:suggestionId/vote', validateIntParams('suggestionId'), authenticateToken, async (req, res) => {
   const { suggestionId } = req.params;
 
   try {
@@ -292,7 +297,7 @@ router.post('/suggestions/:suggestionId/vote', authenticateToken, async (req, re
 });
 
 // Remove vote (requires auth)
-router.delete('/suggestions/:suggestionId/vote', authenticateToken, async (req, res) => {
+router.delete('/suggestions/:suggestionId/vote', validateIntParams('suggestionId'), authenticateToken, async (req, res) => {
   const { suggestionId } = req.params;
 
   try {

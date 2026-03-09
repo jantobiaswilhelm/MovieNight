@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { sanitizeUrl } from '../utils/sanitizeUrl';
+import { sanitizeUrl, sanitizeImdbId, sanitizeImageUrl } from '../utils/sanitizeUrl';
 import {
   getMovies,
   getActiveVoting,
@@ -405,7 +405,7 @@ const Home = () => {
 
   // Get background image from top rated movie this month
   const topRatedMovie = bestRatedThisMonth[0];
-  const backgroundImage = topRatedMovie?.backdrop_url || topRatedMovie?.image_url;
+  const backgroundImage = sanitizeImageUrl(topRatedMovie?.backdrop_url) || sanitizeImageUrl(topRatedMovie?.image_url);
 
   return (
     <div className="home">
@@ -592,10 +592,10 @@ const Home = () => {
               to={`/movie/${nextMovie.id}`}
               className="hero-backdrop"
               style={{
-                backgroundImage: nextMovie.backdrop_url
-                  ? `url(${nextMovie.backdrop_url})`
-                  : nextMovie.image_url
-                    ? `url(${nextMovie.image_url})`
+                backgroundImage: sanitizeImageUrl(nextMovie.backdrop_url)
+                  ? `url(${sanitizeImageUrl(nextMovie.backdrop_url)})`
+                  : sanitizeImageUrl(nextMovie.image_url)
+                    ? `url(${sanitizeImageUrl(nextMovie.image_url)})`
                     : 'none'
               }}
             >
@@ -681,7 +681,7 @@ const Home = () => {
                       </button>
                     )}
                   </div>
-                  {(nextMovie.trailer_url || nextMovie.imdb_id) && (
+                  {(nextMovie.trailer_url || sanitizeImdbId(nextMovie.imdb_id)) && (
                     <div className="hero-actions">
                       {nextMovie.trailer_url && (
                         <a
@@ -694,9 +694,9 @@ const Home = () => {
                           ▶ Watch Trailer
                         </a>
                       )}
-                      {nextMovie.imdb_id && (
+                      {sanitizeImdbId(nextMovie.imdb_id) && (
                         <a
-                          href={`https://www.imdb.com/title/${nextMovie.imdb_id}`}
+                          href={`https://www.imdb.com/title/${sanitizeImdbId(nextMovie.imdb_id)}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="hero-btn hero-btn-secondary"

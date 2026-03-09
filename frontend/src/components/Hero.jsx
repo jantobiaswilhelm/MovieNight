@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { sanitizeImageUrl } from '../utils/sanitizeUrl';
 import StarRating from './StarRating';
 import './Hero.css';
 
@@ -21,10 +22,10 @@ const Hero = ({ movie, type = 'upcoming', compact = false }) => {
 
   return (
     <div className={`hero ${compact ? 'hero--compact' : ''}`}>
-      {movie.image_url && (
+      {sanitizeImageUrl(movie.image_url) && (
         <div
           className="hero-backdrop"
-          style={{ backgroundImage: `url(${movie.image_url})` }}
+          style={{ backgroundImage: `url(${sanitizeImageUrl(movie.image_url)})` }}
         />
       )}
       <div className="hero-content">

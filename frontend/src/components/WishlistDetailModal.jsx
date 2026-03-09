@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { announceFromWishlist } from '../api/client';
-import { sanitizeUrl } from '../utils/sanitizeUrl';
+import { sanitizeUrl, sanitizeImdbId, sanitizeImageUrl } from '../utils/sanitizeUrl';
 import './WishlistDetailModal.css';
 
 const WishlistDetailModal = ({ item, isOpen, onClose, onAnnounce, canAnnounce }) => {
@@ -82,8 +82,8 @@ const WishlistDetailModal = ({ item, isOpen, onClose, onAnnounce, canAnnounce })
     <div className="modal-overlay" onClick={handleClose}>
       <div className="modal-content wishlist-detail-modal" onClick={(e) => e.stopPropagation()}>
         {/* Backdrop */}
-        {item.backdrop_url && (
-          <div className="detail-backdrop" style={{ backgroundImage: `url(${item.backdrop_url})` }}>
+        {sanitizeImageUrl(item.backdrop_url) && (
+          <div className="detail-backdrop" style={{ backgroundImage: `url(${sanitizeImageUrl(item.backdrop_url)})` }}>
             <div className="detail-backdrop-overlay" />
           </div>
         )}
@@ -129,9 +129,9 @@ const WishlistDetailModal = ({ item, isOpen, onClose, onAnnounce, canAnnounce })
               </div>
 
               <div className="detail-links">
-                {item.imdb_id && (
+                {sanitizeImdbId(item.imdb_id) && (
                   <a
-                    href={`https://www.imdb.com/title/${item.imdb_id}`}
+                    href={`https://www.imdb.com/title/${sanitizeImdbId(item.imdb_id)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="detail-link imdb-link"

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getMovie, submitRating, getMyRating, deleteMovie, getSimilarMovies, toggleAttendance, getMovieCredits } from '../api/client';
-import { sanitizeUrl } from '../utils/sanitizeUrl';
+import { sanitizeUrl, sanitizeImdbId, sanitizeImageUrl } from '../utils/sanitizeUrl';
 import RatingInput from '../components/RatingInput';
 import StarRating from '../components/StarRating';
 import RatingReactions from '../components/RatingReactions';
@@ -213,8 +213,8 @@ const Movie = () => {
   return (
     <div className="movie-page">
       {/* Hero Section with Backdrop */}
-      {movie.backdrop_url && (
-        <div className="movie-hero" style={{ backgroundImage: `url(${movie.backdrop_url})` }}>
+      {sanitizeImageUrl(movie.backdrop_url) && (
+        <div className="movie-hero" style={{ backgroundImage: `url(${sanitizeImageUrl(movie.backdrop_url)})` }}>
           <div className="movie-hero-overlay" />
         </div>
       )}
@@ -273,9 +273,9 @@ const Movie = () => {
           </div>
 
           <div className="movie-links">
-            {movie.imdb_id && (
+            {sanitizeImdbId(movie.imdb_id) && (
               <a
-                href={`https://www.imdb.com/title/${movie.imdb_id}`}
+                href={`https://www.imdb.com/title/${sanitizeImdbId(movie.imdb_id)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="movie-link imdb-link"
@@ -510,9 +510,9 @@ const Movie = () => {
                       <span className="similar-movie-year">{similar.year}</span>
                     )}
                     <div className="similar-movie-links">
-                      {similar.imdbId && (
+                      {sanitizeImdbId(similar.imdbId) && (
                         <a
-                          href={`https://www.imdb.com/title/${similar.imdbId}`}
+                          href={`https://www.imdb.com/title/${sanitizeImdbId(similar.imdbId)}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="similar-link imdb"

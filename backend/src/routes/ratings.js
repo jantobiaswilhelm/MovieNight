@@ -1,16 +1,17 @@
 import { Router } from 'express';
 import { authenticateToken } from '../middleware/auth.js';
+import { validateIntParams } from '../middleware/validate.js';
 import * as db from '../models/index.js';
 
 const router = Router();
 
 // Get user's rating history
-router.get('/user/:userId', async (req, res) => {
+router.get('/user/:userId', validateIntParams('userId'), async (req, res) => {
   const { userId } = req.params;
-  const { limit = 20 } = req.query;
+  const limit = Math.min(Math.max(parseInt(req.query.limit) || 20, 1), 100);
 
   try {
-    const ratings = await db.getUserRatings(parseInt(userId), parseInt(limit));
+    const ratings = await db.getUserRatings(parseInt(userId), limit);
     res.json(ratings);
   } catch (err) {
     console.error('Error fetching user ratings:', err);
@@ -20,10 +21,10 @@ router.get('/user/:userId', async (req, res) => {
 
 // Get current user's ratings
 router.get('/me', authenticateToken, async (req, res) => {
-  const { limit = 20 } = req.query;
+  const limit = Math.min(Math.max(parseInt(req.query.limit) || 20, 1), 100);
 
   try {
-    const ratings = await db.getUserRatings(req.user.id, parseInt(limit));
+    const ratings = await db.getUserRatings(req.user.id, limit);
     res.json(ratings);
   } catch (err) {
     console.error('Error fetching ratings:', err);
@@ -32,7 +33,7 @@ router.get('/me', authenticateToken, async (req, res) => {
 });
 
 // Add reaction to a rating
-router.post('/:ratingId/reactions', authenticateToken, async (req, res) => {
+router.post('/:ratingId/reactions', validateIntParams('ratingId'), authenticateToken, async (req, res) => {
   const { ratingId } = req.params;
   const { emoji } = req.body;
 
@@ -56,7 +57,7 @@ router.post('/:ratingId/reactions', authenticateToken, async (req, res) => {
 });
 
 // Remove reaction from a rating
-router.delete('/:ratingId/reactions/:emoji', authenticateToken, async (req, res) => {
+router.delete('/:ratingId/reactions/:emoji', validateIntParams('ratingId'), authenticateToken, async (req, res) => {
   const { ratingId, emoji } = req.params;
 
   try {
@@ -72,7 +73,7 @@ router.delete('/:ratingId/reactions/:emoji', authenticateToken, async (req, res)
 });
 
 // Get reactions for a rating
-router.get('/:ratingId/reactions', async (req, res) => {
+router.get('/:ratingId/reactions', validateIntParams('ratingId'), async (req, res) => {
   const { ratingId } = req.params;
 
   try {

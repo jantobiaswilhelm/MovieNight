@@ -77,14 +77,16 @@ const NotificationBell = () => {
             ) : notifications.length === 0 ? (
               <div className="notification-empty">No notifications yet</div>
             ) : (
-              notifications.map((notification) => (
+              notifications.map((notification) => {
+                const safeLink = notification.link && notification.link.startsWith('/') ? notification.link : null;
+                return (
                 <div
                   key={notification.id}
                   className={`notification-item ${notification.is_read ? 'read' : 'unread'}`}
                   onClick={() => handleNotificationClick(notification)}
                 >
-                  {notification.link ? (
-                    <Link to={notification.link} className="notification-link">
+                  {safeLink ? (
+                    <Link to={safeLink} className="notification-link">
                       <div className="notification-content">
                         <span className="notification-title">{notification.title}</span>
                         {notification.message && (
@@ -104,7 +106,8 @@ const NotificationBell = () => {
                   )}
                   {!notification.is_read && <span className="unread-dot" />}
                 </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
