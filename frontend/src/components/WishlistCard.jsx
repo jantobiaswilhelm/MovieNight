@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { updateWishlistImportance, removeFromWishlist } from '../api/client';
+import { getAvatarUrl } from '../utils/helpers';
 import './WishlistCard.css';
 
 const ImportanceStars = ({ value, editable, onChange }) => {
@@ -77,11 +78,6 @@ const WishlistCard = ({ item, isOwner, showUser, onUpdate, onRemove, onClick }) 
     }
   };
 
-  const getAvatarUrl = () => {
-    if (!item.avatar) return null;
-    return `https://cdn.discordapp.com/avatars/${item.discord_id}/${item.avatar}.png`;
-  };
-
   return (
     <div
       className={`wishlist-card ${isUpdating ? 'updating' : ''} ${onClick ? 'clickable' : ''}`}
@@ -100,7 +96,7 @@ const WishlistCard = ({ item, isOwner, showUser, onUpdate, onRemove, onClick }) 
 
       <div className="wishlist-poster">
         {item.image_url ? (
-          <img src={item.image_url} alt={item.title} />
+          <img src={item.image_url} alt={item.title} loading="lazy" />
         ) : (
           <div className="no-poster">No Poster</div>
         )}
@@ -125,8 +121,8 @@ const WishlistCard = ({ item, isOwner, showUser, onUpdate, onRemove, onClick }) 
 
         {showUser && (
           <div className="wishlist-user">
-            {getAvatarUrl() && (
-              <img src={getAvatarUrl()} alt="" className="wishlist-user-avatar" />
+            {getAvatarUrl(item.discord_id, item.avatar) && (
+              <img src={getAvatarUrl(item.discord_id, item.avatar)} alt={item.username} className="wishlist-user-avatar" loading="lazy" />
             )}
             <span className="wishlist-username">{item.username}</span>
           </div>

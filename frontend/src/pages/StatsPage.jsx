@@ -43,7 +43,7 @@ const MovieList = ({ title, movies, emptyMessage }) => {
           <Link key={movie.id} to={`/movie/${movie.id}`} className="movie-list-item">
             <span className="rank">#{index + 1}</span>
             {movie.image_url && (
-              <img src={movie.image_url} alt="" className="movie-thumb" />
+              <img src={movie.image_url} alt={movie.title} className="movie-thumb" loading="lazy" />
             )}
             <div className="movie-info">
               <span className="movie-title">{movie.title}</span>
@@ -129,7 +129,7 @@ const StatsPage = () => {
                   <Link key={movie.id} to={`/movie/${movie.id}`} className="movie-list-item">
                     <span className="rank">#{index + 1}</span>
                     {movie.image_url && (
-                      <img src={movie.image_url} alt="" className="movie-thumb" />
+                      <img src={movie.image_url} alt={movie.title} className="movie-thumb" loading="lazy" />
                     )}
                     <div className="movie-info">
                       <span className="movie-title">{movie.title}</span>
@@ -169,7 +169,7 @@ const StatsPage = () => {
                   <Link key={movie.id} to={`/movie/${movie.id}`} className="movie-list-item">
                     <span className="rank">#{index + 1}</span>
                     {movie.image_url && (
-                      <img src={movie.image_url} alt="" className="movie-thumb" />
+                      <img src={movie.image_url} alt={movie.title} className="movie-thumb" loading="lazy" />
                     )}
                     <div className="movie-info">
                       <span className="movie-title">{movie.title}</span>
@@ -222,8 +222,9 @@ const StatsPage = () => {
                     ? `https://cdn.discordapp.com/avatars/${rater.discord_id}/${rater.avatar}.png`
                     : `https://cdn.discordapp.com/embed/avatars/${parseInt(rater.discord_id) % 5}.png`
                   }
-                  alt=""
+                  alt={rater.username}
                   className="rater-avatar"
+                  loading="lazy"
                 />
                 <span className="rater-name">{rater.username}</span>
                 <div className="rater-stats">
@@ -249,8 +250,9 @@ const StatsPage = () => {
                     ? `https://cdn.discordapp.com/avatars/${user.discord_id}/${user.avatar}.png`
                     : `https://cdn.discordapp.com/embed/avatars/${parseInt(user.discord_id) % 5}.png`
                   }
-                  alt=""
+                  alt={user.username}
                   className="rater-avatar"
+                  loading="lazy"
                 />
                 <span className="rater-name">{user.username}</span>
                 <div className="rater-stats">

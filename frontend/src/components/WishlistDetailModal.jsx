@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { announceFromWishlist } from '../api/client';
 import { sanitizeUrl, sanitizeImdbId, sanitizeImageUrl } from '../utils/sanitizeUrl';
+import { formatRuntime, getLanguageName, getAvatarUrl } from '../utils/helpers';
 import './WishlistDetailModal.css';
 
 const WishlistDetailModal = ({ item, isOpen, onClose, onAnnounce, canAnnounce }) => {
@@ -13,28 +14,6 @@ const WishlistDetailModal = ({ item, isOpen, onClose, onAnnounce, canAnnounce })
   if (!isOpen || !item) return null;
 
   const today = new Date().toISOString().split('T')[0];
-
-  const formatRuntime = (minutes) => {
-    if (!minutes) return null;
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
-  };
-
-  const getLanguageName = (code) => {
-    const languages = {
-      en: 'English', es: 'Spanish', fr: 'French', de: 'German', it: 'Italian',
-      ja: 'Japanese', ko: 'Korean', zh: 'Chinese', pt: 'Portuguese', ru: 'Russian',
-      hi: 'Hindi', ar: 'Arabic', nl: 'Dutch', sv: 'Swedish', no: 'Norwegian',
-      da: 'Danish', fi: 'Finnish', pl: 'Polish', tr: 'Turkish', th: 'Thai'
-    };
-    return languages[code] || code?.toUpperCase();
-  };
-
-  const getAvatarUrl = () => {
-    if (!item.avatar) return null;
-    return `https://cdn.discordapp.com/avatars/${item.discord_id}/${item.avatar}.png`;
-  };
 
   const handleScheduleSubmit = async (e) => {
     e.preventDefault();
@@ -93,7 +72,7 @@ const WishlistDetailModal = ({ item, isOpen, onClose, onAnnounce, canAnnounce })
         <div className="detail-content">
           <div className="detail-header">
             {item.image_url && (
-              <img src={item.image_url} alt={item.title} className="detail-poster" />
+              <img src={item.image_url} alt={item.title} className="detail-poster" loading="lazy" />
             )}
 
             <div className="detail-info">
@@ -152,8 +131,8 @@ const WishlistDetailModal = ({ item, isOpen, onClose, onAnnounce, canAnnounce })
               </div>
 
               <div className="detail-added-by">
-                {getAvatarUrl() && (
-                  <img src={getAvatarUrl()} alt="" className="added-by-avatar" />
+                {getAvatarUrl(item.discord_id, item.avatar) && (
+                  <img src={getAvatarUrl(item.discord_id, item.avatar)} alt={item.username} className="added-by-avatar" loading="lazy" />
                 )}
                 <span>Added by {item.username}</span>
               </div>

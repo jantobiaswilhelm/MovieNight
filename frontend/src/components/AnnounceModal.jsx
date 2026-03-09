@@ -54,7 +54,7 @@ const AnnounceModal = ({ item, isOpen, onClose, onAnnounced }) => {
         <div className="modal-body">
           <div className="announce-movie-preview">
             {item.image_url && (
-              <img src={item.image_url} alt={item.title} className="preview-poster" />
+              <img src={item.image_url} alt={item.title} className="preview-poster" loading="lazy" />
             )}
             <div className="preview-info">
               <h3>{item.title}</h3>

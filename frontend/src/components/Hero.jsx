@@ -1,21 +1,11 @@
 import { Link } from 'react-router-dom';
 import { sanitizeImageUrl } from '../utils/sanitizeUrl';
+import { formatDate } from '../utils/helpers';
 import StarRating from './StarRating';
 import './Hero.css';
 
 const Hero = ({ movie, type = 'upcoming', compact = false }) => {
   if (!movie) return null;
-
-  const formatDate = (dateStr) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit'
-    });
-  };
 
   const avgRating = parseFloat(movie.avg_rating) || 0;
   const isUpcoming = type === 'upcoming';
@@ -34,7 +24,7 @@ const Hero = ({ movie, type = 'upcoming', compact = false }) => {
             {isUpcoming ? 'Next Movie Night' : 'Featured'}
           </span>
           <h1 className="hero-title">{movie.title}</h1>
-          <p className="hero-date">{formatDate(movie.scheduled_at)}</p>
+          <p className="hero-date">{formatDate(movie.scheduled_at, 'long')}</p>
 
           {avgRating > 0 && (
             <div className="hero-rating">

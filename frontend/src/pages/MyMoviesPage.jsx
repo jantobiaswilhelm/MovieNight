@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { getPersonalMovies, addPersonalMovie, updatePersonalMovie, deletePersonalMovie, searchTMDB, getTMDBMovie, importLetterboxd } from '../api/client';
+import { formatDate } from '../utils/helpers';
 import './MyMoviesPage.css';
 
 const StarRating = ({ value, editable, onChange, size = 'normal' }) => {
@@ -51,12 +52,6 @@ const PersonalMovieCard = ({ movie, onEdit, onDelete }) => {
     }
   };
 
-  const formatDate = (dateStr) => {
-    if (!dateStr) return null;
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  };
-
   return (
     <div className={`personal-movie-card ${isDeleting ? 'deleting' : ''}`}>
       <button
@@ -70,7 +65,7 @@ const PersonalMovieCard = ({ movie, onEdit, onDelete }) => {
 
       <div className="personal-movie-poster" onClick={() => onEdit(movie)}>
         {movie.image_url ? (
-          <img src={movie.image_url} alt={movie.title} />
+          <img src={movie.image_url} alt={movie.title} loading="lazy" />
         ) : (
           <div className="no-poster">No Poster</div>
         )}
@@ -283,7 +278,7 @@ const AddEditMovieModal = ({ isOpen, onClose, onSave, editingMovie }) => {
                     >
                       <div className="result-poster">
                         {movie.posterPath ? (
-                          <img src={movie.posterPath} alt={movie.title} />
+                          <img src={movie.posterPath} alt={movie.title} loading="lazy" />
                         ) : (
                           <div className="no-poster">No Poster</div>
                         )}
@@ -318,7 +313,7 @@ const AddEditMovieModal = ({ isOpen, onClose, onSave, editingMovie }) => {
               <div className="selected-movie-content">
                 <div className="selected-poster">
                   {selectedMovie.posterPath ? (
-                    <img src={selectedMovie.posterPath} alt={selectedMovie.title} />
+                    <img src={selectedMovie.posterPath} alt={selectedMovie.title} loading="lazy" />
                   ) : (
                     <div className="no-poster">No Poster</div>
                   )}

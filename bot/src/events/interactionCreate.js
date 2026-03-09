@@ -497,7 +497,7 @@ async function handleVoteButton(interaction) {
     }
 
     // Verify suggestion belongs to this session
-    if (suggestion.session_id !== session.id) {
+    if (suggestion.voting_session_id !== session.id) {
       return interaction.reply({
         content: 'This suggestion does not belong to the current voting session.',
         ephemeral: true
@@ -570,7 +570,7 @@ async function handleDeleteSuggestionButton(interaction) {
     }
 
     // Verify suggestion belongs to this session
-    if (suggestion.session_id !== session.id) {
+    if (suggestion.voting_session_id !== session.id) {
       return interaction.reply({
         content: 'This suggestion does not belong to the current voting session.',
         ephemeral: true

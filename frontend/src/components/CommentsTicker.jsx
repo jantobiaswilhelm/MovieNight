@@ -51,8 +51,9 @@ const CommentsTicker = () => {
                     ? `https://cdn.discordapp.com/avatars/${comment.discord_id}/${comment.avatar}.png?size=32`
                     : `https://cdn.discordapp.com/embed/avatars/${parseInt(comment.discord_id) % 5}.png`
                   }
-                  alt=""
+                  alt={comment.username}
                   className="ticker-avatar"
+                  loading="lazy"
                 />
                 <span className="ticker-user">{comment.username}</span>
                 <span className="ticker-separator">on</span>

@@ -7,6 +7,7 @@ import GenreBreakdown from '../components/GenreBreakdown';
 import HotTakes from '../components/HotTakes';
 import FavoriteMovies from '../components/FavoriteMovies';
 import TopRatedMovies from '../components/TopRatedMovies';
+import { formatDate, getAvatarUrl } from '../utils/helpers';
 import './Profile.css';
 
 const UserProfile = () => {
@@ -81,15 +82,6 @@ const UserProfile = () => {
     return <div className="error">User not found</div>;
   }
 
-  const formatDate = (dateStr) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
   const formatWatchtime = (minutes) => {
     if (!minutes) return '0h';
     const hours = Math.floor(minutes / 60);
@@ -101,16 +93,11 @@ const UserProfile = () => {
 
   const { user, basic_stats: basicStats, guild_comparison: guildComparison } = profileStats;
 
-  const getAvatarUrl = () => {
-    if (!user.avatar) return null;
-    return `https://cdn.discordapp.com/avatars/${user.discord_id}/${user.avatar}.png`;
-  };
-
   return (
     <div className="profile">
       <div className="user-profile-header">
-        {getAvatarUrl() && (
-          <img src={getAvatarUrl()} alt={user.username} className="user-profile-avatar" />
+        {getAvatarUrl(user.discord_id, user.avatar) && (
+          <img src={getAvatarUrl(user.discord_id, user.avatar)} alt={user.username} className="user-profile-avatar" loading="lazy" />
         )}
         <div className="user-profile-header-content">
           <h1>{user.username}'s Profile</h1>

@@ -9,6 +9,7 @@ import RatingTwin from '../components/RatingTwin';
 import FavoriteMovies from '../components/FavoriteMovies';
 import ProfileWishlist from '../components/ProfileWishlist';
 import TopRatedMovies from '../components/TopRatedMovies';
+import { formatDate } from '../utils/helpers';
 import './Profile.css';
 
 const Profile = () => {
@@ -58,15 +59,6 @@ const Profile = () => {
   if (error) {
     return <div className="error">Error: {error}</div>;
   }
-
-  const formatDate = (dateStr) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
 
   const formatWatchtime = (minutes) => {
     if (!minutes) return '0h';

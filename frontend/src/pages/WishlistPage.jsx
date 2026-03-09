@@ -4,6 +4,7 @@ import { getMyWishlist, getGuildWishlist } from '../api/client';
 import WishlistCard from '../components/WishlistCard';
 import AddToWishlistModal from '../components/AddToWishlistModal';
 import WishlistDetailModal from '../components/WishlistDetailModal';
+import { getAvatarUrl } from '../utils/helpers';
 import './WishlistPage.css';
 
 const WishlistPage = () => {
@@ -117,11 +118,6 @@ const WishlistPage = () => {
       }, {})
     : null;
 
-  const getAvatarUrl = (discordId, avatar) => {
-    if (!avatar) return null;
-    return `https://cdn.discordapp.com/avatars/${discordId}/${avatar}.png`;
-  };
-
   return (
     <div className="wishlist-page">
       <div className="wishlist-header">
@@ -211,8 +207,9 @@ const WishlistPage = () => {
                 {getAvatarUrl(group.discord_id, group.avatar) && (
                   <img
                     src={getAvatarUrl(group.discord_id, group.avatar)}
-                    alt=""
+                    alt={group.username}
                     className="group-avatar"
+                    loading="lazy"
                   />
                 )}
                 <span className="group-username">{group.username}</span>
@@ -278,6 +275,7 @@ const WishlistPage = () => {
                   src={randomMovie.image_url}
                   alt={randomMovie.title}
                   className="random-movie-poster"
+                  loading="lazy"
                 />
               )}
               <div className="random-movie-info">

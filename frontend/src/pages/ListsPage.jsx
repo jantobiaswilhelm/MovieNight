@@ -192,7 +192,7 @@ const ListsPage = () => {
             {currentList.items?.map((item) => (
               <div key={item.id} className="list-item">
                 {item.image_url ? (
-                  <img src={item.image_url} alt={item.title} className="list-item-poster" />
+                  <img src={item.image_url} alt={item.title} className="list-item-poster" loading="lazy" />
                 ) : (
                   <div className="list-item-no-poster">No Image</div>
                 )}
@@ -245,7 +245,7 @@ const ListsPage = () => {
                       onClick={() => handleAddMovie(movie)}
                     >
                       {movie.posterPath ? (
-                        <img src={movie.posterPath} alt={movie.title} />
+                        <img src={movie.posterPath} alt={movie.title} loading="lazy" />
                       ) : (
                         <div className="no-poster-small">?</div>
                       )}

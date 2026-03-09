@@ -102,7 +102,7 @@ const Calendar = () => {
             className="calendar-movie"
           >
             {movie.image_url && (
-              <img src={movie.image_url} alt="" className="calendar-movie-thumb" />
+              <img src={movie.image_url} alt={movie.title} className="calendar-movie-thumb" loading="lazy" />
             )}
             <span className="calendar-movie-title">{movie.title}</span>
           </Link>

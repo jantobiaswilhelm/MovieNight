@@ -139,8 +139,9 @@ const ActivityFeed = () => {
                         ? `https://cdn.discordapp.com/avatars/${activity.discord_id}/${activity.avatar}.png`
                         : `https://cdn.discordapp.com/embed/avatars/${parseInt(activity.discord_id) % 5}.png`
                     }
-                    alt=""
+                    alt={activity.username}
                     className="activity-avatar"
+                    loading="lazy"
                   />
                   <Link to={`/user/${activity.user_id}`} className="activity-username">
                     {activity.username}
@@ -167,8 +168,9 @@ const ActivityFeed = () => {
                       ? `https://cdn.discordapp.com/avatars/${user.discord_id}/${user.avatar}.png`
                       : `https://cdn.discordapp.com/embed/avatars/${parseInt(user.discord_id) % 5}.png`
                   }
-                  alt=""
+                  alt={user.username}
                   className="following-avatar"
+                  loading="lazy"
                 />
                 <span>{user.username}</span>
               </Link>

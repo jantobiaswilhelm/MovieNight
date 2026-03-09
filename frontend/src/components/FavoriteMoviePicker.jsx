@@ -151,7 +151,7 @@ const FavoriteMoviePicker = ({ position, currentFavorites, onSelect, onClose }) 
                     >
                       <div className="picker-item-poster">
                         {movie.image_url ? (
-                          <img src={movie.image_url} alt={movie.title} />
+                          <img src={movie.image_url} alt={movie.title} loading="lazy" />
                         ) : (
                           <div className="no-poster">?</div>
                         )}
@@ -188,7 +188,7 @@ const FavoriteMoviePicker = ({ position, currentFavorites, onSelect, onClose }) 
                     >
                       <div className="picker-item-poster">
                         {movie.posterPath ? (
-                          <img src={movie.posterPath} alt={movie.title} />
+                          <img src={movie.posterPath} alt={movie.title} loading="lazy" />
                         ) : (
                           <div className="no-poster">?</div>
                         )}

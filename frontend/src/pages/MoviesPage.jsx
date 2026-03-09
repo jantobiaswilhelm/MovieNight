@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getMovies, deleteMovie } from '../api/client';
+import { formatDate } from '../utils/helpers';
 import './MoviesPage.css';
 
 const SORT_OPTIONS = [
@@ -129,14 +130,6 @@ const MoviesPage = () => {
     return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   };
 
-  const formatDate = (dateStr) => {
-    return new Date(dateStr).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
-  };
-
   // Calendar helpers
   const getDaysInMonth = (date) => {
     const year = date.getFullYear();
@@ -213,7 +206,7 @@ const MoviesPage = () => {
               className="calendar-movie"
             >
               {movie.image_url && (
-                <img src={movie.image_url} alt="" className="calendar-movie-thumb" />
+                <img src={movie.image_url} alt={movie.title} className="calendar-movie-thumb" loading="lazy" />
               )}
               <span className="calendar-movie-title">{movie.title}</span>
             </Link>
@@ -305,7 +298,7 @@ const MoviesPage = () => {
                   <Link to={`/movie/${movie.id}`} className="movie-card">
                     <div className="movie-poster">
                       {movie.image_url ? (
-                        <img src={movie.image_url} alt={movie.title} />
+                        <img src={movie.image_url} alt={movie.title} loading="lazy" />
                       ) : (
                         <div className="no-poster">No Image</div>
                       )}

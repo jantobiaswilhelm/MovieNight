@@ -32,7 +32,7 @@ const TopRatedMovies = ({ movies }) => {
             </div>
             <div className="top-rated-poster">
               {movie.image_url ? (
-                <img src={movie.image_url} alt={movie.title} />
+                <img src={movie.image_url} alt={movie.title} loading="lazy" />
               ) : (
                 <div className="no-poster">?</div>
               )}

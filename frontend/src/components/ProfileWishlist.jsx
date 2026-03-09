@@ -26,7 +26,7 @@ const ProfileWishlist = ({ wishlist }) => {
           <div key={item.id} className="wishlist-preview-item">
             <div className="wishlist-preview-poster">
               {item.image_url ? (
-                <img src={item.image_url} alt={item.title} />
+                <img src={item.image_url} alt={item.title} loading="lazy" />
               ) : (
                 <div className="no-poster">?</div>
               )}

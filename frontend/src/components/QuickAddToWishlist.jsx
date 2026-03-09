@@ -43,7 +43,7 @@ const QuickAddToWishlist = ({ movie, onClose, onSuccess }) => {
 
         <div className="quick-add-movie">
           {movie.posterPath && (
-            <img src={movie.posterPath} alt={movie.title} className="quick-add-poster" />
+            <img src={movie.posterPath} alt={movie.title} className="quick-add-poster" loading="lazy" />
           )}
           <div className="quick-add-info">
             <span className="quick-add-title">{movie.title}</span>

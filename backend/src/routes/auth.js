@@ -6,11 +6,12 @@ import { findOrCreateUser } from '../models/index.js';
 const router = Router();
 
 // In-memory store for short-lived auth codes (code -> JWT, 30s TTL)
+const AUTH_CODE_TTL_MS = 30_000;
 const authCodes = new Map();
 function storeAuthCode(jwt) {
   const code = crypto.randomBytes(32).toString('hex');
   authCodes.set(code, jwt);
-  setTimeout(() => authCodes.delete(code), 30 * 1000);
+  setTimeout(() => authCodes.delete(code), AUTH_CODE_TTL_MS);
   return code;
 }
 

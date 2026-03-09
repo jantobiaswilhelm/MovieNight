@@ -69,7 +69,7 @@ const CollectionsPage = () => {
             {collectionMovies.map((movie) => (
               <Link key={movie.id} to={`/movie/${movie.id}`} className="collection-movie-card">
                 {movie.image_url ? (
-                  <img src={movie.image_url} alt={movie.title} className="collection-movie-poster" />
+                  <img src={movie.image_url} alt={movie.title} className="collection-movie-poster" loading="lazy" />
                 ) : (
                   <div className="collection-movie-no-poster">No Image</div>
                 )}
@@ -113,7 +113,7 @@ const CollectionsPage = () => {
             >
               <div className="collection-posters">
                 {collection.posters?.slice(0, 4).map((poster, i) => (
-                  <img key={i} src={poster} alt="" className="collection-poster-thumb" />
+                  <img key={i} src={poster} alt={collection.name} className="collection-poster-thumb" loading="lazy" />
                 ))}
                 {(!collection.posters || collection.posters.length === 0) && (
                   <div className="collection-no-poster">No Images</div>

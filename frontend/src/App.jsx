@@ -1,21 +1,24 @@
+import { lazy, Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
-import Home from './pages/Home';
-import Movie from './pages/Movie';
-import MoviesPage from './pages/MoviesPage';
-import Profile from './pages/Profile';
-import UserProfile from './pages/UserProfile';
-import StatsPage from './pages/StatsPage';
-import Commands from './pages/Commands';
-import WishlistPage from './pages/WishlistPage';
-import MyMoviesPage from './pages/MyMoviesPage';
-import AuthCallback from './pages/AuthCallback';
-import CollectionsPage from './pages/CollectionsPage';
-import ListsPage from './pages/ListsPage';
-import AchievementsPage from './pages/AchievementsPage';
-import ActivityFeed from './pages/ActivityFeed';
+import ErrorBoundary from './components/ErrorBoundary';
 import { NotificationProvider } from './context/NotificationContext';
 import './App.css';
+
+const Home = lazy(() => import('./pages/Home'));
+const Movie = lazy(() => import('./pages/Movie'));
+const MoviesPage = lazy(() => import('./pages/MoviesPage'));
+const Profile = lazy(() => import('./pages/Profile'));
+const UserProfile = lazy(() => import('./pages/UserProfile'));
+const StatsPage = lazy(() => import('./pages/StatsPage'));
+const Commands = lazy(() => import('./pages/Commands'));
+const WishlistPage = lazy(() => import('./pages/WishlistPage'));
+const MyMoviesPage = lazy(() => import('./pages/MyMoviesPage'));
+const AuthCallback = lazy(() => import('./pages/AuthCallback'));
+const CollectionsPage = lazy(() => import('./pages/CollectionsPage'));
+const ListsPage = lazy(() => import('./pages/ListsPage'));
+const AchievementsPage = lazy(() => import('./pages/AchievementsPage'));
+const ActivityFeed = lazy(() => import('./pages/ActivityFeed'));
 
 function App() {
   return (
@@ -23,6 +26,8 @@ function App() {
       <div className="app">
         <Header />
         <main className="container">
+          <ErrorBoundary>
+          <Suspense fallback={<div className="loading-spinner">Loading...</div>}>
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/movies" element={<MoviesPage />} />
@@ -41,6 +46,8 @@ function App() {
             <Route path="/feed" element={<ActivityFeed />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
           </Routes>
+          </Suspense>
+          </ErrorBoundary>
         </main>
         <footer className="app-footer">
           <span>Made by Jan Wilhelm</span>

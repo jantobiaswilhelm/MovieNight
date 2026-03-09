@@ -82,7 +82,7 @@ const FavoriteMovies = ({ favorites, onUpdate, isOwner = true }) => {
                     <Link to={`/movie/${movie.movie_night_id}`} className="favorite-link">
                       <div className="favorite-poster">
                         {movie.image_url ? (
-                          <img src={movie.image_url} alt={movie.title} />
+                          <img src={movie.image_url} alt={movie.title} loading="lazy" />
                         ) : (
                           <div className="no-poster">{position}</div>
                         )}
@@ -98,7 +98,7 @@ const FavoriteMovies = ({ favorites, onUpdate, isOwner = true }) => {
                     <>
                       <div className="favorite-poster">
                         {movie.image_url ? (
-                          <img src={movie.image_url} alt={movie.title} />
+                          <img src={movie.image_url} alt={movie.title} loading="lazy" />
                         ) : (
                           <div className="no-poster">{position}</div>
                         )}

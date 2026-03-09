@@ -2,9 +2,10 @@ import cron from 'node-cron';
 import { getMoviesReadyForRatingNotification, markRatingPromptSent } from '../models/index.js';
 import { createRatingAvailableEmbed, createRatingButtons } from '../utils/embeds.js';
 
+const CRON_EVERY_MINUTE = '* * * * *';
+
 export const startRatingNotifierJob = (client) => {
-  // Run every minute to check for movies ready for rating
-  cron.schedule('* * * * *', async () => {
+  cron.schedule(CRON_EVERY_MINUTE, async () => {
     try {
       const moviesReady = await getMoviesReadyForRatingNotification();
 

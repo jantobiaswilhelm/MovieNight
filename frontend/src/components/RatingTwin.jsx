@@ -1,12 +1,8 @@
 import { Link } from 'react-router-dom';
+import { getAvatarUrl } from '../utils/helpers';
 import './RatingTwin.css';
 
 const RatingTwin = ({ twin }) => {
-  const getAvatarUrl = () => {
-    if (!twin?.avatar) return null;
-    return `https://cdn.discordapp.com/avatars/${twin.discord_id}/${twin.avatar}.png`;
-  };
-
   if (!twin) {
     return (
       <div className="rating-twin">
@@ -26,8 +22,8 @@ const RatingTwin = ({ twin }) => {
       <h3>Rating Twin</h3>
       <Link to={`/user/${twin.user_id}`} className="rating-twin-card">
         <div className="rating-twin-avatar">
-          {getAvatarUrl() ? (
-            <img src={getAvatarUrl()} alt={twin.username} />
+          {getAvatarUrl(twin.discord_id, twin.avatar) ? (
+            <img src={getAvatarUrl(twin.discord_id, twin.avatar)} alt={twin.username} loading="lazy" />
           ) : (
             <div className="no-avatar">{twin.username[0].toUpperCase()}</div>
           )}

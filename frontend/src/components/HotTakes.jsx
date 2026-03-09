@@ -28,7 +28,7 @@ const HotTakes = ({ hotTakes }) => {
             >
               <div className="hot-take-poster">
                 {take.image_url ? (
-                  <img src={take.image_url} alt={take.title} />
+                  <img src={take.image_url} alt={take.title} loading="lazy" />
                 ) : (
                   <div className="no-poster">?</div>
                 )}

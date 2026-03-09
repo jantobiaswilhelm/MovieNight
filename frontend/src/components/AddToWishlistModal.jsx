@@ -153,7 +153,7 @@ const AddToWishlistModal = ({ isOpen, onClose, onAdded }) => {
                     >
                       <div className="result-poster">
                         {movie.posterPath ? (
-                          <img src={movie.posterPath} alt={movie.title} />
+                          <img src={movie.posterPath} alt={movie.title} loading="lazy" />
                         ) : (
                           <div className="no-poster">No Poster</div>
                         )}
@@ -186,7 +186,7 @@ const AddToWishlistModal = ({ isOpen, onClose, onAdded }) => {
               <div className="selected-movie-content">
                 <div className="selected-poster">
                   {selectedMovie.posterPath ? (
-                    <img src={selectedMovie.posterPath} alt={selectedMovie.title} />
+                    <img src={selectedMovie.posterPath} alt={selectedMovie.title} loading="lazy" />
                   ) : (
                     <div className="no-poster">No Poster</div>
                   )}

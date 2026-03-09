@@ -6,11 +6,10 @@
 
 ## Security & Correctness (Remaining)
 
-### S-1: migrate.js uses `rejectUnauthorized: false` in production
-**Status:** TODO
-**Files:** `backend/src/config/migrate.js:7`
+### ~~S-1: migrate.js uses `rejectUnauthorized: false` in production~~
+**Status:** DONE
 
-The migration script hardcodes `rejectUnauthorized: false` for production SSL, while the runtime database configs (`backend/src/config/database.js`, `bot/src/config/database.js`) were already hardened to support `DATABASE_CA_CERT`. The migration script should match.
+Migrate.js now uses the same `sslConfig` pattern as `database.js`, supporting `DATABASE_CA_CERT` for full verification.
 
 ### S-2: Guild authorization model — client-supplied `guild_id` trusted
 **Status:** TODO (architectural)
@@ -30,9 +29,9 @@ Codex flagged this but `app.set('trust proxy', 1)` is already present at line 40
 `reschedule.js:64` has `if (!movie || movie.guild_id !== interaction.guildId)` check.
 
 ### ~~S-5: Bot cross-guild button safety~~
-**Status:** ALREADY FIXED
+**Status:** FIXED
 
-`handleVoteButton` at line 490-504 uses `getActiveVotingSession(interaction.guildId)` (guild-scoped) and then verifies `suggestion.session_id !== session.id`. The suggestion-to-session binding prevents cross-guild exploitation.
+`handleVoteButton` and `handleDeleteSuggestionButton` use `getActiveVotingSession(interaction.guildId)` (guild-scoped) and verify `suggestion.voting_session_id !== session.id`. Originally used wrong field name (`session_id` instead of `voting_session_id`), corrected to match the actual DB column.
 
 ---
 
@@ -60,10 +59,10 @@ Codex flagged this but `app.set('trust proxy', 1)` is already present at line 40
 
 Would eliminate 500+ lines of duplicated boilerplate.
 
-### CQ-4: Add Error Boundary component
-**Priority:** High
+### ~~CQ-4: Add Error Boundary component~~
+**Status:** DONE
 
-No Error Boundary exists. If any component throws during render, the entire app goes blank with no recovery. Add a top-level `<ErrorBoundary>` wrapping routes in App.jsx with a fallback UI.
+Added `ErrorBoundary.jsx` component wrapping routes in App.jsx with recovery UI.
 
 ### CQ-5: Introduce shared validation layer
 **Priority:** Medium
@@ -72,37 +71,29 @@ Consolidate input validation across backend routes. Currently date validation, g
 - `zod` schemas per route
 - Shared middleware functions for common patterns (date, guild_id, pagination)
 
-### CQ-6: Deduplicate frontend helper functions
-**Priority:** Medium
+### ~~CQ-6: Deduplicate frontend helper functions~~
+**Status:** DONE
 
-Extract to `frontend/src/utils/`:
-- `formatRuntime(minutes)` — duplicated in Movie.jsx, WishlistDetailModal.jsx, StatsPage.jsx, Profile.jsx
-- `formatDate(dateStr)` — duplicated in 5+ pages
-- `getLanguageName(code)` — duplicated in Movie.jsx, WishlistDetailModal.jsx
-- `getAvatarUrl(discordId, avatar)` — duplicated in Header.jsx, WishlistDetailModal.jsx
+Extracted `formatDate`, `formatRuntime`, `getLanguageName`, `getAvatarUrl` to `frontend/src/utils/helpers.js`. Replaced inline definitions across 13 files.
 
 ### CQ-7: Centralized bot logging
 **Priority:** Medium
 
 77 scattered `console.log`/`console.error` calls with no structured format. Create a logger utility with levels (info/warn/error) and consistent format. Enables future integration with error tracking (Sentry, etc.).
 
-### CQ-8: Replace magic numbers with named constants
-**Priority:** Low
+### ~~CQ-8: Replace magic numbers with named constants~~
+**Status:** DONE
 
-- Rating delay: `runtime - 10` (minutes before movie ends)
-- Throttle: `1000ms`
-- TMDB timeout: `10000ms`
-- Cron schedules: `*/5 * * * *`, `* * * * *`
-- Auth code TTL: `30 * 1000`
+Replaced magic numbers with named constants: `AUTH_CODE_TTL_MS`, `RATING_BUFFER_MINUTES`, `DEFAULT_RUNTIME_MINUTES`, `CRON_EVERY_MINUTE`, `CRON_EVERY_5_MINUTES`. Throttle and TMDB timeout were already named.
 
 ---
 
 ## Performance
 
-### P-1: Add React.lazy route-based code splitting
-**Priority:** High
+### ~~P-1: Add React.lazy route-based code splitting~~
+**Status:** DONE
 
-All 14 pages are eagerly imported in App.jsx. Use `React.lazy()` + `<Suspense>` for route-level code splitting. Heavy pages like Home (1,135 lines), MyMoviesPage (790 lines), and Movie (564 lines) would benefit most.
+All 14 pages converted to `React.lazy()` with `<Suspense>` in App.jsx. Initial bundle reduced from 315 KB to 186 KB (41% reduction).
 
 ### P-2: Memoize list item components
 **Priority:** Medium
@@ -114,10 +105,10 @@ Zero `React.memo` usage. MovieCard, WishlistCard, and rating list items re-rende
 
 MoviesPage can render 500+ movies without virtualization. Consider `react-window` or `react-virtuoso` for the movies grid and ratings lists.
 
-### P-4: Image lazy loading
-**Priority:** Low
+### ~~P-4: Image lazy loading~~
+**Status:** DONE
 
-Movie posters and backdrops loaded eagerly. Add `loading="lazy"` to `<img>` tags below the fold.
+Added `loading="lazy"` to 59 `<img>` tags across 26 files. Hero.jsx left eager (above the fold).
 
 ### P-5: Fix N+1 queries in backend
 **Priority:** Medium
@@ -126,12 +117,10 @@ Movie posters and backdrops loaded eagerly. Add `loading="lazy"` to `<img>` tags
 - Achievement checker runs 5 separate COUNT queries — combine into single joined query
 - Social routes make extra `getUserById()` calls after operations that already return user data
 
-### P-6: Add missing database indexes
-**Priority:** Medium
+### ~~P-6: Add missing database indexes~~
+**Status:** DONE
 
-- `movie_nights.scheduled_at` — used in ORDER BY on every movie listing
-- `movie_nights.announced_by` — used in JOIN for announcer name
-- `notifications(user_id, is_read)` composite — used in unread count queries
+Added `idx_movie_nights_scheduled` and `idx_movie_nights_announced_by` indexes. The `notifications(user_id, is_read)` composite index already existed.
 
 ### P-7: Use ON DELETE CASCADE instead of manual multi-query deletes
 **Priority:** Low
@@ -270,10 +259,10 @@ No linting configured in any of the 3 services. Add shared ESLint config for con
 
 Header dropdowns require mouse hover — no keyboard support. Modals don't trap focus. Add keyboard handlers and proper tab ordering.
 
-### A-3: Image alt text
-**Priority:** Low
+### ~~A-3: Image alt text~~
+**Status:** DONE
 
-Most images have alt text but 4 instances use `alt=""`. Movie posters in list views should have descriptive alt text.
+Fixed all 22 instances of `alt=""` across 12 files with descriptive alt text (movie titles, usernames).
 
 ---
 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getGuildUsers } from '../api/client';
+import { getAvatarUrl } from '../utils/helpers';
 import './UsersSection.css';
 
 const UsersSection = () => {
@@ -46,13 +47,6 @@ const UsersSection = () => {
   const displayedUsers = expanded ? users : users.slice(0, 8);
   const hasMore = users.length > 8;
 
-  const getAvatarUrl = (user) => {
-    if (user.avatar) {
-      return `https://cdn.discordapp.com/avatars/${user.discord_id}/${user.avatar}.png`;
-    }
-    return `https://cdn.discordapp.com/embed/avatars/${parseInt(user.discord_id) % 5}.png`;
-  };
-
   return (
     <div className="users-section">
       <div className="users-section-header">
@@ -63,9 +57,10 @@ const UsersSection = () => {
         {displayedUsers.map((user) => (
           <Link key={user.id} to={`/user/${user.id}`} className="user-item">
             <img
-              src={getAvatarUrl(user)}
+              src={getAvatarUrl(user.discord_id, user.avatar)}
               alt={user.username}
               className="user-avatar"
+              loading="lazy"
             />
             <span className="user-name">{user.username}</span>
             <span className="user-rating-count">{user.rating_count} ratings</span>

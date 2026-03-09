@@ -4,9 +4,10 @@ import { createStartingNowEmbed } from '../utils/embeds.js';
 
 const MOVIE_NIGHT_ROLE_ID = process.env.MOVIE_NIGHT_ROLE_ID;
 
+const CRON_EVERY_MINUTE = '* * * * *';
+
 export const startMovieStarterJob = (client) => {
-  // Run every minute
-  cron.schedule('* * * * *', async () => {
+  cron.schedule(CRON_EVERY_MINUTE, async () => {
     try {
       const moviesToStart = await getMoviesToStart();
 

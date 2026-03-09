@@ -179,7 +179,7 @@ const Header = () => {
           {isAuthenticated ? (
             <div className="user-menu">
               {getAvatarUrl() && (
-                <img src={getAvatarUrl()} alt="" className="avatar" />
+                <img src={getAvatarUrl()} alt={user.username} className="avatar" loading="lazy" />
               )}
               <span className="username">{user.username}</span>
               <button onClick={logout} className="btn-secondary">
