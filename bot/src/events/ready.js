@@ -3,13 +3,16 @@ import { startMovieStarterJob } from '../jobs/movieStarter.js';
 import { startAnnouncementProcessorJob } from '../jobs/announcementProcessor.js';
 import { startRatingNotifierJob } from '../jobs/ratingNotifier.js';
 import { startChannelSyncJob } from '../jobs/channelSync.js';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('ready');
 
 export const name = Events.ClientReady;
 export const once = true;
 
 export const execute = (client) => {
-  console.log(`Bot ready! Logged in as ${client.user.tag}`);
-  console.log(`Serving ${client.guilds.cache.size} guilds`);
+  logger.info(`Bot ready! Logged in as ${client.user.tag}`);
+  logger.info(`Serving ${client.guilds.cache.size} guilds`);
 
   // Start the movie starter scheduled job
   startMovieStarterJob(client);

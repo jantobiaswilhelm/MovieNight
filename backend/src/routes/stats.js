@@ -1,16 +1,13 @@
 import { Router } from 'express';
 import { authenticateToken } from '../middleware/auth.js';
+import { validateGuildId } from '../middleware/validate.js';
 import * as db from '../models/index.js';
 
 const router = Router();
 
 // Get server-wide stats
-router.get('/', async (req, res) => {
-  const { guild_id, month } = req.query;
-
-  if (!guild_id) {
-    return res.status(400).json({ error: 'guild_id is required' });
-  }
+router.get('/', validateGuildId, async (req, res) => {
+  const { month } = req.query;
 
   // Validate month format to prevent SQL injection
   if (month && !/^\d{4}-\d{2}$/.test(month)) {
@@ -32,18 +29,18 @@ router.get('/', async (req, res) => {
       totalRuntime,
       streakLeaderboard
     ] = await Promise.all([
-      db.getGuildStats(guild_id),
-      db.getTopRatedMovies(guild_id, 5),
-      db.getMostActiveRaters(guild_id, 5),
-      db.getTopRatedMoviesByPeriod(guild_id, 'month', 5, 3, month || null),
-      db.getTopRatedMoviesByPeriod(guild_id, 'year', 5, 3),
-      db.getTopRatedMoviesByPeriod(guild_id, 'all', 5, 3),
-      db.getWorstRatedMoviesByPeriod(guild_id, 'month', 5, 3, month || null),
-      db.getWorstRatedMoviesByPeriod(guild_id, 'year', 5, 3),
-      db.getWorstRatedMoviesByPeriod(guild_id, 'all', 5, 3),
-      db.getAvailableMonths(guild_id),
-      db.getGuildTotalRuntime(guild_id),
-      db.getStreakLeaderboard(guild_id, 5)
+      db.getGuildStats(req.guildId),
+      db.getTopRatedMovies(req.guildId, 5),
+      db.getMostActiveRaters(req.guildId, 5),
+      db.getTopRatedMoviesByPeriod(req.guildId, 'month', 5, 3, month || null),
+      db.getTopRatedMoviesByPeriod(req.guildId, 'year', 5, 3),
+      db.getTopRatedMoviesByPeriod(req.guildId, 'all', 5, 3),
+      db.getWorstRatedMoviesByPeriod(req.guildId, 'month', 5, 3, month || null),
+      db.getWorstRatedMoviesByPeriod(req.guildId, 'year', 5, 3),
+      db.getWorstRatedMoviesByPeriod(req.guildId, 'all', 5, 3),
+      db.getAvailableMonths(req.guildId),
+      db.getGuildTotalRuntime(req.guildId),
+      db.getStreakLeaderboard(req.guildId, 5)
     ]);
 
     res.json({
@@ -92,13 +89,7 @@ router.get('/me', authenticateToken, async (req, res) => {
 });
 
 // Get comprehensive profile stats
-router.get('/me/profile', authenticateToken, async (req, res) => {
-  const { guild_id } = req.query;
-
-  if (!guild_id) {
-    return res.status(400).json({ error: 'guild_id is required' });
-  }
-
+router.get('/me/profile', authenticateToken, validateGuildId, async (req, res) => {
   try {
     const [
       basicStats,
@@ -117,13 +108,13 @@ router.get('/me/profile', authenticateToken, async (req, res) => {
     ] = await Promise.all([
       db.getUserStats(req.user.id),
       db.getUserRatingHistogram(req.user.id),
-      db.getUserVsGuildAverage(req.user.id, guild_id),
-      db.findRatingTwin(req.user.id, guild_id),
+      db.getUserVsGuildAverage(req.user.id, req.guildId),
+      db.findRatingTwin(req.user.id, req.guildId),
       db.getUserGenreStats(req.user.id),
       db.getUserHotTakes(req.user.id, 5),
       db.getUserTotalWatchtime(req.user.id),
       db.getUserFavoriteMovies(req.user.id),
-      db.getUserWishlistPreview(req.user.id, guild_id, 5),
+      db.getUserWishlistPreview(req.user.id, req.guildId, 5),
       db.getUserTopRatedMovies(req.user.id, 10),
       db.getUserStreak(req.user.id),
       db.getUserFavoriteDirectors(req.user.id, 5),
@@ -226,15 +217,9 @@ router.get('/me/rated-movies', authenticateToken, async (req, res) => {
 });
 
 // Get all guild users
-router.get('/users', async (req, res) => {
-  const { guild_id } = req.query;
-
-  if (!guild_id) {
-    return res.status(400).json({ error: 'guild_id is required' });
-  }
-
+router.get('/users', validateGuildId, async (req, res) => {
   try {
-    const users = await db.getGuildUsers(guild_id);
+    const users = await db.getGuildUsers(req.guildId);
     res.json(users);
   } catch (err) {
     console.error('Error fetching guild users:', err);
@@ -243,15 +228,11 @@ router.get('/users', async (req, res) => {
 });
 
 // Get random comments for homepage ticker
-router.get('/comments/random', async (req, res) => {
-  const { guild_id, limit = 10 } = req.query;
-
-  if (!guild_id) {
-    return res.status(400).json({ error: 'guild_id is required' });
-  }
+router.get('/comments/random', validateGuildId, async (req, res) => {
+  const { limit = 10 } = req.query;
 
   try {
-    const comments = await db.getRandomComments(guild_id, parseInt(limit));
+    const comments = await db.getRandomComments(req.guildId, parseInt(limit));
     res.json(comments);
   } catch (err) {
     console.error('Error fetching random comments:', err);
@@ -260,13 +241,8 @@ router.get('/comments/random', async (req, res) => {
 });
 
 // Get another user's profile (public preview)
-router.get('/user/:userId/profile', async (req, res) => {
+router.get('/user/:userId/profile', validateGuildId, async (req, res) => {
   const { userId } = req.params;
-  const { guild_id } = req.query;
-
-  if (!guild_id) {
-    return res.status(400).json({ error: 'guild_id is required' });
-  }
 
   try {
     const user = await db.getUserById(parseInt(userId));
@@ -289,7 +265,7 @@ router.get('/user/:userId/profile', async (req, res) => {
     ] = await Promise.all([
       db.getUserStats(parseInt(userId)),
       db.getUserRatingHistogram(parseInt(userId)),
-      db.getUserVsGuildAverage(parseInt(userId), guild_id),
+      db.getUserVsGuildAverage(parseInt(userId), req.guildId),
       db.getUserGenreStats(parseInt(userId)),
       db.getUserHotTakes(parseInt(userId), 5),
       db.getUserTotalWatchtime(parseInt(userId)),

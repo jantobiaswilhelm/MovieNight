@@ -1,5 +1,8 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { findOrCreateUser, getRecentMovieNightsForRating, getMovieNightById, upsertRating, getUserRating } from '../models/index.js';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('rate');
 
 export const data = new SlashCommandBuilder()
   .setName('rate')
@@ -38,7 +41,7 @@ export const autocomplete = async (interaction) => {
       }))
     );
   } catch (err) {
-    console.error('Autocomplete error:', err);
+    logger.error('Autocomplete error', err);
     await interaction.respond([]);
   }
 };
@@ -107,7 +110,7 @@ export const execute = async (interaction) => {
     });
 
   } catch (err) {
-    console.error('Error saving rating:', err);
+    logger.error('Error saving rating', err);
     await interaction.reply({
       content: 'There was an error saving your rating.',
       ephemeral: true

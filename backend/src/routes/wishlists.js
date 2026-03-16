@@ -1,20 +1,17 @@
 import { Router } from 'express';
 import { authenticateToken, optionalAuth } from '../middleware/auth.js';
+import { validateGuildId, parsePagination, validateDate } from '../middleware/validate.js';
 import * as db from '../models/index.js';
 import { logWishlistActivity } from '../services/activityService.js';
 
 const router = Router();
 
 // Get user's wishlist
-router.get('/me', authenticateToken, async (req, res) => {
-  const { guild_id, sort = 'importance' } = req.query;
-
-  if (!guild_id) {
-    return res.status(400).json({ error: 'guild_id is required' });
-  }
+router.get('/me', authenticateToken, validateGuildId, parsePagination, async (req, res) => {
+  const { sort = 'importance' } = req.query;
 
   try {
-    const items = await db.getUserWishlist(req.user.id, guild_id, sort);
+    const items = await db.getUserWishlist(req.user.id, req.guildId, sort, req.pagination.limit, req.pagination.offset);
     res.json(items);
   } catch (err) {
     console.error('Error fetching user wishlist:', err);
@@ -23,15 +20,11 @@ router.get('/me', authenticateToken, async (req, res) => {
 });
 
 // Get combined guild wishlist
-router.get('/guild', optionalAuth, async (req, res) => {
-  const { guild_id, sort = 'importance' } = req.query;
-
-  if (!guild_id) {
-    return res.status(400).json({ error: 'guild_id is required' });
-  }
+router.get('/guild', validateGuildId, parsePagination, optionalAuth, async (req, res) => {
+  const { sort = 'importance' } = req.query;
 
   try {
-    const items = await db.getGuildWishlist(guild_id, sort);
+    const items = await db.getGuildWishlist(req.guildId, sort, req.pagination.limit, req.pagination.offset);
     res.json(items);
   } catch (err) {
     console.error('Error fetching guild wishlist:', err);
@@ -40,12 +33,8 @@ router.get('/guild', optionalAuth, async (req, res) => {
 });
 
 // Add movie to wishlist
-router.post('/', authenticateToken, async (req, res) => {
-  const { guild_id, title, image_url, backdrop_url, description, tmdb_id, imdb_id, tmdb_rating, genres, runtime, release_year, trailer_url, importance = 3 } = req.body;
-
-  if (!guild_id) {
-    return res.status(400).json({ error: 'guild_id is required' });
-  }
+router.post('/', authenticateToken, validateGuildId, async (req, res) => {
+  const { title, image_url, backdrop_url, description, tmdb_id, imdb_id, tmdb_rating, genres, runtime, release_year, trailer_url, importance = 3 } = req.body;
 
   if (!title || typeof title !== 'string' || !tmdb_id) {
     return res.status(400).json({ error: 'title and tmdb_id are required' });
@@ -62,7 +51,7 @@ router.post('/', authenticateToken, async (req, res) => {
   try {
     const item = await db.addToWishlist({
       userId: req.user.id,
-      guildId: guild_id,
+      guildId: req.guildId,
       title,
       imageUrl: image_url,
       backdropUrl: backdrop_url,
@@ -79,7 +68,7 @@ router.post('/', authenticateToken, async (req, res) => {
 
     // Log activity
     try {
-      await logWishlistActivity(req.user.id, guild_id, tmdb_id, title);
+      await logWishlistActivity(req.user.id, req.guildId, tmdb_id, title);
     } catch (activityErr) {
       console.error('Error logging wishlist activity:', activityErr);
     }
@@ -133,16 +122,12 @@ router.delete('/:id', authenticateToken, async (req, res) => {
 });
 
 // Announce movie from wishlist (creates pending announcement for bot)
-router.post('/announce', authenticateToken, async (req, res) => {
-  const { wishlist_id, scheduled_at } = req.body;
+router.post('/announce', authenticateToken, validateDate('scheduled_at'), async (req, res) => {
+  const { wishlist_id } = req.body;
+  const scheduledDate = req.validatedDates.scheduled_at;
 
-  if (!wishlist_id || !scheduled_at) {
-    return res.status(400).json({ error: 'wishlist_id and scheduled_at are required' });
-  }
-
-  const scheduledDate = new Date(scheduled_at);
-  if (isNaN(scheduledDate.getTime())) {
-    return res.status(400).json({ error: 'Invalid scheduled_at date' });
+  if (!wishlist_id) {
+    return res.status(400).json({ error: 'wishlist_id is required' });
   }
 
   if (scheduledDate <= new Date()) {

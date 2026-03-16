@@ -1,53 +1,27 @@
-import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getActivityFeed, getMyFollowing } from '../api/client';
+import { useFetch } from '../hooks';
+import { formatRelativeTime, getAvatarUrl } from '../utils/helpers';
 import './ActivityFeed.css';
 
 const ActivityFeed = () => {
   const { isAuthenticated } = useAuth();
-  const [activities, setActivities] = useState([]);
-  const [following, setFollowing] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchData();
-    } else {
-      setLoading(false);
-    }
-  }, [isAuthenticated]);
-
-  const fetchData = async () => {
-    try {
+  const { data, loading, error } = useFetch(
+    async () => {
       const [activityData, followingData] = await Promise.all([
         getActivityFeed(),
         getMyFollowing()
       ]);
-      setActivities(activityData);
-      setFollowing(followingData);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+      return { activities: activityData, following: followingData };
+    },
+    [isAuthenticated],
+    { enabled: isAuthenticated, initialData: { activities: [], following: [] } }
+  );
 
-  const formatTime = (dateStr) => {
-    const date = new Date(dateStr);
-    const now = new Date();
-    const diffMs = now - date;
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins} minutes ago`;
-    if (diffHours < 24) return `${diffHours} hours ago`;
-    if (diffDays < 7) return `${diffDays} days ago`;
-    return date.toLocaleDateString();
-  };
+  const activities = data.activities;
+  const following = data.following;
 
   const getActivityIcon = (type) => {
     const icons = {
@@ -65,19 +39,25 @@ const ActivityFeed = () => {
       case 'rated_movie':
         return (
           <>
-            rated <strong>{data.movieTitle}</strong> {data.score}/10
+            rated {data.movieNightId
+              ? <Link to={`/movie/${data.movieNightId}`}><strong>{data.movieTitle}</strong></Link>
+              : <strong>{data.movieTitle}</strong>
+            } {data.score}/10
           </>
         );
       case 'added_wishlist':
         return (
           <>
-            added <strong>{data.movieTitle}</strong> to their wishlist
+            added <strong>{data.movieTitle}</strong> to their <Link to="/wishlist">wishlist</Link>
           </>
         );
       case 'created_list':
         return (
           <>
-            created a new list: <strong>{data.listName}</strong>
+            created a new list: {data.listId
+              ? <Link to={`/lists/${data.listId}`}><strong>{data.listName}</strong></Link>
+              : <strong>{data.listName}</strong>
+            }
           </>
         );
       case 'achievement_unlocked':
@@ -134,11 +114,7 @@ const ActivityFeed = () => {
               <div className="activity-content">
                 <div className="activity-user">
                   <img
-                    src={
-                      activity.avatar
-                        ? `https://cdn.discordapp.com/avatars/${activity.discord_id}/${activity.avatar}.png`
-                        : `https://cdn.discordapp.com/embed/avatars/${parseInt(activity.discord_id) % 5}.png`
-                    }
+                    src={getAvatarUrl(activity.discord_id, activity.avatar)}
                     alt={activity.username}
                     className="activity-avatar"
                     loading="lazy"
@@ -148,7 +124,7 @@ const ActivityFeed = () => {
                   </Link>
                 </div>
                 <div className="activity-text">{getActivityText(activity)}</div>
-                <div className="activity-time">{formatTime(activity.created_at)}</div>
+                <div className="activity-time">{formatRelativeTime(activity.created_at)}</div>
               </div>
             </div>
           ))}
@@ -163,11 +139,7 @@ const ActivityFeed = () => {
             {following.map((user) => (
               <Link key={user.id} to={`/user/${user.id}`} className="following-item">
                 <img
-                  src={
-                    user.avatar
-                      ? `https://cdn.discordapp.com/avatars/${user.discord_id}/${user.avatar}.png`
-                      : `https://cdn.discordapp.com/embed/avatars/${parseInt(user.discord_id) % 5}.png`
-                  }
+                  src={getAvatarUrl(user.discord_id, user.avatar)}
                   alt={user.username}
                   className="following-avatar"
                   loading="lazy"

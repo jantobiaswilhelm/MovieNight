@@ -2,6 +2,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import { parse } from 'csv-parse/sync';
 import { authenticateToken } from '../middleware/auth.js';
+import { parsePagination } from '../middleware/validate.js';
 import * as db from '../models/index.js';
 
 const router = Router();
@@ -79,11 +80,11 @@ async function searchAndGetMovie(title, year) {
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Get user's personal movies
-router.get('/', authenticateToken, async (req, res) => {
+router.get('/', authenticateToken, parsePagination, async (req, res) => {
   const { sort = 'newest' } = req.query;
 
   try {
-    const movies = await db.getUserPersonalMovies(req.user.id, sort);
+    const movies = await db.getUserPersonalMovies(req.user.id, sort, req.pagination.limit, req.pagination.offset);
     res.json(movies);
   } catch (err) {
     console.error('Error fetching personal movies:', err);

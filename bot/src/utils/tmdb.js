@@ -1,4 +1,7 @@
 import fetch from 'node-fetch';
+import { createLogger } from './logger.js';
+
+const logger = createLogger('tmdb');
 
 const TMDB_API_KEY = process.env.TMDB_API_KEY;
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
@@ -8,7 +11,7 @@ const TMDB_TIMEOUT_MS = 10000; // 10 second timeout
 
 export const searchMovies = async (query, limit = 10) => {
   if (!TMDB_API_KEY) {
-    console.warn('TMDB_API_KEY not set, movie search disabled');
+    logger.warn('TMDB_API_KEY not set, movie search disabled');
     return [];
   }
 
@@ -19,7 +22,7 @@ export const searchMovies = async (query, limit = 10) => {
     );
 
     if (!response.ok) {
-      console.error('TMDB API error:', response.status);
+      logger.error('TMDB API error:', response.status);
       return [];
     }
 
@@ -35,7 +38,7 @@ export const searchMovies = async (query, limit = 10) => {
       releaseDate: movie.release_date
     }));
   } catch (err) {
-    console.error('TMDB search error:', err);
+    logger.error('TMDB search error', err);
     return [];
   }
 };
@@ -90,7 +93,7 @@ export const getMovieDetails = async (tmdbId) => {
       trailerUrl
     };
   } catch (err) {
-    console.error('TMDB details error:', err);
+    logger.error('TMDB details error', err);
     return null;
   }
 };

@@ -1,80 +1,64 @@
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getMyWishlist, getGuildWishlist } from '../api/client';
-import WishlistCard from '../components/WishlistCard';
-import AddToWishlistModal from '../components/AddToWishlistModal';
-import WishlistDetailModal from '../components/WishlistDetailModal';
+import { useFetch, useModal } from '../hooks';
+import { WishlistCard, AddToWishlistModal, WishlistDetailModal } from '../components/wishlist';
 import { getAvatarUrl } from '../utils/helpers';
 import './WishlistPage.css';
 
 const WishlistPage = () => {
   const { user, isAuthenticated } = useAuth();
   const [activeTab, setActiveTab] = useState('my');
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [sort, setSort] = useState('importance');
   const [groupByUser, setGroupByUser] = useState(false);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [selectedItem, setSelectedItem] = useState(null);
   const [randomMovie, setRandomMovie] = useState(null);
   const [showRandomModal, setShowRandomModal] = useState(false);
 
-  const fetchWishlist = async () => {
-    setLoading(true);
-    setError(null);
+  const addModal = useModal();
+  const detailModal = useModal();
 
-    try {
-      if (activeTab === 'my') {
-        if (!isAuthenticated) {
-          setItems([]);
-          setLoading(false);
-          return;
-        }
-        const data = await getMyWishlist(sort);
-        setItems(data);
-      } else {
-        const data = await getGuildWishlist(sort);
-        setItems(data);
-      }
-    } catch (err) {
-      setError(err.message || 'Failed to load wishlist');
-    } finally {
-      setLoading(false);
+  const fetchFn = async () => {
+    if (activeTab === 'my') {
+      if (!isAuthenticated) return [];
+      return await getMyWishlist(sort);
     }
+    return await getGuildWishlist(sort);
   };
 
-  useEffect(() => {
-    fetchWishlist();
-  }, [activeTab, sort, isAuthenticated]);
+  const { data: items, loading, error, refetch, setData: setItems } = useFetch(
+    fetchFn,
+    [activeTab, sort, isAuthenticated],
+    { initialData: [] }
+  );
 
-  const handleUpdate = (updatedItem) => {
+  const handleUpdate = useCallback((updatedItem) => {
     setItems((prev) =>
       prev.map((item) => (item.id === updatedItem.id ? updatedItem : item))
     );
-  };
+  }, [setItems]);
 
-  const handleRemove = (id) => {
+  const handleRemove = useCallback((id) => {
     setItems((prev) => prev.filter((item) => item.id !== id));
-    if (selectedItem?.id === id) {
-      setSelectedItem(null);
+    if (detailModal.data?.id === id) {
+      detailModal.close();
     }
-  };
+  }, [setItems, detailModal]);
 
-  const handleAdded = () => {
-    fetchWishlist();
-  };
+  const handleAdded = useCallback(() => {
+    refetch();
+  }, [refetch]);
 
-  const handleCardClick = (item) => {
-    setSelectedItem(item);
-  };
+  const handleCardClick = useCallback((item) => {
+    detailModal.open(item);
+  }, [detailModal]);
 
   const handleAnnounce = (item) => {
     // Remove from wishlist after scheduling (called from WishlistDetailModal)
     if (item) {
       handleRemove(item.id);
     }
-    setSelectedItem(null);
+    detailModal.close();
   };
 
   const pickRandomMovie = () => {
@@ -99,7 +83,7 @@ const WishlistPage = () => {
   const handleScheduleRandom = () => {
     // Close random modal and open detail modal with the random movie
     setShowRandomModal(false);
-    setSelectedItem(randomMovie);
+    detailModal.open(randomMovie);
   };
 
   const groupedItems = groupByUser
@@ -135,7 +119,7 @@ const WishlistPage = () => {
           {isAuthenticated && (
             <button
               className="btn-primary add-movie-btn"
-              onClick={() => setShowAddModal(true)}
+              onClick={() => addModal.open()}
             >
               + Add Movie
             </button>
@@ -224,7 +208,7 @@ const WishlistPage = () => {
                     showUser={false}
                     onUpdate={handleUpdate}
                     onRemove={handleRemove}
-                    onClick={() => handleCardClick(item)}
+                    onClick={handleCardClick}
                   />
                 ))}
               </div>
@@ -241,22 +225,26 @@ const WishlistPage = () => {
               showUser={activeTab === 'guild'}
               onUpdate={handleUpdate}
               onRemove={handleRemove}
-              onClick={() => handleCardClick(item)}
+              onClick={handleCardClick}
             />
           ))}
         </div>
       )}
 
+      <div className="wishlist-browse-link">
+        <Link to="/movies">Browse all movies &rarr;</Link>
+      </div>
+
       <AddToWishlistModal
-        isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
+        isOpen={addModal.isOpen}
+        onClose={addModal.close}
         onAdded={handleAdded}
       />
 
       <WishlistDetailModal
-        item={selectedItem}
-        isOpen={!!selectedItem}
-        onClose={() => setSelectedItem(null)}
+        item={detailModal.data}
+        isOpen={detailModal.isOpen}
+        onClose={detailModal.close}
         onAnnounce={handleAnnounce}
         canAnnounce={isAuthenticated}
       />

@@ -1,6 +1,9 @@
 import cron from 'node-cron';
 import { getMoviesToStart, startMovieNight } from '../models/index.js';
 import { createStartingNowEmbed } from '../utils/embeds.js';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('movieStarter');
 
 const MOVIE_NIGHT_ROLE_ID = process.env.MOVIE_NIGHT_ROLE_ID;
 
@@ -29,18 +32,18 @@ export const startMovieStarterJob = (client) => {
               embeds: [embed]
             });
 
-            console.log(`Started movie night: ${movie.title} (ID: ${movie.id})`);
+            logger.info(`Started movie night: ${movie.title} (ID: ${movie.id})`);
           } else {
-            console.error(`Could not find channel ${movie.channel_id} for movie ${movie.id}`);
+            logger.error(`Could not find channel ${movie.channel_id} for movie ${movie.id}`);
           }
         } catch (err) {
-          console.error(`Error starting movie ${movie.id}:`, err);
+          logger.error(`Error starting movie ${movie.id}`, err);
         }
       }
     } catch (err) {
-      console.error('Error in movie starter job:', err);
+      logger.error('Error in movie starter job', err);
     }
   });
 
-  console.log('Movie starter job scheduled (runs every minute)');
+  logger.info('Movie starter job scheduled (runs every minute)');
 };

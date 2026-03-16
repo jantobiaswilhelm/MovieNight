@@ -1,6 +1,9 @@
 import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
 import { getMovieNightById, deleteMovieNight, getRecentMovieNightsForRating } from '../models/index.js';
 import { isAdmin } from '../utils/admin.js';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('delete');
 
 export const data = new SlashCommandBuilder()
   .setName('delete')
@@ -29,7 +32,7 @@ export const autocomplete = async (interaction) => {
       }))
     );
   } catch (err) {
-    console.error('Error in delete autocomplete:', err);
+    logger.error('Error in delete autocomplete', err);
     await interaction.respond([]);
   }
 };
@@ -84,7 +87,7 @@ export const execute = async (interaction) => {
           }
         }
       } catch (err) {
-        console.log('Could not delete original message:', err.message);
+        logger.warn('Could not delete original message:', err.message);
       }
     }
 
@@ -94,7 +97,7 @@ export const execute = async (interaction) => {
     });
 
   } catch (err) {
-    console.error('Error deleting movie:', err);
+    logger.error('Error deleting movie', err);
     await interaction.reply({
       content: 'There was an error deleting the movie.',
       ephemeral: true

@@ -3,6 +3,9 @@ import { findOrCreateUser, getActiveVotingSession, createSuggestion, getSuggesti
 import { buildVotingEmbed, buildVotingButtons } from '../utils/votingEmbed.js';
 import { searchMovies, getMovieDetails } from '../utils/tmdb.js';
 import { shouldThrottle } from '../utils/throttle.js';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('suggest');
 
 export const data = new SlashCommandBuilder()
   .setName('suggest')
@@ -114,7 +117,7 @@ export const execute = async (interaction) => {
         }
       }
     } catch (err) {
-      console.error('Error updating voting message:', err);
+      logger.error('Error updating voting message', err);
     }
 
     // Build confirmation embed
@@ -138,7 +141,7 @@ export const execute = async (interaction) => {
     });
 
   } catch (err) {
-    console.error('Error suggesting movie:', err);
+    logger.error('Error suggesting movie', err);
     await interaction.reply({
       content: 'There was an error adding your suggestion.',
       ephemeral: true

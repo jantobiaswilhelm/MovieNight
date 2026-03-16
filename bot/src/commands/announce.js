@@ -4,6 +4,10 @@ import { createAnnouncementEmbed } from '../utils/embeds.js';
 import { searchMovies, getMovieDetails } from '../utils/tmdb.js';
 import { isAdmin } from '../utils/admin.js';
 import { shouldThrottle } from '../utils/throttle.js';
+import { parseDateTime } from '../utils/dateTime.js';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('announce');
 
 export const data = new SlashCommandBuilder()
   .setName('announce')
@@ -135,7 +139,7 @@ export const execute = async (interaction) => {
     // Rating buttons will be sent automatically when the movie starts
 
   } catch (err) {
-    console.error('Error creating movie night:', err);
+    logger.error('Error creating movie night', err);
     if (interaction.replied) {
       await interaction.followUp({
         content: 'There was an error creating the movie night.',
@@ -150,75 +154,3 @@ export const execute = async (interaction) => {
   }
 };
 
-function parseDateTime(str) {
-  // Try ISO format first
-  let date = new Date(str);
-  if (!isNaN(date.getTime())) {
-    return date;
-  }
-
-  // Try common formats
-  const now = new Date();
-
-  // Handle "tomorrow" keyword
-  if (str.toLowerCase().includes('tomorrow')) {
-    date = new Date(now);
-    date.setDate(date.getDate() + 1);
-
-    // Extract time if present
-    const timeMatch = str.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i);
-    if (timeMatch) {
-      let hours = parseInt(timeMatch[1]);
-      const minutes = parseInt(timeMatch[2]) || 0;
-      const period = timeMatch[3];
-
-      if (period?.toLowerCase() === 'pm' && hours < 12) hours += 12;
-      if (period?.toLowerCase() === 'am' && hours === 12) hours = 0;
-
-      date.setHours(hours, minutes, 0, 0);
-    }
-    return date;
-  }
-
-  // Handle "today" keyword
-  if (str.toLowerCase().includes('today')) {
-    date = new Date(now);
-
-    const timeMatch = str.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i);
-    if (timeMatch) {
-      let hours = parseInt(timeMatch[1]);
-      const minutes = parseInt(timeMatch[2]) || 0;
-      const period = timeMatch[3];
-
-      if (period?.toLowerCase() === 'pm' && hours < 12) hours += 12;
-      if (period?.toLowerCase() === 'am' && hours === 12) hours = 0;
-
-      date.setHours(hours, minutes, 0, 0);
-    }
-    return date;
-  }
-
-  // Try parsing as "YYYY-MM-DD HH:MM" or similar
-  const parts = str.split(/[\s,]+/);
-  if (parts.length >= 2) {
-    const datePart = parts[0];
-    const timePart = parts.slice(1).join(' ');
-
-    date = new Date(datePart);
-
-    const timeMatch = timePart.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i);
-    if (timeMatch && !isNaN(date.getTime())) {
-      let hours = parseInt(timeMatch[1]);
-      const minutes = parseInt(timeMatch[2]) || 0;
-      const period = timeMatch[3];
-
-      if (period?.toLowerCase() === 'pm' && hours < 12) hours += 12;
-      if (period?.toLowerCase() === 'am' && hours === 12) hours = 0;
-
-      date.setHours(hours, minutes, 0, 0);
-      return date;
-    }
-  }
-
-  return new Date(str);
-}

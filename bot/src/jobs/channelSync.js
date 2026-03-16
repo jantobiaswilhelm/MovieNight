@@ -1,6 +1,9 @@
 import cron from 'node-cron';
 import { ChannelType, PermissionFlagsBits } from 'discord.js';
 import { upsertGuildChannel, removeStaleGuildChannels } from '../models/index.js';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('channelSync');
 
 const CRON_EVERY_30_MINUTES = '*/30 * * * *';
 
@@ -37,9 +40,9 @@ async function syncGuildChannels(guild) {
     // Remove channels that no longer exist
     await removeStaleGuildChannels(guild.id, currentChannelIds);
 
-    console.log(`Synced ${currentChannelIds.length} channels for guild ${guild.name}`);
+    logger.info(`Synced ${currentChannelIds.length} channels for guild ${guild.name}`);
   } catch (err) {
-    console.error(`Error syncing channels for guild ${guild.name}:`, err);
+    logger.error(`Error syncing channels for guild ${guild.name}`, err);
   }
 }
 
@@ -58,5 +61,5 @@ export const startChannelSyncJob = (client) => {
     syncAllGuilds(client);
   });
 
-  console.log('Channel sync job scheduled (runs every 30 minutes)');
+  logger.info('Channel sync job scheduled (runs every 30 minutes)');
 };

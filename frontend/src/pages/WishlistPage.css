@@ -425,3 +425,20 @@
     width: 100%;
   }
 }
+
+.wishlist-browse-link {
+  text-align: center;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
+}
+
+.wishlist-browse-link a {
+  color: var(--accent, #7289da);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.wishlist-browse-link a:hover {
+  text-decoration: underline;
+}

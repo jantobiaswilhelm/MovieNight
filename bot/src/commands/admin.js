@@ -2,6 +2,9 @@ import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
 import { getActiveVotingSession, getSuggestionsForSession } from '../models/index.js';
 import { buildVotingEmbed, buildVotingButtons } from '../utils/votingEmbed.js';
 import { isAdmin } from '../utils/admin.js';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('admin');
 
 export const data = new SlashCommandBuilder()
   .setName('admin')
@@ -49,7 +52,7 @@ export const execute = async (interaction) => {
         }
       }
     } catch (err) {
-      console.error('Error updating voting message:', err);
+      logger.error('Error updating voting message', err);
       return interaction.reply({
         content: 'Could not find or update the voting message.',
         ephemeral: true
@@ -62,7 +65,7 @@ export const execute = async (interaction) => {
     });
 
   } catch (err) {
-    console.error('Error showing admin controls:', err);
+    logger.error('Error showing admin controls', err);
     await interaction.reply({
       content: 'There was an error showing admin controls.',
       ephemeral: true

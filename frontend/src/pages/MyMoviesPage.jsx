@@ -1,6 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getPersonalMovies, addPersonalMovie, updatePersonalMovie, deletePersonalMovie, searchTMDB, getTMDBMovie, importLetterboxd } from '../api/client';
+import { useFetch, useModal } from '../hooks';
 import { formatDate } from '../utils/helpers';
 import './MyMoviesPage.css';
 
@@ -639,52 +641,32 @@ const ImportModal = ({ isOpen, onClose, onImported }) => {
 
 const MyMoviesPage = () => {
   const { isAuthenticated } = useAuth();
-  const [movies, setMovies] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [sort, setSort] = useState('newest');
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showImportModal, setShowImportModal] = useState(false);
-  const [editingMovie, setEditingMovie] = useState(null);
 
-  const fetchMovies = async () => {
-    setLoading(true);
-    setError(null);
+  const addModal = useModal();
+  const importModal = useModal();
 
-    try {
-      const data = await getPersonalMovies(sort);
-      setMovies(data);
-    } catch (err) {
-      setError(err.message || 'Failed to load movies');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: movies, loading, error, refetch, setData: setMovies } = useFetch(
+    () => getPersonalMovies(sort),
+    [sort, isAuthenticated],
+    { enabled: isAuthenticated, initialData: [] }
+  );
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchMovies();
-    } else {
-      setLoading(false);
-    }
-  }, [sort, isAuthenticated]);
-
-  const handleDelete = (id) => {
+  const handleDelete = useCallback((id) => {
     setMovies((prev) => prev.filter((m) => m.id !== id));
-  };
+  }, [setMovies]);
 
-  const handleEdit = (movie) => {
-    setEditingMovie(movie);
-  };
+  const handleEdit = useCallback((movie) => {
+    addModal.open(movie);
+  }, [addModal]);
 
-  const handleSave = () => {
-    fetchMovies();
-  };
+  const handleSave = useCallback(() => {
+    refetch();
+  }, [refetch]);
 
-  const handleCloseModal = () => {
-    setShowAddModal(false);
-    setEditingMovie(null);
-  };
+  const handleCloseModal = useCallback(() => {
+    addModal.close();
+  }, [addModal]);
 
   if (!isAuthenticated) {
     return (
@@ -704,13 +686,13 @@ const MyMoviesPage = () => {
         <div className="header-actions">
           <button
             className="btn-secondary import-btn"
-            onClick={() => setShowImportModal(true)}
+            onClick={() => importModal.open()}
           >
             Import from Letterboxd
           </button>
           <button
             className="btn-primary add-movie-btn"
-            onClick={() => setShowAddModal(true)}
+            onClick={() => addModal.open()}
           >
             + Add Movie
           </button>
@@ -741,13 +723,13 @@ const MyMoviesPage = () => {
           <div className="empty-actions">
             <button
               className="btn-primary"
-              onClick={() => setShowAddModal(true)}
+              onClick={() => addModal.open()}
             >
               Add Your First Movie
             </button>
             <button
               className="btn-secondary"
-              onClick={() => setShowImportModal(true)}
+              onClick={() => importModal.open()}
             >
               Import from Letterboxd
             </button>
@@ -766,16 +748,22 @@ const MyMoviesPage = () => {
         </div>
       )}
 
+      <div className="my-movies-links">
+        <Link to="/profile">My Profile</Link>
+        <Link to="/movies">All Movies</Link>
+        <Link to="/wishlist">Wishlist</Link>
+      </div>
+
       <AddEditMovieModal
-        isOpen={showAddModal || !!editingMovie}
+        isOpen={addModal.isOpen}
         onClose={handleCloseModal}
         onSave={handleSave}
-        editingMovie={editingMovie}
+        editingMovie={addModal.data}
       />
 
       <ImportModal
-        isOpen={showImportModal}
-        onClose={() => setShowImportModal(false)}
+        isOpen={importModal.isOpen}
+        onClose={importModal.close}
         onImported={handleSave}
       />
     </div>

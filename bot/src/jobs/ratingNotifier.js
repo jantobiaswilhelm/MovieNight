@@ -1,6 +1,9 @@
 import cron from 'node-cron';
 import { getMoviesReadyForRatingNotification, markRatingPromptSent } from '../models/index.js';
 import { createRatingAvailableEmbed, createRatingButtons } from '../utils/embeds.js';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('ratingNotifier');
 
 const CRON_EVERY_MINUTE = '* * * * *';
 
@@ -27,20 +30,20 @@ export const startRatingNotifierJob = (client) => {
             // Mark as sent
             await markRatingPromptSent(movie.id);
 
-            console.log(`Sent rating notification for: ${movie.title} (ID: ${movie.id})`);
+            logger.info(`Sent rating notification for: ${movie.title} (ID: ${movie.id})`);
           } else {
-            console.error(`Could not find channel ${movie.channel_id} for movie ${movie.id}`);
+            logger.error(`Could not find channel ${movie.channel_id} for movie ${movie.id}`);
             // Still mark as sent to avoid repeated failures
             await markRatingPromptSent(movie.id);
           }
         } catch (err) {
-          console.error(`Error sending rating notification for movie ${movie.id}:`, err);
+          logger.error(`Error sending rating notification for movie ${movie.id}`, err);
         }
       }
     } catch (err) {
-      console.error('Error in rating notifier job:', err);
+      logger.error('Error in rating notifier job', err);
     }
   });
 
-  console.log('Rating notifier job scheduled (runs every minute)');
+  logger.info('Rating notifier job scheduled (runs every minute)');
 };

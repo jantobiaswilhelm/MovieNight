@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { authenticateToken, optionalAuth } from '../middleware/auth.js';
-import { validateIntParams } from '../middleware/validate.js';
+import { validateIntParams, validateGuildId, parsePagination, validateDate } from '../middleware/validate.js';
 import * as db from '../models/index.js';
 import { isAdmin } from '../utils/admin.js';
 import { checkAndUnlockAchievements, checkRatingAchievements } from '../services/achievementChecker.js';
@@ -9,18 +9,10 @@ import { logRatingActivity, logAchievementActivity } from '../services/activityS
 const router = Router();
 
 // Get all movie nights (requires guild_id query param)
-router.get('/', optionalAuth, async (req, res) => {
-  const { guild_id } = req.query;
-  const limit = Math.min(Math.max(parseInt(req.query.limit) || 20, 1), 100);
-  const offset = Math.max(parseInt(req.query.offset) || 0, 0);
-
-  if (!guild_id) {
-    return res.status(400).json({ error: 'guild_id is required' });
-  }
-
+router.get('/', validateGuildId, parsePagination, optionalAuth, async (req, res) => {
   try {
     const includeTest = req.query.include_test === 'true' && req.user && isAdmin(req.user.discord_id);
-    const movies = await db.getMovieNights(guild_id, limit, offset, includeTest);
+    const movies = await db.getMovieNights(req.guildId, req.pagination.limit, req.pagination.offset, includeTest);
     res.json(movies);
   } catch (err) {
     console.error('Error fetching movies:', err);
@@ -29,16 +21,9 @@ router.get('/', optionalAuth, async (req, res) => {
 });
 
 // Get upcoming movies with attendees (must be before /:id)
-router.get('/upcoming/with-attendees', optionalAuth, async (req, res) => {
-  const { guild_id } = req.query;
-  const limit = Math.min(Math.max(parseInt(req.query.limit) || 10, 1), 100);
-
-  if (!guild_id) {
-    return res.status(400).json({ error: 'guild_id is required' });
-  }
-
+router.get('/upcoming/with-attendees', validateGuildId, parsePagination, optionalAuth, async (req, res) => {
   try {
-    const movies = await db.getUpcomingMoviesWithAttendees(guild_id, limit);
+    const movies = await db.getUpcomingMoviesWithAttendees(req.guildId, req.pagination.limit);
     res.json(movies);
   } catch (err) {
     console.error('Error fetching upcoming movies:', err);
@@ -47,15 +32,9 @@ router.get('/upcoming/with-attendees', optionalAuth, async (req, res) => {
 });
 
 // Get next movie with attendees (for homepage hero) (must be before /:id)
-router.get('/next/with-attendees', optionalAuth, async (req, res) => {
-  const { guild_id } = req.query;
-
-  if (!guild_id) {
-    return res.status(400).json({ error: 'guild_id is required' });
-  }
-
+router.get('/next/with-attendees', validateGuildId, optionalAuth, async (req, res) => {
   try {
-    const movie = await db.getNextMovieWithAttendees(guild_id);
+    const movie = await db.getNextMovieWithAttendees(req.guildId);
 
     let isAttending = false;
     if (req.user && movie) {
@@ -70,20 +49,16 @@ router.get('/next/with-attendees', optionalAuth, async (req, res) => {
 });
 
 // Announce movie directly (creates pending announcement for bot)
-router.post('/announce', authenticateToken, async (req, res) => {
+router.post('/announce', authenticateToken, validateGuildId, validateDate('scheduled_at'), async (req, res) => {
   if (!isAdmin(req.user.discord_id)) {
     return res.status(403).json({ error: 'Only admins can announce movies' });
   }
 
-  const { tmdb_data, scheduled_at, guild_id } = req.body;
+  const { tmdb_data } = req.body;
+  const scheduledDate = req.validatedDates.scheduled_at;
 
-  if (!tmdb_data || !scheduled_at || !guild_id) {
-    return res.status(400).json({ error: 'tmdb_data, scheduled_at, and guild_id are required' });
-  }
-
-  const scheduledDate = new Date(scheduled_at);
-  if (isNaN(scheduledDate.getTime())) {
-    return res.status(400).json({ error: 'Invalid scheduled_at date' });
+  if (!tmdb_data) {
+    return res.status(400).json({ error: 'tmdb_data is required' });
   }
 
   if (scheduledDate <= new Date()) {
@@ -92,13 +67,13 @@ router.post('/announce', authenticateToken, async (req, res) => {
 
   try {
     // Check test mode settings
-    const settings = await db.getGuildSettings(guild_id);
+    const settings = await db.getGuildSettings(req.guildId);
     const isTest = settings.test_mode === true;
     const channelId = isTest ? settings.test_channel_id : null;
 
     // Create pending announcement with TMDB data
     const announcement = await db.createPendingAnnouncement({
-      guildId: guild_id,
+      guildId: req.guildId,
       channelId, // Test channel or null (bot uses default)
       userId: req.user.id,
       wishlistId: null, // Not from wishlist

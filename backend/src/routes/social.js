@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { authenticateToken, optionalAuth } from '../middleware/auth.js';
+import { validateGuildId, parsePagination } from '../middleware/validate.js';
 import * as db from '../models/index.js';
 import { notifyNewFollower } from '../services/notificationService.js';
 
@@ -10,9 +11,9 @@ const router = Router();
 // ============================================
 
 // Get current user's followers
-router.get('/followers', authenticateToken, async (req, res) => {
+router.get('/followers', authenticateToken, parsePagination, async (req, res) => {
   try {
-    const followers = await db.getFollowers(req.user.id);
+    const followers = await db.getFollowers(req.user.id, req.pagination.limit, req.pagination.offset);
     res.json(followers);
   } catch (err) {
     console.error('Error fetching followers:', err);
@@ -21,9 +22,9 @@ router.get('/followers', authenticateToken, async (req, res) => {
 });
 
 // Get current user's following
-router.get('/following', authenticateToken, async (req, res) => {
+router.get('/following', authenticateToken, parsePagination, async (req, res) => {
   try {
-    const following = await db.getFollowing(req.user.id);
+    const following = await db.getFollowing(req.user.id, req.pagination.limit, req.pagination.offset);
     res.json(following);
   } catch (err) {
     console.error('Error fetching following:', err);
@@ -96,17 +97,9 @@ router.get('/following/:userId', authenticateToken, async (req, res) => {
 // ============================================
 
 // Get activity feed (from followed users)
-router.get('/feed', authenticateToken, async (req, res) => {
-  const { guild_id } = req.query;
-  const limit = Math.min(Math.max(parseInt(req.query.limit) || 20, 1), 100);
-  const offset = Math.max(parseInt(req.query.offset) || 0, 0);
-
-  if (!guild_id) {
-    return res.status(400).json({ error: 'guild_id is required' });
-  }
-
+router.get('/feed', authenticateToken, validateGuildId, parsePagination, async (req, res) => {
   try {
-    const activities = await db.getActivityFeed(req.user.id, guild_id, limit, offset);
+    const activities = await db.getActivityFeed(req.user.id, req.guildId, req.pagination.limit, req.pagination.offset);
     res.json(activities);
   } catch (err) {
     console.error('Error fetching activity feed:', err);
@@ -115,12 +108,11 @@ router.get('/feed', authenticateToken, async (req, res) => {
 });
 
 // Get a specific user's activity
-router.get('/activity/:userId', async (req, res) => {
+router.get('/activity/:userId', parsePagination, async (req, res) => {
   const { userId } = req.params;
-  const limit = Math.min(Math.max(parseInt(req.query.limit) || 20, 1), 100);
 
   try {
-    const activities = await db.getUserActivity(parseInt(userId), limit);
+    const activities = await db.getUserActivity(parseInt(userId), req.pagination.limit);
     res.json(activities);
   } catch (err) {
     console.error('Error fetching user activity:', err);
@@ -133,15 +125,9 @@ router.get('/activity/:userId', async (req, res) => {
 // ============================================
 
 // Get all shared wishlists for a guild
-router.get('/wishlists', async (req, res) => {
-  const { guild_id } = req.query;
-
-  if (!guild_id) {
-    return res.status(400).json({ error: 'guild_id is required' });
-  }
-
+router.get('/wishlists', validateGuildId, parsePagination, async (req, res) => {
   try {
-    const wishlists = await db.getSharedWishlists(guild_id);
+    const wishlists = await db.getSharedWishlists(req.guildId, req.pagination.limit, req.pagination.offset);
     res.json(wishlists);
   } catch (err) {
     console.error('Error fetching shared wishlists:', err);

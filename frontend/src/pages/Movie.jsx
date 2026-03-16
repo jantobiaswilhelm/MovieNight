@@ -3,11 +3,10 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getMovie, submitRating, getMyRating, deleteMovie, getSimilarMovies, toggleAttendance, getMovieCredits } from '../api/client';
 import { sanitizeUrl, sanitizeImdbId, sanitizeImageUrl } from '../utils/sanitizeUrl';
-import { formatDate, formatRuntime, getLanguageName } from '../utils/helpers';
-import RatingInput from '../components/RatingInput';
-import StarRating from '../components/StarRating';
-import RatingReactions from '../components/RatingReactions';
-import QuickAddToWishlist from '../components/QuickAddToWishlist';
+import { formatDate, formatRuntime, getLanguageName, getAvatarUrl } from '../utils/helpers';
+import { StarRating } from '../components/common';
+import { RatingInput, RatingReactions } from '../components/rating';
+import { QuickAddToWishlist } from '../components/wishlist';
 import './Movie.css';
 
 const Movie = () => {
@@ -234,7 +233,7 @@ const Movie = () => {
           )}
 
           {movie.collection_name && (
-            <p className="movie-collection">Part of the <strong>{movie.collection_name}</strong></p>
+            <p className="movie-collection">Part of the <Link to={`/collections/${encodeURIComponent(movie.collection_name)}`}><strong>{movie.collection_name}</strong></Link></p>
           )}
 
           <div className="movie-ratings-row">
@@ -303,10 +302,7 @@ const Movie = () => {
                   {movie.attendees.map((attendee) => (
                     <div key={attendee.discord_id} className="movie-attendee">
                       <img
-                        src={attendee.avatar
-                          ? `https://cdn.discordapp.com/avatars/${attendee.discord_id}/${attendee.avatar}.png?size=64`
-                          : `https://cdn.discordapp.com/embed/avatars/${parseInt(attendee.discord_id) % 5}.png`
-                        }
+                        src={getAvatarUrl(attendee.discord_id, attendee.avatar)}
                         alt={attendee.username}
                         className="movie-attendee-avatar"
                         loading="lazy"
@@ -439,14 +435,12 @@ const Movie = () => {
               <div key={rating.id} className="rating-item-container">
                 <Link to={`/user/${rating.user_id}`} className="rating-item">
                   <div className="rating-user">
-                    {rating.avatar && (
-                      <img
-                        src={`https://cdn.discordapp.com/avatars/${rating.discord_id}/${rating.avatar}.png`}
-                        alt={rating.username}
-                        className="rating-avatar"
-                        loading="lazy"
-                      />
-                    )}
+                    <img
+                      src={getAvatarUrl(rating.discord_id, rating.avatar)}
+                      alt={rating.username}
+                      className="rating-avatar"
+                      loading="lazy"
+                    />
                     <span>{rating.username}</span>
                   </div>
                   <div className="rating-score">{parseFloat(rating.score).toFixed(1)}/10</div>

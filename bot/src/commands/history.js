@@ -1,6 +1,9 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { getMovieNights } from '../models/index.js';
 import { createHistoryEmbed } from '../utils/embeds.js';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('history');
 
 export const data = new SlashCommandBuilder()
   .setName('history')
@@ -21,7 +24,7 @@ export const execute = async (interaction) => {
 
     await interaction.reply({ embeds: [embed] });
   } catch (err) {
-    console.error('Error fetching history:', err);
+    logger.error('Error fetching history', err);
     await interaction.reply({
       content: 'There was an error fetching movie history.',
       ephemeral: true

@@ -1,6 +1,9 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { getUserTopRatedMovies, findOrCreateUser } from '../models/index.js';
 import { createTop10Embed } from '../utils/embeds.js';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('top10');
 
 export const data = new SlashCommandBuilder()
   .setName('top10')
@@ -27,7 +30,7 @@ export const execute = async (interaction) => {
 
     await interaction.reply({ embeds: [embed] });
   } catch (err) {
-    console.error('Error fetching top 10:', err);
+    logger.error('Error fetching top 10', err);
     await interaction.reply({
       content: 'There was an error fetching the top 10 movies.',
       ephemeral: true

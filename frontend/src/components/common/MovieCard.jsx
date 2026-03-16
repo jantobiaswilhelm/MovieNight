@@ -1,0 +1,129 @@
+import { memo } from 'react';
+import { Link } from 'react-router-dom';
+import StarRating from './StarRating';
+import { formatDate, getAvatarUrl } from '../../utils/helpers';
+import './MovieCard.css';
+
+const MovieCard = memo(({ movie, variant = 'horizontal', attendees = null }) => {
+  const avgRating = parseFloat(movie.avg_rating) || 0;
+  const isUpcoming = new Date(movie.scheduled_at) > new Date();
+
+  if (variant === 'poster') {
+    return (
+      <Link to={`/movie/${movie.id}`} className="movie-card movie-card--poster">
+        <div className="poster-container">
+          {movie.image_url ? (
+            <img src={movie.image_url} alt={movie.title} className="movie-poster" loading="lazy" />
+          ) : (
+            <div className="movie-poster-placeholder">
+              <span>No Image</span>
+            </div>
+          )}
+          <div className="poster-overlay">
+            <h3 className="movie-title">{movie.title}</h3>
+            <p className="movie-date">{formatDate(movie.scheduled_at)}</p>
+          </div>
+          {avgRating > 0 && (
+            <div className="rating-badge">
+              <span className="rating-badge-value">{avgRating.toFixed(1)}</span>
+            </div>
+          )}
+          {isUpcoming && (
+            <div className="upcoming-badge">Upcoming</div>
+          )}
+          {movie.is_test && (
+            <div className="test-badge">TEST</div>
+          )}
+        </div>
+      </Link>
+    );
+  }
+
+  if (variant === 'compact') {
+    const movieAttendees = attendees || movie.attendees;
+    return (
+      <Link to={`/movie/${movie.id}`} className="movie-card movie-card--compact">
+        {movie.image_url && (
+          <img src={movie.image_url} alt={movie.title} className="movie-poster-small" loading="lazy" />
+        )}
+        <div className="movie-info-compact">
+          <h3 className="movie-title">
+            {movie.is_test && <span className="test-badge-inline">TEST</span>}
+            {movie.title}
+          </h3>
+          <p className="movie-date">{formatDate(movie.scheduled_at)}</p>
+          {movieAttendees && movieAttendees.length > 0 && (
+            <div className="compact-attendees">
+              <div className="compact-attendee-avatars">
+                {movieAttendees.slice(0, 4).map((attendee) => (
+                  <img
+                    key={attendee.discord_id}
+                    src={getAvatarUrl(attendee.discord_id, attendee.avatar)}
+                    alt={attendee.username}
+                    title={attendee.username}
+                    className="compact-attendee-avatar"
+                    loading="lazy"
+                  />
+                ))}
+                {movieAttendees.length > 4 && (
+                  <span className="compact-attendee-overflow">+{movieAttendees.length - 4}</span>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+        {avgRating > 0 && (
+          <div className="movie-rating-compact">
+            <StarRating rating={avgRating} size="small" showValue={false} />
+          </div>
+        )}
+      </Link>
+    );
+  }
+
+  return (
+    <Link to={`/movie/${movie.id}`} className="movie-card movie-card--horizontal">
+      <div className="poster-container">
+        {movie.image_url ? (
+          <img src={movie.image_url} alt={movie.title} className="movie-poster" loading="lazy" />
+        ) : (
+          <div className="movie-poster-placeholder">
+            <span>No Image</span>
+          </div>
+        )}
+        {avgRating > 0 && (
+          <div className="rating-badge rating-badge--small">
+            <span className="rating-badge-value">{avgRating.toFixed(1)}</span>
+          </div>
+        )}
+      </div>
+
+      <div className="movie-info">
+        <h3 className="movie-title">
+          {movie.is_test && <span className="test-badge-inline">TEST</span>}
+          {movie.title}
+        </h3>
+        <p className="movie-date">{formatDate(movie.scheduled_at)}</p>
+
+        <div className="movie-rating">
+          {avgRating > 0 ? (
+            <StarRating rating={avgRating} size="small" showValue={false} />
+          ) : (
+            <span className="no-ratings">No ratings yet</span>
+          )}
+          {movie.rating_count > 0 && (
+            <span className="rating-count">{movie.rating_count} votes</span>
+          )}
+        </div>
+
+        {movie.announced_by_name && (
+          <p className="movie-announcer">
+            Picked by {movie.announced_by_name}
+          </p>
+        )}
+      </div>
+    </Link>
+  );
+});
+
+export default MovieCard;

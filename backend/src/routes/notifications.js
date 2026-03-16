@@ -1,17 +1,14 @@
 import { Router } from 'express';
 import { authenticateToken } from '../middleware/auth.js';
-import { validateIntParams } from '../middleware/validate.js';
+import { validateIntParams, parsePagination } from '../middleware/validate.js';
 import * as db from '../models/index.js';
 
 const router = Router();
 
 // Get current user's notifications
-router.get('/', authenticateToken, async (req, res) => {
-  const limit = Math.min(Math.max(parseInt(req.query.limit) || 20, 1), 100);
-  const offset = Math.max(parseInt(req.query.offset) || 0, 0);
-
+router.get('/', authenticateToken, parsePagination, async (req, res) => {
   try {
-    const notifications = await db.getUserNotifications(req.user.id, limit, offset);
+    const notifications = await db.getUserNotifications(req.user.id, req.pagination.limit, req.pagination.offset);
     res.json(notifications);
   } catch (err) {
     console.error('Error fetching notifications:', err);

@@ -3,6 +3,9 @@ import { REST, Routes } from 'discord.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createLogger } from './utils/logger.js';
+
+const logger = createLogger('deploy-commands');
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -17,7 +20,7 @@ for (const file of commandFiles) {
   if ('data' in command && 'execute' in command) {
     commands.push(command.data.toJSON());
   } else {
-    console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
+    logger.warn(`The command at ${filePath} is missing a required "data" or "execute" property.`);
   }
 }
 
@@ -25,7 +28,7 @@ const rest = new REST().setToken(process.env.DISCORD_TOKEN);
 
 (async () => {
   try {
-    console.log(`Started refreshing ${commands.length} application (/) commands.`);
+    logger.info(`Started refreshing ${commands.length} application (/) commands.`);
 
     let data;
 
@@ -35,16 +38,16 @@ const rest = new REST().setToken(process.env.DISCORD_TOKEN);
         Routes.applicationGuildCommands(process.env.DISCORD_CLIENT_ID, process.env.GUILD_ID),
         { body: commands }
       );
-      console.log(`Successfully reloaded ${data.length} guild commands.`);
+      logger.info(`Successfully reloaded ${data.length} guild commands.`);
     } else {
       // Deploy globally
       data = await rest.put(
         Routes.applicationCommands(process.env.DISCORD_CLIENT_ID),
         { body: commands }
       );
-      console.log(`Successfully reloaded ${data.length} global commands.`);
+      logger.info(`Successfully reloaded ${data.length} global commands.`);
     }
   } catch (error) {
-    console.error(error);
+    logger.error('Failed to deploy commands', error);
   }
 })();

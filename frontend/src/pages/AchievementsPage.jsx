@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getMyAchievements } from '../api/client';
+import { useFetch } from '../hooks';
 import './AchievementsPage.css';
 
 const ICONS = {
@@ -24,28 +25,12 @@ const CATEGORY_ORDER = ['ratings', 'streaks', 'watchtime', 'collections', 'speci
 
 const AchievementsPage = () => {
   const { isAuthenticated } = useAuth();
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchAchievements();
-    } else {
-      setLoading(false);
-    }
-  }, [isAuthenticated]);
-
-  const fetchAchievements = async () => {
-    try {
-      const result = await getMyAchievements();
-      setData(result);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data, loading, error } = useFetch(
+    () => getMyAchievements(),
+    [isAuthenticated],
+    { enabled: isAuthenticated }
+  );
 
   if (loading) {
     return <div className="loading">Loading achievements...</div>;
@@ -113,6 +98,12 @@ const AchievementsPage = () => {
             <span className="summary-label">Current Streak</span>
           </div>
         )}
+      </div>
+
+      {/* Quick Links */}
+      <div className="achievements-links">
+        <Link to="/stats" className="achievements-link">View Statistics</Link>
+        <Link to="/profile" className="achievements-link">My Profile</Link>
       </div>
 
       {/* Current Progress */}

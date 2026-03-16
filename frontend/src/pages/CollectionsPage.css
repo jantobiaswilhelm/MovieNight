@@ -1,3 +1,22 @@
+.collections-breadcrumb {
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.7;
+}
+
+.collections-breadcrumb a {
+  color: var(--accent, #7289da);
+  text-decoration: none;
+}
+
+.collections-breadcrumb a:hover {
+  text-decoration: underline;
+}
+
+.collections-breadcrumb span {
+  margin: 0 0.3rem;
+}
+
 .collections-page {
   padding: 1rem 0;
   animation: fadeIn 0.4s ease-out;

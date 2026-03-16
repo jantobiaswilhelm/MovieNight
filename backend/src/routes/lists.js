@@ -1,14 +1,15 @@
 import { Router } from 'express';
 import { authenticateToken, optionalAuth } from '../middleware/auth.js';
+import { validateGuildId, parsePagination } from '../middleware/validate.js';
 import * as db from '../models/index.js';
 import { logListCreatedActivity } from '../services/activityService.js';
 
 const router = Router();
 
 // Get current user's lists
-router.get('/me', authenticateToken, async (req, res) => {
+router.get('/me', authenticateToken, parsePagination, async (req, res) => {
   try {
-    const lists = await db.getUserLists(req.user.id);
+    const lists = await db.getUserLists(req.user.id, req.pagination.limit, req.pagination.offset);
     res.json(lists);
   } catch (err) {
     console.error('Error fetching user lists:', err);
@@ -17,15 +18,9 @@ router.get('/me', authenticateToken, async (req, res) => {
 });
 
 // Get public lists for a guild
-router.get('/public', async (req, res) => {
-  const { guild_id } = req.query;
-
-  if (!guild_id) {
-    return res.status(400).json({ error: 'guild_id is required' });
-  }
-
+router.get('/public', validateGuildId, parsePagination, async (req, res) => {
   try {
-    const lists = await db.getPublicLists(guild_id);
+    const lists = await db.getPublicLists(req.guildId, req.pagination.limit, req.pagination.offset);
     res.json(lists);
   } catch (err) {
     console.error('Error fetching public lists:', err);
@@ -34,11 +29,11 @@ router.get('/public', async (req, res) => {
 });
 
 // Create a new list
-router.post('/', authenticateToken, async (req, res) => {
-  const { name, description, is_public, guild_id } = req.body;
+router.post('/', authenticateToken, validateGuildId, async (req, res) => {
+  const { name, description, is_public } = req.body;
 
-  if (!name || !guild_id) {
-    return res.status(400).json({ error: 'name and guild_id are required' });
+  if (!name) {
+    return res.status(400).json({ error: 'name is required' });
   }
 
   if (name.length > 100) {
@@ -48,7 +43,7 @@ router.post('/', authenticateToken, async (req, res) => {
   try {
     const list = await db.createCustomList(
       req.user.id,
-      guild_id,
+      req.guildId,
       name,
       description || null,
       is_public !== false
@@ -56,7 +51,7 @@ router.post('/', authenticateToken, async (req, res) => {
 
     // Log activity
     try {
-      await logListCreatedActivity(req.user.id, guild_id, list.id, name);
+      await logListCreatedActivity(req.user.id, req.guildId, list.id, name);
     } catch (activityErr) {
       console.error('Error logging activity:', activityErr);
     }

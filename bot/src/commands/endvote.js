@@ -10,6 +10,10 @@ import {
 } from '../models/index.js';
 import { createAnnouncementEmbed } from '../utils/embeds.js';
 import { isAdmin } from '../utils/admin.js';
+import { parseDateTime } from '../utils/dateTime.js';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('endvote');
 
 export const data = new SlashCommandBuilder()
   .setName('endvote')
@@ -132,7 +136,7 @@ export const execute = async (interaction) => {
     // (handled by the movieStarter scheduled job)
 
   } catch (err) {
-    console.error('Error ending vote:', err);
+    logger.error('Error ending vote', err);
     await interaction.reply({
       content: 'There was an error ending the voting session.',
       ephemeral: true
@@ -140,74 +144,3 @@ export const execute = async (interaction) => {
   }
 };
 
-function parseDateTime(str) {
-  let date = new Date(str);
-  if (!isNaN(date.getTime())) {
-    return date;
-  }
-
-  const now = new Date();
-
-  const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-  const lowerStr = str.toLowerCase();
-
-  for (let i = 0; i < days.length; i++) {
-    if (lowerStr.includes(days[i])) {
-      date = new Date(now);
-      const currentDay = date.getDay();
-      let daysUntil = i - currentDay;
-      if (daysUntil <= 0) daysUntil += 7;
-      date.setDate(date.getDate() + daysUntil);
-
-      const timeMatch = str.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i);
-      if (timeMatch) {
-        let hours = parseInt(timeMatch[1]);
-        const minutes = parseInt(timeMatch[2]) || 0;
-        const period = timeMatch[3];
-
-        if (period?.toLowerCase() === 'pm' && hours < 12) hours += 12;
-        if (period?.toLowerCase() === 'am' && hours === 12) hours = 0;
-
-        date.setHours(hours, minutes, 0, 0);
-      }
-      return date;
-    }
-  }
-
-  if (lowerStr.includes('tomorrow')) {
-    date = new Date(now);
-    date.setDate(date.getDate() + 1);
-
-    const timeMatch = str.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i);
-    if (timeMatch) {
-      let hours = parseInt(timeMatch[1]);
-      const minutes = parseInt(timeMatch[2]) || 0;
-      const period = timeMatch[3];
-
-      if (period?.toLowerCase() === 'pm' && hours < 12) hours += 12;
-      if (period?.toLowerCase() === 'am' && hours === 12) hours = 0;
-
-      date.setHours(hours, minutes, 0, 0);
-    }
-    return date;
-  }
-
-  if (lowerStr.includes('today')) {
-    date = new Date(now);
-
-    const timeMatch = str.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i);
-    if (timeMatch) {
-      let hours = parseInt(timeMatch[1]);
-      const minutes = parseInt(timeMatch[2]) || 0;
-      const period = timeMatch[3];
-
-      if (period?.toLowerCase() === 'pm' && hours < 12) hours += 12;
-      if (period?.toLowerCase() === 'am' && hours === 12) hours = 0;
-
-      date.setHours(hours, minutes, 0, 0);
-    }
-    return date;
-  }
-
-  return new Date(str);
-}

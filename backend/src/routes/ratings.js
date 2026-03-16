@@ -1,17 +1,16 @@
 import { Router } from 'express';
 import { authenticateToken } from '../middleware/auth.js';
-import { validateIntParams } from '../middleware/validate.js';
+import { validateIntParams, parsePagination } from '../middleware/validate.js';
 import * as db from '../models/index.js';
 
 const router = Router();
 
 // Get user's rating history
-router.get('/user/:userId', validateIntParams('userId'), async (req, res) => {
+router.get('/user/:userId', validateIntParams('userId'), parsePagination, async (req, res) => {
   const { userId } = req.params;
-  const limit = Math.min(Math.max(parseInt(req.query.limit) || 20, 1), 100);
 
   try {
-    const ratings = await db.getUserRatings(parseInt(userId), limit);
+    const ratings = await db.getUserRatings(parseInt(userId), req.pagination.limit);
     res.json(ratings);
   } catch (err) {
     console.error('Error fetching user ratings:', err);
@@ -20,11 +19,9 @@ router.get('/user/:userId', validateIntParams('userId'), async (req, res) => {
 });
 
 // Get current user's ratings
-router.get('/me', authenticateToken, async (req, res) => {
-  const limit = Math.min(Math.max(parseInt(req.query.limit) || 20, 1), 100);
-
+router.get('/me', authenticateToken, parsePagination, async (req, res) => {
   try {
-    const ratings = await db.getUserRatings(req.user.id, limit);
+    const ratings = await db.getUserRatings(req.user.id, req.pagination.limit);
     res.json(ratings);
   } catch (err) {
     console.error('Error fetching ratings:', err);

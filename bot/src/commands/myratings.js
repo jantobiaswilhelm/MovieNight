@@ -1,6 +1,9 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { getUserRatings } from '../models/index.js';
 import { createMyRatingsEmbed } from '../utils/embeds.js';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('myratings');
 
 export const data = new SlashCommandBuilder()
   .setName('myratings')
@@ -13,7 +16,7 @@ export const execute = async (interaction) => {
 
     await interaction.reply({ embeds: [embed], ephemeral: true });
   } catch (err) {
-    console.error('Error fetching ratings:', err);
+    logger.error('Error fetching ratings', err);
     await interaction.reply({
       content: 'There was an error fetching your ratings.',
       ephemeral: true

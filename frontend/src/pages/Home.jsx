@@ -1,159 +1,51 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { sanitizeUrl, sanitizeImdbId, sanitizeImageUrl } from '../utils/sanitizeUrl';
-import { formatDate } from '../utils/helpers';
+import { sanitizeImageUrl } from '../utils/sanitizeUrl';
 import {
   getMovies,
   getActiveVoting,
-  castVote,
-  deleteSuggestion,
-  createVotingSession,
-  closeVotingSession,
-  deleteVotingSession,
-  submitSuggestion,
-  searchTMDB,
-  getTMDBMovie,
   getNextMovieWithAttendees,
-  getUpcomingMoviesWithAttendees,
-  toggleAttendance,
-  announceMovie,
-  getGuildChannels,
-  getGuildSettings,
-  updateGuildSettings,
-  deleteTestMovies
+  getUpcomingMoviesWithAttendees
 } from '../api/client';
-import MovieCard from '../components/MovieCard';
-import StarRating from '../components/StarRating';
-import UsersSection from '../components/UsersSection';
-import CommentsTicker from '../components/CommentsTicker';
-import { MovieCardSkeleton } from '../components/Skeleton';
+import { StarRating, MovieCard, MovieCardSkeleton } from '../components/common';
+import { AdminSettingsPanel, AnnounceFlow, NextMovieHero, VotingSection, CommentsTicker, UsersSection, ExploreSection } from '../components/home';
 import './Home.css';
 
 const Home = () => {
-  const { isAuthenticated, isAdmin, login } = useAuth();
+  const { isAuthenticated, isAdmin } = useAuth();
   const [movies, setMovies] = useState([]);
   const [voting, setVoting] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [votingLoading, setVotingLoading] = useState(false);
-  const [deletingSuggestion, setDeletingSuggestion] = useState(null);
-
-  // Voting management state
-  const [showStartVoteModal, setShowStartVoteModal] = useState(false);
-  const [showAddMovieModal, setShowAddMovieModal] = useState(false);
-  const [voteDate, setVoteDate] = useState(new Date().toISOString().split('T')[0]);
-  const [voteTime, setVoteTime] = useState('20:00');
-  const [creatingVote, setCreatingVote] = useState(false);
-  const [endingVote, setEndingVote] = useState(false);
-  const [confirmAction, setConfirmAction] = useState(null); // 'end' | 'cancel' | null
-
-  // Movie search state
-  const [movieSearch, setMovieSearch] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-  const [searching, setSearching] = useState(false);
-  const [addingMovie, setAddingMovie] = useState(null);
-
-  // Vote result state
-  const [voteResult, setVoteResult] = useState(null);
-  const [showVoteResultModal, setShowVoteResultModal] = useState(false);
-
-  // Next movie with attendees
   const [nextMovieWithAttendees, setNextMovieWithAttendees] = useState(null);
   const [upcomingWithAttendees, setUpcomingWithAttendees] = useState([]);
-  const [togglingAttendance, setTogglingAttendance] = useState(false);
 
-  // Direct announcement state
-  const [announceStep, setAnnounceStep] = useState('button'); // 'button' | 'search' | 'preview' | 'schedule' | 'success'
-  const [selectedAnnounceMovie, setSelectedAnnounceMovie] = useState(null);
-  const [announceSearch, setAnnounceSearch] = useState('');
-  const [announceResults, setAnnounceResults] = useState([]);
-  const [announceSearching, setAnnounceSearching] = useState(false);
-  const [announceDate, setAnnounceDate] = useState(new Date().toISOString().split('T')[0]);
-  const [announceTime, setAnnounceTime] = useState('20:00');
-  const [announcing, setAnnouncing] = useState(false);
-  const [announceError, setAnnounceError] = useState(null);
-  const [announcedMovieTitle, setAnnouncedMovieTitle] = useState('');
-
-  // Admin settings state
-  const [showAdminSettings, setShowAdminSettings] = useState(false);
-  const [testMode, setTestMode] = useState(false);
-  const [testChannelId, setTestChannelId] = useState('');
-  const [channels, setChannels] = useState([]);
-  const [testMovieCount, setTestMovieCount] = useState(0);
-  const [savingSettings, setSavingSettings] = useState(false);
-  const [deletingTestMovies, setDeletingTestMovies] = useState(false);
-  const [settingsLoaded, setSettingsLoaded] = useState(false);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [moviesData, votingData, nextMovieData, upcomingData] = await Promise.all([
-          getMovies(100, 0),
-          getActiveVoting().catch(() => null),
-          getNextMovieWithAttendees().catch(() => null),
-          getUpcomingMoviesWithAttendees(5).catch(() => [])
-        ]);
-        setMovies(moviesData);
-        setVoting(votingData);
-        setNextMovieWithAttendees(nextMovieData);
-        setUpcomingWithAttendees(upcomingData);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
+  const fetchData = useCallback(async () => {
+    try {
+      const [moviesData, votingData, nextMovieData, upcomingData] = await Promise.all([
+        getMovies(100, 0),
+        getActiveVoting().catch(() => null),
+        getNextMovieWithAttendees().catch(() => null),
+        getUpcomingMoviesWithAttendees(5).catch(() => [])
+      ]);
+      setMovies(moviesData);
+      setVoting(votingData);
+      setNextMovieWithAttendees(nextMovieData);
+      setUpcomingWithAttendees(upcomingData);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  // Load admin settings when panel is toggled open
   useEffect(() => {
-    if (!showAdminSettings || !isAdmin || settingsLoaded) return;
+    fetchData();
+  }, [fetchData]);
 
-    const loadAdminSettings = async () => {
-      try {
-        const [channelsData, settingsData] = await Promise.all([
-          getGuildChannels(),
-          getGuildSettings()
-        ]);
-        setChannels(channelsData);
-        setTestMode(settingsData.test_mode || false);
-        setTestChannelId(settingsData.test_channel_id || '');
-        setTestMovieCount(settingsData.test_movie_count || 0);
-        setSettingsLoaded(true);
-      } catch (err) {
-        console.error('Error loading admin settings:', err);
-      }
-    };
-
-    loadAdminSettings();
-  }, [showAdminSettings, isAdmin, settingsLoaded]);
-
-  const handleSaveSettings = async () => {
-    setSavingSettings(true);
+  const handleDataRefresh = useCallback(async () => {
     try {
-      await updateGuildSettings({
-        test_mode: testMode,
-        test_channel_id: testChannelId || null
-      });
-    } catch (err) {
-      console.error('Error saving settings:', err);
-      alert('Failed to save settings');
-    } finally {
-      setSavingSettings(false);
-    }
-  };
-
-  const handleDeleteTestMovies = async () => {
-    if (!confirm(`Delete all ${testMovieCount} test movies? This cannot be undone.`)) return;
-
-    setDeletingTestMovies(true);
-    try {
-      const result = await deleteTestMovies();
-      setTestMovieCount(0);
-      // Refresh movie data
       const [moviesData, nextMovieData, upcomingData] = await Promise.all([
         getMovies(100, 0),
         getNextMovieWithAttendees().catch(() => null),
@@ -163,282 +55,12 @@ const Home = () => {
       setNextMovieWithAttendees(nextMovieData);
       setUpcomingWithAttendees(upcomingData);
     } catch (err) {
-      console.error('Error deleting test movies:', err);
-      alert('Failed to delete test movies');
-    } finally {
-      setDeletingTestMovies(false);
+      console.error('Error refreshing data:', err);
     }
-  };
+  }, []);
 
-  const handleVote = async (suggestionId) => {
-    if (!isAuthenticated) return;
-
-    setVotingLoading(true);
-    try {
-      await castVote(suggestionId);
-      // Refresh voting data
-      const votingData = await getActiveVoting();
-      setVoting(votingData);
-    } catch (err) {
-      console.error('Error voting:', err);
-    } finally {
-      setVotingLoading(false);
-    }
-  };
-
-  const handleDeleteSuggestion = async (e, suggestionId, suggestionTitle) => {
-    e.stopPropagation();
-
-    if (!confirm(`Delete suggestion "${suggestionTitle}"?`)) {
-      return;
-    }
-
-    setDeletingSuggestion(suggestionId);
-    try {
-      await deleteSuggestion(suggestionId);
-      // Refresh voting data
-      const votingData = await getActiveVoting();
-      setVoting(votingData);
-    } catch (err) {
-      console.error('Error deleting suggestion:', err);
-      alert('Failed to delete suggestion');
-    } finally {
-      setDeletingSuggestion(null);
-    }
-  };
-
-  const handleStartVote = async (e) => {
-    e.preventDefault();
-    if (!voteDate) {
-      alert('Please select a date');
-      return;
-    }
-
-    setCreatingVote(true);
-    try {
-      const scheduledAt = new Date(`${voteDate}T${voteTime}`);
-      await createVotingSession(scheduledAt.toISOString());
-      const votingData = await getActiveVoting();
-      setVoting(votingData);
-      setShowStartVoteModal(false);
-      setVoteDate('');
-      setVoteTime('20:00');
-    } catch (err) {
-      console.error('Error creating vote:', err);
-      alert('Failed to create vote: ' + err.message);
-    } finally {
-      setCreatingVote(false);
-    }
-  };
-
-  const handleEndVote = async () => {
-    if (!voting) return;
-
-    setEndingVote(true);
-    setConfirmAction(null);
-    try {
-      const result = await closeVotingSession(voting.id, true);
-
-      // Show the result modal with winner info
-      if (result.winner) {
-        setVoteResult(result);
-        setShowVoteResultModal(true);
-      }
-
-      // Refresh all data
-      const [votingData, moviesData, nextMovieData, upcomingData] = await Promise.all([
-        getActiveVoting().catch(() => null),
-        getMovies(100, 0),
-        getNextMovieWithAttendees().catch(() => null),
-        getUpcomingMoviesWithAttendees(5).catch(() => [])
-      ]);
-
-      setVoting(votingData);
-      setMovies(moviesData);
-      setNextMovieWithAttendees(nextMovieData);
-      setUpcomingWithAttendees(upcomingData);
-    } catch (err) {
-      console.error('Error ending vote:', err);
-      setConfirmAction(null);
-    } finally {
-      setEndingVote(false);
-    }
-  };
-
-  const handleCancelVote = async () => {
-    if (!voting) return;
-
-    setEndingVote(true);
-    setConfirmAction(null);
-    try {
-      await deleteVotingSession(voting.id);
-      setVoting(null);
-    } catch (err) {
-      console.error('Error canceling vote:', err);
-      alert('Failed to cancel vote: ' + err.message);
-    } finally {
-      setEndingVote(false);
-    }
-  };
-
-  const handleSearchMovies = async (e) => {
-    e.preventDefault();
-    if (!movieSearch.trim()) return;
-
-    setSearching(true);
-    try {
-      const results = await searchTMDB(movieSearch);
-      setSearchResults(results);
-    } catch (err) {
-      console.error('Error searching movies:', err);
-      alert('Failed to search movies');
-    } finally {
-      setSearching(false);
-    }
-  };
-
-  const handleToggleAttendance = async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!isAuthenticated || !nextMovieWithAttendees) return;
-
-    setTogglingAttendance(true);
-    try {
-      const result = await toggleAttendance(nextMovieWithAttendees.id);
-      setNextMovieWithAttendees(prev => ({
-        ...prev,
-        attendees: result.attendees,
-        is_attending: result.attending
-      }));
-    } catch (err) {
-      console.error('Error toggling attendance:', err);
-    } finally {
-      setTogglingAttendance(false);
-    }
-  };
-
-  const handleAddMovieToVote = async (movie) => {
-    if (!voting) return;
-
-    setAddingMovie(movie.id);
-    try {
-      // Get full movie details
-      const details = await getTMDBMovie(movie.id);
-
-      // Submit suggestion with TMDB data
-      await submitSuggestion(voting.id, details.title, details.posterPath, {
-        description: details.overview,
-        tmdbId: details.id,
-        tmdbRating: details.rating,
-        genres: details.genres,
-        runtime: details.runtime,
-        releaseYear: details.year,
-        backdropUrl: details.backdropPath,
-        tagline: details.tagline,
-        imdbId: details.imdbId,
-        originalLanguage: details.originalLanguage,
-        collectionName: details.collectionName,
-        trailerUrl: details.trailerUrl
-      });
-
-      // Refresh voting data
-      const votingData = await getActiveVoting();
-      setVoting(votingData);
-      setShowAddMovieModal(false);
-      setMovieSearch('');
-      setSearchResults([]);
-    } catch (err) {
-      console.error('Error adding movie:', err);
-      alert('Failed to add movie: ' + err.message);
-    } finally {
-      setAddingMovie(null);
-    }
-  };
-
-  // Announcement flow handlers
-  const handleAnnounceSearch = async (e) => {
-    e.preventDefault();
-    if (!announceSearch.trim()) return;
-
-    setAnnounceSearching(true);
-    setAnnounceError(null);
-    try {
-      const results = await searchTMDB(announceSearch);
-      setAnnounceResults(results);
-    } catch (err) {
-      console.error('Error searching movies:', err);
-      setAnnounceError('Failed to search movies');
-    } finally {
-      setAnnounceSearching(false);
-    }
-  };
-
-  const handleSelectAnnounceMovie = async (movie) => {
-    setAnnounceSearching(true);
-    setAnnounceError(null);
-    try {
-      const details = await getTMDBMovie(movie.id);
-      setSelectedAnnounceMovie(details);
-      setAnnounceStep('preview');
-    } catch (err) {
-      console.error('Error fetching movie details:', err);
-      setAnnounceError('Failed to load movie details');
-    } finally {
-      setAnnounceSearching(false);
-    }
-  };
-
-  const handleAnnounceSubmit = async (e) => {
-    e.preventDefault();
-    if (!selectedAnnounceMovie || !announceDate || !announceTime) {
-      setAnnounceError('Please select a date and time');
-      return;
-    }
-
-    const scheduledAt = new Date(`${announceDate}T${announceTime}`);
-    if (scheduledAt <= new Date()) {
-      setAnnounceError('Scheduled time must be in the future');
-      return;
-    }
-
-    setAnnouncing(true);
-    setAnnounceError(null);
-    try {
-      await announceMovie(selectedAnnounceMovie, scheduledAt.toISOString());
-
-      // Refresh data
-      const [nextMovieData, upcomingData] = await Promise.all([
-        getNextMovieWithAttendees().catch(() => null),
-        getUpcomingMoviesWithAttendees(5).catch(() => [])
-      ]);
-      setNextMovieWithAttendees(nextMovieData);
-      setUpcomingWithAttendees(upcomingData);
-
-      // Show success state
-      setAnnouncedMovieTitle(selectedAnnounceMovie.title);
-      setAnnounceStep('success');
-
-      // Auto-reset after 3 seconds
-      setTimeout(() => {
-        resetAnnounceState();
-      }, 3000);
-    } catch (err) {
-      console.error('Error announcing movie:', err);
-      setAnnounceError(err.message || 'Failed to announce movie');
-    } finally {
-      setAnnouncing(false);
-    }
-  };
-
-  const resetAnnounceState = () => {
-    setAnnounceStep('button');
-    setSelectedAnnounceMovie(null);
-    setAnnounceSearch('');
-    setAnnounceResults([]);
-    setAnnounceDate(new Date().toISOString().split('T')[0]);
-    setAnnounceTime('20:00');
-    setAnnounceError(null);
-    setAnnouncedMovieTitle('');
+  const handleAttendanceChange = (updatedMovie) => {
+    setNextMovieWithAttendees(updatedMovie);
   };
 
   if (error) {
@@ -449,12 +71,10 @@ const Home = () => {
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
-  // Upcoming movies (scheduled in the future)
   const upcomingMovies = movies
     .filter(movie => new Date(movie.scheduled_at) > now)
     .sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at));
 
-  // Best rated movies of this month
   const bestRatedThisMonth = movies
     .filter(movie => {
       const date = new Date(movie.scheduled_at);
@@ -463,19 +83,12 @@ const Home = () => {
     .sort((a, b) => parseFloat(b.avg_rating) - parseFloat(a.avg_rating))
     .slice(0, 5);
 
-  // Calculate total votes for percentage
-  const totalVotes = voting?.suggestions?.reduce((sum, s) => sum + parseInt(s.vote_count), 0) || 0;
-
-  // Get the next upcoming movie for the hero (use the one with attendees if available)
   const nextMovie = nextMovieWithAttendees || upcomingMovies[0];
-
-  // Get background image from top rated movie this month
   const topRatedMovie = bestRatedThisMonth[0];
   const backgroundImage = sanitizeImageUrl(topRatedMovie?.backdrop_url) || sanitizeImageUrl(topRatedMovie?.image_url);
 
   return (
     <div className="home">
-      {/* Subtle background from top rated movie */}
       {backgroundImage && (
         <div
           className="home-background"
@@ -483,619 +96,32 @@ const Home = () => {
         />
       )}
 
-      {/* Admin Settings Panel */}
-      {isAdmin && (
-        <section className="admin-settings-section">
-          <button
-            className="admin-settings-toggle"
-            onClick={() => setShowAdminSettings(!showAdminSettings)}
-          >
-            Admin Settings {showAdminSettings ? '▲' : '▼'}
-          </button>
+      {isAdmin && <AdminSettingsPanel onDataRefresh={handleDataRefresh} />}
 
-          {showAdminSettings && (
-            <div className="admin-settings-panel">
-              <div className="admin-setting-row">
-                <label className="admin-setting-label">Test Mode</label>
-                <button
-                  className={`toggle-btn ${testMode ? 'toggle-on' : 'toggle-off'}`}
-                  onClick={() => setTestMode(!testMode)}
-                >
-                  {testMode ? 'ON' : 'OFF'}
-                </button>
-              </div>
-
-              <div className="admin-setting-row">
-                <label className="admin-setting-label">Test Channel</label>
-                <select
-                  className="admin-channel-select"
-                  value={testChannelId}
-                  onChange={(e) => setTestChannelId(e.target.value)}
-                  disabled={!testMode}
-                >
-                  <option value="">Select a channel...</option>
-                  {channels.map((ch) => (
-                    <option key={ch.channel_id} value={ch.channel_id}>
-                      #{ch.channel_name} {ch.parent_name ? `(${ch.parent_name})` : ''}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="admin-setting-actions">
-                <button
-                  className="btn-primary btn-small"
-                  onClick={handleSaveSettings}
-                  disabled={savingSettings}
-                >
-                  {savingSettings ? 'Saving...' : 'Save Settings'}
-                </button>
-
-                {testMovieCount > 0 && (
-                  <button
-                    className="btn-danger btn-small"
-                    onClick={handleDeleteTestMovies}
-                    disabled={deletingTestMovies}
-                  >
-                    {deletingTestMovies ? 'Deleting...' : `Delete All Test Movies (${testMovieCount})`}
-                  </button>
-                )}
-              </div>
-
-              {testMode && (
-                <div className="test-mode-indicator">
-                  Test mode is active - announcements will go to the test channel and movies will be flagged as test data
-                </div>
-              )}
-            </div>
-          )}
-        </section>
-      )}
-
-      {/* Quick Announce Section - Full Width */}
-      {isAuthenticated && (
-        <section className="announce-section-fullwidth">
-          {announceStep === 'button' && (
-            <button
-              className="btn-primary announce-main-btn"
-              onClick={() => setAnnounceStep('search')}
-            >
-              + Announce New Movie Night
-            </button>
-          )}
-
-          {announceStep === 'search' && (
-            <div className="announce-flow">
-              <div className="announce-flow-header">
-                <h3>Announce New Movie Night</h3>
-                <button className="btn-text" onClick={resetAnnounceState}>Cancel</button>
-              </div>
-              <form onSubmit={handleAnnounceSearch} className="announce-search-form">
-                <input
-                  type="text"
-                  placeholder="Search for a movie..."
-                  value={announceSearch}
-                  onChange={(e) => setAnnounceSearch(e.target.value)}
-                  autoFocus
-                />
-                <button type="submit" className="btn-primary" disabled={announceSearching}>
-                  {announceSearching ? 'Searching...' : 'Search'}
-                </button>
-              </form>
-              {announceError && <div className="announce-error">{announceError}</div>}
-              {announceResults.length > 0 && (
-                <div className="announce-results">
-                  {announceResults.slice(0, 8).map((movie) => (
-                    <div
-                      key={movie.id}
-                      className="announce-result-item"
-                      onClick={() => handleSelectAnnounceMovie(movie)}
-                    >
-                      {movie.posterPath ? (
-                        <img src={movie.posterPath} alt={movie.title} className="announce-result-poster" loading="lazy" />
-                      ) : (
-                        <div className="announce-result-poster no-poster">No Image</div>
-                      )}
-                      <div className="announce-result-info">
-                        <span className="announce-result-title">{movie.title}</span>
-                        <span className="announce-result-year">{movie.year}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {announceStep === 'preview' && selectedAnnounceMovie && (
-            <div className="announce-flow">
-              <div className="announce-flow-header">
-                <h3>Announce New Movie Night</h3>
-                <button className="btn-text" onClick={resetAnnounceState}>Cancel</button>
-              </div>
-              <div className="announce-preview">
-                <div className="announce-preview-content">
-                  {selectedAnnounceMovie.posterPath && (
-                    <img src={selectedAnnounceMovie.posterPath} alt={selectedAnnounceMovie.title} className="announce-preview-poster" loading="lazy" />
-                  )}
-                  <div className="announce-preview-info">
-                    <h4>{selectedAnnounceMovie.title}</h4>
-                    <div className="announce-preview-meta">
-                      {selectedAnnounceMovie.year && <span>{selectedAnnounceMovie.year}</span>}
-                      {selectedAnnounceMovie.runtime && <span>{Math.floor(selectedAnnounceMovie.runtime / 60)}h {selectedAnnounceMovie.runtime % 60}m</span>}
-                      {selectedAnnounceMovie.rating && <span>TMDB {selectedAnnounceMovie.rating}</span>}
-                    </div>
-                    {selectedAnnounceMovie.genres && (
-                      <div className="announce-preview-genres">
-                        {selectedAnnounceMovie.genres.split(', ').slice(0, 4).map((genre, i) => (
-                          <span key={i} className="genre-tag">{genre}</span>
-                        ))}
-                      </div>
-                    )}
-                    {selectedAnnounceMovie.overview && (
-                      <p className="announce-preview-description">{selectedAnnounceMovie.overview}</p>
-                    )}
-                  </div>
-                </div>
-                <div className="announce-preview-actions">
-                  <button className="btn-secondary" onClick={() => setAnnounceStep('search')}>
-                    Choose Different
-                  </button>
-                  <button className="btn-primary" onClick={() => setAnnounceStep('schedule')}>
-                    Schedule This Movie
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {announceStep === 'schedule' && selectedAnnounceMovie && (
-            <div className="announce-flow">
-              <div className="announce-flow-header">
-                <h3>Schedule Movie Night</h3>
-                <button className="btn-text" onClick={resetAnnounceState}>Cancel</button>
-              </div>
-              <div className="announce-schedule">
-                <div className="announce-schedule-movie">
-                  {selectedAnnounceMovie.posterPath && (
-                    <img src={selectedAnnounceMovie.posterPath} alt={selectedAnnounceMovie.title} className="announce-schedule-poster" loading="lazy" />
-                  )}
-                  <span className="announce-schedule-title">{selectedAnnounceMovie.title}</span>
-                </div>
-                <form onSubmit={handleAnnounceSubmit} className="announce-schedule-form">
-                  <div className="announce-schedule-fields">
-                    <div className="announce-field">
-                      <label>Date</label>
-                      <input
-                        type="date"
-                        value={announceDate}
-                        onChange={(e) => setAnnounceDate(e.target.value)}
-                        min={new Date().toISOString().split('T')[0]}
-                        required
-                      />
-                    </div>
-                    <div className="announce-field">
-                      <label>Time</label>
-                      <input
-                        type="time"
-                        value={announceTime}
-                        onChange={(e) => setAnnounceTime(e.target.value)}
-                        required
-                      />
-                    </div>
-                  </div>
-                  {announceError && <div className="announce-error">{announceError}</div>}
-                  <div className="announce-schedule-actions">
-                    <button type="button" className="btn-secondary" onClick={() => setAnnounceStep('preview')}>
-                      Back
-                    </button>
-                    <button type="submit" className="btn-primary" disabled={announcing}>
-                      {announcing ? 'Scheduling...' : 'Announce Movie Night'}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
-
-          {announceStep === 'success' && (
-            <div className="announce-success">
-              <div className="announce-success-icon">✓</div>
-              <h3>Movie Night Announced!</h3>
-              <p><strong>{announcedMovieTitle}</strong> has been scheduled.</p>
-            </div>
-          )}
-        </section>
-      )}
+      {isAuthenticated && <AnnounceFlow onAnnounced={handleDataRefresh} />}
 
       <div className="home-layout">
-        {/* Left Side - Featured Movie */}
         <div className="home-hero-column">
-          {loading ? (
-            <div className="hero-backdrop hero-skeleton">
-              <div className="hero-content">
-                <div className="skeleton hero-poster-skeleton" />
-                <div className="hero-details">
-                  <div className="skeleton" style={{ width: '60%', height: 32 }} />
-                  <div className="skeleton" style={{ width: '100%', height: 16, marginTop: 12 }} />
-                  <div className="skeleton" style={{ width: '80%', height: 16, marginTop: 8 }} />
-                </div>
-              </div>
-            </div>
-          ) : nextMovie ? (
-            <Link
-              to={`/movie/${nextMovie.id}`}
-              className="hero-backdrop"
-              style={{
-                backgroundImage: sanitizeImageUrl(nextMovie.backdrop_url)
-                  ? `url(${sanitizeImageUrl(nextMovie.backdrop_url)})`
-                  : sanitizeImageUrl(nextMovie.image_url)
-                    ? `url(${sanitizeImageUrl(nextMovie.image_url)})`
-                    : 'none'
-              }}
-            >
-              <div className="hero-backdrop-overlay" />
-              <div className="hero-content">
-                <div className="hero-poster-small">
-                  {nextMovie.image_url ? (
-                    <img src={nextMovie.image_url} alt={nextMovie.title} className="hero-poster" loading="lazy" />
-                  ) : (
-                    <div className="hero-poster-placeholder">No Poster</div>
-                  )}
-                </div>
-                <div className="hero-details">
-                  <span className="hero-badge">Up Next</span>
-                  <h1 className="hero-title">{nextMovie.title}</h1>
-                  {nextMovie.tagline && (
-                    <p className="hero-tagline">"{nextMovie.tagline}"</p>
-                  )}
-                  <div className="hero-meta">
-                    {nextMovie.release_year && (
-                      <span className="hero-meta-item">{nextMovie.release_year}</span>
-                    )}
-                    {nextMovie.runtime && (
-                      <span className="hero-meta-item">{Math.floor(nextMovie.runtime / 60)}h {nextMovie.runtime % 60}m</span>
-                    )}
-                    {nextMovie.tmdb_rating > 0 && (
-                      <span className="hero-meta-item hero-tmdb">TMDB {parseFloat(nextMovie.tmdb_rating).toFixed(1)}</span>
-                    )}
-                  </div>
-                  {nextMovie.genres && (
-                    <div className="hero-genres">
-                      {nextMovie.genres.split(', ').map((genre, i) => (
-                        <span key={i} className="hero-genre-tag">{genre}</span>
-                      ))}
-                    </div>
-                  )}
-                  {nextMovie.description && (
-                    <p className="hero-description">{nextMovie.description}</p>
-                  )}
-                  <div className="hero-footer">
-                    <p className="hero-date">{formatDate(nextMovie.scheduled_at, 'long')}</p>
-                    {nextMovie.announced_by_name && (
-                      <p className="hero-picker">Picked by {nextMovie.announced_by_name}</p>
-                    )}
-                  </div>
-                  {/* Attendance Section */}
-                  <div className="hero-attendance">
-                    <div className="attendance-info">
-                      {nextMovie.attendees && nextMovie.attendees.length > 0 ? (
-                        <>
-                          <div className="attendance-avatars">
-                            {nextMovie.attendees.slice(0, 8).map((attendee) => (
-                              <img
-                                key={attendee.discord_id}
-                                src={attendee.avatar
-                                  ? `https://cdn.discordapp.com/avatars/${attendee.discord_id}/${attendee.avatar}.png?size=32`
-                                  : `https://cdn.discordapp.com/embed/avatars/${parseInt(attendee.discord_id) % 5}.png`
-                                }
-                                alt={attendee.username}
-                                title={attendee.username}
-                                className="attendance-avatar"
-                                loading="lazy"
-                              />
-                            ))}
-                            {nextMovie.attendees.length > 8 && (
-                              <span className="attendance-overflow">+{nextMovie.attendees.length - 8}</span>
-                            )}
-                          </div>
-                          <span className="attendance-count">
-                            {nextMovie.attendees.length} attending
-                          </span>
-                        </>
-                      ) : (
-                        <span className="attendance-count">No one attending yet</span>
-                      )}
-                    </div>
-                    {isAuthenticated && (
-                      <button
-                        className={`hero-btn ${nextMovie.is_attending ? 'hero-btn-attending' : 'hero-btn-attend'}`}
-                        onClick={handleToggleAttendance}
-                        disabled={togglingAttendance}
-                      >
-                        {togglingAttendance ? '...' : nextMovie.is_attending ? '✓ Attending' : '+ Attend'}
-                      </button>
-                    )}
-                  </div>
-                  {(nextMovie.trailer_url || sanitizeImdbId(nextMovie.imdb_id)) && (
-                    <div className="hero-actions">
-                      {nextMovie.trailer_url && (
-                        <a
-                          href={sanitizeUrl(nextMovie.trailer_url)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="hero-btn hero-btn-primary"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          ▶ Watch Trailer
-                        </a>
-                      )}
-                      {sanitizeImdbId(nextMovie.imdb_id) && (
-                        <a
-                          href={`https://www.imdb.com/title/${sanitizeImdbId(nextMovie.imdb_id)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="hero-btn hero-btn-secondary"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          IMDb
-                        </a>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </Link>
-          ) : (
-            <div className="hero-backdrop hero-empty">
-              <div className="hero-backdrop-overlay" />
-              <div className="hero-content">
-                <div className="hero-details hero-details-centered">
-                  <span className="hero-badge empty">No Upcoming</span>
-                  <h2 className="hero-title">No movie scheduled</h2>
-                  <p className="hero-description">Start a vote to pick the next movie!</p>
-                </div>
-              </div>
-            </div>
-          )}
+          <NextMovieHero
+            movie={nextMovie}
+            loading={loading}
+            onAttendanceChange={handleAttendanceChange}
+          />
         </div>
 
-        {/* Right Side - All Content */}
         <div className="home-content-column">
-          {/* Voting Section */}
-          {voting ? (
-            <section className="home-section voting-section">
-              <div className="section-header">
-                <h2>Vote for Next Movie</h2>
-                <div className="voting-header-actions">
-                  {voting.scheduled_at && (
-                    <span className="voting-date">
-                      {new Date(voting.scheduled_at).toLocaleDateString('en-US', {
-                        weekday: 'short',
-                        month: 'short',
-                        day: 'numeric'
-                      })}
-                    </span>
-                  )}
-                  {isAuthenticated && (
-                    <button
-                      className="btn-secondary btn-small"
-                      onClick={() => setShowAddMovieModal(true)}
-                    >
-                      + Add Movie
-                    </button>
-                  )}
-                  {isAdmin && !confirmAction && (
-                    <>
-                      <button
-                        className="btn-primary btn-small"
-                        onClick={() => setConfirmAction('end')}
-                        disabled={endingVote}
-                      >
-                        {endingVote ? 'Ending...' : 'End Vote'}
-                      </button>
-                      <button
-                        className="btn-danger btn-small"
-                        onClick={() => setConfirmAction('cancel')}
-                        disabled={endingVote}
-                      >
-                        Cancel
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
+          <VotingSection
+            voting={voting}
+            setVoting={setVoting}
+            loading={loading}
+            onDataRefresh={handleDataRefresh}
+          />
 
-              {/* Inline Confirmation */}
-              {confirmAction && (
-                <div className="vote-confirm-inline">
-                  <span className="confirm-message">
-                    {confirmAction === 'end'
-                      ? 'End voting and schedule the winning movie?'
-                      : 'Cancel voting? This will delete all suggestions.'}
-                  </span>
-                  <div className="confirm-actions">
-                    <button
-                      className="btn-secondary btn-small"
-                      onClick={() => setConfirmAction(null)}
-                      disabled={endingVote}
-                    >
-                      No, go back
-                    </button>
-                    <button
-                      className={`btn-small ${confirmAction === 'end' ? 'btn-primary' : 'btn-danger'}`}
-                      onClick={confirmAction === 'end' ? handleEndVote : handleCancelVote}
-                      disabled={endingVote}
-                    >
-                      {endingVote ? 'Processing...' : confirmAction === 'end' ? 'Yes, end vote' : 'Yes, cancel'}
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              <div className="voting-active">
-                {voting.suggestions && voting.suggestions.length > 0 ? (
-                  <div className="suggestions-list">
-                    {voting.suggestions.map((suggestion) => {
-                      const votePercent = totalVotes > 0
-                        ? Math.round((parseInt(suggestion.vote_count) / totalVotes) * 100)
-                        : 0;
-                      const isUserVote = voting.user_vote?.suggestion_id === suggestion.id;
-                      return (
-                        <div
-                          key={suggestion.id}
-                          className={`suggestion-item ${isUserVote ? 'voted' : ''}`}
-                          onClick={() => !votingLoading && isAuthenticated && handleVote(suggestion.id)}
-                        >
-                          {suggestion.image_url && (
-                            <img src={suggestion.image_url} alt={suggestion.title} className="suggestion-poster" loading="lazy" />
-                          )}
-                          <div className="suggestion-info">
-                            <span className="suggestion-title">{suggestion.title}</span>
-                            <span className="suggestion-by">by {suggestion.suggested_by_name}</span>
-                          </div>
-                          <div className="suggestion-votes">
-                            <div className="vote-bar-container">
-                              <div className="vote-bar-fill" style={{ width: `${votePercent}%` }}></div>
-                            </div>
-                            <span className="vote-count">{suggestion.vote_count} votes</span>
-                            {suggestion.voters && suggestion.voters.length > 0 && (
-                              <div className="voter-avatars">
-                                {suggestion.voters.slice(0, 5).map((voter) => (
-                                  <img
-                                    key={voter.discord_id}
-                                    src={voter.avatar
-                                      ? `https://cdn.discordapp.com/avatars/${voter.discord_id}/${voter.avatar}.png?size=32`
-                                      : `https://cdn.discordapp.com/embed/avatars/${parseInt(voter.discord_id) % 5}.png`
-                                    }
-                                    alt={voter.username}
-                                    title={voter.username}
-                                    className="voter-avatar"
-                                    loading="lazy"
-                                  />
-                                ))}
-                                {suggestion.voters.length > 5 && (
-                                  <span className="voter-overflow">+{suggestion.voters.length - 5}</span>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                          {isUserVote && <span className="your-vote">Your vote</span>}
-                          {isAdmin && (
-                            <button
-                              className="suggestion-delete-btn"
-                              onClick={(e) => handleDeleteSuggestion(e, suggestion.id, suggestion.title)}
-                              disabled={deletingSuggestion === suggestion.id}
-                              title="Delete suggestion"
-                            >
-                              {deletingSuggestion === suggestion.id ? '...' : '×'}
-                            </button>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="empty-state compact">
-                    <p>No suggestions yet!</p>
-                    {isAuthenticated && (
-                      <button
-                        className="btn-primary"
-                        onClick={() => setShowAddMovieModal(true)}
-                        style={{ marginTop: '1rem' }}
-                      >
-                        + Add First Movie
-                      </button>
-                    )}
-                  </div>
-                )}
-                {!isAuthenticated && voting.suggestions?.length > 0 && (
-                  <div className="login-to-vote">
-                    <p>Log in to vote!</p>
-                    <button onClick={login} className="btn-primary">Login with Discord</button>
-                  </div>
-                )}
-              </div>
-            </section>
-          ) : !loading && (
-            <section className="home-section voting-section">
-              <div className="section-header">
-                <h2>Vote for Next Movie</h2>
-                {isAdmin && !showStartVoteModal && (
-                  <button
-                    className="btn-primary btn-small"
-                    onClick={() => setShowStartVoteModal(true)}
-                  >
-                    Start Vote
-                  </button>
-                )}
-              </div>
-              {showStartVoteModal ? (
-                <div className="voting-inline-form">
-                  <h3>Start New Vote</h3>
-                  <p className="inline-form-description">Set the movie night date and time</p>
-                  <form onSubmit={handleStartVote}>
-                    <div className="inline-form-row">
-                      <div className="inline-form-field">
-                        <label>Date</label>
-                        <input
-                          type="date"
-                          value={voteDate}
-                          onChange={(e) => setVoteDate(e.target.value)}
-                          min={new Date().toISOString().split('T')[0]}
-                          required
-                        />
-                      </div>
-                      <div className="inline-form-field">
-                        <label>Time</label>
-                        <input
-                          type="time"
-                          value={voteTime}
-                          onChange={(e) => setVoteTime(e.target.value)}
-                          required
-                        />
-                      </div>
-                    </div>
-                    <div className="inline-form-actions">
-                      <button
-                        type="button"
-                        className="btn-secondary"
-                        onClick={() => {
-                          setShowStartVoteModal(false);
-                          setVoteDate('');
-                          setVoteTime('20:00');
-                        }}
-                      >
-                        Cancel
-                      </button>
-                      <button type="submit" className="btn-primary" disabled={creatingVote}>
-                        {creatingVote ? 'Creating...' : 'Start Vote'}
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              ) : (
-                <div className="voting-placeholder">
-                  <div className="voting-card">
-                    <div className="voting-icon">🗳️</div>
-                    <h3>No Active Voting</h3>
-                    {isAdmin ? (
-                      <p>Click "Start Vote" to begin a new voting session.</p>
-                    ) : (
-                      <p>Check back soon for the next vote!</p>
-                    )}
-                  </div>
-                </div>
-              )}
-            </section>
-          )}
-
-          {/* Bottom Row - Upcoming & Best Rated side by side */}
           <div className="home-bottom-row">
             <section className="home-section">
               <div className="section-header">
                 <h2>Upcoming</h2>
-                <Link to="/movies" className="view-all">All Movies →</Link>
+                <Link to="/movies" className="view-all">All Movies {'\u2192'}</Link>
               </div>
               {loading ? (
                 <div className="upcoming-compact">
@@ -1117,7 +143,7 @@ const Home = () => {
             <section className="home-section">
               <div className="section-header">
                 <h2>Best This Month</h2>
-                <Link to="/movies" className="view-all">Stats →</Link>
+                <Link to="/stats" className="view-all">Stats {'\u2192'}</Link>
               </div>
               {loading ? (
                 <div className="best-rated-list compact">
@@ -1156,116 +182,11 @@ const Home = () => {
         </div>
       </div>
 
-      {/* Comments Ticker */}
       <CommentsTicker />
 
-      {/* Members Section */}
+      <ExploreSection />
+
       <UsersSection />
-
-      {/* Add Movie Modal */}
-      {showAddMovieModal && (
-        <div className="modal-overlay" onClick={() => setShowAddMovieModal(false)}>
-          <div className="modal-content modal-large" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Add Movie to Vote</h2>
-              <button className="modal-close" onClick={() => setShowAddMovieModal(false)}>×</button>
-            </div>
-            <form onSubmit={handleSearchMovies} className="search-form">
-              <input
-                type="text"
-                placeholder="Search for a movie..."
-                value={movieSearch}
-                onChange={(e) => setMovieSearch(e.target.value)}
-                autoFocus
-              />
-              <button type="submit" className="btn-primary" disabled={searching}>
-                {searching ? 'Searching...' : 'Search'}
-              </button>
-            </form>
-            {searchResults.length > 0 && (
-              <div className="search-results">
-                {searchResults.map((movie) => (
-                  <div
-                    key={movie.id}
-                    className="search-result-item"
-                    onClick={() => handleAddMovieToVote(movie)}
-                  >
-                    {movie.posterPath ? (
-                      <img src={movie.posterPath} alt={movie.title} className="result-poster" loading="lazy" />
-                    ) : (
-                      <div className="result-poster no-poster">No Image</div>
-                    )}
-                    <div className="result-info">
-                      <span className="result-title">{movie.title}</span>
-                      <span className="result-year">{movie.year}</span>
-                      {movie.rating && (
-                        <span className="result-rating">TMDB: {movie.rating}</span>
-                      )}
-                    </div>
-                    <button
-                      className="btn-primary btn-small"
-                      disabled={addingMovie === movie.id}
-                    >
-                      {addingMovie === movie.id ? 'Adding...' : 'Add'}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Vote Result Modal */}
-      {showVoteResultModal && voteResult && (
-        <div className="modal-overlay" onClick={() => setShowVoteResultModal(false)}>
-          <div className="modal-content vote-result-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Voting Complete!</h2>
-              <button className="modal-close" onClick={() => setShowVoteResultModal(false)}>×</button>
-            </div>
-            <div className="vote-result-content">
-              <div className="vote-result-trophy">🏆</div>
-              <h3 className="vote-result-label">The Winner Is</h3>
-              <div className="vote-result-winner">
-                {voteResult.winner.image_url && (
-                  <img
-                    src={voteResult.winner.image_url}
-                    alt={voteResult.winner.title}
-                    className="vote-result-poster"
-                    loading="lazy"
-                  />
-                )}
-                <div className="vote-result-info">
-                  <h2 className="vote-result-title">{voteResult.winner.title}</h2>
-                  {voteResult.winner.release_year && (
-                    <span className="vote-result-year">{voteResult.winner.release_year}</span>
-                  )}
-                  <span className="vote-result-votes">
-                    {voteResult.winner.vote_count} votes
-                  </span>
-                  <span className="vote-result-suggested">
-                    Suggested by {voteResult.winner.suggested_by_name}
-                  </span>
-                </div>
-              </div>
-              {voteResult.movie_created && (
-                <p className="vote-result-scheduled">
-                  Movie night has been scheduled!
-                </p>
-              )}
-            </div>
-            <div className="modal-actions">
-              <button
-                className="btn-primary"
-                onClick={() => setShowVoteResultModal(false)}
-              >
-                Awesome!
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

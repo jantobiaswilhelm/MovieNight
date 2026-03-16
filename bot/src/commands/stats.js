@@ -1,6 +1,9 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { getGuildStats, getTopRatedMovies, getMostActiveRaters } from '../models/index.js';
 import { createStatsEmbed } from '../utils/embeds.js';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('stats');
 
 export const data = new SlashCommandBuilder()
   .setName('stats')
@@ -17,7 +20,7 @@ export const execute = async (interaction) => {
     const embed = createStatsEmbed(stats, topMovies, topRaters);
     await interaction.reply({ embeds: [embed] });
   } catch (err) {
-    console.error('Error fetching stats:', err);
+    logger.error('Error fetching stats', err);
     await interaction.reply({
       content: 'There was an error fetching statistics.',
       ephemeral: true

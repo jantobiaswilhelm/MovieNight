@@ -6,115 +6,117 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 MovieNight is a full-stack Discord bot + web application for organizing movie nights. Users can schedule movies, vote for what to watch, manage wishlists, rate films, and track statistics.
 
-**Tech Stack:**
-- Frontend: React 18 + Vite + React Router
-- Backend: Express.js (Node.js)
-- Bot: Discord.js v14
-- Database: PostgreSQL
-- External API: TMDB (The Movie Database)
+**Tech Stack:** React 18 + Vite | Express.js | Discord.js v14 | PostgreSQL | TMDB API
 
-## Common Commands
-
-### Development
+## Commands
 
 ```bash
-# Backend (runs on port 3001)
-cd backend && npm run dev
+# Development (run each in separate terminal)
+cd backend && npm run dev     # Express API on port 3001 (uses node --watch)
+cd bot && npm run dev         # Discord bot (uses node --watch)
+cd frontend && npm run dev    # Vite dev server on port 5173
 
-# Discord Bot
-cd bot && npm run dev
-
-# Frontend (runs on port 5173)
-cd frontend && npm run dev
-```
-
-### Production
-
-```bash
-# Backend (auto-runs migrations)
-cd backend && npm start
-
-# Bot
-cd bot && npm start
-
-# Frontend build
-cd frontend && npm run build
-```
-
-### Database & Bot Setup
-
-```bash
-# Run database migrations
+# Database migrations
 cd backend && npm run db:migrate
 
-# Deploy Discord slash commands
+# Deploy Discord slash commands (required after adding/changing commands)
 cd bot && npm run deploy
+
+# Production
+cd backend && npm start       # auto-runs migrations before starting
+cd frontend && npm run build  # Vite production build
 ```
+
+No test framework, linter, or CI/CD is configured.
 
 ## Architecture
 
-### Three-Service Architecture
+Three independent services sharing one PostgreSQL database:
 
 ```
-frontend/     React SPA - user interface
-backend/      Express REST API - data operations, auth, TMDB proxy
-bot/          Discord.js bot - slash commands, scheduled jobs
+frontend/   React SPA — calls backend REST API
+backend/    Express REST API — auth, data operations, TMDB proxy
+bot/        Discord.js bot — slash commands, cron jobs
 ```
 
-All three services connect to the same PostgreSQL database. The bot and backend share the same database schema.
+### Cross-Service Data Flow
 
-### Backend Structure (`backend/src/`)
+The bot and backend don't communicate via HTTP — they share the database directly.
 
-- `routes/` - Express route handlers (auth, movies, ratings, stats, voting, wishlists, tmdb, admin)
-- `models/index.js` - All database operations with raw SQL queries
-- `middleware/auth.js` - JWT authentication with optional auth support
-- `config/database.js` - PostgreSQL connection pool
-- `config/migrate.js` - Database schema migrations
+**Web-to-Discord announcement flow:**
+1. User creates announcement on web → backend inserts into `pending_announcements` (status='pending')
+2. Bot cron job (`announcementProcessor`) polls every 5 min → posts Discord embed → creates `movie_night` record → marks as 'processed'
 
-### Bot Structure (`bot/src/`)
+This pending_announcements table acts as a simple message queue.
 
-- `commands/` - Discord slash commands (announce, rate, startvote, suggest, etc.)
-- `events/` - Discord event handlers (interactionCreate, ready)
-- `jobs/` - Scheduled tasks (announcementProcessor runs every 5 min, movieStarter)
-- `deploy-commands.js` - Script to register slash commands with Discord
+**Ratings flow both ways:** Users can rate via the web UI (POST to backend) or via Discord `/rate` command (bot writes directly to DB). Both write to the same `ratings` table.
 
-### Frontend Structure (`frontend/src/`)
+### Auth Flow
 
-- `pages/` - Route pages (Home, Movie, MoviesPage, WishlistPage, Profile, StatsPage, Calendar)
-- `components/` - Reusable UI components
-- `context/` - React context (AuthContext, ThemeContext)
-- `api/client.js` - Centralized API client with all endpoint methods
+Discord OAuth2 with a two-step code exchange:
+1. Frontend redirects to backend `/auth/discord` → Discord OAuth → callback
+2. Backend generates a short-lived auth code (30s TTL, stored in memory) and redirects to frontend `/auth/callback?code=...`
+3. Frontend exchanges auth code for JWT via `/auth/exchange`
+4. JWT stored in localStorage, sent as `Authorization: Bearer` header
 
-### Key Database Tables
+**Admin status:** Determined by `ADMIN_IDS` env var (comma-separated Discord user IDs). Checked server-side via `requireAdmin` middleware and client-side via `useAuth().isAdmin`.
 
-- `movie_nights` - Scheduled movie events with TMDB metadata
-- `ratings` - User ratings (1-10, 0.5 increments)
-- `voting_sessions` / `movie_suggestions` / `votes` - Voting system
-- `wishlists` - Personal movie wishlists with 1-5 star priority
-- `pending_announcements` - Queue for bot to post announcements
-- `movie_attendance` - Track who's attending each movie
+### Backend (`backend/src/`)
 
-## Key Patterns
+- `routes/` — Modular Express routers. Each route uses `authenticateToken` or `optionalAuth` middleware.
+- `models/index.js` — **All database operations in one file.** Raw SQL with parameterized queries (pg library). No ORM.
+- `middleware/auth.js` — JWT auth. `optionalAuth` sets `req.user` if token valid but doesn't reject.
+- `middleware/validation.js` — `validateIntParams()` for route param validation.
+- `config/migrate.js` — Schema migrations (see Database section).
 
-### Backend API Pattern
-Routes use try-catch with JSON responses. Database operations use parameterized queries via the pg library. Auth middleware provides `optionalAuth` for public endpoints that can show extra data for logged-in users.
+### Bot (`bot/src/`)
 
-### Bot Command Pattern
-Each command exports `data` (SlashCommandBuilder) and `execute(interaction)`. Commands are auto-loaded from the commands directory.
+- `commands/` — Each file exports `data` (SlashCommandBuilder) and `execute(interaction)`. Auto-loaded by index.js via filesystem scan.
+- `events/` — Discord event handlers, auto-loaded. Handles slash commands, buttons, modals, select menus.
+- `jobs/` — Cron tasks using node-cron: `announcementProcessor` (every 5 min), `movieStarter`, `ratingNotifier`, `channelSync`.
 
-### Frontend API Pattern
-All API calls go through `api/client.js` which handles auth tokens and base URL configuration. Components use React hooks and Context API for state.
+### Frontend (`frontend/src/`)
+
+- `pages/` — Lazy-loaded route components wrapped in Suspense + ErrorBoundary.
+- `api/client.js` — Centralized fetch wrapper (50+ methods). Auto-attaches JWT, handles 401 logout.
+- `context/` — AuthContext (user state, login/logout), ThemeContext, NotificationContext.
+- Routes defined in `App.jsx` using React Router v6.
+
+## Database
+
+### Migration Pattern
+
+No migration framework. `backend/src/config/migrate.js` runs as a single script:
+- Uses `CREATE TABLE IF NOT EXISTS` for idempotency
+- Adds new columns via `ALTER TABLE` with column-existence checks against `information_schema.columns`
+- Wrapped in a transaction (BEGIN/COMMIT/ROLLBACK)
+- Runs automatically on `npm start` (production) or manually via `npm run db:migrate`
+
+### Multi-Guild Isolation
+
+Almost every query filters by `guild_id`. This is a required query parameter on most API endpoints. Always include guild_id when adding new queries or routes.
+
+### Test Mode
+
+Admin can create test movie nights (`is_test = true`). Production queries filter these out: `AND (mn.is_test = false OR mn.is_test IS NULL)`.
+
+### Key Tables
+
+- `movie_nights` — Scheduled events with TMDB metadata (genres, runtime, description stored as columns)
+- `ratings` — 1-10 scale, 0.5 increments, with optional comments. Upsert pattern (one rating per user per movie).
+- `voting_sessions` / `movie_suggestions` / `votes` — Voting system. Sessions have status ('open'/'closed').
+- `pending_announcements` — Queue for bot processing (status: 'pending'/'processed'/'failed')
+- `wishlists` — Per-user movie lists with 1-5 star priority
+- `movie_attendance` — RSVP tracking
 
 ## Environment Variables
 
-Each service needs its own `.env` file:
+**backend/.env**: DATABASE_URL, DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, JWT_SECRET, FRONTEND_URL, TMDB_API_KEY, PORT, ADMIN_IDS
 
-**backend/.env**: DATABASE_URL, DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, JWT_SECRET, FRONTEND_URL, TMDB_API_KEY, PORT
-
-**bot/.env**: DISCORD_TOKEN, DISCORD_CLIENT_ID, DATABASE_URL, GUILD_ID, TMDB_API_KEY, ANNOUNCEMENT_CHANNEL_ID
+**bot/.env**: DISCORD_TOKEN, DISCORD_CLIENT_ID, DATABASE_URL, GUILD_ID, TMDB_API_KEY, ANNOUNCEMENT_CHANNEL_ID, ADMIN_IDS
 
 **frontend/.env**: VITE_API_URL, VITE_DISCORD_CLIENT_ID, VITE_GUILD_ID
 
 ## Deployment
 
-Configured for Railway deployment with separate services for backend, bot, and frontend. See `railway.json` in each directory for build configuration.
+Railway with separate services per directory. See `railway.json` in each directory.

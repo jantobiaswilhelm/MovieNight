@@ -2,6 +2,9 @@ import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
 import { getUpcomingMovies, getMovieNightById, startMovieNight } from '../models/index.js';
 import { createStartingNowEmbed, createRatingButtons } from '../utils/embeds.js';
 import { isAdmin } from '../utils/admin.js';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('start');
 
 export const data = new SlashCommandBuilder()
   .setName('start')
@@ -70,7 +73,7 @@ export const execute = async (interaction) => {
     });
 
   } catch (err) {
-    console.error('Error starting movie:', err);
+    logger.error('Error starting movie', err);
     await interaction.reply({
       content: 'There was an error starting the movie.',
       ephemeral: true

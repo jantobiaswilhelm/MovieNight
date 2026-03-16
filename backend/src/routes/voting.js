@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { authenticateToken, optionalAuth } from '../middleware/auth.js';
-import { validateIntParams } from '../middleware/validate.js';
+import { validateIntParams, validateGuildId, validateDate } from '../middleware/validate.js';
 import { isAdmin } from '../utils/admin.js';
 import * as db from '../models/index.js';
 
@@ -17,15 +17,9 @@ const requireAdmin = (req, res, next) => {
 };
 
 // Get active voting session for a guild
-router.get('/active', optionalAuth, async (req, res) => {
-  const { guild_id } = req.query;
-
-  if (!guild_id) {
-    return res.status(400).json({ error: 'guild_id is required' });
-  }
-
+router.get('/active', validateGuildId, optionalAuth, async (req, res) => {
   try {
-    const session = await db.getActiveVotingSession(guild_id);
+    const session = await db.getActiveVotingSession(req.guildId);
 
     if (!session) {
       return res.json(null);
@@ -99,22 +93,15 @@ router.get('/:id', validateIntParams('id'), optionalAuth, async (req, res) => {
 });
 
 // Create a new voting session (admin only)
-router.post('/', authenticateToken, requireAdmin, async (req, res) => {
-  const { scheduled_at, guild_id } = req.body;
+router.post('/', authenticateToken, requireAdmin, validateDate('scheduled_at'), async (req, res) => {
+  const { guild_id } = req.body;
 
   const guildId = guild_id || GUILD_ID;
   if (!guildId) {
     return res.status(400).json({ error: 'guild_id is required' });
   }
 
-  if (!scheduled_at) {
-    return res.status(400).json({ error: 'scheduled_at is required' });
-  }
-
-  const scheduledDate = new Date(scheduled_at);
-  if (isNaN(scheduledDate.getTime())) {
-    return res.status(400).json({ error: 'Invalid scheduled_at date' });
-  }
+  const scheduledDate = req.validatedDates.scheduled_at;
 
   try {
     // Check if there's already an active voting session

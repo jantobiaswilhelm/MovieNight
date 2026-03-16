@@ -1,29 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getStats } from '../api/client';
-import Stats from '../components/Stats';
+import { useFetch } from '../hooks';
+import { formatMonth, formatRuntime, getAvatarUrl } from '../utils/helpers';
+import { Stats } from '../components/home';
 import './StatsPage.css';
-
-const formatMonth = (monthStr) => {
-  if (!monthStr) return 'This Month';
-  const [year, month] = monthStr.split('-');
-  const date = new Date(year, parseInt(month) - 1);
-  return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-};
-
-const formatRuntime = (minutes) => {
-  if (!minutes) return '0h';
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  if (hours >= 24) {
-    const days = Math.floor(hours / 24);
-    const remainingHours = hours % 24;
-    return `${days}d ${remainingHours}h`;
-  }
-  if (hours === 0) return `${mins}m`;
-  if (mins === 0) return `${hours}h`;
-  return `${hours}h ${mins}m`;
-};
 
 const MovieList = ({ title, movies, emptyMessage }) => {
   if (!movies || movies.length === 0) {
@@ -58,31 +39,22 @@ const MovieList = ({ title, movies, emptyMessage }) => {
 };
 
 const StatsPage = () => {
-  const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [selectedMonth, setSelectedMonth] = useState('');
 
-  const fetchStats = async (month = null) => {
-    setLoading(true);
-    try {
-      const data = await getStats(month);
-      setStats(data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: stats, loading, error, setData: setStats } = useFetch(
+    () => getStats(),
+    []
+  );
 
-  useEffect(() => {
-    fetchStats();
-  }, []);
-
-  const handleMonthChange = (e) => {
+  const handleMonthChange = async (e) => {
     const month = e.target.value;
     setSelectedMonth(month);
-    fetchStats(month || null);
+    try {
+      const data = await getStats(month || null);
+      setStats(data);
+    } catch {
+      // Error handled by display
+    }
   };
 
   if (loading && !stats) {
@@ -218,10 +190,7 @@ const StatsPage = () => {
               <Link key={rater.discord_id} to={`/user/${rater.id}`} className="rater-card">
                 <span className="rank">#{index + 1}</span>
                 <img
-                  src={rater.avatar
-                    ? `https://cdn.discordapp.com/avatars/${rater.discord_id}/${rater.avatar}.png`
-                    : `https://cdn.discordapp.com/embed/avatars/${parseInt(rater.discord_id) % 5}.png`
-                  }
+                  src={getAvatarUrl(rater.discord_id, rater.avatar)}
                   alt={rater.username}
                   className="rater-avatar"
                   loading="lazy"
@@ -246,10 +215,7 @@ const StatsPage = () => {
               <Link key={user.discord_id} to={`/user/${user.id}`} className="rater-card streak-card">
                 <span className="rank">#{index + 1}</span>
                 <img
-                  src={user.avatar
-                    ? `https://cdn.discordapp.com/avatars/${user.discord_id}/${user.avatar}.png`
-                    : `https://cdn.discordapp.com/embed/avatars/${parseInt(user.discord_id) % 5}.png`
-                  }
+                  src={getAvatarUrl(user.discord_id, user.avatar)}
                   alt={user.username}
                   className="rater-avatar"
                   loading="lazy"

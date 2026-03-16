@@ -1,8 +1,9 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getMovies, deleteMovie } from '../api/client';
-import { formatDate } from '../utils/helpers';
+import { useFetch } from '../hooks';
+import { formatDate, formatMonth, formatMonthYear } from '../utils/helpers';
 import './MoviesPage.css';
 
 const SORT_OPTIONS = [
@@ -17,32 +18,22 @@ const SORT_OPTIONS = [
 
 const MoviesPage = () => {
   const { isAdmin } = useAuth();
-  const [movies, setMovies] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMonth, setSelectedMonth] = useState('');
+  const [selectedGenre, setSelectedGenre] = useState('');
+  const [selectedYear, setSelectedYear] = useState('');
   const [sortBy, setSortBy] = useState('newest');
   const [deleting, setDeleting] = useState(null);
   const [viewMode, setViewMode] = useState('list');
   const [calendarDate, setCalendarDate] = useState(new Date());
 
-  const fetchMovies = async () => {
-    try {
-      const data = await getMovies(500, 0);
-      setMovies(data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: movies, loading, error, setData: setMovies } = useFetch(
+    () => getMovies(500, 0),
+    [],
+    { initialData: [] }
+  );
 
-  useEffect(() => {
-    fetchMovies();
-  }, []);
-
-  const handleDelete = async (e, movieId, movieTitle) => {
+  const handleDelete = useCallback(async (e, movieId, movieTitle) => {
     e.preventDefault();
     e.stopPropagation();
 
@@ -53,13 +44,13 @@ const MoviesPage = () => {
     setDeleting(movieId);
     try {
       await deleteMovie(movieId);
-      setMovies(movies.filter(m => m.id !== movieId));
+      setMovies((prev) => prev.filter(m => m.id !== movieId));
     } catch (err) {
       alert('Failed to delete movie: ' + err.message);
     } finally {
       setDeleting(null);
     }
-  };
+  }, [setMovies]);
 
   const availableMonths = useMemo(() => {
     const months = new Set();
@@ -73,14 +64,63 @@ const MoviesPage = () => {
     return Array.from(months).sort().reverse();
   }, [movies]);
 
+  const availableGenres = useMemo(() => {
+    const genres = new Set();
+    movies.forEach((movie) => {
+      if (movie.genres) {
+        movie.genres.split(',').forEach((g) => {
+          const trimmed = g.trim();
+          if (trimmed) genres.add(trimmed);
+        });
+      }
+    });
+    return Array.from(genres).sort();
+  }, [movies]);
+
+  const availableYears = useMemo(() => {
+    const years = new Set();
+    movies.forEach((movie) => {
+      if (movie.release_year) {
+        years.add(movie.release_year);
+      }
+    });
+    return Array.from(years).sort((a, b) => b - a);
+  }, [movies]);
+
+  const hasActiveFilters = searchQuery.trim() || selectedMonth || selectedGenre || selectedYear;
+
+  const clearAllFilters = useCallback(() => {
+    setSearchQuery('');
+    setSelectedMonth('');
+    setSelectedGenre('');
+    setSelectedYear('');
+  }, []);
+
   const filteredAndSortedMovies = useMemo(() => {
     let result = [...movies];
 
-    // Filter by search query
+    // Filter by search query (matches title and genres)
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       result = result.filter((movie) =>
-        movie.title.toLowerCase().includes(query)
+        movie.title.toLowerCase().includes(query) ||
+        (movie.genres && movie.genres.toLowerCase().includes(query))
+      );
+    }
+
+    // Filter by genre
+    if (selectedGenre) {
+      result = result.filter((movie) => {
+        if (!movie.genres) return false;
+        const movieGenres = movie.genres.split(',').map((g) => g.trim());
+        return movieGenres.includes(selectedGenre);
+      });
+    }
+
+    // Filter by year
+    if (selectedYear) {
+      result = result.filter((movie) =>
+        movie.release_year === parseInt(selectedYear)
       );
     }
 
@@ -122,13 +162,7 @@ const MoviesPage = () => {
     }
 
     return result;
-  }, [movies, searchQuery, selectedMonth, sortBy]);
-
-  const formatMonth = (monthStr) => {
-    const [year, month] = monthStr.split('-');
-    const date = new Date(year, parseInt(month) - 1);
-    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-  };
+  }, [movies, searchQuery, selectedGenre, selectedYear, selectedMonth, sortBy]);
 
   // Calendar helpers
   const getDaysInMonth = (date) => {
@@ -165,10 +199,6 @@ const MoviesPage = () => {
 
   const goToToday = () => {
     setCalendarDate(new Date());
-  };
-
-  const formatMonthYear = (date) => {
-    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   };
 
   const isToday = (day) => {
@@ -252,14 +282,45 @@ const MoviesPage = () => {
             <div className="search-box">
               <input
                 type="text"
-                placeholder="Search movies..."
+                placeholder="Search by title or genre..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="search-input"
               />
+              {searchQuery && (
+                <button
+                  className="search-clear-btn"
+                  onClick={() => setSearchQuery('')}
+                  title="Clear search"
+                >
+                  &times;
+                </button>
+              )}
             </div>
 
             <div className="filter-group">
+              <select
+                value={selectedGenre}
+                onChange={(e) => setSelectedGenre(e.target.value)}
+                className="filter-select"
+              >
+                <option value="">All Genres</option>
+                {availableGenres.map((genre) => (
+                  <option key={genre} value={genre}>{genre}</option>
+                ))}
+              </select>
+
+              <select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(e.target.value)}
+                className="filter-select"
+              >
+                <option value="">All Years</option>
+                {availableYears.map((year) => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
+              </select>
+
               <select
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(e.target.value)}
@@ -283,13 +344,50 @@ const MoviesPage = () => {
             </div>
           </div>
 
+          {hasActiveFilters && (
+            <div className="active-filters">
+              {selectedGenre && (
+                <span className="filter-tag">
+                  {selectedGenre}
+                  <button onClick={() => setSelectedGenre('')}>&times;</button>
+                </span>
+              )}
+              {selectedYear && (
+                <span className="filter-tag">
+                  {selectedYear}
+                  <button onClick={() => setSelectedYear('')}>&times;</button>
+                </span>
+              )}
+              {selectedMonth && (
+                <span className="filter-tag">
+                  {formatMonth(selectedMonth)}
+                  <button onClick={() => setSelectedMonth('')}>&times;</button>
+                </span>
+              )}
+              {searchQuery.trim() && (
+                <span className="filter-tag">
+                  &ldquo;{searchQuery.trim()}&rdquo;
+                  <button onClick={() => setSearchQuery('')}>&times;</button>
+                </span>
+              )}
+              <button className="clear-all-btn" onClick={clearAllFilters}>
+                Clear all
+              </button>
+            </div>
+          )}
+
           <div className="results-count">
             {filteredAndSortedMovies.length} movie{filteredAndSortedMovies.length !== 1 ? 's' : ''} found
           </div>
 
           {filteredAndSortedMovies.length === 0 ? (
             <div className="empty-state">
-              <p>No movies found matching your criteria.</p>
+              <p>No movies match your search.</p>
+              {hasActiveFilters && (
+                <button className="btn-secondary clear-filters-btn" onClick={clearAllFilters}>
+                  Clear all filters
+                </button>
+              )}
             </div>
           ) : (
             <div className="movies-grid">
@@ -305,8 +403,17 @@ const MoviesPage = () => {
                     </div>
                     <div className="movie-details">
                       <h3 className="movie-title">{movie.title}</h3>
+                      {movie.genres && (
+                        <div className="movie-card-genres">
+                          {movie.genres.split(',').slice(0, 2).map((genre, i) => (
+                            <span key={i} className="movie-genre-tag">{genre.trim()}</span>
+                          ))}
+                        </div>
+                      )}
                       <div className="movie-meta">
-                        <span className="movie-date">{formatDate(movie.scheduled_at)}</span>
+                        <span className="movie-date">
+                          {movie.release_year && `${movie.release_year} · `}{formatDate(movie.scheduled_at)}
+                        </span>
                         <span className="movie-stats">
                           {parseFloat(movie.avg_rating || 0) > 0 ? (
                             <>

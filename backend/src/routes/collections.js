@@ -1,18 +1,13 @@
 import { Router } from 'express';
+import { validateGuildId, parsePagination } from '../middleware/validate.js';
 import * as db from '../models/index.js';
 
 const router = Router();
 
 // Get all collections for a guild
-router.get('/', async (req, res) => {
-  const { guild_id } = req.query;
-
-  if (!guild_id) {
-    return res.status(400).json({ error: 'guild_id is required' });
-  }
-
+router.get('/', validateGuildId, parsePagination, async (req, res) => {
   try {
-    const collections = await db.getCollections(guild_id);
+    const collections = await db.getCollections(req.guildId, req.pagination.limit, req.pagination.offset);
     res.json(collections);
   } catch (err) {
     console.error('Error fetching collections:', err);
@@ -21,16 +16,11 @@ router.get('/', async (req, res) => {
 });
 
 // Get movies in a specific collection
-router.get('/:name', async (req, res) => {
+router.get('/:name', validateGuildId, parsePagination, async (req, res) => {
   const { name } = req.params;
-  const { guild_id } = req.query;
-
-  if (!guild_id) {
-    return res.status(400).json({ error: 'guild_id is required' });
-  }
 
   try {
-    const movies = await db.getCollectionMovies(guild_id, decodeURIComponent(name));
+    const movies = await db.getCollectionMovies(req.guildId, decodeURIComponent(name), req.pagination.limit, req.pagination.offset);
     res.json(movies);
   } catch (err) {
     console.error('Error fetching collection movies:', err);

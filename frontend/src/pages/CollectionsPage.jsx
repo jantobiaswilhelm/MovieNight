@@ -1,47 +1,26 @@
-import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { getCollections, getCollectionMovies } from '../api/client';
+import { useFetch } from '../hooks';
 import './CollectionsPage.css';
 
 const CollectionsPage = () => {
   const { name } = useParams();
   const navigate = useNavigate();
-  const [collections, setCollections] = useState([]);
-  const [collectionMovies, setCollectionMovies] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    if (name) {
-      fetchCollectionMovies();
-    } else {
-      fetchCollections();
-    }
-  }, [name]);
+  const { data: collections, loading: collectionsLoading, error: collectionsError } = useFetch(
+    () => getCollections(),
+    [name],
+    { enabled: !name, initialData: [] }
+  );
 
-  const fetchCollections = async () => {
-    setLoading(true);
-    try {
-      const data = await getCollections();
-      setCollections(data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: collectionMovies, loading: moviesLoading, error: moviesError } = useFetch(
+    () => getCollectionMovies(name),
+    [name],
+    { enabled: !!name, initialData: [] }
+  );
 
-  const fetchCollectionMovies = async () => {
-    setLoading(true);
-    try {
-      const data = await getCollectionMovies(name);
-      setCollectionMovies(data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const loading = name ? moviesLoading : collectionsLoading;
+  const error = name ? moviesError : collectionsError;
 
   if (loading) {
     return <div className="loading">Loading...</div>;
@@ -95,6 +74,9 @@ const CollectionsPage = () => {
   // Collections list view
   return (
     <div className="collections-page">
+      <div className="collections-breadcrumb">
+        <Link to="/movies">Movies</Link> <span>/</span> <span>Collections</span>
+      </div>
       <h1>Movie Collections</h1>
       <p className="page-subtitle">Franchises and series we've watched together</p>
 

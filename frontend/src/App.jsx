@@ -1,15 +1,14 @@
 import { lazy, Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
-import Header from './components/Header';
-import ErrorBoundary from './components/ErrorBoundary';
+import { Header } from './components/layout';
+import { ErrorBoundary } from './components/common';
 import { NotificationProvider } from './context/NotificationContext';
 import './App.css';
 
 const Home = lazy(() => import('./pages/Home'));
 const Movie = lazy(() => import('./pages/Movie'));
 const MoviesPage = lazy(() => import('./pages/MoviesPage'));
-const Profile = lazy(() => import('./pages/Profile'));
-const UserProfile = lazy(() => import('./pages/UserProfile'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const StatsPage = lazy(() => import('./pages/StatsPage'));
 const Commands = lazy(() => import('./pages/Commands'));
 const WishlistPage = lazy(() => import('./pages/WishlistPage'));
@@ -34,9 +33,9 @@ function App() {
             <Route path="/movie/:id" element={<Movie />} />
             <Route path="/commands" element={<Commands />} />
             <Route path="/wishlist" element={<WishlistPage />} />
-            <Route path="/profile" element={<Profile />} />
+            <Route path="/profile" element={<ProfilePage />} />
             <Route path="/my-movies" element={<MyMoviesPage />} />
-            <Route path="/user/:userId" element={<UserProfile />} />
+            <Route path="/user/:userId" element={<ProfilePage />} />
             <Route path="/stats" element={<StatsPage />} />
             <Route path="/collections" element={<CollectionsPage />} />
             <Route path="/collections/:name" element={<CollectionsPage />} />

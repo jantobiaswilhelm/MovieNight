@@ -1,6 +1,9 @@
 import cron from 'node-cron';
 import { getPendingAnnouncements, markAnnouncementProcessed, createMovieNight, findOrCreateUser } from '../models/index.js';
 import { createAnnouncementEmbed } from '../utils/embeds.js';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('announcementProcessor');
 
 // Default announcement channel ID (can be overridden per guild)
 const DEFAULT_CHANNEL_ID = process.env.ANNOUNCEMENT_CHANNEL_ID;
@@ -19,7 +22,7 @@ export const startAnnouncementProcessorJob = (client) => {
           const channelId = announcement.channel_id || DEFAULT_CHANNEL_ID;
 
           if (!channelId) {
-            console.error(`No channel configured for announcement ${announcement.id}`);
+            logger.error(`No channel configured for announcement ${announcement.id}`);
             await markAnnouncementProcessed(announcement.id, 'failed');
             continue;
           }
@@ -28,7 +31,7 @@ export const startAnnouncementProcessorJob = (client) => {
           const channel = await client.channels.fetch(channelId).catch(() => null);
 
           if (!channel) {
-            console.error(`Could not find channel ${channelId} for announcement ${announcement.id}`);
+            logger.error(`Could not find channel ${channelId} for announcement ${announcement.id}`);
             await markAnnouncementProcessed(announcement.id, 'failed');
             continue;
           }
@@ -39,7 +42,7 @@ export const startAnnouncementProcessorJob = (client) => {
             // Try to find a text channel in the correct guild
             const targetGuild = await client.guilds.fetch(announcement.guild_id).catch(() => null);
             if (!targetGuild) {
-              console.error(`Could not find guild ${announcement.guild_id}`);
+              logger.error(`Could not find guild ${announcement.guild_id}`);
               await markAnnouncementProcessed(announcement.id, 'failed');
               continue;
             }
@@ -50,7 +53,7 @@ export const startAnnouncementProcessorJob = (client) => {
             );
 
             if (!textChannel) {
-              console.error(`No suitable channel found in guild ${announcement.guild_id}`);
+              logger.error(`No suitable channel found in guild ${announcement.guild_id}`);
               await markAnnouncementProcessed(announcement.id, 'failed');
               continue;
             }
@@ -61,16 +64,16 @@ export const startAnnouncementProcessorJob = (client) => {
             await processAnnouncement(client, announcement, channel);
           }
         } catch (err) {
-          console.error(`Error processing announcement ${announcement.id}:`, err);
+          logger.error(`Error processing announcement ${announcement.id}`, err);
           await markAnnouncementProcessed(announcement.id, 'failed');
         }
       }
     } catch (err) {
-      console.error('Error in announcement processor job:', err);
+      logger.error('Error in announcement processor job', err);
     }
   });
 
-  console.log('Announcement processor job scheduled (runs every 5 minutes)');
+  logger.info('Announcement processor job scheduled (runs every 5 minutes)');
 };
 
 async function processAnnouncement(client, announcement, channel) {
@@ -118,5 +121,5 @@ async function processAnnouncement(client, announcement, channel) {
   // Mark as processed
   await markAnnouncementProcessed(announcement.id, 'processed');
 
-  console.log(`Processed announcement: ${announcement.title} (ID: ${announcement.id})`);
+  logger.info(`Processed announcement: ${announcement.title} (ID: ${announcement.id})`);
 }
