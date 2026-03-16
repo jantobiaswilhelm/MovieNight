@@ -77,14 +77,19 @@ const MoviesPage = () => {
     return Array.from(genres).sort();
   }, [movies]);
 
-  const availableYears = useMemo(() => {
+  const { availableYears, availableDecades } = useMemo(() => {
     const years = new Set();
+    const decades = new Set();
     movies.forEach((movie) => {
       if (movie.release_year) {
         years.add(movie.release_year);
+        decades.add(Math.floor(movie.release_year / 10) * 10);
       }
     });
-    return Array.from(years).sort((a, b) => b - a);
+    return {
+      availableYears: Array.from(years).sort((a, b) => b - a),
+      availableDecades: Array.from(decades).sort((a, b) => b - a),
+    };
   }, [movies]);
 
   const hasActiveFilters = searchQuery.trim() || selectedMonth || selectedGenre || selectedYear;
@@ -117,11 +122,18 @@ const MoviesPage = () => {
       });
     }
 
-    // Filter by year
+    // Filter by year or decade
     if (selectedYear) {
-      result = result.filter((movie) =>
-        movie.release_year === parseInt(selectedYear)
-      );
+      if (selectedYear.endsWith('s')) {
+        const decade = parseInt(selectedYear);
+        result = result.filter((movie) =>
+          movie.release_year >= decade && movie.release_year < decade + 10
+        );
+      } else {
+        result = result.filter((movie) =>
+          movie.release_year === parseInt(selectedYear)
+        );
+      }
     }
 
     // Filter by month
@@ -316,6 +328,10 @@ const MoviesPage = () => {
                 className="filter-select"
               >
                 <option value="">All Years</option>
+                {availableDecades.map((decade) => (
+                  <option key={`${decade}s`} value={`${decade}s`}>{decade}s</option>
+                ))}
+                <option disabled>───</option>
                 {availableYears.map((year) => (
                   <option key={year} value={year}>{year}</option>
                 ))}
@@ -354,7 +370,7 @@ const MoviesPage = () => {
               )}
               {selectedYear && (
                 <span className="filter-tag">
-                  {selectedYear}
+                  {selectedYear.endsWith('s') ? selectedYear : selectedYear}
                   <button onClick={() => setSelectedYear('')}>&times;</button>
                 </span>
               )}

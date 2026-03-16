@@ -170,9 +170,15 @@ const ProfilePage = () => {
         <div className="profile-column">
           {isOwnProfile && <RatingTwin twin={profileStats?.rating_twin} />}
           <HotTakes hotTakes={profileStats?.hot_takes} />
-          {isOwnProfile && <ProfileWishlist wishlist={profileStats?.wishlist_preview} />}
         </div>
       </div>
+
+      {/* Wishlist Preview */}
+      {isOwnProfile && (
+        <div className="profile-section">
+          <ProfileWishlist wishlist={profileStats?.wishlist_preview} />
+        </div>
+      )}
 
       {/* Quick Links */}
       <div className="profile-section profile-links">
