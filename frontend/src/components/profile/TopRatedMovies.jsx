@@ -8,7 +8,7 @@ const TopRatedMovies = memo(({ movies }) => {
   if (!movies || movies.length === 0) {
     return (
       <div className="top-rated-movies">
-        <h3>Top Rated Movies</h3>
+        <h3>Top Rated on Server</h3>
         <p className="top-rated-empty">No ratings yet - rate some movies to see your top 10!</p>
       </div>
     );
@@ -19,7 +19,7 @@ const TopRatedMovies = memo(({ movies }) => {
   return (
     <div className="top-rated-movies">
       <div className="top-rated-header">
-        <h3>Top Rated Movies</h3>
+        <h3>Top Rated on Server</h3>
         {movies.length > 5 && (
           <button
             className="top-rated-toggle"
