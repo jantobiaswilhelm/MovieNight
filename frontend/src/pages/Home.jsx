@@ -14,7 +14,7 @@ import {
   removeVote
 } from '../api/client';
 import { StarRating, MovieCard, MovieCardSkeleton } from '../components/common';
-import { AdminSettingsPanel, AnnounceFlow, CommentsTicker, UsersSection, ExploreSection } from '../components/home';
+import { AdminSettingsPanel, CommentsTicker, UsersSection, ExploreSection } from '../components/home';
 import './Home.css';
 
 const Home = () => {
@@ -468,8 +468,6 @@ const Home = () => {
 
       <UsersSection />
 
-      {/* ═══ ANNOUNCE FLOW ═══ */}
-      {isAuthenticated && <AnnounceFlow onAnnounced={handleDataRefresh} />}
     </div>
   );
 };

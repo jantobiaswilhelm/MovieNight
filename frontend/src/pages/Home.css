@@ -18,9 +18,8 @@
   display: grid;
   grid-template-columns: 7fr 3fr;
   gap: 1.5rem;
-  min-height: 520px;
-  height: calc(100vh - 160px);
-  max-height: 680px;
+  min-height: 380px;
+  max-height: 520px;
 }
 
 /* ── LEFT: Up Next Hero ── */
@@ -838,6 +837,66 @@
   .home-bottom-row {
     grid-template-columns: 1fr;
   }
+}
+
+/* ══════════════════════════════════════
+   EXPLORE SECTION
+   ══════════════════════════════════════ */
+
+.explore-section {
+  margin-top: 2.5rem;
+  background: #161618;
+  border: 1px solid #2A2A2C;
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.explore-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.75rem;
+}
+
+.explore-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid transparent;
+  text-decoration: none;
+  color: #fff;
+  transition: all 0.2s ease;
+}
+
+.explore-card:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: #2A2A2C;
+  transform: scale(1.02);
+  text-decoration: none;
+}
+
+.explore-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.explore-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.explore-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.explore-desc {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
 }
 
 /* ── Shared helpers ── */

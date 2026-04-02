@@ -167,9 +167,7 @@ const Header = () => {
               )}
             </div>
           )}
-        </nav>
 
-        <div className="header-right">
           {isAuthenticated && (
             <Link to="/#announce" className="announce-cta-btn" onClick={(e) => {
               e.preventDefault();
@@ -190,6 +188,9 @@ const Header = () => {
               Announce Next Movie
             </Link>
           )}
+        </nav>
+
+        <div className="header-right">
           <ThemeSwitcher />
           {isAuthenticated && <NotificationBell />}
           {isAuthenticated ? (
