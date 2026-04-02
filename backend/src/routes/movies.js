@@ -50,10 +50,6 @@ router.get('/next/with-attendees', validateGuildId, optionalAuth, async (req, re
 
 // Announce movie directly (creates pending announcement for bot)
 router.post('/announce', authenticateToken, validateGuildId, validateDate('scheduled_at'), async (req, res) => {
-  if (!isAdmin(req.user.discord_id)) {
-    return res.status(403).json({ error: 'Only admins can announce movies' });
-  }
-
   const { tmdb_data } = req.body;
   const scheduledDate = req.validatedDates.scheduled_at;
 
