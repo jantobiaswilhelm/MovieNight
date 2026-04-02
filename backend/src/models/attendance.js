@@ -69,7 +69,7 @@ export const getUpcomingMoviesWithAttendees = async (guildId, limit = 10) => {
 
 export const getNextMovieWithAttendees = async (guildId) => {
   const result = await pool.query(
-    `SELECT mn.*, u.username as announced_by_name, u.discord_id as announced_by_discord_id,
+    `SELECT mn.*, u.username as announced_by_name, u.discord_id as announced_by_discord_id, u.avatar as announced_by_avatar,
             COALESCE(
               json_agg(
                 json_build_object('id', att_u.id, 'discord_id', att_u.discord_id, 'username', att_u.username, 'avatar', att_u.avatar)
@@ -82,7 +82,7 @@ export const getNextMovieWithAttendees = async (guildId) => {
      LEFT JOIN users att_u ON ma.user_id = att_u.id
      WHERE mn.guild_id = $1 AND mn.started_at IS NULL AND mn.scheduled_at > CURRENT_TIMESTAMP
        AND (mn.is_test = false OR mn.is_test IS NULL)
-     GROUP BY mn.id, u.username, u.discord_id
+     GROUP BY mn.id, u.username, u.discord_id, u.avatar
      ORDER BY mn.scheduled_at ASC
      LIMIT 1`,
     [guildId]

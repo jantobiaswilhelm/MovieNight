@@ -169,19 +169,36 @@ const Header = () => {
           )}
         </nav>
 
-        <div className="header-actions">
+        <div className="header-right">
+          {isAuthenticated && (
+            <Link to="/#announce" className="announce-cta-btn" onClick={(e) => {
+              e.preventDefault();
+              const el = document.querySelector('.announce-section-fullwidth, .announce-flow');
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+              else window.location.href = '/';
+            }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/>
+                <line x1="7" y1="2" x2="7" y2="22"/>
+                <line x1="17" y1="2" x2="17" y2="22"/>
+                <line x1="2" y1="12" x2="22" y2="12"/>
+                <line x1="2" y1="7" x2="7" y2="7"/>
+                <line x1="2" y1="17" x2="7" y2="17"/>
+                <line x1="17" y1="7" x2="22" y2="7"/>
+                <line x1="17" y1="17" x2="22" y2="17"/>
+              </svg>
+              Announce Next Movie
+            </Link>
+          )}
           <ThemeSwitcher />
           {isAuthenticated && <NotificationBell />}
-        </div>
-
-        <div className="auth">
           {isAuthenticated ? (
             <div className="user-menu">
               {avatarUrl && (
                 <img src={avatarUrl} alt={user.username} className="avatar" loading="lazy" />
               )}
               <span className="username">{user.username}</span>
-              <button onClick={logout} className="btn-secondary">
+              <button onClick={logout} className="btn-logout">
                 Logout
               </button>
             </div>
