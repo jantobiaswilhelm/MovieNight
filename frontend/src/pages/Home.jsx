@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { sanitizeUrl, sanitizeImdbId, sanitizeImageUrl } from '../utils/sanitizeUrl';
-import { formatDate, formatRuntime, getAvatarUrl } from '../utils/helpers';
+import { formatDate, formatRuntime, getAvatarUrl, formatRelativeTime } from '../utils/helpers';
 import {
   getMovies,
   getActiveVoting,
@@ -366,8 +366,14 @@ const Home = () => {
                       loading="lazy"
                     />
                     <span className="review-username">{review.username}</span>
+                    {review.created_at && (
+                      <span className="review-time">{formatRelativeTime(review.created_at)}</span>
+                    )}
                   </div>
                   <div className="review-card-body">
+                    {review.image_url && (
+                      <img src={review.image_url} alt="" className="review-poster" loading="lazy" />
+                    )}
                     <div className="review-details">
                       <div className="review-stars">
                         {'★'.repeat(Math.round(parseFloat(review.score) / 2))}
