@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { getAvatarUrl } from '../../utils/helpers';
+import { searchTMDB, getTMDBMovie, announceMovie } from '../../api/client';
 import ThemeSwitcher from '../common/ThemeSwitcher';
 import NotificationBell from './NotificationBell';
 import './Header.css';
@@ -10,6 +11,7 @@ const Header = () => {
   const { user, login, logout, isAuthenticated } = useAuth();
   const location = useLocation();
   const [openDropdown, setOpenDropdown] = useState(null);
+  const [showAnnounceModal, setShowAnnounceModal] = useState(false);
   const dropdownRefs = useRef({});
 
   const avatarUrl = user ? getAvatarUrl(user.discordId, user.avatar) : null;
@@ -171,12 +173,7 @@ const Header = () => {
         </nav>
 
         {isAuthenticated && (
-          <Link to="/#announce" className="announce-cta-btn" onClick={(e) => {
-            e.preventDefault();
-            const el = document.querySelector('.announce-section-fullwidth, .announce-flow');
-            if (el) el.scrollIntoView({ behavior: 'smooth' });
-            else window.location.href = '/';
-          }}>
+          <button className="announce-cta-btn" onClick={() => setShowAnnounceModal(true)}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/>
               <line x1="7" y1="2" x2="7" y2="22"/>
@@ -188,7 +185,7 @@ const Header = () => {
               <line x1="17" y1="17" x2="22" y2="17"/>
             </svg>
             Announce Next Movie
-          </Link>
+          </button>
         )}
 
         <div className="header-right">
@@ -211,7 +208,175 @@ const Header = () => {
           )}
         </div>
       </div>
+
+      {showAnnounceModal && (
+        <AnnounceModal onClose={() => setShowAnnounceModal(false)} />
+      )}
     </header>
+  );
+};
+
+const AnnounceModal = ({ onClose }) => {
+  const [step, setStep] = useState('search');
+  const [selectedMovie, setSelectedMovie] = useState(null);
+  const [search, setSearch] = useState('');
+  const [results, setResults] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [time, setTime] = useState('20:00');
+  const [announcing, setAnnouncing] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    if (!search.trim()) return;
+    setSearching(true);
+    setError(null);
+    try {
+      const data = await searchTMDB(search);
+      setResults(data);
+    } catch {
+      setError('Failed to search movies');
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const handleSelect = async (movie) => {
+    setSearching(true);
+    setError(null);
+    try {
+      const details = await getTMDBMovie(movie.id);
+      setSelectedMovie(details);
+      setStep('preview');
+    } catch {
+      setError('Failed to load movie details');
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedMovie || !date || !time) {
+      setError('Please select a date and time');
+      return;
+    }
+    const scheduledAt = new Date(`${date}T${time}`);
+    if (scheduledAt <= new Date()) {
+      setError('Scheduled time must be in the future');
+      return;
+    }
+    setAnnouncing(true);
+    setError(null);
+    try {
+      await announceMovie(selectedMovie, scheduledAt.toISOString());
+      setStep('success');
+      setTimeout(() => {
+        onClose();
+        window.location.reload();
+      }, 2000);
+    } catch (err) {
+      setError(err.message || 'Failed to announce movie');
+    } finally {
+      setAnnouncing(false);
+    }
+  };
+
+  return (
+    <div className="announce-modal-overlay" onClick={onClose}>
+      <div className="announce-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="announce-modal-header">
+          <h2>{step === 'success' ? 'Done!' : 'Announce Movie Night'}</h2>
+          <button className="announce-modal-close" onClick={onClose}>&times;</button>
+        </div>
+
+        {step === 'search' && (
+          <div className="announce-modal-body">
+            <form onSubmit={handleSearch} className="announce-modal-search">
+              <input
+                type="text"
+                placeholder="Search for a movie..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                autoFocus
+              />
+              <button type="submit" disabled={searching}>
+                {searching ? '...' : 'Search'}
+              </button>
+            </form>
+            {error && <div className="announce-modal-error">{error}</div>}
+            {results.length > 0 && (
+              <div className="announce-modal-results">
+                {results.slice(0, 8).map((movie) => (
+                  <div key={movie.id} className="announce-modal-result" onClick={() => handleSelect(movie)}>
+                    {movie.posterPath ? (
+                      <img src={movie.posterPath} alt="" className="announce-modal-poster" />
+                    ) : (
+                      <div className="announce-modal-poster no-poster">?</div>
+                    )}
+                    <div>
+                      <span className="announce-modal-title">{movie.title}</span>
+                      {movie.year && <span className="announce-modal-year">{movie.year}</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {step === 'preview' && selectedMovie && (
+          <div className="announce-modal-body">
+            <div className="announce-modal-preview">
+              {selectedMovie.posterPath && (
+                <img src={selectedMovie.posterPath} alt="" className="announce-modal-preview-poster" />
+              )}
+              <div className="announce-modal-preview-info">
+                <h3>{selectedMovie.title}</h3>
+                <div className="announce-modal-meta">
+                  {selectedMovie.year && <span>{selectedMovie.year}</span>}
+                  {selectedMovie.runtime > 0 && <span>{Math.floor(selectedMovie.runtime / 60)}h {selectedMovie.runtime % 60}m</span>}
+                  {selectedMovie.rating > 0 && <span>TMDB {selectedMovie.rating}</span>}
+                </div>
+                {selectedMovie.overview && (
+                  <p className="announce-modal-overview">{selectedMovie.overview}</p>
+                )}
+              </div>
+            </div>
+            <form onSubmit={handleSubmit} className="announce-modal-schedule">
+              <div className="announce-modal-fields">
+                <div className="announce-modal-field">
+                  <label>Date</label>
+                  <input type="date" value={date} onChange={(e) => setDate(e.target.value)} min={new Date().toISOString().split('T')[0]} required />
+                </div>
+                <div className="announce-modal-field">
+                  <label>Time</label>
+                  <input type="time" value={time} onChange={(e) => setTime(e.target.value)} required />
+                </div>
+              </div>
+              {error && <div className="announce-modal-error">{error}</div>}
+              <div className="announce-modal-actions">
+                <button type="button" className="btn-back" onClick={() => { setStep('search'); setSelectedMovie(null); }}>
+                  Back
+                </button>
+                <button type="submit" className="btn-announce" disabled={announcing}>
+                  {announcing ? 'Scheduling...' : 'Announce Movie Night'}
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {step === 'success' && (
+          <div className="announce-modal-body announce-modal-success">
+            <div className="announce-success-check">{'\u2713'}</div>
+            <h3>Movie Night Announced!</h3>
+            <p><strong>{selectedMovie?.title}</strong> has been scheduled.</p>
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
 
