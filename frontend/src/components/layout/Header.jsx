@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { getAvatarUrl } from '../../utils/helpers';
@@ -209,8 +210,9 @@ const Header = () => {
         </div>
       </div>
 
-      {showAnnounceModal && (
-        <AnnounceModal onClose={() => setShowAnnounceModal(false)} />
+      {showAnnounceModal && createPortal(
+        <AnnounceModal onClose={() => setShowAnnounceModal(false)} />,
+        document.body
       )}
     </header>
   );
