@@ -139,10 +139,21 @@ const Home = () => {
     .slice(0, 5);
 
   const nextMovie = nextMovieWithAttendees || upcomingMovies[0];
+
+  // If no upcoming movie, show the most recent past movie
+  const lastMovie = !nextMovie
+    ? movies
+        .filter(movie => new Date(movie.scheduled_at) <= now)
+        .sort((a, b) => new Date(b.scheduled_at) - new Date(a.scheduled_at))[0]
+    : null;
+
+  const heroMovie = nextMovie || lastMovie;
+  const isHeroPast = !nextMovie && !!lastMovie;
+
   const totalVotes = voting?.suggestions?.reduce((sum, s) => sum + parseInt(s.vote_count), 0) || 0;
 
-  const heroBackdrop = nextMovie
-    ? sanitizeImageUrl(nextMovie.backdrop_url) || sanitizeImageUrl(nextMovie.image_url)
+  const heroBackdrop = heroMovie
+    ? sanitizeImageUrl(heroMovie.backdrop_url) || sanitizeImageUrl(heroMovie.image_url)
     : null;
 
   return (
@@ -169,64 +180,64 @@ const Home = () => {
                 <div className="skeleton-block" style={{ width: '50%', height: 18 }} />
                 <div className="skeleton-block" style={{ width: '90%', height: 60 }} />
               </div>
-            ) : nextMovie ? (
+            ) : heroMovie ? (
               <>
-                <span className="hero-label">Up Next</span>
+                <span className="hero-label">{isHeroPast ? 'Last Watched' : 'Up Next'}</span>
                 <h1 className="hero-movie-title">
-                  <Link to={`/movie/${nextMovie.id}`}>{nextMovie.title}</Link>
+                  <Link to={`/movie/${heroMovie.id}`}>{heroMovie.title}</Link>
                 </h1>
 
                 <div className="hero-movie-meta">
-                  {nextMovie.release_year && <span>{nextMovie.release_year}</span>}
-                  {nextMovie.runtime > 0 && (
+                  {heroMovie.release_year && <span>{heroMovie.release_year}</span>}
+                  {heroMovie.runtime > 0 && (
                     <>
                       <span className="meta-sep">|</span>
-                      <span>{formatRuntime(nextMovie.runtime)}</span>
+                      <span>{formatRuntime(heroMovie.runtime)}</span>
                     </>
                   )}
-                  {nextMovie.genres && (
+                  {heroMovie.genres && (
                     <>
                       <span className="meta-sep">|</span>
-                      <span>{nextMovie.genres}</span>
+                      <span>{heroMovie.genres}</span>
                     </>
                   )}
                 </div>
 
-                {nextMovie.description && (
-                  <p className="hero-movie-desc">{nextMovie.description}</p>
+                {heroMovie.description && (
+                  <p className="hero-movie-desc">{heroMovie.description}</p>
                 )}
 
                 <p className="hero-showing">
-                  <strong>Next Showing:</strong> {formatDate(nextMovie.scheduled_at, 'long')}
+                  <strong>{isHeroPast ? 'Watched on:' : 'Next Showing:'}</strong> {formatDate(heroMovie.scheduled_at, 'long')}
                 </p>
 
-                {nextMovie.announced_by_name && (
+                {heroMovie.announced_by_name && (
                   <div className="hero-picked-by">
                     <span>Picked by</span>
-                    {nextMovie.announced_by_avatar && (
+                    {heroMovie.announced_by_avatar && (
                       <img
-                        src={getAvatarUrl(nextMovie.announced_by_discord_id, nextMovie.announced_by_avatar)}
+                        src={getAvatarUrl(heroMovie.announced_by_discord_id, heroMovie.announced_by_avatar)}
                         alt=""
                         className="picked-by-avatar"
                       />
                     )}
-                    <span className="picked-by-name">{nextMovie.announced_by_name}</span>
+                    <span className="picked-by-name">{heroMovie.announced_by_name}</span>
                   </div>
                 )}
 
                 <div className="hero-actions-row">
-                  {isAuthenticated && (
+                  {!isHeroPast && isAuthenticated && (
                     <button
-                      className={`hero-action-btn ${nextMovie.is_attending ? 'btn-attending' : 'btn-attend'}`}
+                      className={`hero-action-btn ${nextMovie?.is_attending ? 'btn-attending' : 'btn-attend'}`}
                       onClick={handleAttendanceToggle}
                       disabled={togglingAttendance}
                     >
-                      {togglingAttendance ? '...' : nextMovie.is_attending ? '\u2713 Attending' : 'Attend'}
+                      {togglingAttendance ? '...' : nextMovie?.is_attending ? '\u2713 Attending' : 'Attend'}
                     </button>
                   )}
-                  {nextMovie.trailer_url && (
+                  {heroMovie.trailer_url && (
                     <a
-                      href={sanitizeUrl(nextMovie.trailer_url)}
+                      href={sanitizeUrl(heroMovie.trailer_url)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="hero-action-btn btn-trailer"
@@ -234,9 +245,9 @@ const Home = () => {
                       Watch Trailer
                     </a>
                   )}
-                  {sanitizeImdbId(nextMovie.imdb_id) && (
+                  {sanitizeImdbId(heroMovie.imdb_id) && (
                     <a
-                      href={`https://www.imdb.com/title/${sanitizeImdbId(nextMovie.imdb_id)}`}
+                      href={`https://www.imdb.com/title/${sanitizeImdbId(heroMovie.imdb_id)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="hero-action-btn btn-imdb"
@@ -246,8 +257,8 @@ const Home = () => {
                   )}
                 </div>
 
-                {/* Attendee avatars */}
-                {nextMovie.attendees && nextMovie.attendees.length > 0 && (
+                {/* Attendee avatars - only for upcoming */}
+                {!isHeroPast && nextMovie?.attendees && nextMovie.attendees.length > 0 && (
                   <div className="hero-attendees">
                     <div className="attendee-stack">
                       {nextMovie.attendees.slice(0, 6).map((a) => (
@@ -266,11 +277,19 @@ const Home = () => {
                     <span className="attendee-label">{nextMovie.attendees.length} attending</span>
                   </div>
                 )}
+
+                {/* Rating for past movies */}
+                {isHeroPast && heroMovie.avg_rating > 0 && (
+                  <div className="hero-past-rating">
+                    <span className="hero-past-score">{parseFloat(heroMovie.avg_rating).toFixed(1)}/10</span>
+                    <span className="hero-past-votes">({heroMovie.rating_count} ratings)</span>
+                  </div>
+                )}
               </>
             ) : (
               <div className="hero-empty-state">
-                <h2>No movie scheduled</h2>
-                <p>Announce a movie or start a vote to pick the next one!</p>
+                <h2>No movies yet</h2>
+                <p>Announce a movie to get started!</p>
               </div>
             )}
           </div>

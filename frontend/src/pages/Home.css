@@ -313,6 +313,25 @@
   color: rgba(255, 255, 255, 0.5);
 }
 
+/* Past Movie Rating */
+.hero-past-rating {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.hero-past-score {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #F5C518;
+}
+
+.hero-past-votes {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
 /* Hero Empty State */
 .hero-empty-state {
   display: flex;
