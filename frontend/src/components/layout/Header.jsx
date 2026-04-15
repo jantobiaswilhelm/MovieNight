@@ -1,9 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
-import { createPortal } from 'react-dom';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { getAvatarUrl } from '../../utils/helpers';
-import { searchTMDB, getTMDBMovie, announceMovie } from '../../api/client';
 import { Icon } from '../ui';
 import NotificationBell from './NotificationBell';
 import './Header.css';
@@ -28,7 +26,6 @@ const MORE_NAV = [
 const Header = () => {
   const { user, login, logout, isAuthenticated } = useAuth();
   const location = useLocation();
-  const [showAnnounceModal, setShowAnnounceModal] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
 
@@ -70,17 +67,6 @@ const Header = () => {
         </nav>
 
         <div className="header-right">
-          {isAuthenticated && (
-            <button
-              className="btn"
-              onClick={() => setShowAnnounceModal(true)}
-              aria-label="Announce next movie"
-            >
-              <Icon name="megaphone" size={16} stroke={1.75} />
-              <span>Announce</span>
-            </button>
-          )}
-
           {isAuthenticated && <NotificationBell />}
 
           {isAuthenticated ? (
@@ -119,190 +105,7 @@ const Header = () => {
         </div>
       </div>
 
-      {showAnnounceModal && createPortal(
-        <AnnounceModal onClose={() => setShowAnnounceModal(false)} />,
-        document.body
-      )}
     </header>
-  );
-};
-
-/* ─── Announce modal ──────────────────────────────────────────────────── */
-
-const AnnounceModal = ({ onClose }) => {
-  const [step, setStep] = useState('search');
-  const [selectedMovie, setSelectedMovie] = useState(null);
-  const [search, setSearch] = useState('');
-  const [results, setResults] = useState([]);
-  const [searching, setSearching] = useState(false);
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [time, setTime] = useState('20:00');
-  const [announcing, setAnnouncing] = useState(false);
-  const [error, setError] = useState(null);
-
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    if (!search.trim()) return;
-    setSearching(true);
-    setError(null);
-    try {
-      const data = await searchTMDB(search);
-      setResults(data);
-    } catch {
-      setError('Failed to search movies');
-    } finally {
-      setSearching(false);
-    }
-  };
-
-  const handleSelect = async (movie) => {
-    setSearching(true);
-    setError(null);
-    try {
-      const details = await getTMDBMovie(movie.id);
-      setSelectedMovie(details);
-      setStep('preview');
-    } catch {
-      setError('Failed to load movie details');
-    } finally {
-      setSearching(false);
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!selectedMovie || !date || !time) {
-      setError('Please select a date and time');
-      return;
-    }
-    const scheduledAt = new Date(`${date}T${time}`);
-    if (scheduledAt <= new Date()) {
-      setError('Scheduled time must be in the future');
-      return;
-    }
-    setAnnouncing(true);
-    setError(null);
-    try {
-      await announceMovie(selectedMovie, scheduledAt.toISOString());
-      setStep('success');
-      setTimeout(() => {
-        onClose();
-        window.location.reload();
-      }, 2000);
-    } catch (err) {
-      setError(err.message || 'Failed to announce movie');
-    } finally {
-      setAnnouncing(false);
-    }
-  };
-
-  return (
-    <div className="announce-modal-overlay" onClick={onClose}>
-      <div className="announce-modal" onClick={(e) => e.stopPropagation()}>
-        <header className="announce-modal-header">
-          <div>
-            <div className="announce-modal-eyebrow">
-              {step === 'success' ? 'Scheduled' : 'The next reel'}
-            </div>
-            <h2>{step === 'success' ? 'Announced.' : 'Announce a movie night'}</h2>
-          </div>
-          <button className="btn icon" onClick={onClose} aria-label="Close">
-            <Icon name="close" size={16} />
-          </button>
-        </header>
-
-        {step === 'search' && (
-          <div className="announce-modal-body">
-            <form onSubmit={handleSearch} className="announce-modal-search">
-              <div className="input-group" style={{ flex: 1, position: 'relative' }}>
-                <span className="input-icon" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--bone-mute)' }}>
-                  <Icon name="search" size={16} />
-                </span>
-                <input
-                  type="text"
-                  placeholder="Title, director, year…"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  autoFocus
-                  style={{ paddingLeft: 40 }}
-                />
-              </div>
-              <button type="submit" className="btn" disabled={searching}>
-                {searching ? '…' : 'Search'}
-              </button>
-            </form>
-            {error && <div className="announce-modal-error">{error}</div>}
-            {results.length > 0 && (
-              <ul className="announce-modal-results">
-                {results.slice(0, 8).map((movie) => (
-                  <li key={movie.id} className="announce-modal-result" onClick={() => handleSelect(movie)}>
-                    {movie.posterPath ? (
-                      <img src={movie.posterPath} alt="" className="announce-modal-poster" />
-                    ) : (
-                      <div className="announce-modal-poster no-poster">?</div>
-                    )}
-                    <div className="announce-modal-result-body">
-                      <span className="announce-modal-title">{movie.title}</span>
-                      {movie.year && <span className="announce-modal-year">{movie.year}</span>}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        )}
-
-        {step === 'preview' && selectedMovie && (
-          <div className="announce-modal-body">
-            <div className="announce-modal-preview">
-              {selectedMovie.posterPath && (
-                <img src={selectedMovie.posterPath} alt="" className="announce-modal-preview-poster" />
-              )}
-              <div className="announce-modal-preview-info">
-                <h3>{selectedMovie.title}</h3>
-                <div className="announce-modal-meta">
-                  {selectedMovie.year && <span>{selectedMovie.year}</span>}
-                  {selectedMovie.runtime > 0 && <span>· {Math.floor(selectedMovie.runtime / 60)}h {selectedMovie.runtime % 60}m</span>}
-                  {selectedMovie.rating > 0 && <span>· TMDB {selectedMovie.rating}</span>}
-                </div>
-                {selectedMovie.overview && (
-                  <p className="announce-modal-overview">{selectedMovie.overview}</p>
-                )}
-              </div>
-            </div>
-            <form onSubmit={handleSubmit} className="announce-modal-schedule">
-              <div className="announce-modal-fields">
-                <label className="field">Date
-                  <input type="date" value={date} onChange={(e) => setDate(e.target.value)} min={new Date().toISOString().split('T')[0]} required />
-                </label>
-                <label className="field">Time
-                  <input type="time" value={time} onChange={(e) => setTime(e.target.value)} required />
-                </label>
-              </div>
-              {error && <div className="announce-modal-error">{error}</div>}
-              <div className="announce-modal-actions">
-                <button type="button" className="btn ghost" onClick={() => { setStep('search'); setSelectedMovie(null); }}>
-                  Back
-                </button>
-                <button type="submit" className="btn" disabled={announcing}>
-                  {announcing ? 'Scheduling…' : 'Announce'}
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
-
-        {step === 'success' && (
-          <div className="announce-modal-body announce-modal-success">
-            <div className="announce-success-check">
-              <Icon name="check" size={28} stroke={2} />
-            </div>
-            <h3>It's on the schedule.</h3>
-            <p><em>{selectedMovie?.title}</em> is announced.</p>
-          </div>
-        )}
-      </div>
-    </div>
   );
 };
 

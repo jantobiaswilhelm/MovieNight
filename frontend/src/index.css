@@ -226,9 +226,15 @@ p{ color: var(--bone); }
    ────────────────────────────────────────────────────────────────────────── */
 .container{
   width: 100%;
-  max-width: 1320px;
+  /* Grows with the viewport so 1920+ screens feel full, but caps at 1760px
+     so long-form prose and hero titles keep editorial proportions. Body copy
+     is constrained via its own max-widths (e.g. .mv-desc, .mv-synopsis). */
+  max-width: clamp(1200px, 85vw, 1680px);
   margin: 0 auto;
   padding: 0 var(--s-7);
+}
+@media (max-width: 1280px){
+  .container{ max-width: 100%; padding: 0 var(--s-5); }
 }
 @media (max-width: 720px){
   .container{ padding: 0 var(--s-4); }
@@ -517,11 +523,11 @@ select{
   font-family: var(--font-display);
   font-style: italic;
   font-weight: 300;
-  font-size: var(--fs-72);
+  font-size: var(--fs-48);
   line-height: .92;
   letter-spacing: -.02em;
   color: var(--bone);
-  margin-top: var(--s-3);
+  margin-top: var(--s-2);
 }
 .stat .stat-value sub{
   font-size: .3em;
