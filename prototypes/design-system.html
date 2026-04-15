@@ -1,0 +1,1293 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>MovieNight — Design System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,700;1,9..144,300;1,9..144,500&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* ==========================================================================
+   TOKENS — the single source of truth
+   ========================================================================== */
+:root{
+  /* Color */
+  --ink:        #14110D;
+  --ink-2:      #1C1915;
+  --ink-3:      #252119;
+  --ink-4:      #2F2A21;
+  --bone:       #E8DFC9;
+  --bone-dim:   #A89E88;
+  --bone-mute:  #6B6556;
+  --ember:      #D4663A;
+  --ember-dim:  #8A3F1F;
+  --ember-soft: rgba(212,102,58,.14);
+  --gold:       #E0A23A;
+  --red:        #C8321A; /* destructive only */
+  --rule:       rgba(232,223,201,.08);
+  --rule-strong:rgba(232,223,201,.16);
+
+  /* Type */
+  --font-display: "Fraunces", ui-serif, Georgia, serif;
+  --font-ui:      "Figtree", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono:    "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --fs-11: 11px;
+  --fs-12: 12px;
+  --fs-13: 13px;
+  --fs-14: 14px;
+  --fs-16: 16px;
+  --fs-19: 19px;
+  --fs-24: 24px;
+  --fs-32: clamp(26px, 2.4vw, 32px);
+  --fs-48: clamp(36px, 4vw, 48px);
+  --fs-72: clamp(48px, 7vw, 72px);
+  --fs-108: clamp(64px, 10vw, 108px);
+
+  /* Spacing */
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px;
+  --s-5: 24px; --s-6: 32px; --s-7: 48px; --s-8: 64px; --s-9: 96px;
+
+  /* Radius */
+  --r-0: 0; --r-1: 2px; --r-2: 6px; --r-3: 10px; --r-full: 999px;
+
+  /* Shadow */
+  --shadow-sm: 0 1px 0 rgba(0,0,0,.4);
+  --shadow-md: 0 12px 24px -12px rgba(0,0,0,.6);
+  --shadow-lg: 0 30px 60px -20px rgba(0,0,0,.75);
+
+  /* Motion */
+  --ease-out: cubic-bezier(.2,.7,.2,1);
+  --dur-1: 150ms;
+  --dur-2: 280ms;
+  --dur-3: 480ms;
+}
+
+/* ==========================================================================
+   BASE
+   ========================================================================== */
+*{ box-sizing:border-box; margin:0; padding:0; }
+html,body{ background:var(--ink); color:var(--bone); -webkit-font-smoothing:antialiased; }
+body{
+  font-family: var(--font-ui);
+  font-size: var(--fs-16);
+  line-height: 1.55;
+  letter-spacing: .005em;
+  font-feature-settings: "ss01", "cv11";
+  min-height: 100vh;
+}
+a{ color:inherit; text-decoration:none; }
+
+/* Subtle film-grain atmosphere — always-on, very light */
+body::before{
+  content:""; position:fixed; inset:-10%; pointer-events:none; z-index:9999;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .91  0 0 0 0 .87  0 0 0 0 .78  0 0 0 .08 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  opacity:.5; mix-blend-mode:overlay;
+}
+
+/* ==========================================================================
+   TYPOGRAPHY UTILITIES
+   ========================================================================== */
+.t-display      { font-family: var(--font-display); font-weight:300; letter-spacing:-.02em; line-height:.92; }
+.t-display-it   { font-family: var(--font-display); font-weight:300; font-style:italic; letter-spacing:-.02em; line-height:.92; }
+.t-ui           { font-family: var(--font-ui); }
+.t-mono         { font-family: var(--font-mono); font-size: var(--fs-11); letter-spacing:.28em; text-transform:uppercase; }
+.t-eyebrow      { font-family: var(--font-mono); font-size: var(--fs-11); letter-spacing:.32em; text-transform:uppercase; color: var(--ember); }
+
+h1,h2,h3,h4{ font-family: var(--font-display); font-weight:300; letter-spacing:-.015em; line-height:1.05; color:var(--bone); }
+h1{ font-size: var(--fs-72); }
+h2{ font-size: var(--fs-48); }
+h3{ font-size: var(--fs-32); }
+h4{ font-size: var(--fs-24); }
+p { color: var(--bone); }
+.muted{ color: var(--bone-dim); }
+.dim  { color: var(--bone-mute); }
+
+/* ==========================================================================
+   PAGE SHELL
+   ========================================================================== */
+.shell{ max-width: 1320px; margin: 0 auto; padding: var(--s-6) var(--s-7) var(--s-9); }
+@media (max-width: 720px){ .shell{ padding: var(--s-5) var(--s-4) var(--s-8); } }
+
+.ds-top{
+  display:flex; align-items:center; justify-content:space-between;
+  padding-bottom: var(--s-5);
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: var(--s-7);
+}
+.ds-brand{ display:flex; align-items:center; gap: var(--s-3); font-family: var(--font-mono); font-size: var(--fs-11); letter-spacing:.28em; text-transform:uppercase; color: var(--bone); }
+.ds-brand .mark{
+  width: 22px; height: 22px; display:grid; place-items:center;
+  border:1px solid var(--ember); color: var(--ember);
+  font-family: var(--font-display); font-style:italic; font-weight:500; font-size:14px;
+  border-radius: var(--r-full);
+}
+.ds-brand .mark::after{ content:"m"; transform: translateY(-1px); }
+.ds-top-meta{ font-family: var(--font-mono); font-size: var(--fs-11); letter-spacing:.28em; text-transform:uppercase; color: var(--bone-dim); }
+
+/* Section head used throughout the specimen */
+.section{
+  display:flex; align-items:baseline; gap: var(--s-4);
+  margin: var(--s-9) 0 var(--s-5);
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--rule);
+}
+.section-num{ font-family: var(--font-mono); font-size: var(--fs-11); letter-spacing:.32em; color: var(--ember); text-transform:uppercase; }
+.section-title{ font-family: var(--font-display); font-style:italic; font-weight:300; font-size: var(--fs-32); color: var(--bone); letter-spacing:-.015em; }
+.section-rule{ flex:1; height:1px; background: var(--rule); align-self:center; }
+.section-meta{ font-family: var(--font-mono); font-size: var(--fs-11); letter-spacing:.28em; color: var(--bone-dim); text-transform:uppercase; }
+
+/* Specimen block */
+.spec{ margin-top: var(--s-5); }
+.spec-label{
+  font-family: var(--font-mono); font-size: var(--fs-11); letter-spacing:.28em; text-transform:uppercase;
+  color: var(--bone-mute); margin-bottom: var(--s-3);
+}
+.spec-grid{ display:grid; gap: var(--s-5); }
+.spec-grid.cols-2{ grid-template-columns: repeat(2, 1fr); }
+.spec-grid.cols-3{ grid-template-columns: repeat(3, 1fr); }
+.spec-grid.cols-4{ grid-template-columns: repeat(4, 1fr); }
+.spec-grid.cols-5{ grid-template-columns: repeat(5, 1fr); }
+@media (max-width: 900px){
+  .spec-grid.cols-3, .spec-grid.cols-4, .spec-grid.cols-5{ grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 560px){
+  .spec-grid.cols-2, .spec-grid.cols-3, .spec-grid.cols-4, .spec-grid.cols-5{ grid-template-columns: 1fr; }
+}
+
+/* ==========================================================================
+   PRIMITIVES
+   ========================================================================== */
+
+/* — Eyebrow — */
+.eyebrow{
+  font-family: var(--font-mono); font-size: var(--fs-11); letter-spacing:.32em; text-transform:uppercase;
+  color: var(--ember);
+  display:inline-flex; align-items:center; gap: var(--s-3);
+}
+.eyebrow::before{
+  content:""; width: 28px; height:1px; background: currentColor; opacity:.8;
+}
+
+/* — Rule — */
+.rule{ height:1px; width:100%; background: var(--rule); border:0; }
+.rule.strong{ background: var(--rule-strong); }
+
+/* — Button — */
+.btn{
+  --btn-bg: var(--ember);
+  --btn-fg: var(--ink);
+  --btn-bd: transparent;
+  --btn-pad-y: 12px;
+  --btn-pad-x: 20px;
+  --btn-fs: var(--fs-13);
+  appearance:none; cursor:pointer; border:1px solid var(--btn-bd);
+  background: var(--btn-bg); color: var(--btn-fg);
+  padding: var(--btn-pad-y) var(--btn-pad-x);
+  font-family: var(--font-ui); font-weight:500; font-size: var(--btn-fs);
+  letter-spacing: .02em;
+  border-radius: var(--r-1);
+  display:inline-flex; align-items:center; justify-content:center; gap: var(--s-2);
+  transition: background var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out), transform var(--dur-1) var(--ease-out), border-color var(--dur-1) var(--ease-out);
+  line-height: 1;
+  white-space: nowrap;
+}
+.btn:hover{ background: #E27A4C; }
+.btn:active{ transform: translateY(1px); }
+.btn:focus-visible{ outline: 2px solid var(--ember); outline-offset: 2px; }
+
+.btn.ghost{
+  --btn-bg: transparent; --btn-fg: var(--bone); --btn-bd: var(--rule-strong);
+}
+.btn.ghost:hover{ background: var(--ink-2); border-color: var(--bone-dim); color: var(--bone); }
+
+.btn.text{
+  --btn-bg: transparent; --btn-fg: var(--bone); --btn-bd: transparent;
+  --btn-pad-x: 0; --btn-pad-y: 0;
+  text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px; text-decoration-color: var(--bone-mute);
+}
+.btn.text:hover{ color: var(--ember); text-decoration-color: var(--ember); background: transparent; }
+
+.btn.icon{
+  --btn-pad-x: 10px; --btn-pad-y: 10px;
+  --btn-bg: transparent; --btn-fg: var(--bone); --btn-bd: var(--rule-strong);
+  width: 40px; height: 40px;
+}
+.btn.icon:hover{ background: var(--ink-2); color: var(--ember); border-color: var(--ember); }
+
+.btn.sm{ --btn-pad-y: 8px; --btn-pad-x: 14px; --btn-fs: var(--fs-12); }
+.btn.lg{ --btn-pad-y: 16px; --btn-pad-x: 28px; --btn-fs: var(--fs-16); }
+
+.btn[disabled],.btn.disabled{ opacity:.4; cursor:not-allowed; }
+.btn.destructive{ --btn-bg: var(--red); --btn-fg: var(--bone); }
+.btn.destructive:hover{ background: #D9442A; }
+
+.btn svg{ width: 16px; height:16px; stroke-width: 1.75; }
+
+/* — Card — */
+.card{
+  background: var(--ink-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-2);
+  padding: var(--s-5);
+  position: relative;
+  transition: border-color var(--dur-1) var(--ease-out), background var(--dur-1) var(--ease-out);
+}
+.card.flat{ background: transparent; }
+.card.interactive{ cursor: pointer; }
+.card.interactive:hover{ border-color: var(--rule-strong); background: var(--ink-3); }
+.card.emphasis{ border-color: var(--ember); background: var(--ink-2); box-shadow: var(--shadow-md); }
+.card > header{ margin-bottom: var(--s-4); }
+
+/* — Page header — */
+.page-header{
+  display:grid; grid-template-columns: 1fr auto; align-items:end; gap: var(--s-5);
+  padding-bottom: var(--s-5);
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: var(--s-6);
+}
+.page-header .ph-eyebrow{ color: var(--ember); font-family: var(--font-mono); font-size: var(--fs-11); letter-spacing:.32em; text-transform:uppercase; margin-bottom: var(--s-3); }
+.page-header h1{ font-family: var(--font-display); font-style:italic; font-weight:300; font-size: var(--fs-72); line-height:.92; letter-spacing:-.02em; }
+.page-header .ph-meta{ display:flex; gap: var(--s-3); align-items:center; font-family: var(--font-mono); font-size: var(--fs-11); letter-spacing:.28em; text-transform:uppercase; color: var(--bone-dim); }
+.page-header .ph-actions{ display:flex; gap: var(--s-2); }
+
+/* — Input — */
+.input{
+  width:100%;
+  background: var(--ink-2);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--r-1);
+  color: var(--bone);
+  font-family: var(--font-ui);
+  font-size: var(--fs-14);
+  padding: 12px 14px;
+  transition: border-color var(--dur-1) var(--ease-out), background var(--dur-1) var(--ease-out);
+}
+.input::placeholder{ color: var(--bone-mute); }
+.input:focus{ outline:none; border-color: var(--ember); background: var(--ink-3); }
+.input-group{ position:relative; }
+.input-group .input{ padding-left: 40px; }
+.input-group .input-icon{ position:absolute; left:14px; top:50%; transform: translateY(-50%); color: var(--bone-mute); pointer-events:none; }
+.input-group .input-icon svg{ width:16px; height:16px; }
+
+.select{
+  width:100%;
+  background: var(--ink-2);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--r-1);
+  color: var(--bone);
+  font-family: var(--font-ui);
+  font-size: var(--fs-14);
+  padding: 12px 14px;
+  appearance:none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none'><path d='M1 1l4 4 4-4' stroke='%23A89E88' stroke-width='1.5'/></svg>");
+  background-repeat:no-repeat; background-position: right 14px center;
+}
+
+label.field{
+  display:flex; flex-direction:column; gap: var(--s-2);
+  font-family: var(--font-mono); font-size: var(--fs-11); letter-spacing:.28em; text-transform:uppercase; color: var(--bone-dim);
+}
+
+/* — Chip / Tag — */
+.chip{
+  display:inline-flex; align-items:center; gap: var(--s-2);
+  padding: 4px 10px;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--r-full);
+  font-family: var(--font-mono); font-size: var(--fs-11); letter-spacing: .2em; text-transform: uppercase;
+  color: var(--bone-dim); background: transparent;
+}
+.chip.accent{ border-color: var(--ember); color: var(--ember); background: var(--ember-soft); }
+.chip.solid{ background: var(--ink-3); border-color: var(--ink-3); color: var(--bone); }
+
+/* — Stat — */
+.stat{
+  padding: var(--s-5) 0;
+  border-top: 1px solid var(--rule);
+}
+.stat .stat-label{ font-family: var(--font-mono); font-size: var(--fs-11); letter-spacing:.28em; text-transform:uppercase; color: var(--bone-dim); }
+.stat .stat-value{
+  font-family: var(--font-display); font-style:italic; font-weight:300;
+  font-size: var(--fs-72); line-height:.92; letter-spacing:-.02em; color: var(--bone);
+  margin-top: var(--s-3);
+}
+.stat .stat-value sub{ font-size: .3em; letter-spacing: .2em; vertical-align: super; font-style: normal; font-family: var(--font-mono); color: var(--bone-mute); margin-left: var(--s-2); }
+.stat .stat-caption{ font-family: var(--font-ui); font-size: var(--fs-13); color: var(--bone-mute); margin-top: var(--s-2); }
+.stat.emphasis .stat-value{ color: var(--ember); }
+
+/* — Skeleton — */
+.skeleton{
+  display:block; position:relative; overflow:hidden;
+  background: var(--ink-2);
+  border-radius: var(--r-1);
+}
+.skeleton::after{
+  content:""; position:absolute; inset:0;
+  background: linear-gradient(90deg, transparent 0%, rgba(232,223,201,.04) 50%, transparent 100%);
+  animation: shimmer 1.6s var(--ease-out) infinite;
+}
+@keyframes shimmer{ 0%{ transform: translateX(-100%);} 100%{ transform: translateX(100%);} }
+.skeleton.line{ height: 12px; border-radius: var(--r-1); }
+.skeleton.line.lg{ height: 20px; }
+.skeleton.circle{ border-radius: var(--r-full); aspect-ratio: 1/1; }
+.skeleton.rect{ aspect-ratio: 2/3; }
+
+/* — Empty state — */
+.empty{
+  border: 1px dashed var(--rule-strong);
+  border-radius: var(--r-2);
+  padding: var(--s-8) var(--s-5);
+  text-align:center;
+  color: var(--bone-dim);
+  background: transparent;
+}
+.empty .empty-icon{ margin: 0 auto var(--s-4); width:40px; height:40px; color: var(--bone-mute); }
+.empty .empty-icon svg{ width:100%; height:100%; }
+.empty h4{ font-family: var(--font-display); font-style:italic; font-size: var(--fs-24); color: var(--bone); margin-bottom: var(--s-2); }
+.empty p{ color: var(--bone-dim); font-size: var(--fs-14); max-width: 360px; margin: 0 auto var(--s-5); }
+
+/* — Star rating — */
+.stars{ display:inline-flex; align-items:center; gap: 2px; color: var(--gold); font-size: 14px; }
+.stars .star{ width:14px; height:14px; }
+.stars .off{ color: rgba(232,223,201,.12); }
+.star-display{ display:inline-flex; align-items:baseline; gap: var(--s-3); }
+.star-display .num{
+  font-family: var(--font-display); font-style:italic; font-weight:500; font-size: var(--fs-24);
+  color: var(--bone); letter-spacing: -.01em;
+}
+.star-display .num sub{ font-size: .5em; color: var(--bone-mute); font-style: normal; font-family: var(--font-mono); letter-spacing:.15em; }
+
+/* — Badge (live indicator) — */
+.badge{
+  display:inline-flex; align-items:center; gap:8px;
+  font-family: var(--font-mono); font-size: var(--fs-11); letter-spacing:.28em; text-transform:uppercase; color: var(--bone-dim);
+}
+.badge .dot{ width:7px; height:7px; border-radius: var(--r-full); background: var(--ember); box-shadow: 0 0 8px var(--ember); animation: pulse 1.8s infinite; }
+@keyframes pulse{ 0%,100%{ opacity:1 } 50%{ opacity:.35 } }
+
+/* ==========================================================================
+   HEADER (app chrome preview)
+   ========================================================================== */
+.app-header{
+  display:flex; align-items:center; justify-content:space-between;
+  padding: var(--s-4) var(--s-6);
+  background: var(--ink);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-2);
+}
+.app-header .brand{ display:flex; align-items:center; gap: var(--s-3); font-family: var(--font-display); font-style:italic; font-weight:500; font-size: 20px; color: var(--bone); letter-spacing: -.01em; }
+.app-header .brand .mark{ width:24px; height:24px; border:1px solid var(--ember); border-radius: var(--r-full); display:grid; place-items:center; color: var(--ember); font-family: var(--font-display); font-style:italic; font-size: 14px; }
+.app-header nav{ display:flex; gap: var(--s-5); }
+.app-header nav a{
+  font-family: var(--font-ui); font-size: var(--fs-13); color: var(--bone-dim);
+  display:inline-flex; align-items:center; gap: var(--s-2);
+  transition: color var(--dur-1) var(--ease-out);
+  padding: var(--s-2) 0;
+  border-bottom: 1px solid transparent;
+}
+.app-header nav a:hover{ color: var(--bone); }
+.app-header nav a.active{ color: var(--ember); border-bottom-color: var(--ember); }
+.app-header nav svg{ width:16px; height:16px; stroke-width:1.5; }
+.app-header .right{ display:flex; align-items:center; gap: var(--s-3); }
+
+/* ==========================================================================
+   MOVIE CARD (primitive)
+   ========================================================================== */
+.mcard{
+  cursor:pointer;
+  background: transparent;
+  transition: transform var(--dur-1) var(--ease-out);
+  display:flex; flex-direction:column;
+}
+.mcard:hover{ transform: translateY(-2px); }
+.mcard:hover .mcard-poster::after{ opacity: .1; }
+.mcard:hover .mcard-title{ color: var(--ember); }
+.mcard-poster{
+  aspect-ratio: 2/3;
+  background: linear-gradient(145deg, #3A2518 0%, #1E1208 100%);
+  border-radius: var(--r-2);
+  overflow:hidden;
+  position: relative;
+  border: 1px solid var(--rule);
+}
+.mcard-poster::after{
+  content:""; position:absolute; inset:0;
+  background: radial-gradient(60% 50% at 50% 30%, rgba(212,102,58,.3), transparent 60%);
+  opacity: 0; transition: opacity var(--dur-2) var(--ease-out);
+}
+.mcard-poster-placeholder{
+  position:absolute; inset:0; display:grid; place-items:center;
+  font-family: var(--font-display); font-style:italic; font-weight:300; font-size: 80px;
+  color: var(--bone-mute); opacity: .5;
+}
+.mcard-rating{
+  position:absolute; top: var(--s-3); right: var(--s-3);
+  font-family: var(--font-display); font-style:italic; font-weight:500; font-size: var(--fs-19);
+  color: var(--gold);
+  background: rgba(20,17,13,.8);
+  padding: 4px 8px; border-radius: var(--r-1);
+  backdrop-filter: none;
+}
+.mcard-body{ padding: var(--s-3) 2px 0; }
+.mcard-title{
+  font-family: var(--font-display); font-style:italic; font-weight:500; font-size: var(--fs-19);
+  color: var(--bone); letter-spacing:-.01em; line-height: 1.2;
+  transition: color var(--dur-1) var(--ease-out);
+}
+.mcard-meta{
+  margin-top: var(--s-1);
+  font-family: var(--font-mono); font-size: var(--fs-11); letter-spacing:.2em; text-transform:uppercase;
+  color: var(--bone-mute);
+  display:flex; gap: var(--s-3); align-items:center;
+}
+.mcard-meta .sep{ width:3px; height:3px; background: var(--bone-mute); border-radius: var(--r-full); }
+
+/* ==========================================================================
+   COMPOSED STUB 1 — HOME HERO
+   ========================================================================== */
+.home-hero{
+  margin-top: var(--s-5);
+  display:grid; grid-template-columns: 1.7fr 1fr;
+  gap: var(--s-7);
+  align-items: stretch;
+}
+@media (max-width: 960px){ .home-hero{ grid-template-columns: 1fr; } }
+
+.hero-feature{
+  position: relative;
+  aspect-ratio: 16/10;
+  border-radius: var(--r-2);
+  overflow: hidden;
+  border: 1px solid var(--rule);
+  background:
+    radial-gradient(70% 60% at 20% 30%, rgba(212,102,58,.25), transparent 60%),
+    linear-gradient(160deg, #3B2416 0%, #120D08 100%);
+}
+.hero-feature::after{
+  content:""; position:absolute; inset:0;
+  background:
+    linear-gradient(180deg, transparent 40%, rgba(20,17,13,.95) 100%),
+    linear-gradient(90deg, rgba(20,17,13,.7) 0%, transparent 55%);
+}
+.hero-feature .h-top{
+  position:absolute; top: var(--s-5); left: var(--s-5); right: var(--s-5);
+  display:flex; justify-content:space-between; align-items:center;
+  z-index: 2;
+}
+.hero-feature .h-body{
+  position: absolute; left: var(--s-6); right: var(--s-6); bottom: var(--s-6);
+  z-index: 2;
+  max-width: 560px;
+}
+.hero-feature .h-title{
+  font-family: var(--font-display); font-weight:300; font-size: var(--fs-72); line-height: .92;
+  letter-spacing:-.02em; color: var(--bone); margin-top: var(--s-3);
+}
+.hero-feature .h-title em{ font-style: italic; color: var(--ember); font-weight: 300; }
+.hero-feature .h-meta{
+  margin-top: var(--s-4);
+  display:flex; gap: var(--s-4); align-items:center;
+  font-family: var(--font-mono); font-size: var(--fs-11); letter-spacing:.28em; text-transform:uppercase; color: var(--bone-dim);
+}
+.hero-feature .h-meta .bullet{ width:4px; height:4px; border-radius: var(--r-full); background: var(--bone-mute); }
+.hero-feature .h-desc{ margin-top: var(--s-4); font-size: var(--fs-14); color: var(--bone-dim); max-width: 420px; }
+.hero-feature .h-actions{ margin-top: var(--s-5); display:flex; gap: var(--s-3); }
+
+/* Voting sidebar */
+.hero-voting{
+  display:flex; flex-direction:column;
+  background: var(--ink-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-2);
+  padding: var(--s-5);
+}
+.hero-voting .hv-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom: var(--s-4); }
+.hero-voting .hv-title{ font-family: var(--font-display); font-style:italic; font-weight:500; font-size: var(--fs-24); color: var(--bone); }
+.vote-item{
+  display:grid; grid-template-columns: auto 1fr auto; gap: var(--s-3);
+  padding: var(--s-3) 0;
+  border-bottom: 1px solid var(--rule);
+  align-items: center;
+  cursor: pointer;
+  transition: color var(--dur-1) var(--ease-out);
+}
+.vote-item:last-child{ border-bottom: none; }
+.vote-item:hover .vote-title{ color: var(--ember); }
+.vote-poster{
+  width: 38px; height: 56px; border-radius: var(--r-1); overflow:hidden;
+  background: linear-gradient(145deg, #3A2518, #120802);
+  flex-shrink: 0;
+  border: 1px solid var(--rule);
+}
+.vote-title{ font-family: var(--font-display); font-style:italic; font-weight:500; font-size: var(--fs-16); line-height:1.2; color: var(--bone); transition: color var(--dur-1) var(--ease-out); }
+.vote-meta{ font-family: var(--font-mono); font-size: var(--fs-11); letter-spacing:.2em; text-transform:uppercase; color: var(--bone-mute); margin-top: 2px; }
+.vote-bar{
+  margin-top: 6px; height: 2px; background: var(--rule-strong); border-radius: var(--r-full); overflow:hidden; position:relative;
+}
+.vote-bar > span{ position:absolute; left:0; top:0; bottom:0; background: var(--ember); }
+.vote-count{ font-family: var(--font-display); font-style:italic; font-weight:500; font-size: var(--fs-19); color: var(--bone); }
+
+.hv-foot{ margin-top: var(--s-4); display:flex; gap: var(--s-2); }
+
+/* ==========================================================================
+   COMPOSED STUB 2 — MOVIE DETAIL TOP FOLD
+   ========================================================================== */
+.md-top{
+  margin-top: var(--s-5);
+  display:grid; grid-template-columns: 240px 1fr 260px;
+  gap: var(--s-7);
+  align-items: start;
+}
+@media (max-width: 1060px){ .md-top{ grid-template-columns: 200px 1fr; } .md-rail{ grid-column: 1 / -1; } }
+@media (max-width: 640px){ .md-top{ grid-template-columns: 1fr; } }
+
+.md-poster{
+  aspect-ratio: 2/3;
+  border-radius: var(--r-2);
+  border: 1px solid var(--rule-strong);
+  overflow:hidden;
+  position: relative;
+  background:
+    radial-gradient(70% 50% at 30% 20%, rgba(224,162,58,.25), transparent 60%),
+    linear-gradient(180deg, #3A2518 0%, #0D0602 100%);
+}
+.md-poster::after{ content:""; position:absolute; inset:0; box-shadow: inset 0 0 0 1px rgba(232,223,201,.06); }
+
+.md-center .md-eyebrow{ font-family: var(--font-mono); font-size: var(--fs-11); letter-spacing:.32em; text-transform:uppercase; color: var(--ember); display:flex; align-items:center; gap: var(--s-3); margin-bottom: var(--s-4); }
+.md-center .md-eyebrow::before{ content:""; width:28px; height:1px; background: currentColor; }
+.md-center h1{ font-family: var(--font-display); font-weight:300; font-size: var(--fs-108); line-height: .88; letter-spacing:-.025em; }
+.md-center h1 em{ font-style:italic; color: var(--ember); }
+.md-center .md-sub{ display:flex; gap: var(--s-4); align-items:center; flex-wrap:wrap; margin-top: var(--s-4); font-family: var(--font-mono); font-size: var(--fs-11); letter-spacing:.28em; text-transform:uppercase; color: var(--bone-dim); }
+.md-center .md-sub .sep{ width:3px; height:3px; background: var(--bone-mute); border-radius: var(--r-full); }
+.md-center .md-desc{
+  margin-top: var(--s-5); max-width: 580px;
+  font-family: var(--font-display); font-style:italic; font-weight:300; font-size: var(--fs-19); line-height: 1.55;
+  color: var(--bone-dim);
+}
+.md-center .md-actions{ margin-top: var(--s-6); display:flex; gap: var(--s-3); }
+
+.md-rail{
+  background: var(--ink-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-2);
+  padding: var(--s-5);
+}
+.md-rail h4{ font-family: var(--font-mono); font-size: var(--fs-11); letter-spacing:.32em; text-transform:uppercase; color: var(--ember); margin-bottom: var(--s-4); font-weight:400; }
+.md-rail dl{ display:flex; flex-direction:column; gap: 0; }
+.md-rail .row{ display:flex; justify-content:space-between; align-items:baseline; padding: var(--s-3) 0; border-bottom: 1px dashed var(--rule); gap: var(--s-3); }
+.md-rail .row:last-child{ border-bottom:none; }
+.md-rail dt{ font-family: var(--font-mono); font-size: var(--fs-11); letter-spacing:.2em; text-transform:uppercase; color: var(--bone-mute); }
+.md-rail dd{ font-family: var(--font-display); font-style:italic; font-weight:500; font-size: var(--fs-14); color: var(--bone); text-align:right; }
+.md-rail .chips{ display:flex; flex-wrap:wrap; gap: var(--s-2); margin-top: var(--s-2); justify-content:flex-end; }
+
+/* ==========================================================================
+   COLOR SWATCHES
+   ========================================================================== */
+.swatch{
+  display:flex; flex-direction:column; gap: var(--s-2);
+}
+.swatch .chip-box{ height: 64px; border-radius: var(--r-2); border: 1px solid var(--rule); }
+.swatch .name{ font-family: var(--font-mono); font-size: var(--fs-11); letter-spacing:.22em; text-transform:uppercase; color: var(--bone); }
+.swatch .hex{ font-family: var(--font-mono); font-size: var(--fs-11); color: var(--bone-mute); }
+
+/* ==========================================================================
+   TYPE SPECIMEN
+   ========================================================================== */
+.specimen-row{ display:grid; grid-template-columns: 160px 1fr; gap: var(--s-5); align-items:baseline; padding: var(--s-4) 0; border-top: 1px solid var(--rule); }
+.specimen-row .tag{ font-family: var(--font-mono); font-size: var(--fs-11); letter-spacing:.22em; text-transform:uppercase; color: var(--bone-mute); }
+
+/* ==========================================================================
+   TOAST
+   ========================================================================== */
+.toast{
+  display:flex; align-items:center; gap: var(--s-3);
+  background: var(--ink-2); border: 1px solid var(--rule-strong);
+  border-left: 2px solid var(--ember);
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--r-1);
+  max-width: 380px;
+  box-shadow: var(--shadow-md);
+}
+.toast .dot{ width:8px; height:8px; background: var(--ember); border-radius: var(--r-full); flex-shrink:0; }
+.toast .msg{ font-size: var(--fs-14); color: var(--bone); }
+.toast .msg small{ display:block; font-family: var(--font-mono); font-size: var(--fs-11); letter-spacing:.2em; text-transform:uppercase; color: var(--bone-mute); margin-top: 2px; }
+
+/* ==========================================================================
+   MODAL (preview frame)
+   ========================================================================== */
+.modal-demo{
+  padding: var(--s-7) var(--s-5);
+  background: rgba(10,8,6,.6);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-2);
+  display:grid; place-items:center;
+}
+.modal{
+  width: 100%; max-width: 460px;
+  background: var(--ink-2);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--r-2);
+  box-shadow: var(--shadow-lg);
+  overflow:hidden;
+}
+.modal header{
+  display:flex; justify-content:space-between; align-items:center;
+  padding: var(--s-4) var(--s-5); border-bottom: 1px solid var(--rule);
+}
+.modal header h4{ font-family: var(--font-display); font-style:italic; font-weight:500; font-size: var(--fs-19); }
+.modal .body{ padding: var(--s-5); }
+.modal footer{ padding: var(--s-4) var(--s-5); border-top: 1px solid var(--rule); display:flex; justify-content:flex-end; gap: var(--s-2); background: var(--ink); }
+
+/* ==========================================================================
+   UTILITY HELPERS USED IN THIS SPEC
+   ========================================================================== */
+.flex{ display:flex; }
+.flex.gap-2{ gap: var(--s-2); }
+.flex.gap-3{ gap: var(--s-3); }
+.flex.gap-4{ gap: var(--s-4); }
+.flex.wrap{ flex-wrap:wrap; }
+.flex.center{ align-items:center; }
+.grid{ display:grid; }
+.mt-3{ margin-top: var(--s-3); } .mt-4{ margin-top: var(--s-4); } .mt-5{ margin-top: var(--s-5); }
+
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- TOP -->
+  <div class="ds-top">
+    <div class="ds-brand">
+      <span class="mark"></span>
+      <span>MovieNight · Design System · v0.1</span>
+    </div>
+    <div class="ds-top-meta">Editorial Cinephile · Dark · April 2026</div>
+  </div>
+
+  <!-- COVER -->
+  <section class="page-header" style="border-bottom:1px solid var(--rule-strong);">
+    <div>
+      <div class="ph-eyebrow">The specimen · 01 of 01</div>
+      <h1><em>An editorial system</em><br/>for a movie club.</h1>
+      <p class="muted mt-4" style="max-width:560px; font-family: var(--font-display); font-style:italic; font-weight:300; font-size: var(--fs-19); line-height: 1.5;">
+        Warm ink, bone, and a single ember accent. Hairline rules instead of gradients.
+        One display serif, one humane grotesk, one mono for metadata. Every surface is
+        a flat, considered plane — the movies do the shining.
+      </p>
+    </div>
+    <div class="ph-actions">
+      <button class="btn ghost sm">Download tokens</button>
+      <button class="btn sm">Ship it</button>
+    </div>
+  </section>
+
+  <!-- ── 01 · PALETTE ── -->
+  <div class="section">
+    <span class="section-num">01</span>
+    <span class="section-title">A palette of eleven.</span>
+    <span class="section-rule"></span>
+    <span class="section-meta">All values in index.css</span>
+  </div>
+
+  <div class="spec">
+    <div class="spec-label">Surfaces</div>
+    <div class="spec-grid cols-4">
+      <div class="swatch"><div class="chip-box" style="background:#14110D"></div><div class="name">Ink</div><div class="hex">#14110D · --ink</div></div>
+      <div class="swatch"><div class="chip-box" style="background:#1C1915"></div><div class="name">Ink 2</div><div class="hex">#1C1915 · --ink-2</div></div>
+      <div class="swatch"><div class="chip-box" style="background:#252119"></div><div class="name">Ink 3</div><div class="hex">#252119 · --ink-3</div></div>
+      <div class="swatch"><div class="chip-box" style="background:#2F2A21"></div><div class="name">Ink 4</div><div class="hex">#2F2A21 · --ink-4</div></div>
+    </div>
+  </div>
+
+  <div class="spec">
+    <div class="spec-label">Ink (text on dark)</div>
+    <div class="spec-grid cols-3">
+      <div class="swatch"><div class="chip-box" style="background:#E8DFC9"></div><div class="name">Bone</div><div class="hex">#E8DFC9 · --bone</div></div>
+      <div class="swatch"><div class="chip-box" style="background:#A89E88"></div><div class="name">Bone dim</div><div class="hex">#A89E88 · --bone-dim</div></div>
+      <div class="swatch"><div class="chip-box" style="background:#6B6556"></div><div class="name">Bone mute</div><div class="hex">#6B6556 · --bone-mute</div></div>
+    </div>
+  </div>
+
+  <div class="spec">
+    <div class="spec-label">Accent &amp; signal</div>
+    <div class="spec-grid cols-4">
+      <div class="swatch"><div class="chip-box" style="background:#D4663A"></div><div class="name">Ember</div><div class="hex">#D4663A · --ember</div></div>
+      <div class="swatch"><div class="chip-box" style="background:#8A3F1F"></div><div class="name">Ember deep</div><div class="hex">#8A3F1F · --ember-dim</div></div>
+      <div class="swatch"><div class="chip-box" style="background:#E0A23A"></div><div class="name">Gold (ratings)</div><div class="hex">#E0A23A · --gold</div></div>
+      <div class="swatch"><div class="chip-box" style="background:#C8321A"></div><div class="name">Red (destructive)</div><div class="hex">#C8321A · --red</div></div>
+    </div>
+  </div>
+
+  <!-- ── 02 · TYPOGRAPHY ── -->
+  <div class="section">
+    <span class="section-num">02</span>
+    <span class="section-title">Three typefaces, disciplined.</span>
+    <span class="section-rule"></span>
+    <span class="section-meta">Fraunces · Figtree · JetBrains Mono</span>
+  </div>
+
+  <div class="spec">
+    <div class="specimen-row">
+      <div class="tag">Display 108</div>
+      <div class="t-display" style="font-size:var(--fs-108);">The late show <em class="t-display-it" style="color:var(--ember)">begins.</em></div>
+    </div>
+    <div class="specimen-row">
+      <div class="tag">Display 72</div>
+      <div class="t-display" style="font-size:var(--fs-72);">Mulholland <em class="t-display-it" style="color:var(--ember)">Drive,</em> a dream.</div>
+    </div>
+    <div class="specimen-row">
+      <div class="tag">Display 48</div>
+      <div class="t-display-it" style="font-size:var(--fs-48);">A long dream, a shorter wake.</div>
+    </div>
+    <div class="specimen-row">
+      <div class="tag">Display 32</div>
+      <div class="t-display-it" style="font-size:var(--fs-32);">The picture opens with a jitterbug.</div>
+    </div>
+    <div class="specimen-row">
+      <div class="tag">UI 19</div>
+      <div class="t-ui" style="font-size:var(--fs-19); line-height:1.55; max-width:680px; color:var(--bone);">
+        Body text lives here. Figtree at nineteen is our friendly reader size, used sparingly — intro paragraphs, featured descriptions, the first sentence after a section title.
+      </div>
+    </div>
+    <div class="specimen-row">
+      <div class="tag">UI 16</div>
+      <div class="t-ui" style="font-size:var(--fs-16); line-height:1.55; max-width:680px; color:var(--bone);">
+        Base reading size for lists and longer copy. Tight line-height, roomy paragraph spacing. Numbers use proportional-tabular hybrid for alignment in tables.
+      </div>
+    </div>
+    <div class="specimen-row">
+      <div class="tag">UI 14</div>
+      <div class="t-ui muted" style="font-size:var(--fs-14);">Secondary copy, card subtitles, form help text, inline metadata in long prose.</div>
+    </div>
+    <div class="specimen-row">
+      <div class="tag">Mono 11 · kickers</div>
+      <div class="t-mono">01 · Feature presentation · Friday 17 · 20 : 30</div>
+    </div>
+    <div class="specimen-row">
+      <div class="tag">Mono 11 · tags</div>
+      <div class="flex gap-2 wrap">
+        <span class="chip accent">Neo-noir</span>
+        <span class="chip">Mystery</span>
+        <span class="chip">Drama</span>
+        <span class="chip solid">147 min</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 03 · SCALES ── -->
+  <div class="section">
+    <span class="section-num">03</span>
+    <span class="section-title">Scales.</span>
+    <span class="section-rule"></span>
+    <span class="section-meta">Space · Radius · Shadow</span>
+  </div>
+
+  <div class="spec-grid cols-2" style="gap: var(--s-7);">
+    <div>
+      <div class="spec-label">Spacing · base 4</div>
+      <div class="flex gap-3 wrap" style="align-items:flex-end;">
+        <div><div style="width:4px;  height:4px;  background:var(--ember);"></div><div class="t-mono" style="margin-top:6px;">4</div></div>
+        <div><div style="width:8px;  height:8px;  background:var(--ember);"></div><div class="t-mono" style="margin-top:6px;">8</div></div>
+        <div><div style="width:12px; height:12px; background:var(--ember);"></div><div class="t-mono" style="margin-top:6px;">12</div></div>
+        <div><div style="width:16px; height:16px; background:var(--ember);"></div><div class="t-mono" style="margin-top:6px;">16</div></div>
+        <div><div style="width:24px; height:24px; background:var(--ember);"></div><div class="t-mono" style="margin-top:6px;">24</div></div>
+        <div><div style="width:32px; height:32px; background:var(--ember);"></div><div class="t-mono" style="margin-top:6px;">32</div></div>
+        <div><div style="width:48px; height:48px; background:var(--ember);"></div><div class="t-mono" style="margin-top:6px;">48</div></div>
+        <div><div style="width:64px; height:64px; background:var(--ember);"></div><div class="t-mono" style="margin-top:6px;">64</div></div>
+      </div>
+    </div>
+    <div>
+      <div class="spec-label">Radius</div>
+      <div class="flex gap-4 wrap" style="align-items:flex-end;">
+        <div><div style="width:48px; height:48px; background:var(--ink-2); border:1px solid var(--rule-strong); border-radius:0;"></div><div class="t-mono" style="margin-top:6px;">0</div></div>
+        <div><div style="width:48px; height:48px; background:var(--ink-2); border:1px solid var(--rule-strong); border-radius:2px;"></div><div class="t-mono" style="margin-top:6px;">2</div></div>
+        <div><div style="width:48px; height:48px; background:var(--ink-2); border:1px solid var(--rule-strong); border-radius:6px;"></div><div class="t-mono" style="margin-top:6px;">6</div></div>
+        <div><div style="width:48px; height:48px; background:var(--ink-2); border:1px solid var(--rule-strong); border-radius:10px;"></div><div class="t-mono" style="margin-top:6px;">10</div></div>
+        <div><div style="width:48px; height:48px; background:var(--ink-2); border:1px solid var(--rule-strong); border-radius:999px;"></div><div class="t-mono" style="margin-top:6px;">full</div></div>
+      </div>
+      <div class="spec-label" style="margin-top: var(--s-6);">Elevation</div>
+      <div class="flex gap-4 wrap" style="align-items:flex-end;">
+        <div><div style="width:72px; height:56px; background:var(--ink-2); box-shadow:var(--shadow-sm); border-radius:var(--r-2);"></div><div class="t-mono" style="margin-top:6px;">sm</div></div>
+        <div><div style="width:72px; height:56px; background:var(--ink-2); box-shadow:var(--shadow-md); border-radius:var(--r-2);"></div><div class="t-mono" style="margin-top:6px;">md</div></div>
+        <div><div style="width:72px; height:56px; background:var(--ink-2); box-shadow:var(--shadow-lg); border-radius:var(--r-2);"></div><div class="t-mono" style="margin-top:6px;">lg</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 04 · BUTTONS ── -->
+  <div class="section">
+    <span class="section-num">04</span>
+    <span class="section-title">Buttons.</span>
+    <span class="section-rule"></span>
+    <span class="section-meta">4 variants × 3 sizes</span>
+  </div>
+
+  <div class="spec">
+    <div class="spec-label">Variants</div>
+    <div class="flex gap-3 wrap">
+      <button class="btn">Primary action</button>
+      <button class="btn ghost">Secondary</button>
+      <button class="btn text">Text link →</button>
+      <button class="btn icon" aria-label="icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+      <button class="btn destructive">Remove</button>
+      <button class="btn" disabled>Disabled</button>
+    </div>
+  </div>
+
+  <div class="spec">
+    <div class="spec-label">Sizes</div>
+    <div class="flex gap-3 wrap" style="align-items:center;">
+      <button class="btn sm">Small</button>
+      <button class="btn">Medium</button>
+      <button class="btn lg">Large</button>
+      <button class="btn lg ghost">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        Watch trailer
+      </button>
+    </div>
+  </div>
+
+  <!-- ── 05 · FORMS ── -->
+  <div class="section">
+    <span class="section-num">05</span>
+    <span class="section-title">Forms.</span>
+    <span class="section-rule"></span>
+    <span class="section-meta">Input · Select · Chip</span>
+  </div>
+
+  <div class="spec-grid cols-3">
+    <label class="field">Search
+      <div class="input-group">
+        <span class="input-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+        </span>
+        <input class="input" type="text" placeholder="Title, director, year…"/>
+      </div>
+    </label>
+    <label class="field">Sort
+      <select class="select">
+        <option>Newest first</option>
+        <option>Highest rated</option>
+        <option>A → Z</option>
+      </select>
+    </label>
+    <label class="field">Year
+      <input class="input" type="text" placeholder="e.g. 1979"/>
+    </label>
+  </div>
+
+  <div class="spec">
+    <div class="spec-label">Filter chips</div>
+    <div class="flex gap-2 wrap">
+      <span class="chip accent">Drama</span>
+      <span class="chip">Neo-noir</span>
+      <span class="chip">Surreal</span>
+      <span class="chip">Mystery</span>
+      <span class="chip">Thriller</span>
+      <span class="chip solid">Watched</span>
+      <span class="chip solid">Unwatched</span>
+    </div>
+  </div>
+
+  <!-- ── 06 · CARDS / STATS / RATINGS ── -->
+  <div class="section">
+    <span class="section-num">06</span>
+    <span class="section-title">Surfaces.</span>
+    <span class="section-rule"></span>
+    <span class="section-meta">Card · Stat · Rating</span>
+  </div>
+
+  <div class="spec-grid cols-3">
+
+    <div class="card">
+      <div class="eyebrow">Card · default</div>
+      <h4 style="margin-top: var(--s-3); font-family:var(--font-display); font-style:italic; font-weight:500;">Hairline surface.</h4>
+      <p class="muted mt-3" style="font-size: var(--fs-14);">A flat ink-2 plane with a single 1px hairline. No gradient. No blur. Shadow only when it floats.</p>
+      <div class="mt-4 flex gap-2"><button class="btn sm">Open</button><button class="btn sm ghost">Dismiss</button></div>
+    </div>
+
+    <div class="card interactive">
+      <div class="eyebrow">Card · interactive</div>
+      <h4 style="margin-top: var(--s-3); font-family:var(--font-display); font-style:italic; font-weight:500;">Hover me.</h4>
+      <p class="muted mt-3" style="font-size: var(--fs-14);">On hover the border strengthens and the surface lifts one step. Used for list items and selectable tiles.</p>
+    </div>
+
+    <div class="card emphasis">
+      <div class="eyebrow">Card · emphasis</div>
+      <h4 style="margin-top: var(--s-3); font-family:var(--font-display); font-style:italic; font-weight:500;">The one thing.</h4>
+      <p class="muted mt-3" style="font-size: var(--fs-14);">Ember border signals the single most-important card on the page. Use it once per view, max.</p>
+    </div>
+
+  </div>
+
+  <div class="spec spec-grid cols-4" style="border-top: 1px solid var(--rule); margin-top: var(--s-6); padding-top: 0; gap: var(--s-5);">
+    <div class="stat">
+      <div class="stat-label">Movies watched</div>
+      <div class="stat-value">182<sub>·club</sub></div>
+      <div class="stat-caption">since 2024</div>
+    </div>
+    <div class="stat emphasis">
+      <div class="stat-label">This year</div>
+      <div class="stat-value">34</div>
+      <div class="stat-caption">on track for 60</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Average rating</div>
+      <div class="stat-value">7.4<sub>/10</sub></div>
+      <div class="stat-caption">217 ratings cast</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Top genre</div>
+      <div class="stat-value t-display-it">Thriller</div>
+      <div class="stat-caption">28% of screenings</div>
+    </div>
+  </div>
+
+  <div class="spec">
+    <div class="spec-label">Star rating</div>
+    <div class="flex gap-5 wrap" style="align-items:center;">
+      <span class="stars" aria-label="9 out of 10">
+        <svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <svg class="star" viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <svg class="star off" viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      </span>
+      <span class="star-display"><span class="num">8.5<sub>/ 10</sub></span></span>
+      <span class="badge"><span class="dot"></span>Live · voting open</span>
+    </div>
+  </div>
+
+  <!-- ── 07 · SKELETONS & EMPTY ── -->
+  <div class="section">
+    <span class="section-num">07</span>
+    <span class="section-title">Waiting &amp; nothing.</span>
+    <span class="section-rule"></span>
+    <span class="section-meta">Loading · Empty state</span>
+  </div>
+
+  <div class="spec-grid cols-2">
+    <div>
+      <div class="spec-label">Skeleton — movie card</div>
+      <div class="spec-grid cols-2">
+        <div>
+          <div class="skeleton rect"></div>
+          <div class="skeleton line lg" style="width:70%; margin-top: var(--s-3);"></div>
+          <div class="skeleton line" style="width:40%; margin-top: var(--s-2);"></div>
+        </div>
+        <div>
+          <div class="skeleton rect"></div>
+          <div class="skeleton line lg" style="width:85%; margin-top: var(--s-3);"></div>
+          <div class="skeleton line" style="width:50%; margin-top: var(--s-2);"></div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="spec-label">Empty state</div>
+      <div class="empty">
+        <div class="empty-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25">
+            <rect x="3" y="5" width="18" height="14" rx="1"/>
+            <circle cx="8" cy="10" r="1"/><circle cx="12" cy="10" r="1"/><circle cx="16" cy="10" r="1"/>
+            <circle cx="8" cy="14" r="1"/><circle cx="12" cy="14" r="1"/><circle cx="16" cy="14" r="1"/>
+          </svg>
+        </div>
+        <h4>No screenings yet.</h4>
+        <p>The first film announces itself when the host picks a night. Come back Friday.</p>
+        <button class="btn ghost sm">Browse archive</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 08 · TOAST & MODAL ── -->
+  <div class="section">
+    <span class="section-num">08</span>
+    <span class="section-title">Feedback.</span>
+    <span class="section-rule"></span>
+    <span class="section-meta">Toast · Modal</span>
+  </div>
+
+  <div class="spec-grid cols-2">
+    <div>
+      <div class="spec-label">Toasts</div>
+      <div class="flex" style="flex-direction:column; gap: var(--s-3);">
+        <div class="toast"><span class="dot"></span><div class="msg">Rating saved.<small>Mulholland Drive · 9.0</small></div></div>
+        <div class="toast" style="border-left-color: var(--gold);"><span class="dot" style="background: var(--gold); box-shadow: 0 0 8px var(--gold);"></span><div class="msg">You're on the list.<small>Doors 20:00 · Friday</small></div></div>
+        <div class="toast" style="border-left-color: var(--red);"><span class="dot" style="background: var(--red); box-shadow: 0 0 8px var(--red);"></span><div class="msg">Couldn't reach TMDB.<small>Retrying in 6s</small></div></div>
+      </div>
+    </div>
+    <div>
+      <div class="spec-label">Modal</div>
+      <div class="modal-demo">
+        <div class="modal" role="dialog" aria-labelledby="mt">
+          <header>
+            <h4 id="mt">Confirm attendance</h4>
+            <button class="btn icon" aria-label="Close">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 6l12 12M6 18L18 6"/></svg>
+            </button>
+          </header>
+          <div class="body">
+            <p class="muted" style="font-size: var(--fs-14);">You're confirming for <em class="t-display-it" style="color:var(--bone);">Mulholland Drive</em> on Friday, 17 April at 20:30. Doors 20:00 sharp.</p>
+          </div>
+          <footer>
+            <button class="btn ghost sm">Cancel</button>
+            <button class="btn sm">Save my seat</button>
+          </footer>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 09 · APP HEADER ── -->
+  <div class="section">
+    <span class="section-num">09</span>
+    <span class="section-title">App chrome.</span>
+    <span class="section-rule"></span>
+    <span class="section-meta">Lucide icons · No blur · Solid</span>
+  </div>
+
+  <div class="spec">
+    <div class="spec-label">Header — authenticated</div>
+    <div class="app-header">
+      <div class="brand">
+        <span class="mark"><span style="font-style:italic;">m</span></span>
+        MovieNight
+      </div>
+      <nav>
+        <a href="#" class="active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2h-4v-7h-6v7H5a2 2 0 0 1-2-2z"/></svg>
+          Tonight
+        </a>
+        <a href="#">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="16" rx="1"/><path d="M3 9h18"/></svg>
+          Archive
+        </a>
+        <a href="#">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          Ratings
+        </a>
+        <a href="#">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 12h18"/><path d="M3 6h18"/><path d="M3 18h18"/></svg>
+          Lists
+        </a>
+        <a href="#">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></svg>
+          Stats
+        </a>
+      </nav>
+      <div class="right">
+        <span class="badge"><span class="dot"></span>Vote open</span>
+        <button class="btn icon" aria-label="Notifications">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        </button>
+        <button class="btn sm">Announce</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 10 · MOVIE CARDS ── -->
+  <div class="section">
+    <span class="section-num">10</span>
+    <span class="section-title">The movie card.</span>
+    <span class="section-rule"></span>
+    <span class="section-meta">Poster-first · Serif title</span>
+  </div>
+
+  <div class="spec-grid cols-4">
+    <div class="mcard">
+      <div class="mcard-poster">
+        <div class="mcard-poster-placeholder">M</div>
+        <div class="mcard-rating">9.0</div>
+      </div>
+      <div class="mcard-body">
+        <div class="mcard-title">Mulholland Drive</div>
+        <div class="mcard-meta"><span>2001</span><span class="sep"></span><span>147 min</span><span class="sep"></span><span>R</span></div>
+      </div>
+    </div>
+    <div class="mcard">
+      <div class="mcard-poster" style="background:linear-gradient(155deg,#4A2A10,#1A0A02);">
+        <div class="mcard-poster-placeholder">S</div>
+        <div class="mcard-rating">8.2</div>
+      </div>
+      <div class="mcard-body">
+        <div class="mcard-title">Stalker</div>
+        <div class="mcard-meta"><span>1979</span><span class="sep"></span><span>162 min</span></div>
+      </div>
+    </div>
+    <div class="mcard">
+      <div class="mcard-poster" style="background:linear-gradient(165deg,#2A1A3A,#0A0218);">
+        <div class="mcard-poster-placeholder">P</div>
+        <div class="mcard-rating">8.6</div>
+      </div>
+      <div class="mcard-body">
+        <div class="mcard-title">Parasite</div>
+        <div class="mcard-meta"><span>2019</span><span class="sep"></span><span>132 min</span><span class="sep"></span><span>R</span></div>
+      </div>
+    </div>
+    <div class="mcard">
+      <div class="mcard-poster" style="background:linear-gradient(170deg,#3B3020,#121005);">
+        <div class="mcard-poster-placeholder">D</div>
+        <div class="mcard-rating">7.8</div>
+      </div>
+      <div class="mcard-body">
+        <div class="mcard-title">Drive</div>
+        <div class="mcard-meta"><span>2011</span><span class="sep"></span><span>100 min</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 11 · COMPOSITION A — HOME HERO ── -->
+  <div class="section">
+    <span class="section-num">11</span>
+    <span class="section-title">Composition · Home hero.</span>
+    <span class="section-rule"></span>
+    <span class="section-meta">Feature + voting sidebar</span>
+  </div>
+
+  <div class="home-hero">
+    <div class="hero-feature">
+      <div class="h-top">
+        <span class="eyebrow" style="color:var(--bone);">Feature · Fri 17 Apr · 20 : 30</span>
+        <span class="badge"><span class="dot"></span>07 / 12 confirmed</span>
+      </div>
+      <div class="h-body">
+        <span class="t-mono" style="color:var(--bone-dim);">David Lynch · 2001 · 147 min · R</span>
+        <h2 class="h-title">Mulholland <em>Drive,</em><br/>a dream.</h2>
+        <p class="h-desc">A car crash on the titular LA road leaves a woman with amnesia. An aspiring actress helps her piece things together. The city is not what it seems. Neither is the film.</p>
+        <div class="h-actions">
+          <button class="btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M5 13l4 4L19 7"/></svg>
+            I'll be there
+          </button>
+          <button class="btn ghost">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>
+            Trailer
+          </button>
+          <button class="btn text">Add to wishlist →</button>
+        </div>
+      </div>
+    </div>
+
+    <aside class="hero-voting">
+      <div class="hv-head">
+        <span class="hv-title t-display-it">The vote</span>
+        <span class="eyebrow">closes Thu 22 : 00</span>
+      </div>
+
+      <div class="vote-item">
+        <div class="vote-poster" style="background:linear-gradient(145deg,#3A2518,#0D0503);"></div>
+        <div>
+          <div class="vote-title">Past Lives</div>
+          <div class="vote-meta">Celine Song · 2023</div>
+          <div class="vote-bar"><span style="width:72%;"></span></div>
+        </div>
+        <div class="vote-count">9</div>
+      </div>
+
+      <div class="vote-item">
+        <div class="vote-poster" style="background:linear-gradient(145deg,#2A2A3A,#060818);"></div>
+        <div>
+          <div class="vote-title">Anatomy of a Fall</div>
+          <div class="vote-meta">J. Triet · 2023</div>
+          <div class="vote-bar"><span style="width:56%;"></span></div>
+        </div>
+        <div class="vote-count">7</div>
+      </div>
+
+      <div class="vote-item">
+        <div class="vote-poster" style="background:linear-gradient(145deg,#4A2010,#140402);"></div>
+        <div>
+          <div class="vote-title">The Zone of Interest</div>
+          <div class="vote-meta">J. Glazer · 2023</div>
+          <div class="vote-bar"><span style="width:40%;"></span></div>
+        </div>
+        <div class="vote-count">5</div>
+      </div>
+
+      <div class="vote-item">
+        <div class="vote-poster" style="background:linear-gradient(145deg,#252030,#050610);"></div>
+        <div>
+          <div class="vote-title">Poor Things</div>
+          <div class="vote-meta">Y. Lanthimos · 2023</div>
+          <div class="vote-bar"><span style="width:24%;"></span></div>
+        </div>
+        <div class="vote-count">3</div>
+      </div>
+
+      <div class="hv-foot">
+        <button class="btn sm">Cast your vote</button>
+        <button class="btn sm text">View results →</button>
+      </div>
+    </aside>
+  </div>
+
+  <!-- ── 12 · COMPOSITION B — MOVIE DETAIL ── -->
+  <div class="section">
+    <span class="section-num">12</span>
+    <span class="section-title">Composition · Movie detail.</span>
+    <span class="section-rule"></span>
+    <span class="section-meta">Poster · Feature · Dossier</span>
+  </div>
+
+  <div class="md-top">
+    <div class="md-poster"></div>
+    <div class="md-center">
+      <div class="md-eyebrow">Reel № 07 · Friday 17 Apr</div>
+      <h1>Mulholland <em>Drive.</em></h1>
+      <div class="md-sub">
+        <span>David Lynch</span>
+        <span class="sep"></span>
+        <span>2001</span>
+        <span class="sep"></span>
+        <span>147 min</span>
+        <span class="sep"></span>
+        <span>Rated R</span>
+      </div>
+      <p class="md-desc">
+        The picture opens with a jitterbug and closes with a whisper. Between those bookends Lynch builds a Los Angeles that behaves the way cities behave inside our dreams — recognizable, imprecise, kinder than it should be and then suddenly not.
+      </p>
+      <div class="md-actions">
+        <button class="btn lg">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M5 13l4 4L19 7"/></svg>
+          I'll be there
+        </button>
+        <button class="btn lg ghost">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>
+          Watch trailer
+        </button>
+        <button class="btn text">Add to wishlist →</button>
+      </div>
+    </div>
+
+    <aside class="md-rail">
+      <h4>Dossier</h4>
+      <dl>
+        <div class="row"><dt>Director</dt><dd>David Lynch</dd></div>
+        <div class="row"><dt>Writer</dt><dd>David Lynch</dd></div>
+        <div class="row"><dt>Released</dt><dd>12 Oct 2001</dd></div>
+        <div class="row"><dt>Runtime</dt><dd>147 min</dd></div>
+        <div class="row"><dt>Country</dt><dd>USA · FR</dd></div>
+        <div class="row"><dt>Language</dt><dd>Eng · Spa</dd></div>
+      </dl>
+      <div class="chips">
+        <span class="chip accent">Neo-noir</span>
+        <span class="chip">Mystery</span>
+        <span class="chip">Surreal</span>
+      </div>
+    </aside>
+  </div>
+
+  <!-- FOOTER -->
+  <footer style="margin-top: var(--s-9); padding-top: var(--s-5); border-top: 1px solid var(--rule); display:flex; justify-content:space-between; align-items:center;">
+    <span class="t-mono" style="color:var(--bone-mute);">MovieNight · Design System v0.1</span>
+    <span class="t-mono" style="color:var(--bone-mute);">Fin · Reel № 07 · MMXXVI</span>
+  </footer>
+
+</div>
+</body>
+</html>

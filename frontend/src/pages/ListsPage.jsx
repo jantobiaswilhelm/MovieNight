@@ -2,15 +2,10 @@ import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
-  getMyLists,
-  getPublicLists,
-  createList,
-  getList,
-  deleteList,
-  removeListItem,
-  searchTMDB,
-  addListItem
+  getMyLists, getPublicLists, createList, getList, deleteList,
+  removeListItem, searchTMDB, addListItem
 } from '../api/client';
+import { Icon, PageHeader, SectionHead, EmptyState, Chip } from '../components/ui';
 import './ListsPage.css';
 
 const ListsPage = () => {
@@ -33,11 +28,8 @@ const ListsPage = () => {
   const [searching, setSearching] = useState(false);
 
   useEffect(() => {
-    if (id) {
-      fetchList();
-    } else {
-      fetchLists();
-    }
+    if (id) fetchList();
+    else fetchLists();
   }, [id, isAuthenticated]);
 
   const fetchLists = async () => {
@@ -71,7 +63,6 @@ const ListsPage = () => {
   const handleCreateList = async (e) => {
     e.preventDefault();
     if (!newListName.trim()) return;
-
     setCreating(true);
     try {
       const newList = await createList(newListName, newListDescription, newListPublic);
@@ -88,7 +79,6 @@ const ListsPage = () => {
 
   const handleDeleteList = async () => {
     if (!confirm('Are you sure you want to delete this list?')) return;
-
     try {
       await deleteList(currentList.id);
       navigate('/lists');
@@ -111,7 +101,6 @@ const ListsPage = () => {
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
-
     setSearching(true);
     try {
       const results = await searchTMDB(searchQuery);
@@ -140,122 +129,135 @@ const ListsPage = () => {
     }
   };
 
-  if (loading) {
-    return <div className="loading">Loading...</div>;
-  }
+  if (loading) return <div className="loading">Loading…</div>;
+  if (error)   return <div className="error">Error: {error}</div>;
 
-  if (error) {
-    return <div className="error">Error: {error}</div>;
-  }
-
-  // Single list view
+  /* ── Single list view ── */
   if (id && currentList) {
     return (
       <div className="lists-page">
-        <button className="back-link" onClick={() => navigate('/lists')}>
-          &larr; Back to Lists
+        <button className="btn text" onClick={() => navigate('/lists')}>
+          <Icon name="arrow-left" size={14} /> Back to lists
         </button>
 
-        <div className="list-header">
-          <div>
-            <h1>{currentList.name}</h1>
-            {currentList.description && (
-              <p className="list-description">{currentList.description}</p>
-            )}
-            <div className="list-meta">
-              <span>by {currentList.username}</span>
-              <span>{currentList.items?.length || 0} movies</span>
-              <span className={`list-visibility ${currentList.is_public ? 'public' : 'private'}`}>
-                {currentList.is_public ? 'Public' : 'Private'}
-              </span>
-            </div>
-          </div>
-          {currentList.is_owner && (
-            <div className="list-actions">
-              <button className="btn-primary" onClick={() => setShowAddMovieModal(true)}>
-                + Add Movie
+        <PageHeader
+          eyebrow={currentList.is_public ? 'Public list' : 'Private list'}
+          title={currentList.name}
+          meta={[
+            `by ${currentList.username}`,
+            `${currentList.items?.length || 0} title${(currentList.items?.length || 0) !== 1 ? 's' : ''}`,
+          ]}
+          actions={currentList.is_owner && (
+            <>
+              <button className="btn" onClick={() => setShowAddMovieModal(true)}>
+                <Icon name="plus" size={14} /> <span>Add movie</span>
               </button>
-              <button className="btn-danger" onClick={handleDeleteList}>
-                Delete List
+              <button className="btn destructive" onClick={handleDeleteList}>
+                <Icon name="trash" size={14} /> <span>Delete</span>
               </button>
-            </div>
+            </>
           )}
-        </div>
+        />
+
+        {currentList.description && (
+          <p className="ls-description">{currentList.description}</p>
+        )}
 
         {currentList.items?.length === 0 ? (
-          <div className="empty-state">
-            <p>This list is empty.</p>
-            {currentList.is_owner && <p>Add some movies to get started!</p>}
-          </div>
+          <EmptyState
+            icon={<Icon name="list" size={32} stroke={1.25} />}
+            title="This list is empty."
+            body={currentList.is_owner ? 'Search for a movie and add it to the list.' : 'Nothing here yet.'}
+            action={currentList.is_owner && (
+              <button className="btn" onClick={() => setShowAddMovieModal(true)}>Add first movie</button>
+            )}
+          />
         ) : (
-          <div className="list-items">
-            {currentList.items?.map((item) => (
-              <div key={item.id} className="list-item">
-                {item.image_url ? (
-                  <img src={item.image_url} alt={item.title} className="list-item-poster" loading="lazy" />
-                ) : (
-                  <div className="list-item-no-poster">No Image</div>
-                )}
-                <div className="list-item-info">
-                  <h3>{item.title}</h3>
-                  {item.release_year && <span className="list-item-year">{item.release_year}</span>}
-                  {item.note && <p className="list-item-note">{item.note}</p>}
+          <ul className="ls-items">
+            {currentList.items?.map((item, idx) => (
+              <li key={item.id} className="ls-item">
+                <span className="ls-item-rank">{String(idx + 1).padStart(2, '0')}</span>
+                <div className="ls-item-poster">
+                  {item.image_url ? (
+                    <img src={item.image_url} alt={item.title} loading="lazy" />
+                  ) : (
+                    <span className="ls-placeholder">{item.title?.charAt(0) ?? '?'}</span>
+                  )}
+                </div>
+                <div className="ls-item-body">
+                  <h3 className="ls-item-title">{item.title}</h3>
+                  <div className="ls-item-meta">
+                    {item.release_year && <span>{item.release_year}</span>}
+                  </div>
+                  {item.note && <p className="ls-item-note">&ldquo;{item.note}&rdquo;</p>}
                 </div>
                 {currentList.is_owner && (
                   <button
-                    className="list-item-remove"
+                    className="ls-item-remove"
                     onClick={() => handleRemoveItem(item.id)}
+                    aria-label={`Remove ${item.title}`}
                   >
-                    &times;
+                    <Icon name="close" size={14} />
                   </button>
                 )}
-              </div>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
 
-        {/* Add Movie Modal */}
+        {/* Add movie modal */}
         {showAddMovieModal && (
-          <div className="modal-overlay" onClick={() => setShowAddMovieModal(false)}>
-            <div className="modal" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header">
-                <h2>Add Movie to List</h2>
-                <button className="modal-close" onClick={() => setShowAddMovieModal(false)}>
-                  &times;
+          <div className="ls-modal-overlay" onClick={() => setShowAddMovieModal(false)}>
+            <div className="ls-modal" onClick={(e) => e.stopPropagation()}>
+              <header className="ls-modal-head">
+                <div>
+                  <div className="ls-modal-eyebrow">Add to list</div>
+                  <h3 className="ls-modal-title">Pick a title</h3>
+                </div>
+                <button className="btn icon" onClick={() => setShowAddMovieModal(false)} aria-label="Close">
+                  <Icon name="close" size={16} />
                 </button>
-              </div>
-              <div className="modal-body">
-                <div className="search-input-group">
-                  <input
-                    type="text"
-                    placeholder="Search for a movie..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                  />
-                  <button onClick={handleSearch} disabled={searching}>
-                    {searching ? '...' : 'Search'}
+              </header>
+              <div className="ls-modal-body">
+                <div className="ls-search">
+                  <div className="input-group" style={{ flex: 1, position: 'relative' }}>
+                    <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--bone-mute)' }}>
+                      <Icon name="search" size={16} />
+                    </span>
+                    <input
+                      type="text"
+                      placeholder="Title, director, year…"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                      style={{ paddingLeft: 40 }}
+                    />
+                  </div>
+                  <button className="btn" onClick={handleSearch} disabled={searching}>
+                    {searching ? '…' : 'Search'}
                   </button>
                 </div>
-                <div className="search-results">
-                  {searchResults.map((movie) => (
-                    <div
-                      key={movie.id}
-                      className="search-result-item"
-                      onClick={() => handleAddMovie(movie)}
-                    >
-                      {movie.posterPath ? (
-                        <img src={movie.posterPath} alt={movie.title} loading="lazy" />
-                      ) : (
-                        <div className="no-poster-small">?</div>
-                      )}
-                      <div className="search-result-info">
-                        <span className="search-result-title">{movie.title}</span>
-                        {movie.year && <span className="search-result-year">{movie.year}</span>}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                {searchResults.length > 0 && (
+                  <ul className="ls-search-results">
+                    {searchResults.map((movie) => (
+                      <li
+                        key={movie.id}
+                        className="ls-search-result"
+                        onClick={() => handleAddMovie(movie)}
+                      >
+                        {movie.posterPath ? (
+                          <img src={movie.posterPath} alt={movie.title} loading="lazy" />
+                        ) : (
+                          <div className="ls-search-placeholder">?</div>
+                        )}
+                        <div className="ls-search-info">
+                          <span className="ls-search-title">{movie.title}</span>
+                          {movie.year && <span className="ls-search-year">{movie.year}</span>}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             </div>
           </div>
@@ -264,114 +266,130 @@ const ListsPage = () => {
     );
   }
 
-  // Lists overview
+  /* ── Lists overview ── */
   return (
     <div className="lists-page">
-      <div className="lists-header">
-        <h1>Movie Lists</h1>
-        {isAuthenticated && (
-          <button className="btn-primary" onClick={() => setShowCreateModal(true)}>
-            + Create List
+      <PageHeader
+        eyebrow="Curated"
+        title={<>Movie <em>lists.</em></>}
+        meta={[`${myLists.length + publicLists.length} total`]}
+        actions={isAuthenticated && (
+          <button className="btn" onClick={() => setShowCreateModal(true)}>
+            <Icon name="plus" size={14} /> <span>New list</span>
           </button>
         )}
-      </div>
+      />
 
-      {/* My Lists */}
       {isAuthenticated && myLists.length > 0 && (
-        <section className="lists-section">
-          <h2>My Lists</h2>
-          <div className="lists-grid">
+        <section>
+          <SectionHead num="01" title="Yours" meta={`${myLists.length} list${myLists.length !== 1 ? 's' : ''}`} />
+          <div className="ls-grid">
             {myLists.map((list) => (
-              <Link key={list.id} to={`/lists/${list.id}`} className="list-card">
-                <h3>{list.name}</h3>
-                {list.description && <p className="list-card-desc">{list.description}</p>}
-                <div className="list-card-meta">
-                  <span>{list.item_count} movies</span>
-                  <span className={`list-visibility ${list.is_public ? 'public' : 'private'}`}>
+              <Link key={list.id} to={`/lists/${list.id}`} className="ls-card">
+                <header className="ls-card-head">
+                  <h3 className="ls-card-title">{list.name}</h3>
+                  <Chip variant={list.is_public ? 'accent' : 'default'}>
                     {list.is_public ? 'Public' : 'Private'}
-                  </span>
-                </div>
+                  </Chip>
+                </header>
+                {list.description && <p className="ls-card-desc">{list.description}</p>}
+                <footer className="ls-card-meta">
+                  <span>{list.item_count} title{list.item_count !== 1 ? 's' : ''}</span>
+                  <Icon name="arrow-right" size={14} className="ls-card-arrow" />
+                </footer>
               </Link>
             ))}
           </div>
         </section>
       )}
 
-      {/* Public Lists */}
-      <section className="lists-section">
-        <h2>Public Lists</h2>
+      <section>
+        <SectionHead
+          num={isAuthenticated && myLists.length > 0 ? '02' : '01'}
+          title="From the club"
+          meta={`${publicLists.length} public`}
+        />
         {publicLists.length === 0 ? (
-          <div className="empty-state">
-            <p>No public lists yet.</p>
-            {isAuthenticated && <p>Create the first one!</p>}
-          </div>
+          <EmptyState
+            icon={<Icon name="list" size={32} stroke={1.25} />}
+            title="No public lists yet."
+            body={isAuthenticated ? 'Create the first one.' : 'Log in to create a list.'}
+            action={isAuthenticated && (
+              <button className="btn" onClick={() => setShowCreateModal(true)}>Create a list</button>
+            )}
+          />
         ) : (
-          <div className="lists-grid">
+          <div className="ls-grid">
             {publicLists.map((list) => (
-              <Link key={list.id} to={`/lists/${list.id}`} className="list-card">
-                <h3>{list.name}</h3>
-                {list.description && <p className="list-card-desc">{list.description}</p>}
-                <div className="list-card-meta">
+              <Link key={list.id} to={`/lists/${list.id}`} className="ls-card">
+                <header className="ls-card-head">
+                  <h3 className="ls-card-title">{list.name}</h3>
+                </header>
+                {list.description && <p className="ls-card-desc">{list.description}</p>}
+                <footer className="ls-card-meta">
                   <span>by {list.username}</span>
-                  <span>{list.item_count} movies</span>
-                </div>
+                  <span className="sep" />
+                  <span>{list.item_count} title{list.item_count !== 1 ? 's' : ''}</span>
+                  <Icon name="arrow-right" size={14} className="ls-card-arrow" />
+                </footer>
               </Link>
             ))}
           </div>
         )}
       </section>
 
-      {/* Create List Modal */}
+      {/* Create list modal */}
       {showCreateModal && (
-        <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Create New List</h2>
-              <button className="modal-close" onClick={() => setShowCreateModal(false)}>
-                &times;
+        <div className="ls-modal-overlay" onClick={() => setShowCreateModal(false)}>
+          <div className="ls-modal" onClick={(e) => e.stopPropagation()}>
+            <header className="ls-modal-head">
+              <div>
+                <div className="ls-modal-eyebrow">New list</div>
+                <h3 className="ls-modal-title">Start a new list</h3>
+              </div>
+              <button className="btn icon" onClick={() => setShowCreateModal(false)} aria-label="Close">
+                <Icon name="close" size={16} />
               </button>
-            </div>
+            </header>
             <form onSubmit={handleCreateList}>
-              <div className="modal-body">
-                <div className="form-group">
-                  <label>Name</label>
+              <div className="ls-modal-body">
+                <label className="ls-field">
+                  <span>Name</span>
                   <input
                     type="text"
                     value={newListName}
                     onChange={(e) => setNewListName(e.target.value)}
-                    placeholder="My Favorite Movies"
+                    placeholder="e.g. Kubrick Complete"
                     maxLength={100}
                     required
                   />
-                </div>
-                <div className="form-group">
-                  <label>Description (optional)</label>
+                </label>
+                <label className="ls-field">
+                  <span>Description</span>
                   <textarea
                     value={newListDescription}
                     onChange={(e) => setNewListDescription(e.target.value)}
-                    placeholder="A collection of..."
+                    placeholder="A short note about this list…"
                     rows={3}
                   />
-                </div>
-                <div className="form-group checkbox-group">
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={newListPublic}
-                      onChange={(e) => setNewListPublic(e.target.checked)}
-                    />
-                    Make this list public
-                  </label>
-                </div>
+                </label>
+                <label className="ls-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={newListPublic}
+                    onChange={(e) => setNewListPublic(e.target.checked)}
+                  />
+                  <span>Make this list public</span>
+                </label>
               </div>
-              <div className="modal-footer">
-                <button type="button" className="btn-secondary" onClick={() => setShowCreateModal(false)}>
+              <footer className="ls-modal-footer">
+                <button type="button" className="btn ghost" onClick={() => setShowCreateModal(false)}>
                   Cancel
                 </button>
-                <button type="submit" className="btn-primary" disabled={creating}>
-                  {creating ? 'Creating...' : 'Create List'}
+                <button type="submit" className="btn" disabled={creating}>
+                  {creating ? 'Creating…' : 'Create list'}
                 </button>
-              </div>
+              </footer>
             </form>
           </div>
         </div>

@@ -49,7 +49,10 @@ function App() {
           </ErrorBoundary>
         </main>
         <footer className="app-footer">
-          <span>Made by Jan Wilhelm</span>
+          <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+            <span>MovieNight · Est. MMXXIV</span>
+            <span>Made by Jan Wilhelm</span>
+          </div>
         </footer>
       </div>
     </NotificationProvider>

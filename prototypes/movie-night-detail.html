@@ -1,0 +1,872 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Movie Night — The Late Show</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,700;0,6..96,900;1,6..96,400&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;1,9..144,300;1,9..144,500&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0B0906;
+    --ink-soft:#14110C;
+    --cream:#F2E7CE;
+    --cream-dim:#D9CDB0;
+    --paper:#EADDBE;
+    --blood:#C8321A;
+    --blood-deep:#8A1E0F;
+    --mustard:#E0A23A;
+    --shadow:rgba(0,0,0,.55);
+    --rule:rgba(242,231,206,.18);
+  }
+
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ background:var(--ink); color:var(--cream); font-family:"Fraunces", Georgia, serif; font-weight:300; -webkit-font-smoothing:antialiased; }
+  body{
+    font-size:16px; line-height:1.55; letter-spacing:.01em;
+    background:
+      radial-gradient(120% 80% at 50% -10%, rgba(200,50,26,.12), transparent 60%),
+      radial-gradient(80% 60% at 10% 100%, rgba(224,162,58,.07), transparent 60%),
+      var(--ink);
+    overflow-x:hidden;
+    cursor:default;
+  }
+
+  /* ---------- film grain ---------- */
+  body::before{
+    content:""; position:fixed; inset:-50%; pointer-events:none; z-index:9999;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 .95  0 0 0 0 .85  0 0 0 .35 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    opacity:.22; mix-blend-mode:overlay;
+    animation:grain 1.2s steps(4) infinite;
+  }
+  @keyframes grain{
+    0%{transform:translate(0,0)}
+    25%{transform:translate(-2%,1%)}
+    50%{transform:translate(1%,-2%)}
+    75%{transform:translate(-1%,2%)}
+    100%{transform:translate(2%,-1%)}
+  }
+  /* vignette */
+  body::after{
+    content:""; position:fixed; inset:0; pointer-events:none; z-index:9998;
+    background: radial-gradient(130% 90% at 50% 45%, transparent 55%, rgba(0,0,0,.55) 100%);
+  }
+
+  /* ---------- layout shell ---------- */
+  .frame{ max-width:1320px; margin:0 auto; padding:28px 48px 120px; position:relative; z-index:1; }
+
+  /* ---------- top bar ---------- */
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding-bottom:22px; border-bottom:1px solid var(--rule);
+    font-family:"JetBrains Mono", monospace; font-size:11px; letter-spacing:.22em; text-transform:uppercase;
+    color:var(--cream-dim);
+  }
+  .brand{ display:flex; align-items:center; gap:12px; color:var(--cream); }
+  .brand-mark{
+    width:22px; height:22px; border:1.5px solid var(--blood); border-radius:50%;
+    display:grid; place-items:center; color:var(--blood);
+    font-family:"Bodoni Moda", serif; font-weight:900; font-size:14px; line-height:1;
+    box-shadow:0 0 0 3px rgba(200,50,26,.08);
+  }
+  .brand-mark::after{ content:"★"; }
+  .top-nav{ display:flex; gap:28px; }
+  .top-nav a{ color:var(--cream-dim); text-decoration:none; transition:color .2s; }
+  .top-nav a:hover{ color:var(--blood); }
+  .top-meta{ display:flex; gap:18px; align-items:center; }
+  .reel-status{ display:flex; align-items:center; gap:8px; }
+  .reel-dot{ width:8px; height:8px; background:var(--blood); border-radius:50%; animation:pulse 1.6s infinite; box-shadow:0 0 8px var(--blood); }
+  @keyframes pulse{ 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  /* ---------- section index strip ---------- */
+  .index-strip{
+    margin-top:18px;
+    display:flex; justify-content:space-between;
+    font-family:"JetBrains Mono", monospace; font-size:10px; letter-spacing:.3em; color:rgba(242,231,206,.35);
+    text-transform:uppercase;
+  }
+  .index-strip span:nth-child(1){ color:var(--mustard); }
+
+  /* ---------- HERO ---------- */
+  .hero{
+    margin-top:40px;
+    display:grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap:48px;
+    align-items:end;
+    position:relative;
+  }
+  .hero::before{
+    content:"REEL №07"; position:absolute; top:-26px; right:0;
+    font-family:"JetBrains Mono", monospace; font-size:10px; letter-spacing:.3em; color:var(--blood);
+  }
+
+  .hero-left .kicker{
+    font-family:"JetBrains Mono", monospace; font-size:11px; letter-spacing:.32em;
+    color:var(--blood); text-transform:uppercase; margin-bottom:22px;
+    display:flex; align-items:center; gap:14px;
+  }
+  .kicker::before{ content:""; width:42px; height:1px; background:var(--blood); display:inline-block; }
+
+  .hero h1{
+    font-family:"Bodoni Moda", serif;
+    font-weight:400;
+    font-size: clamp(72px, 11vw, 172px);
+    line-height:.82;
+    letter-spacing:-.02em;
+    color:var(--cream);
+    margin-bottom:24px;
+  }
+  .hero h1 .ital{ font-style:italic; font-weight:300; color:var(--cream); }
+  .hero h1 .red{ color:var(--blood); font-style:italic; font-weight:300; }
+  .hero h1 .ampersand{ font-style:italic; font-weight:300; display:inline-block; transform:translateY(-.05em) scale(1.1); color:var(--mustard); }
+
+  .title-rule{
+    display:flex; align-items:center; gap:16px;
+    font-family:"JetBrains Mono", monospace; font-size:11px; letter-spacing:.25em; text-transform:uppercase;
+    color:var(--cream-dim);
+    margin:6px 0 30px;
+  }
+  .title-rule .star{ color:var(--blood); letter-spacing:0; }
+
+  .synopsis{
+    max-width:540px; font-family:"Fraunces", serif; font-weight:300; font-style:italic;
+    font-size:19px; line-height:1.55; color:var(--cream-dim);
+  }
+  .synopsis .dropcap{
+    float:left;
+    font-family:"Bodoni Moda", serif; font-weight:900; font-style:normal;
+    font-size:82px; line-height:.8; color:var(--blood);
+    padding:8px 12px 0 0; margin-top:6px;
+  }
+
+  /* ---------- POSTER COLUMN ---------- */
+  .hero-right{ position:relative; aspect-ratio:3/4; }
+  .poster{
+    position:relative; width:100%; height:100%;
+    background:
+      radial-gradient(80% 60% at 30% 20%, rgba(224,162,58,.35), transparent 60%),
+      linear-gradient(180deg, #2A0D0A 0%, #0D0403 100%);
+    border:1px solid rgba(242,231,206,.1);
+    overflow:hidden;
+    box-shadow:
+      0 40px 80px -20px rgba(0,0,0,.7),
+      inset 0 0 0 6px rgba(0,0,0,.35),
+      inset 0 0 0 7px rgba(242,231,206,.15);
+  }
+  /* abstract face / eye — pure CSS giallo */
+  .poster-art{
+    position:absolute; inset:0;
+    display:grid; place-items:center;
+  }
+  .poster-art .eye{
+    position:relative; width:62%; aspect-ratio:2/1;
+    background: radial-gradient(ellipse at center, var(--cream) 0 22%, var(--blood) 22.5% 38%, var(--ink) 38.5% 100%);
+    border-radius:50%;
+    filter:contrast(1.1) saturate(1.1);
+    box-shadow: 0 0 80px rgba(200,50,26,.3);
+    transform:rotate(-4deg);
+  }
+  .poster-art .eye::after{
+    content:""; position:absolute; left:46%; top:34%; width:8%; aspect-ratio:1; background:var(--cream);
+    border-radius:50%; box-shadow:0 0 12px var(--cream);
+  }
+  .poster-art .tear{
+    position:absolute; left:42%; top:58%; width:3px; height:28%;
+    background: linear-gradient(180deg, var(--blood), var(--blood-deep) 70%, transparent);
+    border-radius:3px;
+    filter:blur(.3px);
+    animation:drip 4s ease-in-out infinite;
+  }
+  @keyframes drip{
+    0%,100%{ transform:scaleY(1); opacity:.9; }
+    50%{ transform:scaleY(1.15); opacity:1; }
+  }
+  .poster-scan{
+    position:absolute; inset:0; pointer-events:none;
+    background:repeating-linear-gradient(180deg, rgba(0,0,0,.08) 0 2px, transparent 2px 4px);
+    mix-blend-mode:multiply;
+  }
+  .poster-stamp{
+    position:absolute; top:18px; left:18px;
+    font-family:"Bodoni Moda", serif; font-weight:900; font-style:italic;
+    font-size:11px; letter-spacing:.3em; text-transform:uppercase;
+    color:var(--blood); padding:6px 10px;
+    border:1.5px solid var(--blood);
+    transform:rotate(-4deg);
+    background:rgba(11,9,6,.4);
+  }
+  .poster-footer{
+    position:absolute; left:16px; right:16px; bottom:14px;
+    display:flex; justify-content:space-between; align-items:baseline;
+    font-family:"JetBrains Mono", monospace; font-size:9px; letter-spacing:.3em; color:var(--cream-dim);
+    text-transform:uppercase;
+  }
+  .poster-footer .big{
+    font-family:"Bodoni Moda", serif; font-weight:900; font-style:italic;
+    font-size:24px; letter-spacing:-.02em; color:var(--cream); text-transform:none;
+  }
+
+  /* film-sprocket side rail */
+  .sprocket{
+    position:absolute; top:0; bottom:0; width:22px;
+    background:
+      repeating-linear-gradient(180deg, var(--ink) 0 14px, transparent 14px 30px),
+      var(--cream);
+    opacity:.9;
+  }
+  .sprocket.left{ left:-22px;
+    background:
+      repeating-linear-gradient(180deg, transparent 0 8px, var(--ink) 8px 16px, transparent 16px 30px),
+      var(--cream);
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+  }
+  .sprocket.left::before,
+  .sprocket.right::before{
+    content:""; position:absolute; inset:0;
+    background: repeating-linear-gradient(180deg,
+      transparent 0 10px,
+      var(--ink-soft) 10px 18px,
+      transparent 18px 28px);
+  }
+  .sprocket.right{ right:-22px; }
+
+  /* ---------- TICKET STUB ---------- */
+  .ticket{
+    margin-top:80px; position:relative;
+    background:var(--cream);
+    color:var(--ink);
+    display:grid;
+    grid-template-columns: 1.1fr 1fr 1fr .8fr 1.1fr;
+    padding:32px 36px;
+    box-shadow: 0 30px 60px -20px rgba(0,0,0,.8), inset 0 0 0 1px rgba(11,9,6,.08);
+    gap:24px;
+  }
+  /* perforated top/bottom edges via radial masks */
+  .ticket::before,
+  .ticket::after{
+    content:""; position:absolute; left:0; right:0; height:14px;
+    background-image: radial-gradient(circle at 14px 7px, var(--ink) 4px, transparent 4.5px);
+    background-size:28px 14px;
+  }
+  .ticket::before{ top:-7px; }
+  .ticket::after{ bottom:-7px; }
+
+  .ticket-cell{ position:relative; padding-right:16px; }
+  .ticket-cell + .ticket-cell::before{
+    content:""; position:absolute; left:-12px; top:8px; bottom:8px;
+    width:1px; background:repeating-linear-gradient(180deg, rgba(11,9,6,.4) 0 4px, transparent 4px 8px);
+  }
+  .ticket-label{
+    font-family:"JetBrains Mono", monospace; font-size:9px; letter-spacing:.3em; text-transform:uppercase;
+    color:rgba(11,9,6,.55); margin-bottom:10px;
+  }
+  .ticket-value{
+    font-family:"Bodoni Moda", serif; font-weight:700; font-style:italic; font-size:26px; line-height:1.05;
+    color:var(--ink);
+  }
+  .ticket-sub{
+    font-family:"Fraunces", serif; font-weight:300; font-size:13px; color:rgba(11,9,6,.7); margin-top:4px;
+  }
+  .ticket-admit{
+    display:flex; flex-direction:column; justify-content:space-between;
+    border:1.5px solid var(--blood); padding:14px 16px;
+    background:rgba(200,50,26,.05);
+  }
+  .admit-top{ font-family:"JetBrains Mono",monospace; font-size:9px; letter-spacing:.3em; color:var(--blood); text-transform:uppercase; }
+  .admit-big{ font-family:"Bodoni Moda", serif; font-weight:900; font-style:italic; font-size:40px; line-height:.9; color:var(--blood); }
+  .admit-sub{ font-family:"JetBrains Mono",monospace; font-size:10px; color:rgba(11,9,6,.7); letter-spacing:.2em; text-transform:uppercase; }
+
+  /* ---------- two-column editorial ---------- */
+  .chapter-head{
+    margin-top:96px; display:flex; align-items:baseline; gap:20px;
+    border-top:1px solid var(--rule); padding-top:22px;
+  }
+  .chapter-num{ font-family:"JetBrains Mono", monospace; font-size:11px; letter-spacing:.3em; color:var(--mustard); }
+  .chapter-title{
+    font-family:"Bodoni Moda", serif; font-weight:400; font-style:italic;
+    font-size:40px; letter-spacing:-.01em; color:var(--cream);
+  }
+  .chapter-rule{ flex:1; height:1px; background:var(--rule); }
+  .chapter-meta{ font-family:"JetBrains Mono", monospace; font-size:10px; letter-spacing:.25em; color:var(--cream-dim); text-transform:uppercase; }
+
+  .editorial{
+    margin-top:28px;
+    display:grid; grid-template-columns: 1.6fr .8fr; gap:64px; align-items:start;
+  }
+  .prose p{ margin-bottom:18px; font-size:17px; line-height:1.7; color:var(--cream); font-weight:300; }
+  .prose p:first-of-type::first-letter{
+    font-family:"Bodoni Moda", serif; font-weight:900; font-style:italic;
+    font-size:78px; line-height:.82; float:left;
+    color:var(--blood); padding:6px 10px 0 0;
+  }
+  .pullquote{
+    font-family:"Bodoni Moda", serif; font-weight:400; font-style:italic;
+    font-size:28px; line-height:1.25; color:var(--mustard);
+    border-left:2px solid var(--blood); padding:6px 0 6px 22px;
+    margin:28px 0;
+  }
+
+  .aside{
+    border:1px solid var(--rule);
+    padding:24px 24px 26px;
+    background:rgba(234,221,190,.02);
+    position:relative;
+  }
+  .aside::before{
+    content:"DOSSIER"; position:absolute; top:-9px; left:18px;
+    background:var(--ink); padding:0 10px;
+    font-family:"JetBrains Mono", monospace; font-size:10px; letter-spacing:.35em; color:var(--blood);
+  }
+  .aside dl{ display:grid; grid-template-columns: 1fr; gap:14px; }
+  .aside .row{ display:flex; justify-content:space-between; gap:12px; align-items:baseline; border-bottom:1px dashed var(--rule); padding-bottom:10px; }
+  .aside dt{ font-family:"JetBrains Mono", monospace; font-size:10px; letter-spacing:.25em; color:var(--cream-dim); text-transform:uppercase; }
+  .aside dd{ font-family:"Fraunces", serif; font-style:italic; font-size:15px; color:var(--cream); text-align:right; }
+  .aside .genres{ display:flex; flex-wrap:wrap; gap:6px; margin-top:4px; }
+  .aside .chip{
+    font-family:"JetBrains Mono", monospace; font-size:10px; letter-spacing:.2em; text-transform:uppercase;
+    padding:4px 8px; border:1px solid var(--rule); color:var(--cream-dim);
+  }
+  .aside .chip:first-child{ color:var(--blood); border-color:var(--blood); }
+
+  /* ---------- CREW (numbered typographic list) ---------- */
+  .crew{
+    margin-top:56px;
+    display:grid; grid-template-columns: repeat(3, 1fr); gap:1px;
+    background:var(--rule);
+    border:1px solid var(--rule);
+  }
+  .crew .cell{
+    background:var(--ink);
+    padding:28px 26px;
+    display:flex; gap:18px; align-items:flex-start;
+    transition: background .3s;
+  }
+  .crew .cell:hover{ background:var(--ink-soft); }
+  .crew .cell:hover .num{ color:var(--blood); }
+  .crew .num{
+    font-family:"Bodoni Moda", serif; font-weight:900; font-style:italic;
+    font-size:40px; line-height:.9; color:var(--cream-dim);
+    transition:color .3s;
+  }
+  .crew .role{ font-family:"JetBrains Mono", monospace; font-size:10px; letter-spacing:.3em; color:var(--mustard); text-transform:uppercase; margin-bottom:6px; }
+  .crew .name{ font-family:"Bodoni Moda", serif; font-weight:400; font-style:italic; font-size:22px; color:var(--cream); line-height:1.1; }
+  .crew .note{ font-family:"Fraunces", serif; font-weight:300; font-size:13px; color:var(--cream-dim); margin-top:6px; font-style:italic; }
+
+  /* ---------- RSVP + ATTENDING ---------- */
+  .showtime{
+    margin-top:96px;
+    display:grid; grid-template-columns: 1.1fr 1fr; gap:56px; align-items:center;
+  }
+  .rsvp-card{
+    position:relative;
+    padding:56px 52px 48px;
+    background:
+      radial-gradient(120% 100% at 50% 0%, rgba(200,50,26,.18), transparent 70%),
+      linear-gradient(180deg, #16100A 0%, #0A0704 100%);
+    border:1px solid rgba(200,50,26,.35);
+    overflow:hidden;
+  }
+  /* marquee bulbs */
+  .bulbs{ position:absolute; left:16px; right:16px; display:flex; justify-content:space-between; pointer-events:none; }
+  .bulbs.top{ top:14px; }
+  .bulbs.bot{ bottom:14px; }
+  .bulb{
+    width:8px; height:8px; border-radius:50%;
+    background:radial-gradient(circle at 30% 30%, var(--mustard), var(--blood-deep));
+    box-shadow:0 0 10px rgba(224,162,58,.9), 0 0 20px rgba(200,50,26,.4);
+    animation:blink 2s infinite;
+  }
+  .bulb:nth-child(odd){ animation-delay:.3s; background:radial-gradient(circle at 30% 30%, var(--cream), var(--blood)); }
+  .bulb:nth-child(3n){ animation-delay:.7s; }
+  .bulb:nth-child(5n){ animation-delay:1.1s; }
+  @keyframes blink{ 0%,100%{opacity:1; transform:scale(1)} 50%{opacity:.35; transform:scale(.85)} }
+
+  .rsvp-kicker{ font-family:"JetBrains Mono", monospace; font-size:10px; letter-spacing:.35em; color:var(--blood); text-transform:uppercase; margin-bottom:14px; }
+  .rsvp-title{
+    font-family:"Bodoni Moda", serif; font-weight:400; font-style:italic;
+    font-size:54px; line-height:.95; letter-spacing:-.01em; color:var(--cream); margin-bottom:10px;
+  }
+  .rsvp-title em{ color:var(--blood); }
+  .rsvp-sub{ font-family:"Fraunces", serif; font-style:italic; font-size:16px; color:var(--cream-dim); max-width:440px; margin-bottom:28px; }
+
+  .rsvp-buttons{ display:flex; gap:12px; align-items:stretch; flex-wrap:wrap; }
+  button{ font-family:inherit; cursor:pointer; }
+
+  .btn-primary{
+    position:relative;
+    padding:18px 28px;
+    background:var(--blood);
+    color:var(--cream);
+    border:none;
+    font-family:"Bodoni Moda", serif; font-style:italic; font-weight:700;
+    font-size:18px; letter-spacing:.04em;
+    display:inline-flex; align-items:center; gap:14px;
+    transition: transform .2s, background .2s;
+    box-shadow:0 6px 0 var(--blood-deep), 0 20px 40px -10px rgba(200,50,26,.5);
+  }
+  .btn-primary::before{
+    content:""; width:10px; height:10px; border-radius:50%;
+    background:var(--cream); box-shadow:0 0 10px var(--cream);
+  }
+  .btn-primary:hover{ transform:translateY(2px); background:#DB3A1E; box-shadow:0 4px 0 var(--blood-deep), 0 14px 30px -8px rgba(200,50,26,.6); }
+  .btn-primary:active{ transform:translateY(6px); box-shadow:0 0 0 var(--blood-deep); }
+
+  .btn-ghost{
+    padding:18px 22px; background:transparent; color:var(--cream-dim);
+    border:1px solid var(--rule);
+    font-family:"JetBrains Mono", monospace; font-size:11px; letter-spacing:.25em; text-transform:uppercase;
+    transition:all .2s;
+  }
+  .btn-ghost:hover{ border-color:var(--cream); color:var(--cream); }
+
+  .rsvp-count{
+    margin-top:28px;
+    font-family:"JetBrains Mono", monospace; font-size:11px; letter-spacing:.25em; color:var(--cream-dim); text-transform:uppercase;
+    display:flex; align-items:center; gap:14px;
+  }
+  .rsvp-count strong{ font-family:"Bodoni Moda", serif; font-weight:900; font-style:italic; color:var(--mustard); font-size:22px; letter-spacing:-.01em; }
+
+  /* attending column */
+  .attending{ }
+  .attending h3{ font-family:"JetBrains Mono", monospace; font-size:11px; letter-spacing:.3em; color:var(--mustard); text-transform:uppercase; margin-bottom:18px; }
+  .guest-list{ display:flex; flex-direction:column; }
+  .guest{
+    display:grid; grid-template-columns: auto 1fr auto; gap:16px; align-items:center;
+    padding:14px 0; border-bottom:1px solid var(--rule);
+  }
+  .guest:last-child{ border-bottom:none; }
+  .avatar{
+    width:44px; height:44px; border-radius:50%;
+    background: linear-gradient(135deg, var(--blood), var(--mustard));
+    display:grid; place-items:center;
+    font-family:"Bodoni Moda", serif; font-style:italic; font-weight:900; font-size:18px;
+    color:var(--ink); flex-shrink:0;
+    box-shadow:inset 0 0 0 2px var(--ink), 0 0 0 1px var(--rule);
+  }
+  .avatar.v2{ background:linear-gradient(135deg, var(--cream), var(--blood)); }
+  .avatar.v3{ background:linear-gradient(135deg, var(--mustard), #6B3A1F); }
+  .avatar.v4{ background:linear-gradient(135deg, #4A6A6F, var(--cream)); }
+  .avatar.v5{ background:linear-gradient(135deg, var(--blood-deep), var(--mustard)); }
+  .guest-name{ font-family:"Fraunces", serif; font-style:italic; font-size:18px; color:var(--cream); }
+  .guest-note{ font-family:"JetBrains Mono", monospace; font-size:10px; letter-spacing:.25em; color:var(--cream-dim); text-transform:uppercase; }
+  .guest-rsvp{ font-family:"JetBrains Mono", monospace; font-size:10px; letter-spacing:.3em; text-transform:uppercase; }
+  .rsvp-yes{ color:var(--blood); }
+  .rsvp-maybe{ color:var(--mustard); }
+
+  /* ---------- PREVIOUS RATINGS STRIP ---------- */
+  .ratings-row{
+    margin-top:96px;
+    display:grid; grid-template-columns: repeat(4, 1fr); gap:28px;
+    padding-top:22px; border-top:1px solid var(--rule);
+  }
+  .rating{ border-left:1px solid var(--rule); padding:0 0 0 20px; }
+  .rating:first-child{ border-left:none; padding-left:0; }
+  .stars{ font-family:"Bodoni Moda", serif; font-weight:900; font-size:20px; color:var(--mustard); letter-spacing:.02em; }
+  .stars .off{ color:rgba(242,231,206,.18); }
+  .rating-num{ font-family:"Bodoni Moda", serif; font-weight:900; font-style:italic; font-size:44px; color:var(--cream); line-height:1; margin-top:6px; }
+  .rating-num sub{ font-size:18px; color:var(--cream-dim); font-style:normal; font-weight:400; vertical-align:baseline; }
+  .rating-source{ font-family:"JetBrains Mono", monospace; font-size:10px; letter-spacing:.3em; color:var(--cream-dim); text-transform:uppercase; margin-top:12px; }
+  .rating-quote{ font-family:"Fraunces", serif; font-style:italic; font-size:14px; color:var(--cream-dim); margin-top:8px; line-height:1.5; }
+
+  /* ---------- FOOTER REEL ---------- */
+  footer{
+    margin-top:120px;
+    border-top:1px solid var(--rule);
+    padding-top:24px;
+    display:flex; justify-content:space-between; align-items:center;
+    font-family:"JetBrains Mono", monospace; font-size:10px; letter-spacing:.3em; color:var(--cream-dim); text-transform:uppercase;
+  }
+  .reel-frames{ display:flex; gap:6px; }
+  .reel-frames span{
+    width:18px; height:24px; border:1px solid var(--rule);
+    background:repeating-linear-gradient(180deg, transparent 0 2px, rgba(242,231,206,.05) 2px 3px);
+  }
+
+  /* ---------- entrance animations ---------- */
+  @keyframes rise{ from{ opacity:0; transform:translateY(20px); } to{ opacity:1; transform:translateY(0); } }
+  .hero h1 .ln1{ display:block; opacity:0; animation:rise .9s .1s forwards cubic-bezier(.2,.7,.2,1); }
+  .hero h1 .ln2{ display:block; opacity:0; animation:rise .9s .25s forwards cubic-bezier(.2,.7,.2,1); }
+  .hero h1 .ln3{ display:block; opacity:0; animation:rise .9s .4s forwards cubic-bezier(.2,.7,.2,1); }
+  .hero-left .kicker{ opacity:0; animation:rise .8s 0s forwards; }
+  .title-rule{ opacity:0; animation:rise .8s .55s forwards; }
+  .synopsis{ opacity:0; animation:rise .8s .7s forwards; }
+  .hero-right{ opacity:0; animation:rise 1s .5s forwards; }
+  .ticket{ opacity:0; animation:rise 1s .9s forwards; }
+
+  /* reveal rest on scroll via simple IO */
+  .reveal{ opacity:0; transform:translateY(24px); transition:opacity .8s ease, transform .8s ease; }
+  .reveal.on{ opacity:1; transform:translateY(0); }
+
+  /* responsive */
+  @media (max-width: 960px){
+    .frame{ padding:20px 20px 80px; }
+    .hero{ grid-template-columns:1fr; gap:32px; }
+    .hero-right{ max-width:340px; }
+    .ticket{ grid-template-columns:1fr 1fr; }
+    .editorial{ grid-template-columns:1fr; gap:32px; }
+    .crew{ grid-template-columns:1fr; }
+    .showtime{ grid-template-columns:1fr; }
+    .ratings-row{ grid-template-columns:1fr 1fr; }
+    .top-nav{ display:none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="frame">
+
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark"></span>
+      <span>The&nbsp;Late&nbsp;Show&nbsp;·&nbsp;Est.&nbsp;MMXXIV</span>
+    </div>
+    <nav class="top-nav">
+      <a href="#">Tonight</a>
+      <a href="#">Archive</a>
+      <a href="#">Wishlist</a>
+      <a href="#">Voting Booth</a>
+    </nav>
+    <div class="top-meta">
+      <div class="reel-status"><span class="reel-dot"></span> Projector&nbsp;Warming</div>
+    </div>
+  </header>
+
+  <div class="index-strip">
+    <span>01 · Feature Presentation</span>
+    <span>02 · Synopsis</span>
+    <span>03 · Crew</span>
+    <span>04 · Showtime</span>
+    <span>05 · Past Screenings</span>
+  </div>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-left">
+      <div class="kicker">Feature Presentation · Friday 17 · 20:30</div>
+      <h1>
+        <span class="ln1">Mulholland</span>
+        <span class="ln2 red">Drive<span class="ampersand">,</span></span>
+        <span class="ln3 ital">a dream.</span>
+      </h1>
+      <div class="title-rule">
+        <span>Dir. David Lynch</span>
+        <span class="star">★</span>
+        <span>2001</span>
+        <span class="star">★</span>
+        <span>147 min</span>
+        <span class="star">★</span>
+        <span>Rated R</span>
+      </div>
+      <p class="synopsis">
+        <span class="dropcap">A</span>fter a car crash on the titular Los Angeles road leaves a woman with amnesia,
+        an aspiring actress helps her piece together an identity — only to find the city itself slipping
+        out from under them both, one velvet-red curtain at a time.
+      </p>
+    </div>
+
+    <!-- POSTER COLUMN -->
+    <div class="hero-right">
+      <div class="sprocket left"></div>
+      <div class="poster">
+        <div class="poster-stamp">Now&nbsp;·&nbsp;Showing</div>
+        <div class="poster-art">
+          <div class="eye"></div>
+          <div class="tear"></div>
+        </div>
+        <div class="poster-scan"></div>
+        <div class="poster-footer">
+          <span>35mm · Eastmancolor</span>
+          <span class="big">M·D</span>
+          <span>Reel 07 / 09</span>
+        </div>
+      </div>
+      <div class="sprocket right"></div>
+    </div>
+  </section>
+
+  <!-- TICKET STUB -->
+  <section class="ticket">
+    <div class="ticket-cell">
+      <div class="ticket-label">Date</div>
+      <div class="ticket-value">Fri · 17 Apr</div>
+      <div class="ticket-sub">MMXXVI</div>
+    </div>
+    <div class="ticket-cell">
+      <div class="ticket-label">Doors</div>
+      <div class="ticket-value">20:00</div>
+      <div class="ticket-sub">Projection 20:30 sharp</div>
+    </div>
+    <div class="ticket-cell">
+      <div class="ticket-label">Host</div>
+      <div class="ticket-value">J. Petrov</div>
+      <div class="ticket-sub">Seventh projection</div>
+    </div>
+    <div class="ticket-cell">
+      <div class="ticket-label">Hall</div>
+      <div class="ticket-value">№ 3</div>
+      <div class="ticket-sub">Velvet &amp; amber</div>
+    </div>
+    <div class="ticket-admit">
+      <div class="admit-top">Admit One</div>
+      <div class="admit-big">07<span style="font-size:18px;opacity:.5;">/12</span></div>
+      <div class="admit-sub">Seats remain</div>
+    </div>
+  </section>
+
+  <!-- CHAPTER 02: SYNOPSIS -->
+  <div class="chapter-head reveal">
+    <span class="chapter-num">02</span>
+    <span class="chapter-title">A long dream, a shorter wake.</span>
+    <span class="chapter-rule"></span>
+    <span class="chapter-meta">read · 3 min</span>
+  </div>
+
+  <section class="editorial reveal">
+    <div class="prose">
+      <p>
+        The picture opens with a jitterbug and closes with a whisper. Between those
+        bookends Lynch builds a Los Angeles that behaves the way cities behave
+        inside our dreams — recognizable, imprecise, kinder than it should be and then
+        suddenly not. There is a blue box, a cowboy, an audition scene that rearranges the
+        floor beneath you, and a diner on Sunset whose back alley contains something
+        you absolutely do not want to see.
+      </p>
+      <div class="pullquote">
+        “It'll be just like in the movies. We'll pretend to be someone else.”
+      </div>
+      <p>
+        The best way in is to stop trying to solve it. The film rewards attention the way
+        a painting rewards attention: not with an answer, but with a stranger, longer
+        version of the question. Come early. Stay for the second half.
+      </p>
+    </div>
+
+    <aside class="aside">
+      <dl>
+        <div class="row"><dt>Director</dt><dd>David Lynch</dd></div>
+        <div class="row"><dt>Writer</dt><dd>David Lynch</dd></div>
+        <div class="row"><dt>Released</dt><dd>12 Oct 2001</dd></div>
+        <div class="row"><dt>Runtime</dt><dd>147 min</dd></div>
+        <div class="row"><dt>Country</dt><dd>USA · France</dd></div>
+        <div class="row"><dt>Language</dt><dd>English · Spanish</dd></div>
+        <div class="row"><dt>Sound</dt><dd>Dolby · DTS</dd></div>
+        <div class="row" style="border-bottom:none;"><dt>Genres</dt><dd style="text-align:right;"></dd></div>
+      </dl>
+      <div class="genres">
+        <span class="chip">Neo-noir</span>
+        <span class="chip">Mystery</span>
+        <span class="chip">Drama</span>
+        <span class="chip">Surreal</span>
+      </div>
+    </aside>
+  </section>
+
+  <!-- CHAPTER 03: CREW -->
+  <div class="chapter-head reveal">
+    <span class="chapter-num">03</span>
+    <span class="chapter-title">The players.</span>
+    <span class="chapter-rule"></span>
+    <span class="chapter-meta">seven credits</span>
+  </div>
+
+  <section class="crew reveal">
+    <div class="cell">
+      <div class="num">01</div>
+      <div>
+        <div class="role">Lead</div>
+        <div class="name">Naomi Watts</div>
+        <div class="note">as Betty / Diane</div>
+      </div>
+    </div>
+    <div class="cell">
+      <div class="num">02</div>
+      <div>
+        <div class="role">Lead</div>
+        <div class="name">Laura Harring</div>
+        <div class="note">as Rita / Camilla</div>
+      </div>
+    </div>
+    <div class="cell">
+      <div class="num">03</div>
+      <div>
+        <div class="role">Support</div>
+        <div class="name">Justin Theroux</div>
+        <div class="note">as Adam Kesher, beleaguered director</div>
+      </div>
+    </div>
+    <div class="cell">
+      <div class="num">04</div>
+      <div>
+        <div class="role">Cinematography</div>
+        <div class="name">Peter Deming</div>
+        <div class="note">Eastmancolor · 1.85:1</div>
+      </div>
+    </div>
+    <div class="cell">
+      <div class="num">05</div>
+      <div>
+        <div class="role">Score</div>
+        <div class="name">Angelo Badalamenti</div>
+        <div class="note">A recurring, low, mournful motif.</div>
+      </div>
+    </div>
+    <div class="cell">
+      <div class="num">06</div>
+      <div>
+        <div class="role">Editor</div>
+        <div class="name">Mary Sweeney</div>
+        <div class="note">Longtime Lynch collaborator</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CHAPTER 04: SHOWTIME / RSVP -->
+  <div class="chapter-head reveal">
+    <span class="chapter-num">04</span>
+    <span class="chapter-title">Take your seat.</span>
+    <span class="chapter-rule"></span>
+    <span class="chapter-meta">doors close 20:25</span>
+  </div>
+
+  <section class="showtime reveal">
+    <div class="rsvp-card">
+      <div class="bulbs top">
+        <span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span>
+        <span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span>
+        <span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span>
+      </div>
+      <div class="rsvp-kicker">Reservations · Friday Night</div>
+      <h2 class="rsvp-title">Will you be <em>in the dark</em> with us?</h2>
+      <p class="rsvp-sub">
+        Confirm your seat below. Popcorn provided. Phones in pockets. We start on time
+        and we don't pause for latecomers.
+      </p>
+      <div class="rsvp-buttons">
+        <button class="btn-primary">I'll be there</button>
+        <button class="btn-ghost">Maybe</button>
+        <button class="btn-ghost">Can't make it</button>
+      </div>
+      <div class="rsvp-count">
+        <span><strong>07</strong>&nbsp;of 12 confirmed</span>
+        <span>·</span>
+        <span>03 maybe</span>
+      </div>
+      <div class="bulbs bot">
+        <span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span>
+        <span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span>
+        <span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span>
+      </div>
+    </div>
+
+    <div class="attending">
+      <h3>The Guest List</h3>
+      <div class="guest-list">
+        <div class="guest">
+          <div class="avatar">N</div>
+          <div><div class="guest-name">Nadia Petrov</div><div class="guest-note">host · projector</div></div>
+          <div class="guest-rsvp rsvp-yes">· Yes</div>
+        </div>
+        <div class="guest">
+          <div class="avatar v2">R</div>
+          <div><div class="guest-name">Raimo Kask</div><div class="guest-note">snacks detail</div></div>
+          <div class="guest-rsvp rsvp-yes">· Yes</div>
+        </div>
+        <div class="guest">
+          <div class="avatar v3">J</div>
+          <div><div class="guest-name">Jonas Meri</div><div class="guest-note">bringing the chianti</div></div>
+          <div class="guest-rsvp rsvp-yes">· Yes</div>
+        </div>
+        <div class="guest">
+          <div class="avatar v4">T</div>
+          <div><div class="guest-name">Tuuli Saar</div><div class="guest-note">first screening</div></div>
+          <div class="guest-rsvp rsvp-yes">· Yes</div>
+        </div>
+        <div class="guest">
+          <div class="avatar v5">M</div>
+          <div><div class="guest-name">Mira Toom</div><div class="guest-note">may arrive after doors</div></div>
+          <div class="guest-rsvp rsvp-maybe">· Maybe</div>
+        </div>
+        <div class="guest">
+          <div class="avatar v2">A</div>
+          <div><div class="guest-name">Anton Ilves</div><div class="guest-note">regular · seat 4</div></div>
+          <div class="guest-rsvp rsvp-yes">· Yes</div>
+        </div>
+        <div class="guest">
+          <div class="avatar v3">E</div>
+          <div><div class="guest-name">Eva Laur</div><div class="guest-note">returning from holiday</div></div>
+          <div class="guest-rsvp rsvp-maybe">· Maybe</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CHAPTER 05: PREVIOUS RATINGS -->
+  <div class="chapter-head reveal">
+    <span class="chapter-num">05</span>
+    <span class="chapter-title">From past screenings.</span>
+    <span class="chapter-rule"></span>
+    <span class="chapter-meta">average 8.6 / 10</span>
+  </div>
+
+  <section class="ratings-row reveal">
+    <div class="rating">
+      <div class="stars">★ ★ ★ ★ ★ <span class="off">★ ★ ★ ★ ★</span></div>
+      <div class="rating-num">9.0<sub>/10</sub></div>
+      <div class="rating-source">Raimo · reel №02</div>
+      <div class="rating-quote">“The blue box scene lives rent-free.”</div>
+    </div>
+    <div class="rating">
+      <div class="stars">★ ★ ★ ★ <span class="off">★ ★ ★ ★ ★ ★</span></div>
+      <div class="rating-num">8.5<sub>/10</sub></div>
+      <div class="rating-source">Nadia · reel №02</div>
+      <div class="rating-quote">“I got lost, then found, then lost again — which I think is the point.”</div>
+    </div>
+    <div class="rating">
+      <div class="stars">★ ★ ★ ★ ★ <span class="off">★ ★ ★ ★ ★</span></div>
+      <div class="rating-num">9.5<sub>/10</sub></div>
+      <div class="rating-source">Jonas · reel №03</div>
+      <div class="rating-quote">“Badalamenti's score could carry a lesser film; here it escorts a masterpiece.”</div>
+    </div>
+    <div class="rating">
+      <div class="stars">★ ★ ★ <span class="off">★ ★ ★ ★ ★ ★ ★</span></div>
+      <div class="rating-num">7.5<sub>/10</sub></div>
+      <div class="rating-source">Anton · reel №04</div>
+      <div class="rating-quote">“Too many cowboys. (Kidding. One is perfect.)”</div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <span>© The Late Show · Private Screening</span>
+    <div class="reel-frames">
+      <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+    </div>
+    <span>Fin · Reel 07 · MMXXVI</span>
+  </footer>
+
+</div>
+
+<script>
+  // gentle scroll reveals
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries){
+      if (e.isIntersecting){ e.target.classList.add("on"); io.unobserve(e.target); }
+    }
+  }, { threshold: .15 });
+  document.querySelectorAll(".reveal").forEach(el => io.observe(el));
+
+  // subtle parallax on the poster eye
+  const eye = document.querySelector(".poster-art .eye");
+  if (eye){
+    document.addEventListener("mousemove", (e) => {
+      const x = (e.clientX / window.innerWidth - .5) * 8;
+      const y = (e.clientY / window.innerHeight - .5) * 6;
+      eye.style.transform = `rotate(-4deg) translate(${x}px, ${y}px)`;
+    });
+  }
+</script>
+</body>
+</html>

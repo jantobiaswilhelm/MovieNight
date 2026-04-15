@@ -1,606 +1,384 @@
-/* ══════════════════════════════════════════════
-   MOVIES PAGE — Cinematic Grid
-   ══════════════════════════════════════════════ */
+/* ==========================================================================
+   MOVIES PAGE — editorial archive
+   ========================================================================== */
 
-.movies-page {
-  padding: 1.5rem 0;
-  animation: fadeIn 0.4s ease-out;
-  width: 100%;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* ── Header ── */
-.movies-header {
+.movies-page{
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-  flex-wrap: wrap;
-  gap: 1rem;
+  flex-direction: column;
+  gap: var(--s-5);
+  animation: fadeIn var(--dur-2) var(--ease-out);
 }
 
-.movies-header h1 {
-  margin: 0;
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: #fff;
-}
-
-/* View Toggle */
-.view-toggle {
-  display: flex;
-  background: #161618;
-  border-radius: 8px;
+/* ── View toggle in page header ── */
+.view-toggle{
+  display: inline-flex;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--r-1);
   overflow: hidden;
-  border: 1px solid #2A2A2C;
 }
-
-.view-btn {
-  padding: 0.5rem 1.25rem;
-  background: transparent;
-  border: none;
-  color: rgba(255, 255, 255, 0.5);
-  cursor: pointer;
-  font-size: 0.85rem;
-  font-weight: 500;
-  transition: all 0.2s ease;
-  font-family: inherit;
-}
-
-.view-btn:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.view-btn.active {
-  background: #E11D48;
-  color: #fff;
-}
-
-/* ── Filters Bar ── */
-.filters-bar {
-  display: flex;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-.search-box {
-  flex: 1;
-  min-width: 200px;
-  position: relative;
-}
-
-.search-input {
-  width: 100%;
-  padding: 0.65rem 2.5rem 0.65rem 1rem;
-  font-size: 0.9rem;
-  background: #161618;
-  color: #fff;
-  border: 1px solid #2A2A2C;
-  border-radius: 8px;
-  transition: all 0.2s ease;
-  font-family: inherit;
-  box-sizing: border-box;
-}
-
-.search-input:focus {
-  outline: none;
-  border-color: #E11D48;
-  box-shadow: 0 0 0 2px rgba(225, 29, 72, 0.15);
-}
-
-.search-input::placeholder {
-  color: rgba(255, 255, 255, 0.3);
-}
-
-.search-clear-btn {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  color: rgba(255, 255, 255, 0.3);
-  font-size: 1.2rem;
-  cursor: pointer;
-  padding: 0.25rem 0.5rem;
-  line-height: 1;
-  transition: color 0.2s;
-}
-
-.search-clear-btn:hover {
-  color: #fff;
-}
-
-.filter-group {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.filter-select {
-  padding: 0.65rem 1rem;
-  font-size: 0.85rem;
-  background: #161618;
-  color: #fff;
-  border: 1px solid #2A2A2C;
-  border-radius: 8px;
-  cursor: pointer;
-  min-width: 130px;
-  transition: all 0.2s ease;
-  font-family: inherit;
-  appearance: auto;
-}
-
-.filter-select:hover {
-  border-color: #3A3A3C;
-}
-
-.filter-select:focus {
-  outline: none;
-  border-color: #E11D48;
-  box-shadow: 0 0 0 2px rgba(225, 29, 72, 0.15);
-}
-
-/* Active Filters */
-.active-filters {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-  flex-wrap: wrap;
-}
-
-.filter-tag {
+.vt-btn{
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.3rem 0.7rem;
-  background: #E11D48;
-  color: #fff;
-  border-radius: 20px;
-  font-size: 0.8rem;
+  gap: var(--s-2);
+  padding: 10px 14px;
+  background: transparent;
+  color: var(--bone-dim);
+  font-family: var(--font-ui);
+  font-size: var(--fs-13);
   font-weight: 500;
-}
-
-.filter-tag button {
-  background: none;
-  border: none;
-  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: .01em;
   cursor: pointer;
-  font-size: 1rem;
-  line-height: 1;
-  padding: 0;
-  transition: color 0.2s;
+  border: 0;
+  transition: background var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
 }
-
-.filter-tag button:hover {
-  color: #fff;
+.vt-btn + .vt-btn{ border-left: 1px solid var(--rule); }
+.vt-btn:hover{ color: var(--bone); background: var(--ink-2); }
+.vt-btn.active{
+  background: var(--ember);
+  color: var(--ink);
 }
+.vt-btn.active:hover{ background: var(--ember-hi); color: var(--ink); }
 
-.clear-all-btn {
-  background: none;
-  border: none;
-  color: rgba(255, 255, 255, 0.4);
-  cursor: pointer;
-  font-size: 0.8rem;
-  padding: 0.3rem 0.5rem;
-  transition: color 0.2s;
-  text-decoration: underline;
-  font-family: inherit;
-}
-
-.clear-all-btn:hover {
-  color: #fff;
-}
-
-.clear-filters-btn {
-  margin-top: 1rem;
-}
-
-/* Results Count */
-.results-count {
-  color: rgba(255, 255, 255, 0.35);
-  font-size: 0.85rem;
-  margin-bottom: 1.25rem;
-}
-
-/* Empty State */
-.movies-page .empty-state {
-  text-align: center;
-  padding: 3rem;
-  background: #161618;
-  border-radius: 12px;
-  color: rgba(255, 255, 255, 0.4);
-  border: 1px solid #2A2A2C;
-}
-
-/* ══════════════════════════════════════
-   MOVIES GRID
-   ══════════════════════════════════════ */
-
-.movies-grid {
+/* ── Filters ── */
+.filters-bar{
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-  gap: 1.25rem;
-  width: 100%;
+  grid-template-columns: 1.5fr 2fr;
+  gap: var(--s-3);
+  align-items: center;
+}
+@media (max-width: 900px){
+  .filters-bar{ grid-template-columns: 1fr; }
 }
 
-.movie-card-wrapper {
+.filter-search{
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.filter-search-icon{
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--bone-mute);
+  pointer-events: none;
+  display: inline-flex;
+}
+.filter-search-input{
+  width: 100%;
+  padding-left: 40px;
+  padding-right: 40px;
+}
+.filter-search-clear{
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  color: var(--bone-mute);
+  background: transparent;
+  border: 0;
+  border-radius: var(--r-1);
+  cursor: pointer;
+  transition: color var(--dur-1) var(--ease-out), background var(--dur-1) var(--ease-out);
+}
+.filter-search-clear:hover{ color: var(--ember); background: var(--ink-3); }
+
+.filter-selects{
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--s-2);
+}
+@media (max-width: 720px){
+  .filter-selects{ grid-template-columns: 1fr 1fr; }
+}
+
+/* ── Active filter chips row ── */
+.active-filters{
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  align-items: center;
+}
+.active-filters .chip{
+  gap: var(--s-2);
+}
+.active-filters .chip svg{ opacity: .7; }
+.active-filters .chip:hover svg{ opacity: 1; }
+
+/* ── Results count ── */
+.results-count{
+  font-family: var(--font-mono);
+  font-size: var(--fs-11);
+  letter-spacing: .28em;
+  text-transform: uppercase;
+  color: var(--bone-mute);
+  padding-bottom: var(--s-3);
+  border-bottom: 1px solid var(--rule);
+}
+
+/* ── Movies grid ── */
+.movies-grid{
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--s-5);
+}
+
+.mg-wrapper{
   position: relative;
 }
 
-.movie-card {
-  display: block;
-  background: #161618;
-  border-radius: 10px;
-  overflow: hidden;
-  text-decoration: none;
-  color: inherit;
-  transition: all 0.2s ease;
-  border: 1px solid #2A2A2C;
-}
-
-.movie-card:hover {
-  transform: scale(1.02);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
-  border-color: #3A3A3C;
-  text-decoration: none;
-}
-
-/* Delete Button */
-.delete-btn {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: rgba(225, 29, 72, 0.9);
-  color: #fff;
-  border: none;
-  font-size: 14px;
-  font-weight: bold;
-  cursor: pointer;
+.mg-card{
   display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.2s, background 0.2s;
-  z-index: 10;
+  flex-direction: column;
+  gap: var(--s-3);
+  color: var(--bone);
+  transition: transform var(--dur-1) var(--ease-out);
 }
+.mg-card:hover{ transform: translateY(-2px); }
+.mg-card:hover .mg-title{ color: var(--ember); }
+.mg-card:hover .mg-poster{ border-color: var(--rule-strong); }
 
-.movie-card-wrapper:hover .delete-btn {
-  opacity: 1;
-}
-
-.delete-btn:hover {
-  background: #E11D48;
-}
-
-.delete-btn:disabled {
-  background: rgba(113, 113, 122, 0.9);
-  cursor: not-allowed;
-}
-
-/* Poster */
-.movie-poster {
+.mg-poster{
+  position: relative;
   aspect-ratio: 2/3;
+  border-radius: var(--r-2);
   overflow: hidden;
-  background: #0A0A0B;
+  border: 1px solid var(--rule);
+  background: var(--ink-2);
+  transition: border-color var(--dur-1) var(--ease-out);
 }
-
-.movie-poster img {
-  width: 100%;
-  height: 100%;
+.mg-poster img{
+  width: 100%; height: 100%;
   object-fit: cover;
-  transition: transform 0.3s ease;
+  display: block;
+}
+.mg-poster-placeholder{
+  position: absolute; inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 60px;
+  color: var(--bone-mute);
+  background: var(--ink-3);
 }
 
-.movie-card:hover .movie-poster img {
-  transform: scale(1.05);
+.mg-rating{
+  position: absolute;
+  top: var(--s-2);
+  right: var(--s-2);
+  padding: 3px 8px;
+  background: rgba(20, 17, 13, .85);
+  color: var(--gold);
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: var(--fs-14);
+  border-radius: var(--r-1);
+  letter-spacing: -.01em;
 }
 
-.no-poster {
-  width: 100%;
-  height: 100%;
+.mg-body{
   display: flex;
-  align-items: center;
-  justify-content: center;
-  color: rgba(255, 255, 255, 0.2);
-  font-size: 0.85rem;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding: 0 2px;
 }
-
-/* Card Details */
-.movie-details {
-  padding: 0.75rem;
-}
-
-.movie-card .movie-title {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #fff;
-  margin-bottom: 0.35rem;
-  line-height: 1.3;
+.mg-title{
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: var(--fs-19);
+  line-height: 1.2;
+  letter-spacing: -.005em;
+  color: var(--bone);
+  margin: 0;
+  transition: color var(--dur-1) var(--ease-out);
+  overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
-  overflow: hidden;
 }
-
-/* Genre Tags */
-.movie-card-genres {
-  display: flex;
-  gap: 0.3rem;
-  flex-wrap: wrap;
-  margin-bottom: 0.35rem;
-}
-
-.movie-genre-tag {
-  display: inline-block;
-  padding: 0.15rem 0.4rem;
-  background: rgba(225, 29, 72, 0.12);
-  border: 1px solid rgba(225, 29, 72, 0.2);
-  border-radius: 4px;
-  font-size: 0.6rem;
-  color: rgba(255, 255, 255, 0.6);
-  line-height: 1.3;
-}
-
-/* Meta Row */
-.movie-card .movie-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  font-size: 0.75rem;
-}
-
-.movie-date {
-  color: rgba(255, 255, 255, 0.4);
-}
-
-.movie-stats {
+.mg-meta{
   display: flex;
   align-items: center;
-  gap: 0.3rem;
-}
-
-.movie-stats .rating {
-  font-weight: 700;
-  color: #F5C518;
-}
-
-.movie-stats .votes {
-  color: rgba(255, 255, 255, 0.35);
-  font-size: 0.7rem;
-}
-
-.no-rating {
-  color: rgba(255, 255, 255, 0.2);
-  font-style: italic;
-}
-
-/* ══════════════════════════════════════
-   CALENDAR VIEW
-   ══════════════════════════════════════ */
-
-.calendar-view {
-  margin-top: 1rem;
-}
-
-.calendar-controls {
-  display: flex;
-  justify-content: center;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-.calendar-controls .btn-secondary {
-  background: #161618;
-  border: 1px solid #2A2A2C;
-  color: rgba(255, 255, 255, 0.7);
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 0.85rem;
-  font-family: inherit;
-  transition: all 0.2s;
-}
-
-.calendar-controls .btn-secondary:hover {
-  border-color: #3A3A3C;
-  color: #fff;
-}
-
-.current-month {
-  text-align: center;
-  font-size: 1.5rem;
-  color: rgba(255, 255, 255, 0.6);
-  margin-bottom: 1rem;
-}
-
-.calendar-grid {
-  background: #161618;
-  border-radius: 12px;
-  overflow: hidden;
-  border: 1px solid #2A2A2C;
-}
-
-.calendar-weekdays {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  background: #0A0A0B;
-  border-bottom: 1px solid #2A2A2C;
-}
-
-.calendar-weekdays div {
-  padding: 0.75rem;
-  text-align: center;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.4);
+  gap: var(--s-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-11);
+  letter-spacing: .2em;
   text-transform: uppercase;
-  font-size: 0.7rem;
-  letter-spacing: 0.5px;
+  color: var(--bone-mute);
+}
+.mg-meta .sep{
+  width: 3px; height: 3px;
+  background: var(--bone-mute);
+  border-radius: var(--r-full);
+}
+.mg-chips{
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-1);
 }
 
-.calendar-days {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-}
-
-.calendar-day {
-  min-height: 120px;
-  padding: 0.5rem;
-  border-right: 1px solid #2A2A2C;
-  border-bottom: 1px solid #2A2A2C;
-  background: #161618;
-  transition: background 0.2s ease;
-}
-
-.calendar-day:nth-child(7n) {
-  border-right: none;
-}
-
-.calendar-day.empty {
-  background: #0E0E10;
-}
-
-.calendar-day.today {
-  background: rgba(225, 29, 72, 0.06);
-}
-
-.calendar-day.today .day-number {
-  background: #E11D48;
-  color: #fff;
-  border-radius: 50%;
+/* Admin delete on grid card */
+.mg-delete{
+  position: absolute;
+  top: var(--s-2);
+  left: var(--s-2);
   width: 28px;
   height: 28px;
-  display: inline-flex;
+  display: grid;
+  place-items: center;
+  background: rgba(20, 17, 13, .85);
+  color: var(--bone-dim);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--r-full);
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity var(--dur-1) var(--ease-out),
+    color var(--dur-1) var(--ease-out),
+    border-color var(--dur-1) var(--ease-out),
+    background var(--dur-1) var(--ease-out);
+}
+.mg-wrapper:hover .mg-delete{ opacity: 1; }
+.mg-delete:hover{
+  color: var(--red);
+  border-color: var(--red);
+  background: rgba(200, 50, 26, .12);
+}
+.mg-delete:disabled{ opacity: .4; cursor: wait; }
+
+/* ==========================================================================
+   CALENDAR VIEW
+   ========================================================================== */
+.calendar-view{
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+}
+
+.calendar-controls{
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  justify-content: center;
+  gap: var(--s-4);
+  padding-bottom: var(--s-4);
+  border-bottom: 1px solid var(--rule);
+}
+.cc-right{
+  display: flex;
+  gap: var(--s-2);
+}
+.current-month{
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 300;
+  font-size: var(--fs-32);
+  letter-spacing: -.015em;
+  color: var(--bone);
+  margin: 0;
+  text-align: center;
 }
 
-.calendar-day.has-movies {
-  background: rgba(34, 197, 94, 0.04);
+.calendar-grid{
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--rule);
+  border-radius: var(--r-2);
+  overflow: hidden;
+  background: var(--ink-2);
 }
 
-.day-number {
-  display: block;
+.calendar-weekdays{
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  background: var(--ink);
+  border-bottom: 1px solid var(--rule);
+}
+.calendar-weekdays > div{
+  padding: var(--s-3) var(--s-3);
+  font-family: var(--font-mono);
+  font-size: var(--fs-11);
+  letter-spacing: .28em;
+  text-transform: uppercase;
+  color: var(--bone-mute);
+  text-align: center;
+}
+
+.calendar-days{
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  background: var(--rule);
+}
+
+.calendar-day{
+  background: var(--ink-2);
+  min-height: 100px;
+  padding: var(--s-2);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.calendar-day.empty{ background: var(--ink); }
+.calendar-day.today .day-number{
+  color: var(--ink);
+  background: var(--ember);
+  width: 22px; height: 22px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: var(--r-full);
   font-weight: 600;
-  margin-bottom: 0.5rem;
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.85rem;
+}
+.day-number{
+  font-family: var(--font-mono);
+  font-size: var(--fs-11);
+  letter-spacing: .15em;
+  color: var(--bone-mute);
+  margin-bottom: 2px;
 }
 
-.calendar-movie {
+.calendar-movie{
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.25rem 0.5rem;
-  background: #E11D48;
-  color: #fff;
-  border-radius: 4px;
-  text-decoration: none;
-  font-size: 0.7rem;
-  margin-bottom: 0.25rem;
-  transition: all 0.2s ease;
+  gap: 6px;
+  padding: 4px;
+  border-radius: var(--r-1);
+  background: var(--ink-3);
+  color: var(--bone);
+  font-size: var(--fs-11);
+  overflow: hidden;
+  transition: background var(--dur-1) var(--ease-out);
 }
-
-.calendar-movie:hover {
-  background: #be123c;
-  text-decoration: none;
+.calendar-movie:hover{
+  background: var(--ember-soft);
+  color: var(--ember);
 }
-
-.calendar-movie-thumb {
-  width: 20px;
-  height: 30px;
+.calendar-movie-thumb{
+  width: 18px; height: 28px;
   object-fit: cover;
   border-radius: 2px;
+  flex-shrink: 0;
 }
-
-.calendar-movie-title {
+.calendar-movie-title{
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: var(--fs-12);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-/* ══════════════════════════════════════
-   RESPONSIVE
-   ══════════════════════════════════════ */
-
-@media (max-width: 768px) {
-  .filters-bar {
-    flex-direction: column;
-  }
-
-  .search-box {
-    width: 100%;
-  }
-
-  .filter-group {
-    width: 100%;
-    flex-wrap: wrap;
-  }
-
-  .filter-select {
-    flex: 1 1 calc(50% - 0.25rem);
-    min-width: 0;
-  }
-
-  .movies-grid {
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 0.75rem;
-  }
-
-  .movie-details {
-    padding: 0.5rem;
-  }
-
-  .movie-card .movie-title {
-    font-size: 0.75rem;
-  }
-
-  .movie-card-genres {
-    display: none;
-  }
-
-  .calendar-weekdays div {
-    padding: 0.5rem;
-    font-size: 0.65rem;
-  }
-
-  .calendar-day {
-    min-height: 80px;
-    padding: 0.25rem;
-  }
-
-  .day-number {
-    font-size: 0.8rem;
-  }
-
-  .calendar-movie {
-    font-size: 0.6rem;
-    padding: 0.15rem 0.25rem;
-  }
-
-  .calendar-movie-thumb {
-    display: none;
-  }
-}
-
-@media (max-width: 480px) {
-  .movies-grid {
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    gap: 0.5rem;
-  }
-
-  .movie-details {
-    padding: 0.4rem;
-  }
+@media (max-width: 720px){
+  .calendar-day{ min-height: 60px; padding: 4px; }
+  .calendar-weekdays > div{ padding: var(--s-2); font-size: 9px; letter-spacing: .15em; }
+  .calendar-movie-title{ display: none; }
+  .calendar-controls{ grid-template-columns: 1fr; text-align: center; }
+  .calendar-controls .cc-right{ justify-content: center; }
 }

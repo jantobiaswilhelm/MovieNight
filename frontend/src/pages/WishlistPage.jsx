@@ -5,6 +5,7 @@ import { getMyWishlist, getGuildWishlist } from '../api/client';
 import { useFetch, useModal } from '../hooks';
 import { WishlistCard, AddToWishlistModal, WishlistDetailModal } from '../components/wishlist';
 import { getAvatarUrl } from '../utils/helpers';
+import { Icon, PageHeader, Chip, EmptyState } from '../components/ui';
 import './WishlistPage.css';
 
 const WishlistPage = () => {
@@ -33,55 +34,38 @@ const WishlistPage = () => {
   );
 
   const handleUpdate = useCallback((updatedItem) => {
-    setItems((prev) =>
-      prev.map((item) => (item.id === updatedItem.id ? updatedItem : item))
-    );
+    setItems((prev) => prev.map((item) => (item.id === updatedItem.id ? updatedItem : item)));
   }, [setItems]);
 
   const handleRemove = useCallback((id) => {
     setItems((prev) => prev.filter((item) => item.id !== id));
-    if (detailModal.data?.id === id) {
-      detailModal.close();
-    }
+    if (detailModal.data?.id === id) detailModal.close();
   }, [setItems, detailModal]);
 
-  const handleAdded = useCallback(() => {
-    refetch();
-  }, [refetch]);
-
-  const handleCardClick = useCallback((item) => {
-    detailModal.open(item);
-  }, [detailModal]);
+  const handleAdded = useCallback(() => { refetch(); }, [refetch]);
+  const handleCardClick = useCallback((item) => { detailModal.open(item); }, [detailModal]);
 
   const handleAnnounce = (item) => {
-    // Remove from wishlist after scheduling (called from WishlistDetailModal)
-    if (item) {
-      handleRemove(item.id);
-    }
+    if (item) handleRemove(item.id);
     detailModal.close();
   };
 
   const pickRandomMovie = () => {
     if (items.length === 0) return;
-    const randomIndex = Math.floor(Math.random() * items.length);
-    setRandomMovie(items[randomIndex]);
+    setRandomMovie(items[Math.floor(Math.random() * items.length)]);
     setShowRandomModal(true);
   };
 
   const rerollRandomMovie = () => {
     if (items.length <= 1) return;
-    let newIndex;
     let newMovie;
-    // Ensure we pick a different movie
     do {
-      newIndex = Math.floor(Math.random() * items.length);
-      newMovie = items[newIndex];
+      newMovie = items[Math.floor(Math.random() * items.length)];
     } while (newMovie.id === randomMovie?.id && items.length > 1);
     setRandomMovie(newMovie);
   };
 
   const handleScheduleRandom = () => {
-    // Close random modal and open detail modal with the random movie
     setShowRandomModal(false);
     detailModal.open(randomMovie);
   };
@@ -90,12 +74,7 @@ const WishlistPage = () => {
     ? items.reduce((acc, item) => {
         const key = item.username;
         if (!acc[key]) {
-          acc[key] = {
-            username: item.username,
-            avatar: item.avatar,
-            discord_id: item.discord_id,
-            items: []
-          };
+          acc[key] = { username: item.username, avatar: item.avatar, discord_id: item.discord_id, items: [] };
         }
         acc[key].items.push(item);
         return acc;
@@ -104,102 +83,101 @@ const WishlistPage = () => {
 
   return (
     <div className="wishlist-page">
-      <div className="wishlist-header">
-        <h1>Wishlist</h1>
+      <PageHeader
+        eyebrow="Reels to come"
+        title={<>The <em>wishlist.</em></>}
+        meta={[`${items.length} title${items.length !== 1 ? 's' : ''}`, activeTab === 'my' ? 'yours' : 'shared']}
+        actions={
+          <>
+            {items.length > 0 && (
+              <button className="btn ghost" onClick={pickRandomMovie}>
+                <Icon name="star" size={14} />
+                <span>Pick random</span>
+              </button>
+            )}
+            {isAuthenticated && (
+              <button className="btn" onClick={() => addModal.open()}>
+                <Icon name="plus" size={14} />
+                <span>Add movie</span>
+              </button>
+            )}
+          </>
+        }
+      />
 
-        <div className="wishlist-header-actions">
-          {items.length > 0 && (
-            <button
-              className="btn-secondary random-pick-btn"
-              onClick={pickRandomMovie}
-            >
-              🎲 Pick Random
-            </button>
-          )}
-          {isAuthenticated && (
-            <button
-              className="btn-primary add-movie-btn"
-              onClick={() => addModal.open()}
-            >
-              + Add Movie
-            </button>
-          )}
-        </div>
-      </div>
-
-      <div className="wishlist-controls">
-        <div className="tab-toggle">
+      <div className="wl-controls">
+        <div className="wl-tabs" role="tablist">
           <button
-            className={`tab-btn ${activeTab === 'my' ? 'active' : ''}`}
+            className={`wl-tab ${activeTab === 'my' ? 'active' : ''}`}
             onClick={() => setActiveTab('my')}
+            role="tab"
           >
-            My Wishlist
+            Mine
           </button>
           <button
-            className={`tab-btn ${activeTab === 'guild' ? 'active' : ''}`}
+            className={`wl-tab ${activeTab === 'guild' ? 'active' : ''}`}
             onClick={() => setActiveTab('guild')}
+            role="tab"
           >
-            Group Wishlist
+            The Club
           </button>
         </div>
 
-        <div className="filter-controls">
-          <select
-            className="filter-select"
-            value={sort}
-            onChange={(e) => setSort(e.target.value)}
-          >
-            <option value="importance">Sort by Priority</option>
-            <option value="newest">Sort by Newest</option>
-            <option value="alphabetical">Sort A-Z</option>
+        <div className="wl-filters">
+          <select value={sort} onChange={(e) => setSort(e.target.value)}>
+            <option value="importance">By priority</option>
+            <option value="newest">Newest first</option>
+            <option value="alphabetical">A → Z</option>
           </select>
 
           {activeTab === 'guild' && (
-            <label className="group-checkbox">
+            <label className="wl-checkbox">
               <input
                 type="checkbox"
                 checked={groupByUser}
                 onChange={(e) => setGroupByUser(e.target.checked)}
               />
-              Group by user
+              <span>Group by user</span>
             </label>
           )}
         </div>
       </div>
 
       {loading ? (
-        <div className="loading-state">Loading...</div>
+        <div className="loading">Loading…</div>
       ) : error ? (
-        <div className="error-state">{error}</div>
+        <div className="error">{error}</div>
       ) : activeTab === 'my' && !isAuthenticated ? (
-        <div className="empty-state">
-          <p>Login to create your personal wishlist</p>
-        </div>
+        <EmptyState
+          icon={<Icon name="user" size={32} stroke={1.25} />}
+          title="Log in to build your list."
+          body="Discord sign-in saves your wishlist across devices."
+        />
       ) : items.length === 0 ? (
-        <div className="empty-state">
-          <p>
-            {activeTab === 'my'
-              ? 'Your wishlist is empty. Add some movies!'
-              : 'No movies in the guild wishlist yet.'}
-          </p>
-        </div>
+        <EmptyState
+          icon={<Icon name="bookmark" size={32} stroke={1.25} />}
+          title={activeTab === 'my' ? 'Your wishlist is empty.' : 'The club hasn\u2019t wished for anything yet.'}
+          body={activeTab === 'my' ? 'Start with one title. Add more as you discover them.' : 'Members can add their picks from any movie detail page.'}
+          action={isAuthenticated && activeTab === 'my' && (
+            <button className="btn" onClick={() => addModal.open()}>Add your first movie</button>
+          )}
+        />
       ) : groupByUser && activeTab === 'guild' ? (
-        <div className="wishlist-grouped">
+        <div className="wl-groups">
           {Object.values(groupedItems).map((group) => (
-            <div key={group.username} className="user-group">
-              <div className="user-group-header">
-                {getAvatarUrl(group.discord_id, group.avatar) && (
-                  <img
-                    src={getAvatarUrl(group.discord_id, group.avatar)}
-                    alt={group.username}
-                    className="group-avatar"
-                    loading="lazy"
-                  />
-                )}
-                <span className="group-username">{group.username}</span>
-                <span className="group-count">({group.items.length})</span>
-              </div>
-              <div className="wishlist-grid">
+            <section key={group.username} className="wl-group">
+              <header className="wl-group-head">
+                <img
+                  src={getAvatarUrl(group.discord_id, group.avatar)}
+                  alt={group.username}
+                  className="wl-group-avatar"
+                  loading="lazy"
+                />
+                <span className="wl-group-user">{group.username}</span>
+                <span className="wl-group-count">{group.items.length} title{group.items.length !== 1 ? 's' : ''}</span>
+                <span className="wl-group-rule" />
+              </header>
+              <div className="wl-grid">
                 {group.items.map((item) => (
                   <WishlistCard
                     key={item.id}
@@ -212,11 +190,11 @@ const WishlistPage = () => {
                   />
                 ))}
               </div>
-            </div>
+            </section>
           ))}
         </div>
       ) : (
-        <div className="wishlist-grid">
+        <div className="wl-grid">
           {items.map((item) => (
             <WishlistCard
               key={item.id}
@@ -231,8 +209,8 @@ const WishlistPage = () => {
         </div>
       )}
 
-      <div className="wishlist-browse-link">
-        <Link to="/movies">Browse all movies &rarr;</Link>
+      <div className="wl-browse">
+        <Link to="/movies" className="btn text">Browse the archive →</Link>
       </div>
 
       <AddToWishlistModal
@@ -249,63 +227,68 @@ const WishlistPage = () => {
         canAnnounce={isAuthenticated}
       />
 
-      {/* Random Movie Picker Modal */}
+      {/* ── Random pick modal ── */}
       {showRandomModal && randomMovie && (
-        <div className="modal-overlay" onClick={() => setShowRandomModal(false)}>
-          <div className="modal-content random-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>🎲 Random Pick</h2>
-              <button className="modal-close" onClick={() => setShowRandomModal(false)}>×</button>
-            </div>
-            <div className="random-movie-display">
+        <div className="wl-random-overlay" onClick={() => setShowRandomModal(false)}>
+          <div className="wl-random" onClick={(e) => e.stopPropagation()}>
+            <header className="wl-random-head">
+              <div>
+                <div className="wl-random-eyebrow">A random pick</div>
+                <h3 className="wl-random-title">The dice say…</h3>
+              </div>
+              <button className="btn icon" onClick={() => setShowRandomModal(false)} aria-label="Close">
+                <Icon name="close" size={16} />
+              </button>
+            </header>
+            <div className="wl-random-body">
               {randomMovie.image_url && (
                 <img
                   src={randomMovie.image_url}
                   alt={randomMovie.title}
-                  className="random-movie-poster"
+                  className="wl-random-poster"
                   loading="lazy"
                 />
               )}
-              <div className="random-movie-info">
-                <h3 className="random-movie-title">{randomMovie.title}</h3>
-                {randomMovie.release_year && (
-                  <span className="random-movie-year">{randomMovie.release_year}</span>
-                )}
-                {randomMovie.tmdb_rating && (
-                  <span className="random-movie-rating">⭐ {parseFloat(randomMovie.tmdb_rating).toFixed(1)}</span>
-                )}
+              <div className="wl-random-info">
+                <h4 className="wl-random-movie">{randomMovie.title}</h4>
+                <div className="wl-random-meta">
+                  {randomMovie.release_year && <span>{randomMovie.release_year}</span>}
+                  {randomMovie.tmdb_rating && (
+                    <>
+                      <span className="sep" />
+                      <span className="wl-random-score">{parseFloat(randomMovie.tmdb_rating).toFixed(1)}<sub>/10</sub></span>
+                    </>
+                  )}
+                </div>
                 {randomMovie.genres && (
-                  <div className="random-movie-genres">
+                  <div className="wl-random-chips">
                     {randomMovie.genres.split(',').slice(0, 3).map((genre, i) => (
-                      <span key={i} className="genre-tag">{genre.trim()}</span>
+                      <Chip key={i} variant={i === 0 ? 'accent' : 'default'}>{genre.trim()}</Chip>
                     ))}
                   </div>
                 )}
                 {randomMovie.description && (
-                  <p className="random-movie-description">{randomMovie.description}</p>
+                  <p className="wl-random-desc">{randomMovie.description}</p>
                 )}
                 {activeTab === 'guild' && randomMovie.username && (
-                  <span className="random-movie-user">Added by {randomMovie.username}</span>
+                  <p className="wl-random-by">Added by <em>{randomMovie.username}</em></p>
                 )}
               </div>
             </div>
-            <div className="random-modal-actions">
+            <footer className="wl-random-actions">
               <button
-                className="btn-secondary"
+                className="btn ghost"
                 onClick={rerollRandomMovie}
                 disabled={items.length <= 1}
               >
-                🎲 Reroll
+                Reroll
               </button>
               {isAuthenticated && (
-                <button
-                  className="btn-primary"
-                  onClick={handleScheduleRandom}
-                >
-                  📅 Schedule This Movie
+                <button className="btn" onClick={handleScheduleRandom}>
+                  <Icon name="calendar" size={14} /> <span>Schedule this one</span>
                 </button>
               )}
-            </div>
+            </footer>
           </div>
         </div>
       )}

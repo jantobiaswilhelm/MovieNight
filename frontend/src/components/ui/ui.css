@@ -1,0 +1,175 @@
+/* ==========================================================================
+   UI PRIMITIVES — shared styles
+   Source of truth for primitive appearance. Global classes (.btn, .card, etc.)
+   live in index.css so legacy markup inherits. This file adds component-only
+   modifiers used by the React primitives in frontend/src/components/ui/.
+   ========================================================================== */
+
+/* — PageHeader — */
+.ui-page-header{
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: var(--s-5);
+  padding-bottom: var(--s-5);
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: var(--s-6);
+}
+.ui-page-header .ph-left{ min-width: 0; }
+.ui-page-header .ph-eyebrow{
+  font-family: var(--font-mono);
+  font-size: var(--fs-11);
+  letter-spacing: .32em;
+  text-transform: uppercase;
+  color: var(--ember);
+  margin-bottom: var(--s-3);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+.ui-page-header .ph-eyebrow::before{
+  content: "";
+  width: 28px; height: 1px;
+  background: currentColor;
+}
+.ui-page-header h1{
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 300;
+  font-size: var(--fs-72);
+  line-height: .92;
+  letter-spacing: -.02em;
+  margin: 0;
+}
+.ui-page-header h1 em{ font-style: italic; color: var(--ember); font-weight: 300; }
+.ui-page-header .ph-meta{
+  margin-top: var(--s-4);
+  display: flex;
+  gap: var(--s-3);
+  align-items: center;
+  flex-wrap: wrap;
+  font-family: var(--font-mono);
+  font-size: var(--fs-11);
+  letter-spacing: .28em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+}
+.ui-page-header .ph-meta .sep{
+  width: 3px; height: 3px;
+  background: var(--bone-mute);
+  border-radius: var(--r-full);
+}
+.ui-page-header .ph-actions{ display: flex; gap: var(--s-2); }
+
+@media (max-width: 720px){
+  .ui-page-header{ grid-template-columns: 1fr; }
+  .ui-page-header .ph-actions{ justify-content: flex-start; }
+}
+
+/* — Section head — */
+.ui-section-head{
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-4);
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--rule);
+  margin-bottom: var(--s-4);
+}
+.ui-section-head .num{
+  font-family: var(--font-mono);
+  font-size: var(--fs-11);
+  letter-spacing: .32em;
+  color: var(--ember);
+  text-transform: uppercase;
+}
+.ui-section-head .title{
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 300;
+  font-size: var(--fs-32);
+  color: var(--bone);
+  letter-spacing: -.015em;
+}
+.ui-section-head .rule{
+  flex: 1; height: 1px;
+  background: var(--rule);
+  align-self: center;
+}
+.ui-section-head .meta{
+  font-family: var(--font-mono);
+  font-size: var(--fs-11);
+  letter-spacing: .28em;
+  color: var(--bone-dim);
+  text-transform: uppercase;
+}
+
+/* — EmptyState extras — */
+.ui-empty{
+  border: 1px dashed var(--rule-strong);
+  border-radius: var(--r-2);
+  padding: var(--s-8) var(--s-5);
+  text-align: center;
+  color: var(--bone-dim);
+  background: transparent;
+}
+.ui-empty-icon{
+  margin: 0 auto var(--s-4);
+  width: 40px; height: 40px;
+  color: var(--bone-mute);
+}
+.ui-empty-icon svg{ width: 100%; height: 100%; }
+.ui-empty h4{
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: var(--fs-24);
+  color: var(--bone);
+  margin-bottom: var(--s-2);
+}
+.ui-empty p{
+  color: var(--bone-dim);
+  font-size: var(--fs-14);
+  max-width: 360px;
+  margin: 0 auto var(--s-5);
+}
+
+/* — Stat primitive — */
+.ui-stat{
+  padding: var(--s-5) 0;
+  border-top: 1px solid var(--rule);
+}
+.ui-stat .stat-label{
+  font-family: var(--font-mono);
+  font-size: var(--fs-11);
+  letter-spacing: .28em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+}
+.ui-stat .stat-value{
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 300;
+  font-size: var(--fs-72);
+  line-height: .92;
+  letter-spacing: -.02em;
+  color: var(--bone);
+  margin-top: var(--s-3);
+}
+.ui-stat .stat-value sub{
+  font-size: .3em;
+  letter-spacing: .2em;
+  vertical-align: super;
+  font-style: normal;
+  font-family: var(--font-mono);
+  color: var(--bone-mute);
+  margin-left: var(--s-2);
+}
+.ui-stat .stat-caption{
+  font-family: var(--font-ui);
+  font-size: var(--fs-13);
+  color: var(--bone-mute);
+  margin-top: var(--s-2);
+}
+.ui-stat.emphasis .stat-value{ color: var(--ember); }
+
+/* — Skeleton variants already in index.css; nothing needed here — */

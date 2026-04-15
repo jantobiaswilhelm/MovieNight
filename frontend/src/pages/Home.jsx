@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { sanitizeUrl, sanitizeImdbId, sanitizeImageUrl } from '../utils/sanitizeUrl';
@@ -14,11 +14,12 @@ import {
   removeVote
 } from '../api/client';
 import { StarRating, MovieCard, MovieCardSkeleton } from '../components/common';
-import { AdminSettingsPanel, CommentsTicker, UsersSection, ExploreSection } from '../components/home';
+import { AdminSettingsPanel, UsersSection } from '../components/home';
+import { Icon, SectionHead, Skeleton, EmptyState, Badge } from '../components/ui';
 import './Home.css';
 
 const Home = () => {
-  const { isAuthenticated, isAdmin, user } = useAuth();
+  const { isAuthenticated, isAdmin } = useAuth();
   const [movies, setMovies] = useState([]);
   const [voting, setVoting] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -28,7 +29,6 @@ const Home = () => {
   const [reviews, setReviews] = useState([]);
   const [togglingAttendance, setTogglingAttendance] = useState(false);
   const [votingLoading, setVotingLoading] = useState(false);
-  const reviewsRef = useRef(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -108,16 +108,6 @@ const Home = () => {
     }
   };
 
-  const scrollReviews = (direction) => {
-    if (reviewsRef.current) {
-      const scrollAmount = 340;
-      reviewsRef.current.scrollBy({
-        left: direction === 'right' ? scrollAmount : -scrollAmount,
-        behavior: 'smooth'
-      });
-    }
-  };
-
   if (error) {
     return <div className="error">Error: {error}</div>;
   }
@@ -140,7 +130,6 @@ const Home = () => {
 
   const nextMovie = nextMovieWithAttendees || upcomingMovies[0];
 
-  // If no upcoming movie, show the most recent past movie
   const lastMovie = !nextMovie
     ? movies
         .filter(movie => new Date(movie.scheduled_at) <= now)
@@ -150,89 +139,103 @@ const Home = () => {
   const heroMovie = nextMovie || lastMovie;
   const isHeroPast = !nextMovie && !!lastMovie;
 
-  const totalVotes = voting?.suggestions?.reduce((sum, s) => sum + parseInt(s.vote_count), 0) || 0;
-
   const heroBackdrop = heroMovie
     ? sanitizeImageUrl(heroMovie.backdrop_url) || sanitizeImageUrl(heroMovie.image_url)
     : null;
 
   return (
-    <div className="cinematic-home">
+    <div className="home">
       {isAdmin && <AdminSettingsPanel onDataRefresh={handleDataRefresh} />}
 
-      {/* ═══ HERO SPLIT: 70% Movie / 30% Voting ═══ */}
+      {/* ═══ HERO — Feature + voting ═══ */}
       <section className="hero-split">
-        {/* Left: Up Next Hero */}
-        <div className="hero-main">
+        <article className="hero-feature">
           {heroBackdrop && (
             <div
-              className="hero-main-bg"
+              className="hero-bg"
               style={{ backgroundImage: `url(${heroBackdrop})` }}
+              aria-hidden="true"
             />
           )}
-          <div className="hero-main-overlay" />
+          <div className="hero-scrim" aria-hidden="true" />
 
-          <div className="hero-main-content">
+          <div className="hero-top">
+            <span className="eyebrow">
+              {isHeroPast ? 'Last screening' : 'Tonight\u2019s feature'}
+            </span>
+            {!isHeroPast && nextMovie?.attendees?.length > 0 && (
+              <Badge live>
+                {nextMovie.attendees.length} attending
+              </Badge>
+            )}
+          </div>
+
+          <div className="hero-body">
             {loading ? (
               <div className="hero-loading">
-                <div className="skeleton-block" style={{ width: '40%', height: 20 }} />
-                <div className="skeleton-block" style={{ width: '70%', height: 44 }} />
-                <div className="skeleton-block" style={{ width: '50%', height: 18 }} />
-                <div className="skeleton-block" style={{ width: '90%', height: 60 }} />
+                <Skeleton variant="line" width="40%" height={14} />
+                <Skeleton variant="line" size="lg" width="70%" height={48} style={{ marginTop: 12 }} />
+                <Skeleton variant="line" width="50%" height={14} style={{ marginTop: 16 }} />
+                <Skeleton variant="line" width="90%" height={60} style={{ marginTop: 20 }} />
               </div>
             ) : heroMovie ? (
               <>
-                <span className="hero-label">{isHeroPast ? 'Last Watched' : 'Up Next'}</span>
-                <h1 className="hero-movie-title">
-                  <Link to={`/movie/${heroMovie.id}`}>{heroMovie.title}</Link>
-                </h1>
-
-                <div className="hero-movie-meta">
+                <div className="hero-meta">
                   {heroMovie.release_year && <span>{heroMovie.release_year}</span>}
                   {heroMovie.runtime > 0 && (
                     <>
-                      <span className="meta-sep">|</span>
+                      <span className="sep" />
                       <span>{formatRuntime(heroMovie.runtime)}</span>
                     </>
                   )}
                   {heroMovie.genres && (
                     <>
-                      <span className="meta-sep">|</span>
+                      <span className="sep" />
                       <span>{heroMovie.genres}</span>
                     </>
                   )}
                 </div>
 
+                <h1 className="hero-title">
+                  <Link to={`/movie/${heroMovie.id}`}>{heroMovie.title}</Link>
+                </h1>
+
                 {heroMovie.description && (
-                  <p className="hero-movie-desc">{heroMovie.description}</p>
+                  <p className="hero-desc">{heroMovie.description}</p>
                 )}
 
-                <p className="hero-showing">
-                  <strong>{isHeroPast ? 'Watched on:' : 'Next Showing:'}</strong> {formatDate(heroMovie.scheduled_at, 'long')}
-                </p>
+                <div className="hero-showing">
+                  <Icon name="calendar" size={14} stroke={1.5} />
+                  <span>
+                    {isHeroPast ? 'Watched' : 'Next'} · {formatDate(heroMovie.scheduled_at, 'long')}
+                  </span>
+                  {heroMovie.announced_by_name && (
+                    <>
+                      <span className="sep" />
+                      <span>Picked by</span>
+                      {heroMovie.announced_by_avatar && (
+                        <img
+                          src={getAvatarUrl(heroMovie.announced_by_discord_id, heroMovie.announced_by_avatar)}
+                          alt=""
+                          className="pickedby-avatar"
+                          loading="lazy"
+                        />
+                      )}
+                      <span className="pickedby-name">{heroMovie.announced_by_name}</span>
+                    </>
+                  )}
+                </div>
 
-                {heroMovie.announced_by_name && (
-                  <div className="hero-picked-by">
-                    <span>Picked by</span>
-                    {heroMovie.announced_by_avatar && (
-                      <img
-                        src={getAvatarUrl(heroMovie.announced_by_discord_id, heroMovie.announced_by_avatar)}
-                        alt=""
-                        className="picked-by-avatar"
-                      />
-                    )}
-                    <span className="picked-by-name">{heroMovie.announced_by_name}</span>
-                  </div>
-                )}
-
-                <div className="hero-actions-row">
+                <div className="hero-actions">
                   {!isHeroPast && isAuthenticated && (
                     <button
-                      className={`hero-action-btn ${nextMovie?.is_attending ? 'btn-attending' : 'btn-attend'}`}
+                      className={`btn ${nextMovie?.is_attending ? 'ghost' : ''}`}
                       onClick={handleAttendanceToggle}
                       disabled={togglingAttendance}
                     >
-                      {togglingAttendance ? '...' : nextMovie?.is_attending ? '\u2713 Attending' : 'Attend'}
+                      {nextMovie?.is_attending
+                        ? <><Icon name="check" size={16} /> <span>Attending</span></>
+                        : <span>I'll be there</span>}
                     </button>
                   )}
                   {heroMovie.trailer_url && (
@@ -240,9 +243,10 @@ const Home = () => {
                       href={sanitizeUrl(heroMovie.trailer_url)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="hero-action-btn btn-trailer"
+                      className="btn ghost"
                     >
-                      Watch Trailer
+                      <Icon name="play" size={14} />
+                      <span>Trailer</span>
                     </a>
                   )}
                   {sanitizeImdbId(heroMovie.imdb_id) && (
@@ -250,15 +254,14 @@ const Home = () => {
                       href={`https://www.imdb.com/title/${sanitizeImdbId(heroMovie.imdb_id)}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="hero-action-btn btn-imdb"
+                      className="btn text"
                     >
-                      IMDb
+                      IMDb →
                     </a>
                   )}
                 </div>
 
-                {/* Attendee avatars - only for upcoming */}
-                {!isHeroPast && nextMovie?.attendees && nextMovie.attendees.length > 0 && (
+                {!isHeroPast && nextMovie?.attendees?.length > 0 && (
                   <div className="hero-attendees">
                     <div className="attendee-stack">
                       {nextMovie.attendees.slice(0, 6).map((a) => (
@@ -268,172 +271,165 @@ const Home = () => {
                           alt={a.username}
                           title={a.username}
                           className="attendee-avatar"
+                          loading="lazy"
                         />
                       ))}
                       {nextMovie.attendees.length > 6 && (
                         <span className="attendee-more">+{nextMovie.attendees.length - 6}</span>
                       )}
                     </div>
-                    <span className="attendee-label">{nextMovie.attendees.length} attending</span>
+                    <span className="attendee-label">
+                      {nextMovie.attendees.length} confirmed
+                    </span>
                   </div>
                 )}
 
-                {/* Rating for past movies */}
                 {isHeroPast && heroMovie.avg_rating > 0 && (
                   <div className="hero-past-rating">
-                    <span className="hero-past-score">{parseFloat(heroMovie.avg_rating).toFixed(1)}/10</span>
-                    <span className="hero-past-votes">({heroMovie.rating_count} ratings)</span>
+                    <span className="past-score">{parseFloat(heroMovie.avg_rating).toFixed(1)}<sub>/10</sub></span>
+                    <span className="past-votes">from {heroMovie.rating_count} ratings</span>
                   </div>
                 )}
               </>
             ) : (
-              <div className="hero-empty-state">
-                <h2>No movies yet</h2>
-                <p>Announce a movie to get started!</p>
-              </div>
+              <EmptyState
+                icon={<Icon name="film" size={40} stroke={1.25} />}
+                title="No screenings yet."
+                body="The first film announces itself when the host picks a night."
+              />
             )}
           </div>
-        </div>
+        </article>
 
-        {/* Right: Voting Sidebar */}
-        <div className="hero-sidebar">
+        {/* Voting sidebar */}
+        <aside className="hero-voting">
+          <header className="hv-head">
+            <div>
+              <div className="hv-eyebrow">The vote</div>
+              <h3 className="hv-title">Pick the next one</h3>
+            </div>
+            {voting?.suggestions?.length > 0 && (
+              <Badge live>Open</Badge>
+            )}
+          </header>
+
           {loading ? (
-            <div className="sidebar-card">
-              <div className="sidebar-header">
-                <h2>Vote for Next Movie</h2>
-              </div>
-              <div className="sidebar-body">
-                <div className="skeleton-block" style={{ height: 60 }} />
-                <div className="skeleton-block" style={{ height: 60 }} />
-                <div className="skeleton-block" style={{ height: 60 }} />
-              </div>
+            <div className="hv-body">
+              <Skeleton variant="line" size="lg" height={54} />
+              <Skeleton variant="line" size="lg" height={54} style={{ marginTop: 12 }} />
+              <Skeleton variant="line" size="lg" height={54} style={{ marginTop: 12 }} />
             </div>
           ) : voting && voting.suggestions?.length > 0 ? (
-            <div className="sidebar-card">
-              <div className="sidebar-header">
-                <h2>Vote for Next Movie</h2>
-                <span className="sidebar-badge">Voting Open! {voting.suggestions.length} Candidates</span>
-              </div>
-              <div className="sidebar-body">
-                {voting.suggestions.map((suggestion) => {
-                  const isVoted = voting.user_vote?.suggestion_id === suggestion.id;
-                  return (
-                    <div
-                      key={suggestion.id}
-                      className={`vote-candidate ${isVoted ? 'voted' : ''}`}
-                    >
-                      {suggestion.image_url && (
-                        <img
-                          src={suggestion.image_url}
-                          alt=""
-                          className="candidate-poster"
-                          loading="lazy"
-                        />
-                      )}
-                      <div className="candidate-info">
-                        <span className="candidate-title">{suggestion.title}</span>
-                        <span className="candidate-votes">{suggestion.vote_count} votes</span>
+            <ul className="hv-list">
+              {voting.suggestions.map((suggestion) => {
+                const isVoted = voting.user_vote?.suggestion_id === suggestion.id;
+                const totalVotes = voting.suggestions.reduce((sum, s) => sum + parseInt(s.vote_count), 0);
+                const pct = totalVotes > 0 ? (parseInt(suggestion.vote_count) / totalVotes) * 100 : 0;
+                return (
+                  <li
+                    key={suggestion.id}
+                    className={`vote-item ${isVoted ? 'voted' : ''}`}
+                    onClick={() => isAuthenticated && handleVote(suggestion.id)}
+                  >
+                    {suggestion.image_url ? (
+                      <img
+                        src={suggestion.image_url}
+                        alt=""
+                        className="vote-poster"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="vote-poster no-poster">
+                        <Icon name="film" size={16} />
                       </div>
-                      {isAuthenticated && (
-                        <button
-                          className={`candidate-vote-btn ${isVoted ? 'voted' : ''}`}
-                          onClick={() => handleVote(suggestion.id)}
-                          disabled={votingLoading}
-                        >
-                          {isVoted ? 'Voted' : 'Vote'}
-                        </button>
-                      )}
+                    )}
+                    <div className="vote-info">
+                      <span className="vote-title">{suggestion.title}</span>
+                      <div className="vote-bar">
+                        <span style={{ width: `${pct}%` }} />
+                      </div>
                     </div>
-                  );
-                })}
-              </div>
-            </div>
+                    <span className="vote-count">{suggestion.vote_count}</span>
+                  </li>
+                );
+              })}
+            </ul>
           ) : (
-            <div className="sidebar-card sidebar-empty">
-              <div className="sidebar-header">
-                <h2>Vote for Next Movie</h2>
-              </div>
-              <div className="sidebar-body sidebar-body-centered">
-                <p>No active voting session.</p>
-                <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.3)' }}>Start a vote from Discord or the website.</p>
-              </div>
+            <div className="hv-empty">
+              <p>No active vote.</p>
+              <small>Start one from Discord or the website.</small>
             </div>
           )}
-        </div>
+        </aside>
       </section>
 
-      {/* ═══ RECENT REVIEWS CAROUSEL ═══ */}
+      {/* ═══ Reviews carousel — auto-scrolling ═══ */}
       {reviews.length > 0 && (
-        <section className="reviews-section">
-          <div className="section-header">
-            <h2>Recent Reviews</h2>
-          </div>
-          <div className="reviews-carousel-wrapper">
-            <button className="carousel-arrow carousel-arrow-left" onClick={() => scrollReviews('left')}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M15 18l-6-6 6-6" />
-              </svg>
-            </button>
-            <div className="reviews-carousel" ref={reviewsRef}>
-              {reviews.map((review, i) => (
-                <div key={i} className="review-card">
-                  <div className="review-card-header">
-                    <img
-                      src={getAvatarUrl(review.discord_id, review.avatar)}
-                      alt=""
-                      className="review-avatar"
-                      loading="lazy"
-                    />
-                    <span className="review-username">{review.username}</span>
-                    {review.created_at && (
-                      <span className="review-time">{formatRelativeTime(review.created_at)}</span>
-                    )}
-                  </div>
-                  <div className="review-card-body">
-                    {review.image_url && (
-                      <img src={review.image_url} alt="" className="review-poster" loading="lazy" />
-                    )}
-                    <div className="review-details">
-                      <div className="review-stars">
-                        {'★'.repeat(Math.round(parseFloat(review.score) / 2))}
-                        {'☆'.repeat(5 - Math.round(parseFloat(review.score) / 2))}
-                        <span className="review-score">{parseFloat(review.score).toFixed(1)}/10</span>
+        <section className="home-block">
+          <SectionHead num="02" title="Recent dispatches" meta={`${reviews.length} reviews · live`} />
+          <div className="reviews-wrap">
+            <div className="reviews-marquee">
+              <div className="reviews-track">
+                {[...reviews, ...reviews].map((review, i) => (
+                  <article key={i} className="review-card" aria-hidden={i >= reviews.length ? 'true' : undefined}>
+                    <header className="review-head">
+                      <img
+                        src={getAvatarUrl(review.discord_id, review.avatar)}
+                        alt=""
+                        className="review-avatar"
+                        loading="lazy"
+                      />
+                      <div className="review-who">
+                        <span className="review-username">{review.username}</span>
+                        {review.created_at && (
+                          <span className="review-time">{formatRelativeTime(review.created_at)}</span>
+                        )}
                       </div>
-                      <span className="review-movie-title">{review.movie_title}</span>
+                    </header>
+                    <div className="review-body">
+                      {review.image_url && (
+                        <img src={review.image_url} alt="" className="review-poster" loading="lazy" />
+                      )}
+                      <div className="review-main">
+                        <div className="review-score">
+                          <span className="score-num">{parseFloat(review.score).toFixed(1)}</span>
+                          <span className="score-denom">/ 10</span>
+                        </div>
+                        <div className="review-movie">{review.movie_title}</div>
+                      </div>
                     </div>
-                  </div>
-                  {review.comment && (
-                    <p className="review-comment">"{review.comment}"</p>
-                  )}
-                </div>
-              ))}
+                    {review.comment && (
+                      <p className="review-comment">&ldquo;{review.comment}&rdquo;</p>
+                    )}
+                  </article>
+                ))}
+              </div>
             </div>
-            <button className="carousel-arrow carousel-arrow-right" onClick={() => scrollReviews('right')}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M9 18l6-6-6-6" />
-              </svg>
-            </button>
           </div>
         </section>
       )}
 
-      {/* ═══ UPCOMING & BEST RATED ═══ */}
-      <div className="home-bottom-row">
-        <section className="home-section">
-          <div className="section-header">
-            <h2>Upcoming</h2>
-            <Link to="/movies" className="view-all">All Movies {'\u2192'}</Link>
-          </div>
+      {/* ═══ Upcoming + Best rated ═══ */}
+      <div className="home-bottom">
+        <section className="home-block">
+          <SectionHead
+            num="03"
+            title="On the calendar"
+            meta={<Link to="/movies" className="btn text">Archive →</Link>}
+          />
           {loading ? (
-            <div className="upcoming-compact">
+            <div className="upcoming-grid">
+              <MovieCardSkeleton />
+              <MovieCardSkeleton />
               <MovieCardSkeleton />
             </div>
           ) : upcomingWithAttendees.length <= 1 ? (
-            <div className="empty-state compact">
-              <p>No more upcoming movies.</p>
-            </div>
+            <EmptyState
+              title="Nothing queued."
+              body="Announce a movie to start the next screening."
+            />
           ) : (
-            <div className="upcoming-compact">
+            <div className="upcoming-grid">
               {upcomingWithAttendees.slice(1, 4).map((movie) => (
                 <MovieCard key={movie.id} movie={movie} variant="compact" />
               ))}
@@ -441,49 +437,48 @@ const Home = () => {
           )}
         </section>
 
-        <section className="home-section">
-          <div className="section-header">
-            <h2>Best This Month</h2>
-            <Link to="/stats" className="view-all">Stats {'\u2192'}</Link>
-          </div>
+        <section className="home-block">
+          <SectionHead
+            num="04"
+            title="Best this month"
+            meta={<Link to="/stats" className="btn text">Stats →</Link>}
+          />
           {loading ? (
-            <div className="best-rated-list compact">
+            <div className="best-list">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="best-rated-item best-rated-skeleton">
-                  <div className="skeleton-block" style={{ width: 30, height: 20 }} />
-                  <div className="skeleton-block" style={{ width: 30, height: 45 }} />
-                  <div className="best-rated-info">
-                    <div className="skeleton-block" style={{ width: 100, height: 16 }} />
-                  </div>
+                <div key={i} className="best-item">
+                  <Skeleton variant="line" width={24} height={20} />
+                  <Skeleton variant="rect" width={32} height={48} />
+                  <Skeleton variant="line" width="60%" height={16} />
                 </div>
               ))}
             </div>
           ) : bestRatedThisMonth.length === 0 ? (
-            <div className="empty-state compact">
-              <p>No rated movies yet.</p>
-            </div>
+            <EmptyState
+              title="No ratings yet."
+              body="Rate a movie after the screening and it'll appear here."
+            />
           ) : (
-            <div className="best-rated-list compact">
+            <ol className="best-list">
               {bestRatedThisMonth.slice(0, 4).map((movie, index) => (
-                <Link to={`/movie/${movie.id}`} key={movie.id} className="best-rated-item">
-                  <span className="rank">#{index + 1}</span>
-                  {movie.image_url && (
-                    <img src={movie.image_url} alt={movie.title} className="best-rated-poster" loading="lazy" />
-                  )}
-                  <div className="best-rated-info">
-                    <span className="best-rated-title">{movie.title}</span>
-                    <StarRating rating={parseFloat(movie.avg_rating)} size="small" />
-                  </div>
-                </Link>
+                <li key={movie.id}>
+                  <Link to={`/movie/${movie.id}`} className="best-item">
+                    <span className="rank">{String(index + 1).padStart(2, '0')}</span>
+                    {movie.image_url && (
+                      <img src={movie.image_url} alt={movie.title} className="best-poster" loading="lazy" />
+                    )}
+                    <div className="best-info">
+                      <span className="best-title">{movie.title}</span>
+                      <StarRating rating={parseFloat(movie.avg_rating)} size="small" />
+                    </div>
+                    <Icon name="arrow-right" size={16} stroke={1.5} className="best-arrow" />
+                  </Link>
+                </li>
               ))}
-            </div>
+            </ol>
           )}
         </section>
       </div>
-
-      <CommentsTicker />
-
-      <ExploreSection />
 
       <UsersSection />
 

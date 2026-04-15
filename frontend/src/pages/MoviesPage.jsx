@@ -4,16 +4,17 @@ import { useAuth } from '../context/AuthContext';
 import { getMovies, deleteMovie } from '../api/client';
 import { useFetch } from '../hooks';
 import { formatDate, formatMonth, formatMonthYear } from '../utils/helpers';
+import { Icon, PageHeader, Chip, EmptyState } from '../components/ui';
 import './MoviesPage.css';
 
 const SORT_OPTIONS = [
-  { value: 'newest', label: 'Newest First' },
-  { value: 'oldest', label: 'Oldest First' },
-  { value: 'rating-high', label: 'Highest Rated' },
-  { value: 'rating-low', label: 'Lowest Rated' },
-  { value: 'votes', label: 'Most Votes' },
-  { value: 'alpha', label: 'A-Z' },
-  { value: 'alpha-reverse', label: 'Z-A' }
+  { value: 'newest', label: 'Newest first' },
+  { value: 'oldest', label: 'Oldest first' },
+  { value: 'rating-high', label: 'Highest rated' },
+  { value: 'rating-low', label: 'Lowest rated' },
+  { value: 'votes', label: 'Most votes' },
+  { value: 'alpha', label: 'A → Z' },
+  { value: 'alpha-reverse', label: 'Z → A' }
 ];
 
 const MoviesPage = () => {
@@ -104,7 +105,6 @@ const MoviesPage = () => {
   const filteredAndSortedMovies = useMemo(() => {
     let result = [...movies];
 
-    // Filter by search query (matches title and genres)
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       result = result.filter((movie) =>
@@ -113,7 +113,6 @@ const MoviesPage = () => {
       );
     }
 
-    // Filter by genre
     if (selectedGenre) {
       result = result.filter((movie) => {
         if (!movie.genres) return false;
@@ -122,7 +121,6 @@ const MoviesPage = () => {
       });
     }
 
-    // Filter by year or decade
     if (selectedYear) {
       if (selectedYear.endsWith('s')) {
         const decade = parseInt(selectedYear);
@@ -136,7 +134,6 @@ const MoviesPage = () => {
       }
     }
 
-    // Filter by month
     if (selectedMonth) {
       result = result.filter((movie) => {
         if (!movie.scheduled_at) return false;
@@ -146,78 +143,42 @@ const MoviesPage = () => {
       });
     }
 
-    // Sort
     switch (sortBy) {
-      case 'newest':
-        result.sort((a, b) => new Date(b.scheduled_at) - new Date(a.scheduled_at));
-        break;
-      case 'oldest':
-        result.sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at));
-        break;
-      case 'rating-high':
-        result.sort((a, b) => parseFloat(b.avg_rating || 0) - parseFloat(a.avg_rating || 0));
-        break;
-      case 'rating-low':
-        result.sort((a, b) => parseFloat(a.avg_rating || 0) - parseFloat(b.avg_rating || 0));
-        break;
-      case 'votes':
-        result.sort((a, b) => parseInt(b.rating_count || 0) - parseInt(a.rating_count || 0));
-        break;
-      case 'alpha':
-        result.sort((a, b) => a.title.localeCompare(b.title));
-        break;
-      case 'alpha-reverse':
-        result.sort((a, b) => b.title.localeCompare(a.title));
-        break;
-      default:
-        break;
+      case 'newest':        result.sort((a, b) => new Date(b.scheduled_at) - new Date(a.scheduled_at)); break;
+      case 'oldest':        result.sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at)); break;
+      case 'rating-high':   result.sort((a, b) => parseFloat(b.avg_rating || 0) - parseFloat(a.avg_rating || 0)); break;
+      case 'rating-low':    result.sort((a, b) => parseFloat(a.avg_rating || 0) - parseFloat(b.avg_rating || 0)); break;
+      case 'votes':         result.sort((a, b) => parseInt(b.rating_count || 0) - parseInt(a.rating_count || 0)); break;
+      case 'alpha':         result.sort((a, b) => a.title.localeCompare(b.title)); break;
+      case 'alpha-reverse': result.sort((a, b) => b.title.localeCompare(a.title)); break;
+      default: break;
     }
 
     return result;
   }, [movies, searchQuery, selectedGenre, selectedYear, selectedMonth, sortBy]);
 
   // Calendar helpers
-  const getDaysInMonth = (date) => {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    return new Date(year, month + 1, 0).getDate();
-  };
-
-  const getFirstDayOfMonth = (date) => {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    return new Date(year, month, 1).getDay();
-  };
+  const getDaysInMonth = (date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+  const getFirstDayOfMonth = (date) => new Date(date.getFullYear(), date.getMonth(), 1).getDay();
 
   const getMoviesForDate = (day) => {
     const year = calendarDate.getFullYear();
     const month = calendarDate.getMonth();
-
     return movies.filter(movie => {
-      const movieDate = new Date(movie.scheduled_at);
-      return movieDate.getFullYear() === year &&
-             movieDate.getMonth() === month &&
-             movieDate.getDate() === day;
+      const d = new Date(movie.scheduled_at);
+      return d.getFullYear() === year && d.getMonth() === month && d.getDate() === day;
     });
   };
 
-  const previousMonth = () => {
-    setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1));
-  };
-
-  const nextMonth = () => {
-    setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1));
-  };
-
-  const goToToday = () => {
-    setCalendarDate(new Date());
-  };
+  const previousMonth = () => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1));
+  const nextMonth = () => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1));
+  const goToToday = () => setCalendarDate(new Date());
 
   const isToday = (day) => {
     const today = new Date();
     return today.getFullYear() === calendarDate.getFullYear() &&
-           today.getMonth() === calendarDate.getMonth() &&
-           today.getDate() === day;
+      today.getMonth() === calendarDate.getMonth() &&
+      today.getDate() === day;
   };
 
   const renderCalendar = () => {
@@ -225,16 +186,13 @@ const MoviesPage = () => {
     const firstDay = getFirstDayOfMonth(calendarDate);
     const days = [];
 
-    // Empty cells for days before the first day of the month
     for (let i = 0; i < firstDay; i++) {
-      days.push(<div key={`empty-${i}`} className="calendar-day empty"></div>);
+      days.push(<div key={`empty-${i}`} className="calendar-day empty" />);
     }
 
-    // Days of the month
     for (let day = 1; day <= daysInMonth; day++) {
       const dayMovies = getMoviesForDate(day);
       const hasMovies = dayMovies.length > 0;
-
       days.push(
         <div
           key={day}
@@ -242,11 +200,7 @@ const MoviesPage = () => {
         >
           <span className="day-number">{day}</span>
           {dayMovies.map(movie => (
-            <Link
-              key={movie.id}
-              to={`/movie/${movie.id}`}
-              className="calendar-movie"
-            >
+            <Link key={movie.id} to={`/movie/${movie.id}`} className="calendar-movie">
               {movie.image_url && (
                 <img src={movie.image_url} alt={movie.title} className="calendar-movie-thumb" loading="lazy" />
               )}
@@ -260,74 +214,65 @@ const MoviesPage = () => {
     return days;
   };
 
-  if (loading) {
-    return <div className="loading">Loading movies...</div>;
-  }
-
-  if (error) {
-    return <div className="error">Error: {error}</div>;
-  }
+  if (loading) return <div className="loading">Loading…</div>;
+  if (error)   return <div className="error">Error: {error}</div>;
 
   return (
     <div className="movies-page">
-      <div className="movies-header">
-        <h1>All Movies</h1>
-        <div className="view-toggle">
-          <button
-            className={`view-btn ${viewMode === 'list' ? 'active' : ''}`}
-            onClick={() => setViewMode('list')}
-          >
-            List
-          </button>
-          <button
-            className={`view-btn ${viewMode === 'calendar' ? 'active' : ''}`}
-            onClick={() => setViewMode('calendar')}
-          >
-            Calendar
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow={`${movies.length} titles in the archive`}
+        title={<>The <em>archive.</em></>}
+        actions={
+          <div className="view-toggle">
+            <button
+              className={`vt-btn ${viewMode === 'list' ? 'active' : ''}`}
+              onClick={() => setViewMode('list')}
+            >
+              <Icon name="list" size={14} /> <span>List</span>
+            </button>
+            <button
+              className={`vt-btn ${viewMode === 'calendar' ? 'active' : ''}`}
+              onClick={() => setViewMode('calendar')}
+            >
+              <Icon name="calendar" size={14} /> <span>Calendar</span>
+            </button>
+          </div>
+        }
+      />
 
       {viewMode === 'list' ? (
         <>
           <div className="filters-bar">
-            <div className="search-box">
+            <div className="filter-search">
+              <span className="filter-search-icon"><Icon name="search" size={16} /></span>
               <input
                 type="text"
-                placeholder="Search by title or genre..."
+                placeholder="Title, director, genre…"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="search-input"
+                className="filter-search-input"
               />
               {searchQuery && (
                 <button
-                  className="search-clear-btn"
+                  className="filter-search-clear"
                   onClick={() => setSearchQuery('')}
-                  title="Clear search"
+                  aria-label="Clear search"
                 >
-                  &times;
+                  <Icon name="close" size={14} />
                 </button>
               )}
             </div>
 
-            <div className="filter-group">
-              <select
-                value={selectedGenre}
-                onChange={(e) => setSelectedGenre(e.target.value)}
-                className="filter-select"
-              >
-                <option value="">All Genres</option>
+            <div className="filter-selects">
+              <select value={selectedGenre} onChange={(e) => setSelectedGenre(e.target.value)}>
+                <option value="">All genres</option>
                 {availableGenres.map((genre) => (
                   <option key={genre} value={genre}>{genre}</option>
                 ))}
               </select>
 
-              <select
-                value={selectedYear}
-                onChange={(e) => setSelectedYear(e.target.value)}
-                className="filter-select"
-              >
-                <option value="">All Years</option>
+              <select value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)}>
+                <option value="">All years</option>
                 {availableDecades.map((decade) => (
                   <option key={`${decade}s`} value={`${decade}s`}>{decade}s</option>
                 ))}
@@ -337,22 +282,14 @@ const MoviesPage = () => {
                 ))}
               </select>
 
-              <select
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-                className="filter-select"
-              >
-                <option value="">All Months</option>
+              <select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)}>
+                <option value="">All months</option>
                 {availableMonths.map((m) => (
                   <option key={m} value={m}>{formatMonth(m)}</option>
                 ))}
               </select>
 
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="filter-select"
-              >
+              <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
                 {SORT_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
@@ -363,94 +300,83 @@ const MoviesPage = () => {
           {hasActiveFilters && (
             <div className="active-filters">
               {selectedGenre && (
-                <span className="filter-tag">
-                  {selectedGenre}
-                  <button onClick={() => setSelectedGenre('')}>&times;</button>
-                </span>
+                <Chip variant="accent" onClick={() => setSelectedGenre('')} style={{ cursor: 'pointer' }}>
+                  {selectedGenre} <Icon name="close" size={11} />
+                </Chip>
               )}
               {selectedYear && (
-                <span className="filter-tag">
-                  {selectedYear.endsWith('s') ? selectedYear : selectedYear}
-                  <button onClick={() => setSelectedYear('')}>&times;</button>
-                </span>
+                <Chip variant="accent" onClick={() => setSelectedYear('')} style={{ cursor: 'pointer' }}>
+                  {selectedYear} <Icon name="close" size={11} />
+                </Chip>
               )}
               {selectedMonth && (
-                <span className="filter-tag">
-                  {formatMonth(selectedMonth)}
-                  <button onClick={() => setSelectedMonth('')}>&times;</button>
-                </span>
+                <Chip variant="accent" onClick={() => setSelectedMonth('')} style={{ cursor: 'pointer' }}>
+                  {formatMonth(selectedMonth)} <Icon name="close" size={11} />
+                </Chip>
               )}
               {searchQuery.trim() && (
-                <span className="filter-tag">
-                  &ldquo;{searchQuery.trim()}&rdquo;
-                  <button onClick={() => setSearchQuery('')}>&times;</button>
-                </span>
+                <Chip variant="accent" onClick={() => setSearchQuery('')} style={{ cursor: 'pointer' }}>
+                  &ldquo;{searchQuery.trim()}&rdquo; <Icon name="close" size={11} />
+                </Chip>
               )}
-              <button className="clear-all-btn" onClick={clearAllFilters}>
-                Clear all
-              </button>
+              <button className="btn text sm" onClick={clearAllFilters}>Clear all</button>
             </div>
           )}
 
           <div className="results-count">
-            {filteredAndSortedMovies.length} movie{filteredAndSortedMovies.length !== 1 ? 's' : ''} found
+            {filteredAndSortedMovies.length} title{filteredAndSortedMovies.length !== 1 ? 's' : ''}
           </div>
 
           {filteredAndSortedMovies.length === 0 ? (
-            <div className="empty-state">
-              <p>No movies match your search.</p>
-              {hasActiveFilters && (
-                <button className="btn-secondary clear-filters-btn" onClick={clearAllFilters}>
-                  Clear all filters
-                </button>
+            <EmptyState
+              icon={<Icon name="search" size={32} stroke={1.25} />}
+              title="Nothing matches."
+              body="Try clearing filters or using a shorter search."
+              action={hasActiveFilters && (
+                <button className="btn ghost" onClick={clearAllFilters}>Clear all filters</button>
               )}
-            </div>
+            />
           ) : (
             <div className="movies-grid">
               {filteredAndSortedMovies.map((movie) => (
-                <div key={movie.id} className="movie-card-wrapper">
-                  <Link to={`/movie/${movie.id}`} className="movie-card">
-                    <div className="movie-poster">
+                <div key={movie.id} className="mg-wrapper">
+                  <Link to={`/movie/${movie.id}`} className="mg-card">
+                    <div className="mg-poster">
                       {movie.image_url ? (
                         <img src={movie.image_url} alt={movie.title} loading="lazy" />
                       ) : (
-                        <div className="no-poster">No Image</div>
+                        <div className="mg-poster-placeholder">
+                          {movie.title?.charAt(0) ?? '?'}
+                        </div>
+                      )}
+                      {parseFloat(movie.avg_rating || 0) > 0 && (
+                        <span className="mg-rating">{parseFloat(movie.avg_rating).toFixed(1)}</span>
                       )}
                     </div>
-                    <div className="movie-details">
-                      <h3 className="movie-title">{movie.title}</h3>
+                    <div className="mg-body">
+                      <h3 className="mg-title">{movie.title}</h3>
+                      <div className="mg-meta">
+                        {movie.release_year && <span>{movie.release_year}</span>}
+                        {movie.release_year && movie.scheduled_at && <span className="sep" />}
+                        {movie.scheduled_at && <span>{formatDate(movie.scheduled_at)}</span>}
+                      </div>
                       {movie.genres && (
-                        <div className="movie-card-genres">
+                        <div className="mg-chips">
                           {movie.genres.split(',').slice(0, 2).map((genre, i) => (
-                            <span key={i} className="movie-genre-tag">{genre.trim()}</span>
+                            <Chip key={i}>{genre.trim()}</Chip>
                           ))}
                         </div>
                       )}
-                      <div className="movie-meta">
-                        <span className="movie-date">
-                          {movie.release_year && `${movie.release_year} · `}{formatDate(movie.scheduled_at)}
-                        </span>
-                        <span className="movie-stats">
-                          {parseFloat(movie.avg_rating || 0) > 0 ? (
-                            <>
-                              <span className="rating">{parseFloat(movie.avg_rating).toFixed(1)}</span>
-                              <span className="votes">({movie.rating_count} votes)</span>
-                            </>
-                          ) : (
-                            <span className="no-rating">No ratings</span>
-                          )}
-                        </span>
-                      </div>
                     </div>
                   </Link>
                   {isAdmin && (
                     <button
-                      className="delete-btn"
+                      className="mg-delete"
                       onClick={(e) => handleDelete(e, movie.id, movie.title)}
                       disabled={deleting === movie.id}
-                      title="Delete movie"
+                      aria-label={`Delete ${movie.title}`}
                     >
-                      {deleting === movie.id ? '...' : '×'}
+                      <Icon name="trash" size={14} />
                     </button>
                   )}
                 </div>
@@ -461,25 +387,23 @@ const MoviesPage = () => {
       ) : (
         <div className="calendar-view">
           <div className="calendar-controls">
-            <button onClick={previousMonth} className="btn-secondary">← Prev</button>
-            <button onClick={goToToday} className="btn-secondary">Today</button>
-            <button onClick={nextMonth} className="btn-secondary">Next →</button>
+            <button onClick={previousMonth} className="btn ghost sm">
+              <Icon name="chevron-left" size={14} /> <span>Prev</span>
+            </button>
+            <h2 className="current-month">{formatMonthYear(calendarDate)}</h2>
+            <div className="cc-right">
+              <button onClick={goToToday} className="btn ghost sm">Today</button>
+              <button onClick={nextMonth} className="btn ghost sm">
+                <span>Next</span> <Icon name="chevron-right" size={14} />
+              </button>
+            </div>
           </div>
-          <h2 className="current-month">{formatMonthYear(calendarDate)}</h2>
 
           <div className="calendar-grid">
             <div className="calendar-weekdays">
-              <div>Sun</div>
-              <div>Mon</div>
-              <div>Tue</div>
-              <div>Wed</div>
-              <div>Thu</div>
-              <div>Fri</div>
-              <div>Sat</div>
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => <div key={d}>{d}</div>)}
             </div>
-            <div className="calendar-days">
-              {renderCalendar()}
-            </div>
+            <div className="calendar-days">{renderCalendar()}</div>
           </div>
         </div>
       )}

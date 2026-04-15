@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001';
 const GUILD_ID = import.meta.env.VITE_GUILD_ID;
 
 const getToken = () => localStorage.getItem('token');
@@ -268,7 +268,7 @@ export const importLetterboxd = async (files) => {
   if (files.diary) formData.append('diary', files.diary);
   if (files.reviews) formData.append('reviews', files.reviews);
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+  const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001';
   const response = await fetch(`${API_URL}/api/personal-movies/import/letterboxd`, {
     method: 'POST',
     headers: {

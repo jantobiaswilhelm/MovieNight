@@ -7,6 +7,7 @@ import { formatDate, formatRuntime, getLanguageName, getAvatarUrl } from '../uti
 import { StarRating } from '../components/common';
 import { RatingInput, RatingReactions } from '../components/rating';
 import { QuickAddToWishlist } from '../components/wishlist';
+import { Icon, SectionHead, Chip, Badge, EmptyState } from '../components/ui';
 import './Movie.css';
 
 const Movie = () => {
@@ -53,7 +54,6 @@ const Movie = () => {
     fetchData();
   }, [id, isAuthenticated]);
 
-  // Fetch similar movies and credits when movie data is available
   useEffect(() => {
     const fetchSimilarAndCredits = async () => {
       if (!movie?.tmdb_id) return;
@@ -76,7 +76,6 @@ const Movie = () => {
     fetchSimilarAndCredits();
   }, [movie?.tmdb_id]);
 
-  // Check if ratings are available (runtime - 10 minutes after start)
   useEffect(() => {
     if (!movie?.started_at) {
       setRatingsAvailable(false);
@@ -106,16 +105,14 @@ const Movie = () => {
       }
     };
 
-    // Check immediately
     const isAvailable = checkRatingsAvailability();
 
-    // If not yet available, set up interval to check periodically
     if (!isAvailable) {
       const interval = setInterval(() => {
         if (checkRatingsAvailability()) {
           clearInterval(interval);
         }
-      }, 300000); // Check every 5 minutes
+      }, 300000);
 
       return () => clearInterval(interval);
     }
@@ -127,11 +124,8 @@ const Movie = () => {
       setMyRating(score);
       setMyComment(comment);
       setRatingMessage('Rating saved!');
-
-      // Refresh movie data
       const movieData = await getMovie(id);
       setMovie(movieData);
-
       setTimeout(() => setRatingMessage(null), 3000);
     } catch (err) {
       setRatingMessage(`Error: ${err.message}`);
@@ -142,7 +136,6 @@ const Movie = () => {
     if (!confirm(`Are you sure you want to delete "${movie.title}"? This will also delete all ratings.`)) {
       return;
     }
-
     setDeleting(true);
     try {
       await deleteMovie(id);
@@ -155,7 +148,6 @@ const Movie = () => {
 
   const handleToggleAttendance = async () => {
     if (!isAuthenticated) return;
-
     setTogglingAttendance(true);
     try {
       const result = await toggleAttendance(id);
@@ -172,7 +164,7 @@ const Movie = () => {
   };
 
   if (loading) {
-    return <div className="loading">Loading movie...</div>;
+    return <div className="loading">Loading…</div>;
   }
 
   if (error) {
@@ -183,318 +175,389 @@ const Movie = () => {
     return <div className="error">Movie not found</div>;
   }
 
+  const backdropUrl = sanitizeImageUrl(movie.backdrop_url);
+
   return (
     <div className="movie-page">
-      {/* Hero Section with Backdrop */}
-      {sanitizeImageUrl(movie.backdrop_url) && (
-        <div className="movie-hero" style={{ backgroundImage: `url(${sanitizeImageUrl(movie.backdrop_url)})` }}>
-          <div className="movie-hero-overlay" />
-        </div>
-      )}
 
-      <Link to="/movies" className="back-link">&larr; Back to Movies</Link>
-
-      {movie.is_test && (
-        <div className="test-mode-banner">
-          TEST MODE - This movie was created in test mode
-        </div>
-      )}
-
-      <div className="movie-header">
-        {movie.image_url && (
-          <img src={movie.image_url} alt={movie.title} className="movie-poster-large" loading="lazy" />
+      {/* ── Back / breadcrumb ── */}
+      <div className="movie-back">
+        <Link to="/movies" className="btn text">
+          <Icon name="arrow-left" size={14} stroke={1.75} /> Back to the archive
+        </Link>
+        {isAdmin && movie.is_test && (
+          <Chip variant="accent">Test mode</Chip>
         )}
-
-        <div className="movie-details">
-          <h1>{movie.title}</h1>
-
-          {movie.tagline && (
-            <p className="movie-tagline">"{movie.tagline}"</p>
-          )}
-
-          <div className="movie-meta-info">
-            {movie.release_year && (
-              <span className="meta-item">{movie.release_year}</span>
-            )}
-            {movie.runtime && (
-              <span className="meta-item">{formatRuntime(movie.runtime)}</span>
-            )}
-            {movie.original_language && (
-              <span className="meta-item">{getLanguageName(movie.original_language)}</span>
-            )}
-          </div>
-
-          {movie.genres && (
-            <div className="movie-genres">
-              {movie.genres.split(', ').map((genre, i) => (
-                <span key={i} className="genre-tag">{genre}</span>
-              ))}
-            </div>
-          )}
-
-          {movie.collection_name && (
-            <p className="movie-collection">Part of the <Link to={`/collections/${encodeURIComponent(movie.collection_name)}`}><strong>{movie.collection_name}</strong></Link></p>
-          )}
-
-          <div className="movie-ratings-row">
-            {movie.tmdb_rating > 0 && (
-              <div className="tmdb-rating">
-                <span className="tmdb-label">TMDB</span>
-                <span className="tmdb-score">{parseFloat(movie.tmdb_rating).toFixed(1)}</span>
-              </div>
-            )}
-            {movie.avg_rating > 0 && (
-              <div className="group-rating">
-                <StarRating rating={movie.avg_rating} size="medium" />
-                <span className="rating-label">{movie.rating_count} group votes</span>
-              </div>
-            )}
-          </div>
-
-          <div className="movie-links">
-            {sanitizeImdbId(movie.imdb_id) && (
-              <a
-                href={`https://www.imdb.com/title/${sanitizeImdbId(movie.imdb_id)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="movie-link imdb-link"
-              >
-                IMDb
-              </a>
-            )}
-            {movie.trailer_url && (
-              <a
-                href={sanitizeUrl(movie.trailer_url)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="movie-link trailer-link"
-              >
-                Watch Trailer
-              </a>
-            )}
-          </div>
-
-          <p className="movie-date">
-            {movie.started_at ? 'Watched on' : 'Scheduled for'} {formatDate(movie.scheduled_at, 'long')}
-          </p>
-
-          {movie.announced_by_name && (
-            <p className="movie-announcer">Picked by {movie.announced_by_name}</p>
-          )}
-
-          {/* Attendance Section - only for upcoming movies */}
-          {!movie.started_at && (
-            <div className="movie-attendance-section">
-              <div className="movie-attendance-header">
-                <h3>Who's Attending?</h3>
-                {isAuthenticated && (
-                  <button
-                    className={`btn-attend ${movie.is_attending ? 'attending' : ''}`}
-                    onClick={handleToggleAttendance}
-                    disabled={togglingAttendance}
-                  >
-                    {togglingAttendance ? '...' : movie.is_attending ? '✓ Attending' : '+ Attend'}
-                  </button>
-                )}
-              </div>
-              {movie.attendees && movie.attendees.length > 0 ? (
-                <div className="movie-attendees-list">
-                  {movie.attendees.map((attendee) => (
-                    <div key={attendee.discord_id} className="movie-attendee">
-                      <img
-                        src={getAvatarUrl(attendee.discord_id, attendee.avatar)}
-                        alt={attendee.username}
-                        className="movie-attendee-avatar"
-                        loading="lazy"
-                      />
-                      <span className="movie-attendee-name">{attendee.username}</span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="movie-no-attendees">No one has confirmed attendance yet.</p>
-              )}
-            </div>
-          )}
-
-          {isAdmin && (
-            <button
-              className="btn-danger"
-              onClick={handleDelete}
-              disabled={deleting}
-            >
-              {deleting ? 'Deleting...' : 'Delete Movie'}
-            </button>
-          )}
-        </div>
       </div>
 
+      {/* ── Hero with backdrop ── */}
+      <header className="mv-hero">
+        {backdropUrl && (
+          <div
+            className="mv-hero-bg"
+            style={{ backgroundImage: `url(${backdropUrl})` }}
+            aria-hidden="true"
+          />
+        )}
+        <div className="mv-hero-scrim" aria-hidden="true" />
+
+        <div className="mv-hero-grid">
+          {/* Poster */}
+          <div className="mv-poster-wrap">
+            {movie.image_url ? (
+              <img src={movie.image_url} alt={movie.title} className="mv-poster" loading="lazy" />
+            ) : (
+              <div className="mv-poster mv-poster-placeholder">
+                <span>{movie.title?.charAt(0) ?? '?'}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Center feature */}
+          <div className="mv-feature">
+            <div className="mv-eyebrow">
+              {movie.started_at ? 'Past screening' : 'Scheduled'} · {formatDate(movie.scheduled_at, 'long')}
+            </div>
+
+            <h1 className="mv-title">{movie.title}</h1>
+
+            {movie.tagline && (
+              <p className="mv-tagline">&ldquo;{movie.tagline}&rdquo;</p>
+            )}
+
+            <div className="mv-meta">
+              {movie.release_year && <span>{movie.release_year}</span>}
+              {movie.runtime && (<><span className="sep" /><span>{formatRuntime(movie.runtime)}</span></>)}
+              {movie.original_language && (<><span className="sep" /><span>{getLanguageName(movie.original_language)}</span></>)}
+            </div>
+
+            {movie.genres && (
+              <div className="mv-chips">
+                {movie.genres.split(', ').map((genre, i) => (
+                  <Chip key={i} variant={i === 0 ? 'accent' : 'default'}>{genre}</Chip>
+                ))}
+              </div>
+            )}
+
+            <div className="mv-scores">
+              {movie.tmdb_rating > 0 && (
+                <div className="mv-score">
+                  <span className="mv-score-label">TMDB</span>
+                  <span className="mv-score-num">{parseFloat(movie.tmdb_rating).toFixed(1)}<sub>/10</sub></span>
+                </div>
+              )}
+              {movie.avg_rating > 0 && (
+                <div className="mv-score emphasis">
+                  <span className="mv-score-label">The Club</span>
+                  <span className="mv-score-num">{parseFloat(movie.avg_rating).toFixed(1)}<sub>/10</sub></span>
+                  <span className="mv-score-sub">{movie.rating_count} ratings</span>
+                </div>
+              )}
+            </div>
+
+            <div className="mv-actions">
+              {!movie.started_at && isAuthenticated && (
+                <button
+                  className={`btn ${movie.is_attending ? 'ghost' : ''}`}
+                  onClick={handleToggleAttendance}
+                  disabled={togglingAttendance}
+                >
+                  {movie.is_attending
+                    ? <><Icon name="check" size={16} /> <span>Attending</span></>
+                    : <span>I'll be there</span>}
+                </button>
+              )}
+              {movie.trailer_url && (
+                <a
+                  href={sanitizeUrl(movie.trailer_url)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn ghost"
+                >
+                  <Icon name="play" size={14} /> <span>Trailer</span>
+                </a>
+              )}
+              {sanitizeImdbId(movie.imdb_id) && (
+                <a
+                  href={`https://www.imdb.com/title/${sanitizeImdbId(movie.imdb_id)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn text"
+                >
+                  IMDb →
+                </a>
+              )}
+              {isAdmin && (
+                <button
+                  className="btn destructive sm"
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  style={{ marginLeft: 'auto' }}
+                >
+                  <Icon name="trash" size={14} />
+                  <span>{deleting ? 'Deleting…' : 'Delete'}</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Dossier rail */}
+          <aside className="mv-dossier">
+            <h4>Dossier</h4>
+            <dl>
+              {credits?.directors?.length > 0 && (
+                <div className="row">
+                  <dt>Director</dt>
+                  <dd>{credits.directors.map(d => d.name).join(', ')}</dd>
+                </div>
+              )}
+              {movie.original_language && (
+                <div className="row">
+                  <dt>Language</dt>
+                  <dd>{getLanguageName(movie.original_language)}</dd>
+                </div>
+              )}
+              {movie.release_year && (
+                <div className="row">
+                  <dt>Released</dt>
+                  <dd>{movie.release_year}</dd>
+                </div>
+              )}
+              {movie.runtime > 0 && (
+                <div className="row">
+                  <dt>Runtime</dt>
+                  <dd>{formatRuntime(movie.runtime)}</dd>
+                </div>
+              )}
+              {movie.announced_by_name && (
+                <div className="row">
+                  <dt>Picked by</dt>
+                  <dd>{movie.announced_by_name}</dd>
+                </div>
+              )}
+              {movie.collection_name && (
+                <div className="row">
+                  <dt>Collection</dt>
+                  <dd>
+                    <Link to={`/collections/${encodeURIComponent(movie.collection_name)}`}>
+                      {movie.collection_name}
+                    </Link>
+                  </dd>
+                </div>
+              )}
+            </dl>
+          </aside>
+        </div>
+      </header>
+
+      {/* ── Attendance ── */}
+      {!movie.started_at && (
+        <section>
+          <SectionHead
+            num="02"
+            title="Who's coming"
+            meta={movie.attendees?.length > 0 ? `${movie.attendees.length} confirmed` : 'None yet'}
+          />
+          {movie.attendees?.length > 0 ? (
+            <div className="mv-attendees">
+              {movie.attendees.map((attendee) => (
+                <div key={attendee.discord_id} className="mv-attendee">
+                  <img
+                    src={getAvatarUrl(attendee.discord_id, attendee.avatar)}
+                    alt={attendee.username}
+                    className="mv-attendee-avatar"
+                    loading="lazy"
+                  />
+                  <span className="mv-attendee-name">{attendee.username}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              title="Nobody confirmed yet."
+              body={isAuthenticated ? "Be the first to confirm a seat." : "Log in to RSVP."}
+            />
+          )}
+        </section>
+      )}
+
+      {/* ── Synopsis ── */}
       {movie.description && (
-        <div className="movie-description">
-          <h2>Overview</h2>
-          <p>{movie.description}</p>
-        </div>
+        <section>
+          <SectionHead num={movie.started_at ? '02' : '03'} title="The picture" meta="Synopsis" />
+          <div className="mv-synopsis">
+            <p>{movie.description}</p>
+          </div>
+        </section>
       )}
 
-      {/* Cast & Crew Section */}
+      {/* ── Cast & Crew ── */}
       {credits && (credits.directors?.length > 0 || credits.cast?.length > 0) && (
-        <div className="movie-credits-section">
-          {credits.directors?.length > 0 && (
-            <div className="credits-group">
-              <h3>Director{credits.directors.length > 1 ? 's' : ''}</h3>
-              <div className="credits-list directors-list">
-                {credits.directors.map((person, i) => (
-                  <div key={`director-${i}`} className="credit-person">
-                    {person.profilePath ? (
-                      <img src={person.profilePath} alt={person.name} className="credit-photo" loading="lazy" />
-                    ) : (
-                      <div className="credit-photo-placeholder" />
-                    )}
-                    <span className="credit-name">{person.name}</span>
+        <section>
+          <SectionHead
+            num={movie.started_at ? '03' : '04'}
+            title="The players"
+            meta={`${(credits.directors?.length || 0) + (credits.cast?.length || 0)} credits`}
+          />
+          <div className="mv-credits">
+            {credits.directors?.map((person, i) => (
+              <article key={`d-${i}`} className="mv-credit">
+                {person.profilePath ? (
+                  <img src={person.profilePath} alt={person.name} className="mv-credit-photo" loading="lazy" />
+                ) : (
+                  <div className="mv-credit-photo placeholder">
+                    {person.name?.charAt(0) ?? '?'}
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
-          {credits.cast?.length > 0 && (
-            <div className="credits-group">
-              <h3>Cast</h3>
-              <div className="credits-list cast-list">
-                {credits.cast.map((person, i) => (
-                  <div key={`actor-${i}`} className="credit-person">
-                    {person.profilePath ? (
-                      <img src={person.profilePath} alt={person.name} className="credit-photo" loading="lazy" />
-                    ) : (
-                      <div className="credit-photo-placeholder" />
-                    )}
-                    <div className="credit-info">
-                      <span className="credit-name">{person.name}</span>
-                      {person.characterName && (
-                        <span className="credit-character">{person.characterName}</span>
-                      )}
-                    </div>
+                )}
+                <div className="mv-credit-body">
+                  <span className="mv-credit-role">Director</span>
+                  <span className="mv-credit-name">{person.name}</span>
+                </div>
+              </article>
+            ))}
+            {credits.cast?.map((person, i) => (
+              <article key={`c-${i}`} className="mv-credit">
+                {person.profilePath ? (
+                  <img src={person.profilePath} alt={person.name} className="mv-credit-photo" loading="lazy" />
+                ) : (
+                  <div className="mv-credit-photo placeholder">
+                    {person.name?.charAt(0) ?? '?'}
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+                )}
+                <div className="mv-credit-body">
+                  <span className="mv-credit-role">Cast</span>
+                  <span className="mv-credit-name">{person.name}</span>
+                  {person.characterName && (
+                    <span className="mv-credit-char">as {person.characterName}</span>
+                  )}
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
       )}
 
-      {ratingsAvailable ? (
-        <div className="rating-section">
-          <h2>Your Rating</h2>
-          {isAuthenticated ? (
-            <>
+      {/* ── Your rating ── */}
+      <section>
+        <SectionHead
+          num="05"
+          title="Your verdict"
+          meta={ratingsAvailable ? 'Rating open' : 'Locked'}
+        />
+        {ratingsAvailable ? (
+          isAuthenticated ? (
+            <div className="mv-rating-block">
               <RatingInput
                 currentRating={myRating}
                 currentComment={myComment}
                 onSubmit={handleSubmitRating}
               />
               {ratingMessage && (
-                <p className={ratingMessage.startsWith('Error') ? 'error' : 'success'}>
+                <p className={`mv-rating-msg ${ratingMessage.startsWith('Error') ? 'is-error' : 'is-success'}`}>
                   {ratingMessage}
                 </p>
               )}
-            </>
-          ) : (
-            <div className="login-prompt">
-              <p>Log in with Discord to rate this movie.</p>
-              <button onClick={login} className="btn-primary">
-                Login with Discord
-              </button>
             </div>
-          )}
-        </div>
-      ) : (
-        <div className="rating-section">
-          <h2>Rating</h2>
-          <div className="not-started-message">
-            {movie.started_at ? (
-              <>
-                <p>The movie is still playing.</p>
-                <p className="not-started-hint">
-                  Ratings will be available in {timeUntilRatings} minute{timeUntilRatings !== 1 ? 's' : ''}.
-                </p>
-              </>
-            ) : (
-              <>
-                <p>This movie night hasn't started yet.</p>
-                <p className="not-started-hint">Ratings will be available near the end of the movie.</p>
-              </>
-            )}
-          </div>
-        </div>
-      )}
+          ) : (
+            <EmptyState
+              icon={<Icon name="user" size={32} stroke={1.25} />}
+              title="Log in to rate."
+              body="Discord sign-in lets you save a score and comment."
+              action={<button onClick={login} className="btn">Log in with Discord</button>}
+            />
+          )
+        ) : (
+          <EmptyState
+            icon={<Icon name="clock" size={32} stroke={1.25} />}
+            title={movie.started_at ? 'Still playing.' : "Hasn't started yet."}
+            body={
+              movie.started_at
+                ? `Ratings open in ${timeUntilRatings} minute${timeUntilRatings !== 1 ? 's' : ''}.`
+                : 'Ratings open near the end of the screening.'
+            }
+          />
+        )}
+      </section>
 
-      {ratingsAvailable && movie.ratings && movie.ratings.length > 0 && (
-        <div className="all-ratings">
-          <h2>All Ratings</h2>
-          <div className="ratings-list">
+      {/* ── All ratings ── */}
+      {ratingsAvailable && movie.ratings?.length > 0 && (
+        <section>
+          <SectionHead
+            num="06"
+            title="The ledger"
+            meta={`${movie.ratings.length} verdict${movie.ratings.length !== 1 ? 's' : ''}`}
+          />
+          <ul className="mv-ratings">
             {movie.ratings.map((rating) => (
-              <div key={rating.id} className="rating-item-container">
-                <Link to={`/user/${rating.user_id}`} className="rating-item">
-                  <div className="rating-user">
-                    <img
-                      src={getAvatarUrl(rating.discord_id, rating.avatar)}
-                      alt={rating.username}
-                      className="rating-avatar"
-                      loading="lazy"
-                    />
-                    <span>{rating.username}</span>
-                  </div>
-                  <div className="rating-score">{parseFloat(rating.score).toFixed(1)}/10</div>
+              <li key={rating.id} className="mv-rating">
+                <Link to={`/user/${rating.user_id}`} className="mv-rating-head">
+                  <img
+                    src={getAvatarUrl(rating.discord_id, rating.avatar)}
+                    alt={rating.username}
+                    className="mv-rating-avatar"
+                    loading="lazy"
+                  />
+                  <span className="mv-rating-user">{rating.username}</span>
+                  <span className="mv-rating-score">
+                    {parseFloat(rating.score).toFixed(1)}<sub>/10</sub>
+                  </span>
                 </Link>
                 {rating.comment && (
-                  <div className="rating-comment-display">
-                    <p>"{rating.comment}"</p>
-                  </div>
+                  <p className="mv-rating-comment">&ldquo;{rating.comment}&rdquo;</p>
                 )}
                 <RatingReactions
                   ratingId={rating.id}
                   currentUserId={user?.id}
                   ratingUserId={rating.user_id}
                 />
-              </div>
+              </li>
             ))}
-          </div>
-        </div>
+          </ul>
+        </section>
       )}
 
-      {/* Similar Movies Section */}
+      {/* ── Similar movies ── */}
       {movie.tmdb_id && (
-        <div className="similar-movies-section">
-          <h2>Similar Movies</h2>
+        <section>
+          <SectionHead
+            num="07"
+            title="Further viewing"
+            meta={loadingSimilar ? 'Loading…' : `${similarMovies.length} titles`}
+          />
           {loadingSimilar ? (
-            <div className="similar-loading">Loading similar movies...</div>
+            <div className="mv-similar-grid">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="mv-similar">
+                  <div className="skeleton rect" />
+                  <div className="skeleton line" style={{ width: '70%', marginTop: 12 }} />
+                </div>
+              ))}
+            </div>
           ) : similarMovies.length > 0 ? (
-            <div className="similar-movies-grid">
+            <div className="mv-similar-grid">
               {similarMovies.map((similar) => (
-                <div key={similar.id} className="similar-movie-card">
-                  {similar.posterPath ? (
-                    <img
-                      src={similar.posterPath}
-                      alt={similar.title}
-                      className="similar-movie-poster"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="similar-movie-no-poster">No Image</div>
-                  )}
-                  <div className="similar-movie-info">
-                    <h3 className="similar-movie-title">{similar.title}</h3>
-                    {similar.year && (
-                      <span className="similar-movie-year">{similar.year}</span>
+                <article key={similar.id} className="mv-similar">
+                  <div className="mv-similar-poster">
+                    {similar.posterPath ? (
+                      <img src={similar.posterPath} alt={similar.title} loading="lazy" />
+                    ) : (
+                      <span className="mv-similar-placeholder">
+                        {similar.title?.charAt(0) ?? '?'}
+                      </span>
                     )}
-                    <div className="similar-movie-links">
+                  </div>
+                  <div className="mv-similar-body">
+                    <h4 className="mv-similar-title">{similar.title}</h4>
+                    {similar.year && <span className="mv-similar-year">{similar.year}</span>}
+                    <div className="mv-similar-actions">
                       {sanitizeImdbId(similar.imdbId) && (
                         <a
                           href={`https://www.imdb.com/title/${sanitizeImdbId(similar.imdbId)}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="similar-link imdb"
+                          className="btn text sm"
                         >
-                          IMDb
+                          IMDb →
                         </a>
                       )}
                       {similar.trailerUrl && (
@@ -502,31 +565,30 @@ const Movie = () => {
                           href={sanitizeUrl(similar.trailerUrl)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="similar-link trailer"
+                          className="btn text sm"
                         >
-                          Trailer
+                          <Icon name="play" size={12} /> Trailer
                         </a>
                       )}
                       {isAuthenticated && (
                         <button
-                          className="similar-link add-wishlist"
+                          className="btn text sm"
                           onClick={() => setQuickAddMovie(similar)}
                         >
-                          + Wishlist
+                          <Icon name="plus" size={12} /> Wishlist
                         </button>
                       )}
                     </div>
                   </div>
-                </div>
+                </article>
               ))}
             </div>
           ) : (
-            <div className="similar-empty">No similar movies found</div>
+            <EmptyState title="No suggestions." body="TMDB didn't return anything similar for this one." />
           )}
-        </div>
+        </section>
       )}
 
-      {/* Quick Add to Wishlist Modal */}
       {quickAddMovie && (
         <QuickAddToWishlist
           movie={quickAddMovie}

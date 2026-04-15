@@ -1,210 +1,119 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { getAvatarUrl } from '../../utils/helpers';
 import { searchTMDB, getTMDBMovie, announceMovie } from '../../api/client';
-import ThemeSwitcher from '../common/ThemeSwitcher';
+import { Icon } from '../ui';
 import NotificationBell from './NotificationBell';
 import './Header.css';
+
+const PRIMARY_NAV = [
+  { to: '/',            label: 'Tonight',  icon: 'home',  end: true },
+  { to: '/movies',      label: 'Archive',  icon: 'film' },
+  { to: '/wishlist',    label: 'Wishlist', icon: 'bookmark' },
+  { to: '/stats',       label: 'Stats',    icon: 'chart' },
+  { to: '/feed',        label: 'Feed',     icon: 'feed' },
+];
+
+const MORE_NAV = [
+  { to: '/my-movies',    label: 'My ratings',  icon: 'star' },
+  { to: '/profile',      label: 'My profile',  icon: 'user' },
+  { to: '/collections',  label: 'Collections', icon: 'folder' },
+  { to: '/lists',        label: 'Lists',       icon: 'list' },
+  { to: '/achievements', label: 'Achievements', icon: 'trophy' },
+  { to: '/commands',     label: 'Commands',    icon: 'terminal' },
+];
 
 const Header = () => {
   const { user, login, logout, isAuthenticated } = useAuth();
   const location = useLocation();
-  const [openDropdown, setOpenDropdown] = useState(null);
   const [showAnnounceModal, setShowAnnounceModal] = useState(false);
-  const dropdownRefs = useRef({});
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef(null);
 
   const avatarUrl = user ? getAvatarUrl(user.discordId, user.avatar) : null;
 
-  // Close dropdown when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (openDropdown && dropdownRefs.current[openDropdown]) {
-        if (!dropdownRefs.current[openDropdown].contains(event.target)) {
-          setOpenDropdown(null);
-        }
+    const onClick = (e) => {
+      if (menuOpen && menuRef.current && !menuRef.current.contains(e.target)) {
+        setMenuOpen(false);
       }
     };
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, [menuOpen]);
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [openDropdown]);
-
-  // Close dropdown on route change
-  useEffect(() => {
-    setOpenDropdown(null);
-  }, [location.pathname]);
-
-  const handleMouseEnter = (name) => {
-    setOpenDropdown(name);
-  };
-
-  const handleMouseLeave = () => {
-    setOpenDropdown(null);
-  };
-
-  const isActiveInGroup = (paths) => {
-    return paths.some(path => location.pathname.startsWith(path));
-  };
-
-  const browseItems = [
-    { to: '/movies', label: 'Movies', icon: '🎬', desc: 'All movie nights' },
-    { to: '/collections', label: 'Collections', icon: '📚', desc: 'Movie franchises' },
-    { to: '/wishlist', label: 'Wishlist', icon: '⭐', desc: 'Movies to watch' },
-    { to: '/lists', label: 'Lists', icon: '📋', desc: 'Curated lists' },
-    { to: '/commands', label: 'Commands', icon: '🤖', desc: 'Discord bot commands' },
-  ];
-
-  const socialItems = [
-    { to: '/feed', label: 'Activity Feed', icon: '📰', desc: 'See what others watched' },
-    { to: '/stats', label: 'Statistics', icon: '📊', desc: 'Leaderboards & data' },
-    { to: '/achievements', label: 'Achievements', icon: '🏆', desc: 'Badges & milestones' },
-  ];
-
-  const myStuffItems = [
-    { to: '/my-movies', label: 'My Movies', icon: '🎥', desc: 'Your personal ratings' },
-    { to: '/profile', label: 'My Profile', icon: '👤', desc: 'Your stats & favorites' },
-  ];
+  useEffect(() => { setMenuOpen(false); }, [location.pathname]);
 
   return (
     <header className="header">
       <div className="container header-content">
-        <Link to="/" className="logo">
-          Movie Night
+
+        <Link to="/" className="logo" aria-label="MovieNight home">
+          <span className="logo-mark" aria-hidden="true">m</span>
+          <span className="logo-text">MovieNight</span>
         </Link>
 
         <nav className="nav">
-          <Link to="/" className={location.pathname === '/' ? 'active' : ''}>
-            Home
-          </Link>
-
-          {/* Browse Dropdown */}
-          <div
-            className="nav-dropdown"
-            ref={el => dropdownRefs.current.browse = el}
-            onMouseEnter={() => handleMouseEnter('browse')}
-            onMouseLeave={handleMouseLeave}
-          >
-            <button
-              className={`nav-dropdown-trigger ${isActiveInGroup(['/movies', '/collections', '/wishlist', '/lists', '/commands']) ? 'active' : ''}`}
+          {PRIMARY_NAV.map(item => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.end}
+              className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
             >
-              Browse
-              <svg className={`dropdown-arrow ${openDropdown === 'browse' ? 'open' : ''}`} viewBox="0 0 12 12">
-                <path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-              </svg>
-            </button>
-            {openDropdown === 'browse' && (
-              <div className="nav-dropdown-menu">
-                {browseItems.map(item => (
-                  <Link key={item.to} to={item.to} className="nav-dropdown-item">
-                    <span className="nav-dropdown-icon">{item.icon}</span>
-                    <div className="nav-dropdown-text">
-                      <span className="nav-dropdown-label">{item.label}</span>
-                      <span className="nav-dropdown-desc">{item.desc}</span>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
+              <Icon name={item.icon} size={16} stroke={1.5} />
+              <span>{item.label}</span>
+            </NavLink>
+          ))}
+        </nav>
 
-          {/* Social Dropdown */}
-          <div
-            className="nav-dropdown"
-            ref={el => dropdownRefs.current.social = el}
-            onMouseEnter={() => handleMouseEnter('social')}
-            onMouseLeave={handleMouseLeave}
-          >
-            <button
-              className={`nav-dropdown-trigger ${isActiveInGroup(['/feed', '/stats', '/achievements']) ? 'active' : ''}`}
-            >
-              Social
-              <svg className={`dropdown-arrow ${openDropdown === 'social' ? 'open' : ''}`} viewBox="0 0 12 12">
-                <path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-              </svg>
-            </button>
-            {openDropdown === 'social' && (
-              <div className="nav-dropdown-menu">
-                {socialItems.map(item => (
-                  <Link key={item.to} to={item.to} className="nav-dropdown-item">
-                    <span className="nav-dropdown-icon">{item.icon}</span>
-                    <div className="nav-dropdown-text">
-                      <span className="nav-dropdown-label">{item.label}</span>
-                      <span className="nav-dropdown-desc">{item.desc}</span>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* My Stuff Dropdown - Only when authenticated */}
+        <div className="header-right">
           {isAuthenticated && (
-            <div
-              className="nav-dropdown"
-              ref={el => dropdownRefs.current.mystuff = el}
-              onMouseEnter={() => handleMouseEnter('mystuff')}
-              onMouseLeave={handleMouseLeave}
+            <button
+              className="btn"
+              onClick={() => setShowAnnounceModal(true)}
+              aria-label="Announce next movie"
             >
+              <Icon name="megaphone" size={16} stroke={1.75} />
+              <span>Announce</span>
+            </button>
+          )}
+
+          {isAuthenticated && <NotificationBell />}
+
+          {isAuthenticated ? (
+            <div className="user-menu" ref={menuRef}>
               <button
-                className={`nav-dropdown-trigger ${isActiveInGroup(['/my-movies', '/profile']) ? 'active' : ''}`}
+                className="user-trigger"
+                onClick={() => setMenuOpen(o => !o)}
+                aria-expanded={menuOpen}
               >
-                My Stuff
-                <svg className={`dropdown-arrow ${openDropdown === 'mystuff' ? 'open' : ''}`} viewBox="0 0 12 12">
-                  <path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                </svg>
+                {avatarUrl && <img src={avatarUrl} alt="" className="avatar" loading="lazy" />}
+                <span className="username">{user.username}</span>
+                <Icon name="chevron" size={14} stroke={1.5} className={`chev ${menuOpen ? 'open' : ''}`} />
               </button>
-              {openDropdown === 'mystuff' && (
-                <div className="nav-dropdown-menu">
-                  {myStuffItems.map(item => (
-                    <Link key={item.to} to={item.to} className="nav-dropdown-item">
-                      <span className="nav-dropdown-icon">{item.icon}</span>
-                      <div className="nav-dropdown-text">
-                        <span className="nav-dropdown-label">{item.label}</span>
-                        <span className="nav-dropdown-desc">{item.desc}</span>
-                      </div>
+              {menuOpen && (
+                <div className="user-menu-panel" role="menu">
+                  <div className="menu-eyebrow">Your shelf</div>
+                  {MORE_NAV.map(item => (
+                    <Link key={item.to} to={item.to} className="menu-item" role="menuitem">
+                      <Icon name={item.icon} size={16} stroke={1.5} />
+                      <span>{item.label}</span>
                     </Link>
                   ))}
+                  <div className="menu-sep" />
+                  <button onClick={logout} className="menu-item danger" role="menuitem">
+                    <Icon name="logout" size={16} stroke={1.5} />
+                    <span>Log out</span>
+                  </button>
                 </div>
               )}
             </div>
-          )}
-
-        </nav>
-
-        {isAuthenticated && (
-          <button className="announce-cta-btn" onClick={() => setShowAnnounceModal(true)}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/>
-              <line x1="7" y1="2" x2="7" y2="22"/>
-              <line x1="17" y1="2" x2="17" y2="22"/>
-              <line x1="2" y1="12" x2="22" y2="12"/>
-              <line x1="2" y1="7" x2="7" y2="7"/>
-              <line x1="2" y1="17" x2="7" y2="17"/>
-              <line x1="17" y1="7" x2="22" y2="7"/>
-              <line x1="17" y1="17" x2="22" y2="17"/>
-            </svg>
-            Announce Next Movie
-          </button>
-        )}
-
-        <div className="header-right">
-          <ThemeSwitcher />
-          {isAuthenticated && <NotificationBell />}
-          {isAuthenticated ? (
-            <div className="user-menu">
-              {avatarUrl && (
-                <img src={avatarUrl} alt={user.username} className="avatar" loading="lazy" />
-              )}
-              <span className="username">{user.username}</span>
-              <button onClick={logout} className="btn-logout">
-                Logout
-              </button>
-            </div>
           ) : (
-            <button onClick={login} className="btn-primary">
-              Login with Discord
+            <button onClick={login} className="btn">
+              Log in with Discord
             </button>
           )}
         </div>
@@ -217,6 +126,8 @@ const Header = () => {
     </header>
   );
 };
+
+/* ─── Announce modal ──────────────────────────────────────────────────── */
 
 const AnnounceModal = ({ onClose }) => {
   const [step, setStep] = useState('search');
@@ -288,42 +199,55 @@ const AnnounceModal = ({ onClose }) => {
   return (
     <div className="announce-modal-overlay" onClick={onClose}>
       <div className="announce-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="announce-modal-header">
-          <h2>{step === 'success' ? 'Done!' : 'Announce Movie Night'}</h2>
-          <button className="announce-modal-close" onClick={onClose}>&times;</button>
-        </div>
+        <header className="announce-modal-header">
+          <div>
+            <div className="announce-modal-eyebrow">
+              {step === 'success' ? 'Scheduled' : 'The next reel'}
+            </div>
+            <h2>{step === 'success' ? 'Announced.' : 'Announce a movie night'}</h2>
+          </div>
+          <button className="btn icon" onClick={onClose} aria-label="Close">
+            <Icon name="close" size={16} />
+          </button>
+        </header>
 
         {step === 'search' && (
           <div className="announce-modal-body">
             <form onSubmit={handleSearch} className="announce-modal-search">
-              <input
-                type="text"
-                placeholder="Search for a movie..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                autoFocus
-              />
-              <button type="submit" disabled={searching}>
-                {searching ? '...' : 'Search'}
+              <div className="input-group" style={{ flex: 1, position: 'relative' }}>
+                <span className="input-icon" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--bone-mute)' }}>
+                  <Icon name="search" size={16} />
+                </span>
+                <input
+                  type="text"
+                  placeholder="Title, director, year…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  autoFocus
+                  style={{ paddingLeft: 40 }}
+                />
+              </div>
+              <button type="submit" className="btn" disabled={searching}>
+                {searching ? '…' : 'Search'}
               </button>
             </form>
             {error && <div className="announce-modal-error">{error}</div>}
             {results.length > 0 && (
-              <div className="announce-modal-results">
+              <ul className="announce-modal-results">
                 {results.slice(0, 8).map((movie) => (
-                  <div key={movie.id} className="announce-modal-result" onClick={() => handleSelect(movie)}>
+                  <li key={movie.id} className="announce-modal-result" onClick={() => handleSelect(movie)}>
                     {movie.posterPath ? (
                       <img src={movie.posterPath} alt="" className="announce-modal-poster" />
                     ) : (
                       <div className="announce-modal-poster no-poster">?</div>
                     )}
-                    <div>
+                    <div className="announce-modal-result-body">
                       <span className="announce-modal-title">{movie.title}</span>
                       {movie.year && <span className="announce-modal-year">{movie.year}</span>}
                     </div>
-                  </div>
+                  </li>
                 ))}
-              </div>
+              </ul>
             )}
           </div>
         )}
@@ -338,8 +262,8 @@ const AnnounceModal = ({ onClose }) => {
                 <h3>{selectedMovie.title}</h3>
                 <div className="announce-modal-meta">
                   {selectedMovie.year && <span>{selectedMovie.year}</span>}
-                  {selectedMovie.runtime > 0 && <span>{Math.floor(selectedMovie.runtime / 60)}h {selectedMovie.runtime % 60}m</span>}
-                  {selectedMovie.rating > 0 && <span>TMDB {selectedMovie.rating}</span>}
+                  {selectedMovie.runtime > 0 && <span>· {Math.floor(selectedMovie.runtime / 60)}h {selectedMovie.runtime % 60}m</span>}
+                  {selectedMovie.rating > 0 && <span>· TMDB {selectedMovie.rating}</span>}
                 </div>
                 {selectedMovie.overview && (
                   <p className="announce-modal-overview">{selectedMovie.overview}</p>
@@ -348,22 +272,20 @@ const AnnounceModal = ({ onClose }) => {
             </div>
             <form onSubmit={handleSubmit} className="announce-modal-schedule">
               <div className="announce-modal-fields">
-                <div className="announce-modal-field">
-                  <label>Date</label>
+                <label className="field">Date
                   <input type="date" value={date} onChange={(e) => setDate(e.target.value)} min={new Date().toISOString().split('T')[0]} required />
-                </div>
-                <div className="announce-modal-field">
-                  <label>Time</label>
+                </label>
+                <label className="field">Time
                   <input type="time" value={time} onChange={(e) => setTime(e.target.value)} required />
-                </div>
+                </label>
               </div>
               {error && <div className="announce-modal-error">{error}</div>}
               <div className="announce-modal-actions">
-                <button type="button" className="btn-back" onClick={() => { setStep('search'); setSelectedMovie(null); }}>
+                <button type="button" className="btn ghost" onClick={() => { setStep('search'); setSelectedMovie(null); }}>
                   Back
                 </button>
-                <button type="submit" className="btn-announce" disabled={announcing}>
-                  {announcing ? 'Scheduling...' : 'Announce Movie Night'}
+                <button type="submit" className="btn" disabled={announcing}>
+                  {announcing ? 'Scheduling…' : 'Announce'}
                 </button>
               </div>
             </form>
@@ -372,9 +294,11 @@ const AnnounceModal = ({ onClose }) => {
 
         {step === 'success' && (
           <div className="announce-modal-body announce-modal-success">
-            <div className="announce-success-check">{'\u2713'}</div>
-            <h3>Movie Night Announced!</h3>
-            <p><strong>{selectedMovie?.title}</strong> has been scheduled.</p>
+            <div className="announce-success-check">
+              <Icon name="check" size={28} stroke={2} />
+            </div>
+            <h3>It's on the schedule.</h3>
+            <p><em>{selectedMovie?.title}</em> is announced.</p>
           </div>
         )}
       </div>
