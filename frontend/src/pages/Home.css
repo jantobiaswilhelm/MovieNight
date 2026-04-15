@@ -253,11 +253,13 @@
   border-radius: var(--r-2);
   display: flex;
   flex-direction: column;
-  min-height: clamp(520px, 34vw, 720px);
+  /* Fixed height (not min-height) so search results scroll INSIDE the panel
+     instead of expanding the whole sidebar and stretching the hero next to it. */
+  height: clamp(520px, 34vw, 720px);
   overflow: hidden;
 }
 @media (max-width: 1060px){
-  .home-sidebar{ min-height: 0; }
+  .home-sidebar{ height: auto; min-height: 0; }
 }
 
 /* Tab row */
