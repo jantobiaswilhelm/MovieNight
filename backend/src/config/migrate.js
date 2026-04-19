@@ -699,6 +699,36 @@ const migrate = async () => {
       await client.query(`ALTER TABLE users ADD COLUMN discord_access_token TEXT`);
     }
 
+    // Voice presence tracking for movie nights.
+    // Column added without a default, THEN default set — so existing rows keep
+    // NULL (grandfathered) while new inserts default to true.
+    const voiceTrackingCol = await client.query(`
+      SELECT column_name FROM information_schema.columns
+      WHERE table_name = 'movie_nights' AND column_name = 'voice_tracking_enabled'
+    `);
+    if (voiceTrackingCol.rows.length === 0) {
+      await client.query(`ALTER TABLE movie_nights ADD COLUMN voice_tracking_enabled BOOLEAN`);
+      await client.query(`ALTER TABLE movie_nights ALTER COLUMN voice_tracking_enabled SET DEFAULT true`);
+    }
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS movie_night_voice_presence (
+        id SERIAL PRIMARY KEY,
+        movie_night_id INTEGER NOT NULL REFERENCES movie_nights(id) ON DELETE CASCADE,
+        user_discord_id VARCHAR(20) NOT NULL,
+        joined_at TIMESTAMP NOT NULL,
+        left_at TIMESTAMP
+      )
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_voice_presence_night_user
+      ON movie_night_voice_presence(movie_night_id, user_discord_id)
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_voice_presence_open
+      ON movie_night_voice_presence(user_discord_id) WHERE left_at IS NULL
+    `);
+
     await client.query('COMMIT');
     console.log('Migration completed successfully!');
   } catch (err) {

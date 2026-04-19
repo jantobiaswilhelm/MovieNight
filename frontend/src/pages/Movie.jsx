@@ -7,7 +7,7 @@ import { formatDate, formatRuntime, getLanguageName, getAvatarUrl } from '../uti
 import { StarRating } from '../components/common';
 import { RatingInput, RatingReactions } from '../components/rating';
 import { QuickAddToWishlist } from '../components/wishlist';
-import { Icon, SectionHead, Chip, Badge, EmptyState } from '../components/ui';
+import { Icon, SectionHead, Chip, Badge, Eyebrow, EmptyState } from '../components/ui';
 import './Movie.css';
 
 const Movie = () => {
@@ -489,7 +489,10 @@ const Movie = () => {
           />
           <ul className="mv-ratings">
             {movie.ratings.map((rating) => (
-              <li key={rating.id} className="mv-rating">
+              <li
+                key={rating.id}
+                className={`mv-rating${rating.attended === false ? ' is-absent' : ''}`}
+              >
                 <Link to={`/user/${rating.user_id}`} className="mv-rating-head">
                   <img
                     src={getAvatarUrl(rating.discord_id, rating.avatar)}
@@ -502,6 +505,9 @@ const Movie = () => {
                     {parseFloat(rating.score).toFixed(1)}<sub>/10</sub>
                   </span>
                 </Link>
+                {rating.attended === false && (
+                  <Eyebrow className="mv-rating-absent">Wasn't in the call</Eyebrow>
+                )}
                 {rating.comment && (
                   <p className="mv-rating-comment">&ldquo;{rating.comment}&rdquo;</p>
                 )}

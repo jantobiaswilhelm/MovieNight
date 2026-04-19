@@ -423,6 +423,12 @@
   border-bottom: 1px solid var(--rule);
 }
 .mv-rating:last-child{ border-bottom: none; }
+.mv-rating.is-absent{ opacity: .5; }
+.mv-rating-absent{
+  display: inline-block;
+  margin-top: var(--s-2);
+  color: var(--bone-mute);
+}
 
 .mv-rating-head{
   display: grid;

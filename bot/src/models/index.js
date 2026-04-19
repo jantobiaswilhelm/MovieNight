@@ -538,3 +538,71 @@ export const markRatingPromptSent = async (movieId) => {
   );
   return result.rows[0];
 };
+
+// Voice presence tracking
+// Active window: movie has started and now is before started_at + runtime + 30min buffer.
+export const findActiveMovieNight = async (guildId, at = new Date()) => {
+  const result = await pool.query(
+    `SELECT id, guild_id, started_at, runtime, voice_tracking_enabled
+     FROM movie_nights
+     WHERE guild_id = $1
+       AND voice_tracking_enabled = true
+       AND started_at IS NOT NULL
+       AND started_at <= $2::timestamp
+       AND started_at + (COALESCE(runtime, 120) + 30) * INTERVAL '1 minute' >= $2::timestamp
+     ORDER BY started_at DESC
+     LIMIT 1`,
+    [guildId, at]
+  );
+  return result.rows[0];
+};
+
+export const openVoicePresence = async (movieNightId, userDiscordId, at = new Date()) => {
+  const existing = await pool.query(
+    `SELECT id FROM movie_night_voice_presence
+     WHERE movie_night_id = $1 AND user_discord_id = $2 AND left_at IS NULL
+     LIMIT 1`,
+    [movieNightId, userDiscordId]
+  );
+  if (existing.rows.length > 0) return existing.rows[0];
+  const result = await pool.query(
+    `INSERT INTO movie_night_voice_presence (movie_night_id, user_discord_id, joined_at)
+     VALUES ($1, $2, $3)
+     RETURNING *`,
+    [movieNightId, userDiscordId, at]
+  );
+  return result.rows[0];
+};
+
+export const closeVoicePresenceForUser = async (userDiscordId, at = new Date()) => {
+  const result = await pool.query(
+    `UPDATE movie_night_voice_presence
+     SET left_at = $2
+     WHERE user_discord_id = $1 AND left_at IS NULL
+     RETURNING *`,
+    [userDiscordId, at]
+  );
+  return result.rows;
+};
+
+export const getOpenVoicePresence = async () => {
+  const result = await pool.query(
+    `SELECT vp.id, vp.movie_night_id, vp.user_discord_id, vp.joined_at, mn.guild_id
+     FROM movie_night_voice_presence vp
+     JOIN movie_nights mn ON vp.movie_night_id = mn.id
+     WHERE vp.left_at IS NULL`
+  );
+  return result.rows;
+};
+
+// Zero out a dangling session (user is no longer in voice after bot restart):
+// setting left_at = joined_at avoids over-counting time the bot wasn't watching.
+export const zeroOutPresenceById = async (ids) => {
+  if (!ids || ids.length === 0) return;
+  await pool.query(
+    `UPDATE movie_night_voice_presence
+     SET left_at = joined_at
+     WHERE id = ANY($1::int[])`,
+    [ids]
+  );
+};

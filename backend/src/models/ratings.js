@@ -1,5 +1,17 @@
 import pool from '../config/database.js';
 
+// Whether the rater watched ≥50% of the movie's runtime in voice.
+// Grandfathered nights (voice_tracking_enabled IS NOT TRUE) always return true.
+// Open presence rows (left_at NULL) are counted up to CURRENT_TIMESTAMP.
+const ATTENDED_SQL = `(
+  mn.voice_tracking_enabled IS NOT TRUE
+  OR COALESCE((
+    SELECT EXTRACT(EPOCH FROM SUM(COALESCE(vp.left_at, CURRENT_TIMESTAMP) - vp.joined_at))
+    FROM movie_night_voice_presence vp
+    WHERE vp.movie_night_id = mn.id AND vp.user_discord_id = u.discord_id
+  ), 0) >= COALESCE(mn.runtime, 120) * 60 * 0.5
+)`;
+
 export const upsertRating = async (movieNightId, userId, score, comment = null) => {
   const result = await pool.query(
     `INSERT INTO ratings (movie_night_id, user_id, score, comment)
@@ -14,9 +26,11 @@ export const upsertRating = async (movieNightId, userId, score, comment = null) 
 
 export const getRatingsForMovie = async (movieNightId) => {
   const result = await pool.query(
-    `SELECT r.*, u.username, u.discord_id, u.avatar
+    `SELECT r.*, u.username, u.discord_id, u.avatar,
+            ${ATTENDED_SQL} AS attended
      FROM ratings r
      JOIN users u ON r.user_id = u.id
+     JOIN movie_nights mn ON r.movie_night_id = mn.id
      WHERE r.movie_night_id = $1
      ORDER BY r.created_at DESC`,
     [movieNightId]
@@ -27,8 +41,10 @@ export const getRatingsForMovie = async (movieNightId) => {
 export const getUserRatings = async (userId, limit = 20) => {
   const result = await pool.query(
     `SELECT r.id, r.movie_night_id, r.user_id, r.score, r.comment, r.created_at, r.updated_at,
-            mn.title, mn.scheduled_at, mn.image_url
+            mn.title, mn.scheduled_at, mn.image_url,
+            ${ATTENDED_SQL} AS attended
      FROM ratings r
+     JOIN users u ON r.user_id = u.id
      JOIN movie_nights mn ON r.movie_night_id = mn.id
      WHERE r.user_id = $1
      ORDER BY mn.scheduled_at DESC
