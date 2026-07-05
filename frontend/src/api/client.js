@@ -3,7 +3,39 @@ const GUILD_ID = import.meta.env.VITE_GUILD_ID;
 
 const getToken = () => localStorage.getItem('token');
 
-const fetchAPI = async (endpoint, options = {}) => {
+const clearTokens = () => {
+  localStorage.removeItem('token');
+  localStorage.removeItem('refreshToken');
+};
+
+// Single-flight refresh: if several requests 401 at once, they share one refresh
+// call rather than stampeding /auth/refresh.
+let refreshPromise = null;
+const refreshAccessToken = () => {
+  const refreshToken = localStorage.getItem('refreshToken');
+  if (!refreshToken) return Promise.resolve(null);
+  if (!refreshPromise) {
+    refreshPromise = fetch(`${API_URL}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken })
+    })
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error('refresh failed'))))
+      .then((data) => {
+        localStorage.setItem('token', data.token);
+        if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken);
+        return data.token;
+      })
+      .catch(() => {
+        clearTokens();
+        return null;
+      })
+      .finally(() => { refreshPromise = null; });
+  }
+  return refreshPromise;
+};
+
+const fetchAPI = async (endpoint, options = {}, retried = false) => {
   const token = getToken();
 
   const headers = {
@@ -21,9 +53,14 @@ const fetchAPI = async (endpoint, options = {}) => {
   });
 
   if (!response.ok) {
+    // Access token likely expired — refresh once and retry transparently.
+    if (response.status === 401 && !retried && localStorage.getItem('refreshToken')) {
+      const newToken = await refreshAccessToken();
+      if (newToken) return fetchAPI(endpoint, options, true);
+    }
     if (response.status === 401) {
-      // Clear invalid token and let AuthContext handle redirect
-      localStorage.removeItem('token');
+      // No refresh possible — clear tokens and let AuthContext handle logout.
+      clearTokens();
     }
     const error = await response.json().catch(() => ({ error: 'Request failed' }));
     throw new Error(error.error || 'Request failed');
@@ -42,6 +79,10 @@ export const exchangeAuthCode = (code) =>
     method: 'POST',
     body: JSON.stringify({ code })
   });
+
+// Revoke all tokens server-side (bumps token_version). Best-effort from logout.
+export const logoutRequest = () =>
+  fetchAPI('/auth/logout', { method: 'POST' });
 
 // Movies
 export const getMovies = (limit = 20, offset = 0) =>

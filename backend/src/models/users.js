@@ -32,6 +32,16 @@ export const getUserById = async (id) => {
   return result.rows[0];
 };
 
+// Invalidate every outstanding token for a user (logout / "sign out everywhere").
+export const bumpTokenVersion = async (id) => {
+  const result = await pool.query(
+    `UPDATE users SET token_version = token_version + 1, updated_at = CURRENT_TIMESTAMP
+     WHERE id = $1 RETURNING token_version`,
+    [id]
+  );
+  return result.rows[0];
+};
+
 export const getGuildUsers = async (guildId) => {
   const result = await pool.query(
     `SELECT DISTINCT u.id, u.username, u.discord_id, u.avatar, COUNT(r.id)::integer as rating_count

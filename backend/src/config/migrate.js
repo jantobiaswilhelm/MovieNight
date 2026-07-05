@@ -33,6 +33,17 @@ const migrate = async () => {
       )
     `);
 
+    // Add token_version for JWT revocation. Bumped on logout to invalidate all
+    // of a user's outstanding access + refresh tokens at once.
+    await client.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'token_version') THEN
+          ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0;
+        END IF;
+      END $$;
+    `);
+
     // Movie nights table
     await client.query(`
       CREATE TABLE IF NOT EXISTS movie_nights (

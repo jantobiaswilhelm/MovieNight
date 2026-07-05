@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { getMe, getLoginUrl, checkAdmin, exchangeAuthCode } from '../api/client';
+import { getMe, getLoginUrl, checkAdmin, exchangeAuthCode, logoutRequest } from '../api/client';
 
 const AuthContext = createContext(null);
 
@@ -29,6 +29,7 @@ export const AuthProvider = ({ children }) => {
         })
         .catch(() => {
           localStorage.removeItem('token');
+          localStorage.removeItem('refreshToken');
         })
         .finally(() => setLoading(false));
     } else {
@@ -41,14 +42,23 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
+    // Revoke server-side first (bumps token_version). Keep tokens in storage
+    // until it settles so an expired access token can still refresh-and-revoke;
+    // then clear them. UI state is cleared immediately either way.
+    logoutRequest()
+      .catch(() => {})
+      .finally(() => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
+      });
     setUser(null);
     setIsAdmin(false);
   };
 
   const handleCallback = async (code) => {
-    const { token } = await exchangeAuthCode(code);
+    const { token, refreshToken } = await exchangeAuthCode(code);
     localStorage.setItem('token', token);
+    if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
     const userData = await getMe();
     setUser(userData);
     await fetchAdminStatus();

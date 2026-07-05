@@ -2,15 +2,35 @@ import { Router } from 'express';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { findOrCreateUser } from '../models/index.js';
+import { authenticateToken } from '../middleware/auth.js';
 
 const router = Router();
 
-// In-memory store for short-lived auth codes (code -> JWT, 30s TTL)
+// Short-lived access token; long-lived refresh token that mints new access
+// tokens. Both carry `tv` (the user's token_version) so a logout can revoke them.
+const ACCESS_TTL = '1h';
+const REFRESH_TTL = '30d';
+
+const signAccessToken = (user) =>
+  jwt.sign(
+    { userId: user.id, discordId: user.discord_id, tv: user.token_version ?? 0, type: 'access' },
+    process.env.JWT_SECRET,
+    { expiresIn: ACCESS_TTL }
+  );
+
+const signRefreshToken = (user) =>
+  jwt.sign(
+    { userId: user.id, tv: user.token_version ?? 0, type: 'refresh' },
+    process.env.JWT_SECRET,
+    { expiresIn: REFRESH_TTL }
+  );
+
+// In-memory store for short-lived auth codes (code -> {accessToken, refreshToken}, 30s TTL)
 const AUTH_CODE_TTL_MS = 30_000;
 const authCodes = new Map();
-function storeAuthCode(jwt) {
+function storeAuthCode(tokens) {
   const code = crypto.randomBytes(32).toString('hex');
-  authCodes.set(code, jwt);
+  authCodes.set(code, tokens);
   setTimeout(() => authCodes.delete(code), AUTH_CODE_TTL_MS);
   return code;
 }
@@ -90,15 +110,11 @@ router.get('/callback', async (req, res) => {
       tokenData.access_token
     );
 
-    // Generate JWT
-    const token = jwt.sign(
-      { userId: user.id, discordId: user.discord_id },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
-
-    // Store JWT behind a short-lived auth code and redirect with the code
-    const authCode = storeAuthCode(token);
+    // Issue an access + refresh token pair, stored behind a short-lived auth code
+    const authCode = storeAuthCode({
+      accessToken: signAccessToken(user),
+      refreshToken: signRefreshToken(user)
+    });
     res.redirect(`${process.env.FRONTEND_URL}/auth/callback?code=${authCode}`);
   } catch (err) {
     console.error('OAuth error:', err);
@@ -114,14 +130,52 @@ router.post('/exchange', (req, res) => {
     return res.status(400).json({ error: 'code is required' });
   }
 
-  const token = authCodes.get(code);
+  const tokens = authCodes.get(code);
   authCodes.delete(code);
 
-  if (!token) {
+  if (!tokens) {
     return res.status(400).json({ error: 'Invalid or expired code' });
   }
 
-  res.json({ token });
+  res.json({ token: tokens.accessToken, refreshToken: tokens.refreshToken });
+});
+
+// Exchange a refresh token for a fresh access token (and a rotated refresh token)
+router.post('/refresh', async (req, res) => {
+  const { refreshToken } = req.body;
+
+  if (!refreshToken) {
+    return res.status(400).json({ error: 'refreshToken is required' });
+  }
+
+  try {
+    const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
+    if (decoded.type !== 'refresh') {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    const { getUserById } = await import('../models/index.js');
+    const user = await getUserById(decoded.userId);
+
+    if (!user || (user.token_version ?? 0) !== decoded.tv) {
+      return res.status(401).json({ error: 'Token revoked' });
+    }
+
+    res.json({ token: signAccessToken(user), refreshToken: signRefreshToken(user) });
+  } catch {
+    res.status(401).json({ error: 'Invalid or expired refresh token' });
+  }
+});
+
+// Log out everywhere: bump token_version so all outstanding tokens are revoked
+router.post('/logout', authenticateToken, async (req, res) => {
+  try {
+    const { bumpTokenVersion } = await import('../models/index.js');
+    await bumpTokenVersion(req.user.id);
+  } catch (err) {
+    console.error('Logout error:', err);
+  }
+  res.json({ ok: true });
 });
 
 // Get current user (refreshes Discord profile if stale)
@@ -135,11 +189,14 @@ router.get('/me', async (req, res) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (decoded.type === 'refresh') {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
     const { getUserById } = await import('../models/index.js');
     let user = await getUserById(decoded.userId);
 
-    if (!user) {
-      return res.status(401).json({ error: 'User not found' });
+    if (!user || (user.token_version ?? 0) !== (decoded.tv ?? -1)) {
+      return res.status(401).json({ error: 'Invalid or expired token' });
     }
 
     // Refresh Discord profile if last update was more than 1 hour ago
