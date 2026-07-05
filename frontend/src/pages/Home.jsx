@@ -139,6 +139,14 @@ const Home = () => {
   const heroMovie = nextMovie || lastMovie;
   const isHeroPast = !nextMovie && !!lastMovie;
 
+  // Recent past screenings for the "Last screenings" strip. Skip the one already
+  // featured in the hero (only happens when there's nothing upcoming) to avoid a dupe.
+  const lastScreenings = movies
+    .filter((movie) => new Date(movie.scheduled_at) <= now)
+    .filter((movie) => !(isHeroPast && heroMovie && movie.id === heroMovie.id))
+    .sort((a, b) => new Date(b.scheduled_at) - new Date(a.scheduled_at))
+    .slice(0, 3);
+
   const heroBackdrop = heroMovie
     ? sanitizeImageUrl(heroMovie.backdrop_url) || sanitizeImageUrl(heroMovie.image_url)
     : null;
@@ -428,6 +436,33 @@ const Home = () => {
           )}
         </section>
       </div>
+
+      {/* ═══ Last screenings ═══ */}
+      <section className="home-block">
+        <SectionHead
+          num="05"
+          title="Last screenings"
+          meta={<Link to="/movies" className="btn text">Archive →</Link>}
+        />
+        {loading ? (
+          <div className="upcoming-grid">
+            <MovieCardSkeleton />
+            <MovieCardSkeleton />
+            <MovieCardSkeleton />
+          </div>
+        ) : lastScreenings.length === 0 ? (
+          <EmptyState
+            title="No screenings yet."
+            body="Past movie nights show up here once you've watched one."
+          />
+        ) : (
+          <div className="upcoming-grid">
+            {lastScreenings.map((movie) => (
+              <MovieCard key={movie.id} movie={movie} variant="compact" />
+            ))}
+          </div>
+        )}
+      </section>
 
       <UsersSection />
 
