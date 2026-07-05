@@ -102,6 +102,12 @@ export const rescheduleMovieNight = async (movieId, newScheduledAt) => {
   return result.rows[0];
 };
 
+// Signal the bot to post a "rescheduled" note in the movie's Discord channel.
+// pg_notify (function form) is used so the movie id can be passed as a payload.
+export const notifyReschedule = async (movieId) => {
+  await pool.query("SELECT pg_notify('movie_reschedule', $1)", [String(movieId)]);
+};
+
 export const createPendingAnnouncement = async (data) => {
   const result = await pool.query(
     `INSERT INTO pending_announcements (guild_id, channel_id, user_id, wishlist_id, title, image_url, backdrop_url, description, tmdb_id, imdb_id, tmdb_rating, genres, runtime, release_year, trailer_url, scheduled_at, is_test)

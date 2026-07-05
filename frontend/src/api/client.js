@@ -49,6 +49,12 @@ export const getMovies = (limit = 20, offset = 0) =>
 
 export const getMovie = (id) => fetchAPI(`/api/movies/${id}`);
 
+export const rescheduleMovie = (id, scheduledAt) =>
+  fetchAPI(`/api/movies/${id}/reschedule`, {
+    method: 'PATCH',
+    body: JSON.stringify({ scheduled_at: scheduledAt, guild_id: GUILD_ID })
+  });
+
 export const submitRating = (movieId, score, comment = null) =>
   fetchAPI(`/api/movies/${movieId}/ratings`, {
     method: 'POST',

@@ -1,8 +1,10 @@
 import { Events } from 'discord.js';
 import { startMovieStarterJob } from '../jobs/movieStarter.js';
-import { startAnnouncementProcessorJob, startAnnouncementListener } from '../jobs/announcementProcessor.js';
+import { startAnnouncementProcessorJob, processPendingAnnouncements } from '../jobs/announcementProcessor.js';
+import { postRescheduleNote } from '../jobs/rescheduleNotifier.js';
 import { startRatingNotifierJob } from '../jobs/ratingNotifier.js';
 import { startChannelSyncJob } from '../jobs/channelSync.js';
+import { startNotifyListener } from '../config/pgNotify.js';
 import {
   findActiveMovieNight,
   openVoicePresence,
@@ -77,9 +79,16 @@ export const execute = async (client) => {
   // Start the announcement processor job (backstop poll for web-created announcements)
   startAnnouncementProcessorJob(client);
 
-  // Listen for instant NOTIFY signals from the backend so web announcements
-  // post immediately instead of waiting for the next poll.
-  startAnnouncementListener(client);
+  // Listen for instant NOTIFY signals from the backend: post web announcements
+  // immediately, and post a note when a movie is rescheduled from the web.
+  startNotifyListener({
+    movie_announcement: () => processPendingAnnouncements(client),
+    movie_reschedule: (payload) => postRescheduleNote(client, payload)
+  });
+
+  // Drain anything queued while the bot was offline (the listener only fires on
+  // new notifications, so catch up on startup).
+  processPendingAnnouncements(client);
 
   // Start the rating notifier job (sends rating prompt after runtime-10 min)
   startRatingNotifierJob(client);

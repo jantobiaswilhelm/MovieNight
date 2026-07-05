@@ -1,5 +1,4 @@
 import cron from 'node-cron';
-import pool from '../config/database.js';
 import { getPendingAnnouncements, markAnnouncementProcessed, createMovieNight, findOrCreateUser } from '../models/index.js';
 import { createAnnouncementEmbed } from '../utils/embeds.js';
 import { createLogger } from '../utils/logger.js';
@@ -11,10 +10,6 @@ const DEFAULT_CHANNEL_ID = process.env.ANNOUNCEMENT_CHANNEL_ID;
 const MOVIE_NIGHT_ROLE_ID = process.env.MOVIE_NIGHT_ROLE_ID;
 
 const CRON_EVERY_5_MINUTES = '*/5 * * * *';
-// Postgres NOTIFY channel the backend fires when a new announcement is queued.
-const NOTIFY_CHANNEL = 'movie_announcement';
-// How long to wait before retrying a dropped listener connection.
-const RECONNECT_DELAY_MS = 5000;
 
 // Guard so the cron backstop and LISTEN notifications never process the queue
 // concurrently. If a run is requested while one is in flight we re-run once
@@ -105,64 +100,11 @@ async function drainPendingAnnouncements(client) {
 }
 
 export const startAnnouncementProcessorJob = (client) => {
-  // Cron is now a backstop: it catches anything the LISTEN notification missed
-  // (e.g. a NOTIFY fired while the bot was restarting).
+  // Cron is a backstop: it catches anything the LISTEN notification missed
+  // (e.g. a NOTIFY fired while the bot was restarting). Instant delivery comes
+  // from the shared notify listener wired up in events/ready.js.
   cron.schedule(CRON_EVERY_5_MINUTES, () => processPendingAnnouncements(client));
   logger.info('Announcement processor job scheduled (runs every 5 minutes as a backstop)');
-};
-
-/**
- * Open a dedicated connection that LISTENs for announcement notifications and
- * drains the queue the instant one fires. Self-heals if the connection drops.
- */
-export const startAnnouncementListener = (client) => {
-  let listenClient = null;
-  let reconnectTimer = null;
-
-  const scheduleReconnect = () => {
-    if (reconnectTimer) return;
-    if (listenClient) {
-      // Destroy the broken client (true) so it leaves the pool cleanly.
-      try { listenClient.release(true); } catch { /* already gone */ }
-      listenClient = null;
-    }
-    reconnectTimer = setTimeout(() => {
-      reconnectTimer = null;
-      connect();
-    }, RECONNECT_DELAY_MS);
-  };
-
-  const connect = async () => {
-    try {
-      listenClient = await pool.connect();
-
-      listenClient.on('notification', (msg) => {
-        if (msg.channel !== NOTIFY_CHANNEL) return;
-        processPendingAnnouncements(client).catch((err) =>
-          logger.error('Error handling announcement notification', err)
-        );
-      });
-
-      // A dropped dedicated connection stops delivering notifications — reconnect.
-      listenClient.on('error', (err) => {
-        logger.error('Announcement listener connection error', err);
-        scheduleReconnect();
-      });
-
-      await listenClient.query(`LISTEN ${NOTIFY_CHANNEL}`);
-      logger.info(`Announcement listener active (LISTEN ${NOTIFY_CHANNEL})`);
-
-      // Drain anything that queued while the listener was down.
-      processPendingAnnouncements(client).catch((err) =>
-        logger.error('Error draining announcements on listener start', err)
-      );
-    } catch (err) {
-      logger.error('Failed to start announcement listener', err);
-      scheduleReconnect();
-    }
-  };
-
-  connect();
 };
 
 async function processAnnouncement(client, announcement, channel) {

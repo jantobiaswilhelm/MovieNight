@@ -7,6 +7,7 @@ import { formatDate, formatRuntime, getLanguageName, getAvatarUrl } from '../uti
 import { StarRating } from '../components/common';
 import { RatingInput, RatingReactions } from '../components/rating';
 import { QuickAddToWishlist } from '../components/wishlist';
+import RescheduleModal from '../components/common/RescheduleModal';
 import { Icon, SectionHead, Chip, Badge, Eyebrow, EmptyState } from '../components/ui';
 import './Movie.css';
 
@@ -28,6 +29,7 @@ const Movie = () => {
   const [ratingsAvailable, setRatingsAvailable] = useState(false);
   const [timeUntilRatings, setTimeUntilRatings] = useState(null);
   const [quickAddMovie, setQuickAddMovie] = useState(null);
+  const [showReschedule, setShowReschedule] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -287,12 +289,22 @@ const Movie = () => {
                   IMDb →
                 </a>
               )}
+              {!movie.started_at && (isAdmin || (user && movie.announced_by === user.id)) && (
+                <button
+                  className="btn ghost sm"
+                  onClick={() => setShowReschedule(true)}
+                  style={{ marginLeft: 'auto' }}
+                >
+                  <Icon name="calendar" size={14} />
+                  <span>Reschedule</span>
+                </button>
+              )}
               {isAdmin && (
                 <button
                   className="btn destructive sm"
                   onClick={handleDelete}
                   disabled={deleting}
-                  style={{ marginLeft: 'auto' }}
+                  style={{ marginLeft: !movie.started_at && (isAdmin || (user && movie.announced_by === user.id)) ? undefined : 'auto' }}
                 >
                   <Icon name="trash" size={14} />
                   <span>{deleting ? 'Deleting…' : 'Delete'}</span>
@@ -600,6 +612,17 @@ const Movie = () => {
           movie={quickAddMovie}
           onClose={() => setQuickAddMovie(null)}
           onSuccess={() => setQuickAddMovie(null)}
+        />
+      )}
+
+      {showReschedule && (
+        <RescheduleModal
+          movie={movie}
+          isOpen
+          onClose={() => setShowReschedule(false)}
+          onRescheduled={(updated) =>
+            setMovie((prev) => ({ ...prev, scheduled_at: updated.scheduled_at }))
+          }
         />
       )}
     </div>

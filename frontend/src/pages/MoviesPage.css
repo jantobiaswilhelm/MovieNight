@@ -254,6 +254,33 @@
 }
 .mg-delete:disabled{ opacity: .4; cursor: wait; }
 
+.mg-reschedule{
+  position: absolute;
+  top: var(--s-2);
+  right: var(--s-2);
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  background: rgba(20, 17, 13, .85);
+  color: var(--bone-dim);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--r-full);
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity var(--dur-1) var(--ease-out),
+    color var(--dur-1) var(--ease-out),
+    border-color var(--dur-1) var(--ease-out),
+    background var(--dur-1) var(--ease-out);
+}
+.mg-wrapper:hover .mg-reschedule{ opacity: 1; }
+.mg-reschedule:hover{
+  color: var(--ember);
+  border-color: var(--ember);
+  background: rgba(200, 90, 40, .12);
+}
+
 /* ==========================================================================
    CALENDAR VIEW
    ========================================================================== */

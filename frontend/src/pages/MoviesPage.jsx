@@ -5,6 +5,7 @@ import { getMovies, deleteMovie } from '../api/client';
 import { useFetch } from '../hooks';
 import { formatDate, formatMonth, formatMonthYear } from '../utils/helpers';
 import { Icon, PageHeader, Chip, EmptyState } from '../components/ui';
+import RescheduleModal from '../components/common/RescheduleModal';
 import './MoviesPage.css';
 
 const SORT_OPTIONS = [
@@ -18,8 +19,9 @@ const SORT_OPTIONS = [
 ];
 
 const MoviesPage = () => {
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
+  const [reschedulingMovie, setReschedulingMovie] = useState(null);
   const [selectedMonth, setSelectedMonth] = useState('');
   const [selectedGenre, setSelectedGenre] = useState('');
   const [selectedYear, setSelectedYear] = useState('');
@@ -379,6 +381,16 @@ const MoviesPage = () => {
                       <Icon name="trash" size={14} />
                     </button>
                   )}
+                  {new Date(movie.scheduled_at) > new Date() && !movie.started_at &&
+                    (isAdmin || (user && movie.announced_by === user.id)) && (
+                    <button
+                      className="mg-reschedule"
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setReschedulingMovie(movie); }}
+                      aria-label={`Reschedule ${movie.title}`}
+                    >
+                      <Icon name="calendar" size={14} />
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
@@ -406,6 +418,17 @@ const MoviesPage = () => {
             <div className="calendar-days">{renderCalendar()}</div>
           </div>
         </div>
+      )}
+
+      {reschedulingMovie && (
+        <RescheduleModal
+          movie={reschedulingMovie}
+          isOpen
+          onClose={() => setReschedulingMovie(null)}
+          onRescheduled={(updated) =>
+            setMovies((prev) => prev.map((m) => (m.id === updated.id ? { ...m, scheduled_at: updated.scheduled_at } : m)))
+          }
+        />
       )}
     </div>
   );

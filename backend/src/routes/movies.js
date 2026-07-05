@@ -97,6 +97,47 @@ router.post('/announce', authenticateToken, validateGuildId, validateDate('sched
   }
 });
 
+// Reschedule a movie night (the original host or an admin)
+router.patch('/:id/reschedule', validateIntParams('id'), authenticateToken, validateGuildId, validateDate('scheduled_at'), async (req, res) => {
+  const movieId = req.params.id;
+  const scheduledDate = req.validatedDates.scheduled_at;
+
+  if (scheduledDate <= new Date()) {
+    return res.status(400).json({ error: 'Scheduled time must be in the future' });
+  }
+
+  try {
+    const movie = await db.getMovieNightById(movieId);
+    if (!movie || movie.guild_id !== req.guildId) {
+      return res.status(404).json({ error: 'Movie not found' });
+    }
+
+    const isHost = movie.announced_by === req.user.id;
+    if (!isHost && !isAdmin(req.user.discord_id)) {
+      return res.status(403).json({ error: 'Only the host or an admin can reschedule this movie' });
+    }
+
+    if (movie.started_at) {
+      return res.status(400).json({ error: 'Cannot reschedule a movie that has already started' });
+    }
+
+    const updated = await db.rescheduleMovieNight(movieId, scheduledDate);
+
+    // Ask the bot to post a reschedule note in the Discord channel.
+    // Non-fatal: the DB is already updated regardless of Discord.
+    try {
+      await db.notifyReschedule(movieId);
+    } catch (err) {
+      console.error('Failed to send movie_reschedule NOTIFY:', err.message);
+    }
+
+    res.json(updated);
+  } catch (err) {
+    console.error('Error rescheduling movie:', err);
+    res.status(500).json({ error: 'Failed to reschedule movie' });
+  }
+});
+
 // Get single movie with ratings and attendance
 router.get('/:id', validateIntParams('id'), optionalAuth, async (req, res) => {
   const { id } = req.params;
