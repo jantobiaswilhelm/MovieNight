@@ -14,6 +14,13 @@ export const startRatingNotifierJob = (client) => {
 
       for (const movie of moviesReady) {
         try {
+          // Claim the prompt first so overlapping ticks (or a post/mark gap)
+          // can't double-send. If we don't win the claim, another tick has it.
+          // Trade-off: a transient send failure after claiming means this movie
+          // won't be retried — acceptable to guarantee we never spam the channel.
+          const claimed = await markRatingPromptSent(movie.id);
+          if (!claimed) continue;
+
           // Get the channel to send the rating notification
           const channel = await client.channels.fetch(movie.channel_id);
 
@@ -27,14 +34,9 @@ export const startRatingNotifierJob = (client) => {
               components: buttons
             });
 
-            // Mark as sent
-            await markRatingPromptSent(movie.id);
-
             logger.info(`Sent rating notification for: ${movie.title} (ID: ${movie.id})`);
           } else {
             logger.error(`Could not find channel ${movie.channel_id} for movie ${movie.id}`);
-            // Still mark as sent to avoid repeated failures
-            await markRatingPromptSent(movie.id);
           }
         } catch (err) {
           logger.error(`Error sending rating notification for movie ${movie.id}`, err);

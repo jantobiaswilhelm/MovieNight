@@ -432,11 +432,15 @@ export const getMoviesToStart = async () => {
   return result.rows;
 };
 
+// Atomically claim-and-start: the `started_at IS NULL` guard means two
+// overlapping cron ticks can't both start the same movie. Returns undefined
+// if it was already started, so the caller knows to skip re-posting.
 export const startMovieNight = async (movieId) => {
   const result = await pool.query(
     `UPDATE movie_nights
      SET started_at = CURRENT_TIMESTAMP
      WHERE id = $1
+       AND started_at IS NULL
      RETURNING *`,
     [movieId]
   );
@@ -528,11 +532,15 @@ export const removeStaleGuildChannels = async (guildId, currentChannelIds) => {
   );
 };
 
+// Atomically claim the rating prompt: the `rating_prompt_sent_at IS NULL` guard
+// means only one cron tick can win the claim, so the prompt can't be double-sent.
+// Returns undefined if it was already claimed.
 export const markRatingPromptSent = async (movieId) => {
   const result = await pool.query(
     `UPDATE movie_nights
      SET rating_prompt_sent_at = CURRENT_TIMESTAMP
      WHERE id = $1
+       AND rating_prompt_sent_at IS NULL
      RETURNING *`,
     [movieId]
   );

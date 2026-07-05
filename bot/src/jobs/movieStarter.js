@@ -16,8 +16,10 @@ export const startMovieStarterJob = (client) => {
 
       for (const movie of moviesToStart) {
         try {
-          // Mark movie as started
-          await startMovieNight(movie.id);
+          // Atomically claim the movie. If another tick already started it,
+          // startMovieNight returns undefined and we skip re-posting the embed.
+          const started = await startMovieNight(movie.id);
+          if (!started) continue;
 
           // Get the channel to send the announcement
           const channel = await client.channels.fetch(movie.channel_id);

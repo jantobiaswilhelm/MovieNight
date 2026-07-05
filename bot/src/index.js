@@ -7,6 +7,17 @@ import { createLogger } from './utils/logger.js';
 
 const logger = createLogger('index');
 
+// --- Startup validation ---
+// Fail fast with a clear message instead of a confusing runtime error later
+// (e.g. client.login(undefined) or the first DB query).
+const requiredEnvVars = ['DISCORD_TOKEN', 'DISCORD_CLIENT_ID', 'DATABASE_URL'];
+for (const envVar of requiredEnvVars) {
+  if (!process.env[envVar]) {
+    console.error(`FATAL: ${envVar} environment variable is not set. Exiting.`);
+    process.exit(1);
+  }
+}
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
