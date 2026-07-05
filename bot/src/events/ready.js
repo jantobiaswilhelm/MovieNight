@@ -2,6 +2,7 @@ import { Events } from 'discord.js';
 import { startMovieStarterJob } from '../jobs/movieStarter.js';
 import { startAnnouncementProcessorJob, processPendingAnnouncements } from '../jobs/announcementProcessor.js';
 import { postRescheduleNote } from '../jobs/rescheduleNotifier.js';
+import { postCancelNote } from '../jobs/cancelNotifier.js';
 import { startRatingNotifierJob } from '../jobs/ratingNotifier.js';
 import { startChannelSyncJob } from '../jobs/channelSync.js';
 import { startNotifyListener } from '../config/pgNotify.js';
@@ -83,7 +84,8 @@ export const execute = async (client) => {
   // immediately, and post a note when a movie is rescheduled from the web.
   startNotifyListener({
     movie_announcement: () => processPendingAnnouncements(client),
-    movie_reschedule: (payload) => postRescheduleNote(client, payload)
+    movie_reschedule: (payload) => postRescheduleNote(client, payload),
+    movie_cancel: (payload) => postCancelNote(client, payload)
   });
 
   // Drain anything queued while the bot was offline (the listener only fires on

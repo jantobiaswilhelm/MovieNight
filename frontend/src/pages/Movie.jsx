@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useConfirm } from '../context/ConfirmContext';
-import { getMovie, submitRating, getMyRating, deleteMovie, getSimilarMovies, toggleAttendance, getMovieCredits } from '../api/client';
+import { getMovie, submitRating, getMyRating, deleteMovie, cancelMovie, getSimilarMovies, toggleAttendance, getMovieCredits } from '../api/client';
 import { sanitizeUrl, sanitizeImdbId, sanitizeImageUrl } from '../utils/sanitizeUrl';
 import { formatDate, formatRuntime, getLanguageName, getAvatarUrl } from '../utils/helpers';
 import { StarRating } from '../components/common';
@@ -34,6 +34,7 @@ const Movie = () => {
   const [timeUntilRatings, setTimeUntilRatings] = useState(null);
   const [quickAddMovie, setQuickAddMovie] = useState(null);
   const [showReschedule, setShowReschedule] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -149,6 +150,23 @@ const Movie = () => {
     } catch (err) {
       showError('Failed to delete movie: ' + err.message);
       setDeleting(false);
+    }
+  };
+
+  const handleCancel = async () => {
+    if (!(await confirm({
+      title: 'Cancel screening?',
+      message: `Call off "${movie.title}"? Anyone who RSVP'd will be notified in Discord.`,
+      confirmLabel: 'Cancel screening',
+      danger: true
+    }))) return;
+    setCancelling(true);
+    try {
+      await cancelMovie(id);
+      navigate('/movies');
+    } catch (err) {
+      showError('Failed to cancel: ' + err.message);
+      setCancelling(false);
     }
   };
 
@@ -294,21 +312,31 @@ const Movie = () => {
                 </a>
               )}
               {!movie.started_at && (isAdmin || (user && movie.announced_by === user.id)) && (
-                <button
-                  className="btn ghost sm"
-                  onClick={() => setShowReschedule(true)}
-                  style={{ marginLeft: 'auto' }}
-                >
-                  <Icon name="calendar" size={14} />
-                  <span>Reschedule</span>
-                </button>
+                <>
+                  <button
+                    className="btn ghost sm"
+                    onClick={() => setShowReschedule(true)}
+                    style={{ marginLeft: 'auto' }}
+                  >
+                    <Icon name="calendar" size={14} />
+                    <span>Reschedule</span>
+                  </button>
+                  <button
+                    className="btn destructive sm"
+                    onClick={handleCancel}
+                    disabled={cancelling}
+                  >
+                    <Icon name="close" size={14} />
+                    <span>{cancelling ? 'Cancelling…' : 'Cancel screening'}</span>
+                  </button>
+                </>
               )}
-              {isAdmin && (
+              {movie.started_at && isAdmin && (
                 <button
                   className="btn destructive sm"
                   onClick={handleDelete}
                   disabled={deleting}
-                  style={{ marginLeft: !movie.started_at && (isAdmin || (user && movie.announced_by === user.id)) ? undefined : 'auto' }}
+                  style={{ marginLeft: 'auto' }}
                 >
                   <Icon name="trash" size={14} />
                   <span>{deleting ? 'Deleting…' : 'Delete'}</span>

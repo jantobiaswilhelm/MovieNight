@@ -1,4 +1,4 @@
-import { getMovieNightById } from '../models/index.js';
+import { getMovieNightById, getAttendeeDiscordIds } from '../models/index.js';
 import { createLogger } from '../utils/logger.js';
 
 const logger = createLogger('rescheduleNotifier');
@@ -24,8 +24,15 @@ export const postRescheduleNote = async (client, payload) => {
   }
 
   const timestamp = Math.floor(new Date(movie.scheduled_at).getTime() / 1000);
-  await channel.send(
-    `**${movie.title}** has been rescheduled to <t:${timestamp}:F> (<t:${timestamp}:R>)`
-  );
-  logger.info(`Posted reschedule note for movie ${movieId}`);
+
+  // Ping anyone who already RSVP'd so they see the new time.
+  const attendeeIds = await getAttendeeDiscordIds(movieId);
+  const mentions = attendeeIds.map((id) => `<@${id}>`).join(' ');
+  const base = `**${movie.title}** has been rescheduled to <t:${timestamp}:F> (<t:${timestamp}:R>)`;
+
+  await channel.send({
+    content: mentions ? `${base}\n${mentions}` : base,
+    allowedMentions: { users: attendeeIds }
+  });
+  logger.info(`Posted reschedule note for movie ${movieId} (pinged ${attendeeIds.length} attendees)`);
 };

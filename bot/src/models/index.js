@@ -394,6 +394,18 @@ export const deleteMovieNight = async (movieId) => {
   return result.rows[0];
 };
 
+// Discord IDs of everyone who RSVP'd to a movie night (for reschedule pings).
+export const getAttendeeDiscordIds = async (movieId) => {
+  const result = await pool.query(
+    `SELECT u.discord_id
+     FROM movie_attendance ma
+     JOIN users u ON ma.user_id = u.id
+     WHERE ma.movie_night_id = $1`,
+    [movieId]
+  );
+  return result.rows.map((r) => r.discord_id);
+};
+
 export const deleteVotingSession = async (sessionId) => {
   const client = await pool.connect();
   try {

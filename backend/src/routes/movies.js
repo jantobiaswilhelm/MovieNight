@@ -138,6 +138,44 @@ router.patch('/:id/reschedule', validateIntParams('id'), authenticateToken, vali
   }
 });
 
+// Cancel an upcoming movie night (the original host or an admin). Deletes the
+// night and asks the bot to post a cancellation note in Discord.
+router.delete('/:id', validateIntParams('id'), authenticateToken, validateGuildId, async (req, res) => {
+  const movieId = req.params.id;
+
+  try {
+    const movie = await db.getMovieNightById(movieId);
+    if (!movie || movie.guild_id !== req.guildId) {
+      return res.status(404).json({ error: 'Movie not found' });
+    }
+
+    const isHost = movie.announced_by === req.user.id;
+    if (!isHost && !isAdmin(req.user.discord_id)) {
+      return res.status(403).json({ error: 'Only the host or an admin can cancel this movie' });
+    }
+
+    if (movie.started_at) {
+      return res.status(400).json({ error: 'Cannot cancel a movie that has already started' });
+    }
+
+    await db.deleteMovieNight(movieId);
+
+    // Tell the bot to post a cancellation note. Non-fatal.
+    if (movie.channel_id) {
+      try {
+        await db.notifyCancel(movie.channel_id, movie.title);
+      } catch (err) {
+        console.error('Failed to send movie_cancel NOTIFY:', err.message);
+      }
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error cancelling movie:', err);
+    res.status(500).json({ error: 'Failed to cancel movie' });
+  }
+});
+
 // Get single movie with ratings and attendance
 router.get('/:id', validateIntParams('id'), optionalAuth, async (req, res) => {
   const { id } = req.params;
