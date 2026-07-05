@@ -139,8 +139,11 @@ const Home = () => {
   const heroMovie = nextMovie || lastMovie;
   const isHeroPast = !nextMovie && !!lastMovie;
 
-  // Recent past screenings for the "Last screenings" strip. Skip the one already
-  // featured in the hero (only happens when there's nothing upcoming) to avoid a dupe.
+  // The "On the calendar" slot shows upcoming nights beyond the hero when there
+  // are any; otherwise it backfills with recent past screenings so it isn't empty
+  // during the (common) spontaneous stretches with nothing scheduled.
+  const hasUpcomingExtras = upcomingWithAttendees.length > 1;
+
   const lastScreenings = movies
     .filter((movie) => new Date(movie.scheduled_at) <= now)
     .filter((movie) => !(isHeroPast && heroMovie && movie.id === heroMovie.id))
@@ -371,7 +374,7 @@ const Home = () => {
         <section className="home-block">
           <SectionHead
             num="03"
-            title="On the calendar"
+            title={hasUpcomingExtras ? 'On the calendar' : 'Last screenings'}
             meta={<Link to="/movies" className="btn text">Archive →</Link>}
           />
           {loading ? (
@@ -380,17 +383,23 @@ const Home = () => {
               <MovieCardSkeleton />
               <MovieCardSkeleton />
             </div>
-          ) : upcomingWithAttendees.length <= 1 ? (
-            <EmptyState
-              title="Nothing queued."
-              body="Announce a movie to start the next screening."
-            />
-          ) : (
+          ) : hasUpcomingExtras ? (
             <div className="upcoming-grid">
               {upcomingWithAttendees.slice(1, 4).map((movie) => (
                 <MovieCard key={movie.id} movie={movie} variant="compact" />
               ))}
             </div>
+          ) : lastScreenings.length > 0 ? (
+            <div className="upcoming-grid">
+              {lastScreenings.map((movie) => (
+                <MovieCard key={movie.id} movie={movie} variant="compact" />
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              title="Nothing queued."
+              body="Announce a movie to start the next screening."
+            />
           )}
         </section>
 
@@ -436,33 +445,6 @@ const Home = () => {
           )}
         </section>
       </div>
-
-      {/* ═══ Last screenings ═══ */}
-      <section className="home-block">
-        <SectionHead
-          num="05"
-          title="Last screenings"
-          meta={<Link to="/movies" className="btn text">Archive →</Link>}
-        />
-        {loading ? (
-          <div className="upcoming-grid">
-            <MovieCardSkeleton />
-            <MovieCardSkeleton />
-            <MovieCardSkeleton />
-          </div>
-        ) : lastScreenings.length === 0 ? (
-          <EmptyState
-            title="No screenings yet."
-            body="Past movie nights show up here once you've watched one."
-          />
-        ) : (
-          <div className="upcoming-grid">
-            {lastScreenings.map((movie) => (
-              <MovieCard key={movie.id} movie={movie} variant="compact" />
-            ))}
-          </div>
-        )}
-      </section>
 
       <UsersSection />
 
