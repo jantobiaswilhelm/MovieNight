@@ -1,5 +1,5 @@
 import cron from 'node-cron';
-import { getMoviesToStart, startMovieNight } from '../models/index.js';
+import { getMoviesToStart, startMovieNight, openVoicePresence } from '../models/index.js';
 import { createStartingNowEmbed } from '../utils/embeds.js';
 import { createLogger } from '../utils/logger.js';
 
@@ -20,6 +20,25 @@ export const startMovieStarterJob = (client) => {
           // startMovieNight returns undefined and we skip re-posting the embed.
           const started = await startMovieNight(movie.id);
           if (!started) continue;
+
+          // Snapshot anyone already sitting in voice at start. The voiceStateUpdate
+          // handler only fires on join/leave, so people already in the call when the
+          // movie begins would otherwise never be recorded — and get wrongly flagged
+          // "wasn't in the call". Counts any non-AFK voice channel, matching the
+          // live tracking. openVoicePresence is idempotent, so a concurrent join is safe.
+          try {
+            const guild = client.guilds.cache.get(movie.guild_id);
+            if (guild) {
+              const now = new Date();
+              for (const [, vs] of guild.voiceStates.cache) {
+                if (!vs.channelId || vs.channelId === guild.afkChannelId) continue;
+                if (vs.member?.user?.bot) continue;
+                await openVoicePresence(movie.id, vs.id, now);
+              }
+            }
+          } catch (err) {
+            logger.error(`Failed to snapshot voice presence for movie ${movie.id}`, err);
+          }
 
           // Get the channel to send the announcement
           const channel = await client.channels.fetch(movie.channel_id);
