@@ -11,16 +11,16 @@
   width: 36px;
   height: 36px;
   padding: 0;
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
+  background: var(--ink-2);
+  border: 1px solid var(--rule-strong);
   border-radius: 8px;
-  color: var(--text-secondary);
+  color: var(--bone-dim);
   transition: all 0.2s ease;
 }
 
 .mode-toggle:hover {
   background: rgba(255, 255, 255, 0.1);
-  color: var(--text-primary);
+  color: var(--bone);
   transform: translateY(-1px);
 }
 
@@ -37,10 +37,10 @@
 
 .theme-dropdown select {
   appearance: none;
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
+  background: var(--ink-2);
+  border: 1px solid var(--rule-strong);
   border-radius: 8px;
-  color: var(--text-primary);
+  color: var(--bone);
   font-size: 0.875rem;
   font-weight: 500;
   padding: 0.5rem 2.5rem 0.5rem 2rem;
@@ -50,17 +50,17 @@
 
 .theme-dropdown select:hover {
   background: rgba(255, 255, 255, 0.1);
-  border-color: var(--glass-border);
+  border-color: var(--rule-strong);
 }
 
 .theme-dropdown select:focus {
   outline: none;
-  border-color: var(--accent);
+  border-color: var(--ember);
 }
 
 .theme-dropdown select option {
-  background: var(--bg-card);
-  color: var(--text-primary);
+  background: var(--ink-2);
+  color: var(--bone);
   padding: 0.5rem;
 }
 
@@ -81,7 +81,7 @@
   height: 0;
   border-left: 4px solid transparent;
   border-right: 4px solid transparent;
-  border-top: 5px solid var(--text-secondary);
+  border-top: 5px solid var(--bone-dim);
   pointer-events: none;
 }
 

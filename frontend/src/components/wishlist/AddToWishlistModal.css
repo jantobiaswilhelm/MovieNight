@@ -15,7 +15,7 @@
 }
 
 .modal-content {
-  background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
+  background: linear-gradient(135deg, var(--ink-2) 0%, var(--ink-2) 100%);
   border-radius: 16px;
   max-width: 500px;
   width: 100%;
@@ -23,7 +23,7 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--glass-border);
+  border: 1px solid var(--rule-strong);
   box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5);
   animation: scaleIn 0.2s ease-out;
 }
@@ -37,8 +37,8 @@
   justify-content: space-between;
   align-items: center;
   padding: 1rem 1.25rem;
-  border-bottom: 1px solid var(--border-color);
-  background: var(--glass-bg);
+  border-bottom: 1px solid var(--rule);
+  background: var(--ink-2);
 }
 
 .modal-header h2 {
@@ -47,11 +47,11 @@
 }
 
 .modal-close {
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
+  background: var(--ink-2);
+  border: 1px solid var(--rule-strong);
   border-radius: 8px;
   font-size: 1.25rem;
-  color: var(--text-secondary);
+  color: var(--bone-dim);
   cursor: pointer;
   padding: 0.25rem 0.5rem;
   line-height: 1;
@@ -59,9 +59,9 @@
 }
 
 .modal-close:hover {
-  color: var(--text-primary);
+  color: var(--bone);
   background: rgba(255, 255, 255, 0.1);
-  border-color: var(--accent-glow);
+  border-color: var(--ember-soft);
 }
 
 .modal-body {
@@ -77,24 +77,24 @@
   width: 100%;
   padding: 0.75rem 1rem;
   font-size: 1rem;
-  background: var(--bg-secondary);
-  color: var(--text-primary);
-  border: 1px solid var(--border-color);
+  background: var(--ink-2);
+  color: var(--bone);
+  border: 1px solid var(--rule);
   border-radius: 8px;
   transition: all 0.2s ease;
 }
 
 .search-input:focus {
   outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-glow);
+  border-color: var(--ember);
+  box-shadow: 0 0 0 3px var(--ember-soft);
 }
 
 .search-loading,
 .no-results {
   text-align: center;
   padding: 2rem;
-  color: var(--text-secondary);
+  color: var(--bone-dim);
 }
 
 .search-results {
@@ -116,8 +116,8 @@
 }
 
 .search-result-item:hover {
-  background: var(--bg-secondary);
-  border-color: var(--accent-glow);
+  background: var(--ink-2);
+  border-color: var(--ember-soft);
 }
 
 .result-poster {
@@ -126,7 +126,7 @@
   aspect-ratio: 2/3;
   border-radius: 4px;
   overflow: hidden;
-  background: var(--bg-secondary);
+  background: var(--ink-2);
 }
 
 .result-poster img {
@@ -142,7 +142,7 @@
   align-items: center;
   justify-content: center;
   font-size: 0.6rem;
-  color: var(--text-muted);
+  color: var(--bone-mute);
   text-align: center;
 }
 
@@ -163,13 +163,13 @@
   display: flex;
   gap: 0.75rem;
   font-size: 0.8rem;
-  color: var(--text-secondary);
+  color: var(--bone-dim);
 }
 
 .back-button {
   background: none;
   border: none;
-  color: var(--accent);
+  color: var(--ember);
   cursor: pointer;
   padding: 0;
   font-size: 0.9rem;
@@ -178,7 +178,7 @@
 }
 
 .back-button:hover {
-  color: var(--accent-hover);
+  color: var(--ember-hi);
   text-decoration: none;
 }
 
@@ -194,8 +194,8 @@
   aspect-ratio: 2/3;
   border-radius: 8px;
   overflow: hidden;
-  background: var(--bg-secondary);
-  border: 1px solid var(--glass-border);
+  background: var(--ink-2);
+  border: 1px solid var(--rule-strong);
 }
 
 .selected-poster img {
@@ -210,7 +210,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-muted);
+  color: var(--bone-mute);
 }
 
 .selected-info h3 {
@@ -222,19 +222,19 @@
   display: flex;
   gap: 0.75rem;
   font-size: 0.85rem;
-  color: var(--text-secondary);
+  color: var(--bone-dim);
   margin-bottom: 0.5rem;
 }
 
 .selected-genres {
   font-size: 0.8rem;
-  color: var(--text-secondary);
+  color: var(--bone-dim);
   margin-bottom: 0.5rem;
 }
 
 .selected-overview {
   font-size: 0.85rem;
-  color: var(--text-secondary);
+  color: var(--bone-dim);
   line-height: 1.5;
   margin: 0;
   display: -webkit-box;
@@ -264,8 +264,8 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem 1rem;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
+  background: var(--ink-2);
+  border: 1px solid var(--rule);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -273,7 +273,7 @@
 }
 
 .importance-btn:hover {
-  border-color: var(--accent);
+  border-color: var(--ember);
   background: rgba(229, 9, 20, 0.05);
 }
 
@@ -290,13 +290,13 @@
 }
 
 .importance-btn .importance-text {
-  color: var(--text-primary);
+  color: var(--bone);
   font-size: 0.9rem;
 }
 
 .modal-error {
   background: rgba(239, 68, 68, 0.1);
-  color: var(--danger);
+  color: var(--red);
   padding: 0.75rem 1rem;
   border-radius: 8px;
   margin-bottom: 1rem;

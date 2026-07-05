@@ -1,9 +1,9 @@
 .users-section {
   margin-top: 2rem;
   padding: 1.5rem;
-  background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
+  background: linear-gradient(135deg, var(--ink-2) 0%, var(--ink-2) 100%);
   border-radius: 12px;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--rule);
 }
 
 .users-section-header {
@@ -16,12 +16,12 @@
 .users-section h3 {
   margin: 0;
   font-size: 1.1rem;
-  color: var(--text-primary);
+  color: var(--bone);
 }
 
 .users-count {
   font-size: 0.85rem;
-  color: var(--text-secondary);
+  color: var(--bone-dim);
 }
 
 .users-grid {
@@ -40,7 +40,7 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem;
-  background: var(--bg-secondary);
+  background: var(--ink-2);
   border-radius: 12px;
   text-decoration: none;
   color: inherit;
@@ -49,8 +49,8 @@
 }
 
 .user-item:hover {
-  background: var(--bg-card-hover);
-  border-color: var(--accent-glow);
+  background: var(--ink-3);
+  border-color: var(--ember-soft);
   transform: translateY(-2px);
 }
 
@@ -58,19 +58,19 @@
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  border: 2px solid var(--glass-border);
+  border: 2px solid var(--rule-strong);
   transition: all 0.2s ease;
 }
 
 .user-item:hover .user-avatar {
-  border-color: var(--accent);
-  box-shadow: 0 0 12px var(--accent-glow);
+  border-color: var(--ember);
+  box-shadow: 0 0 12px var(--ember-soft);
 }
 
 .user-name {
   font-size: 0.85rem;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--bone);
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
@@ -80,7 +80,7 @@
 
 .user-rating-count {
   font-size: 0.75rem;
-  color: var(--text-secondary);
+  color: var(--bone-dim);
 }
 
 .user-skeleton {
@@ -104,10 +104,10 @@
   width: 100%;
   margin-top: 1rem;
   padding: 0.75rem;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
+  background: var(--ink-2);
+  border: 1px solid var(--rule);
   border-radius: 8px;
-  color: var(--text-primary);
+  color: var(--bone);
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
@@ -115,8 +115,8 @@
 }
 
 .users-expand-btn:hover {
-  background: var(--bg-card-hover);
-  border-color: var(--accent-glow);
+  background: var(--ink-3);
+  border-color: var(--ember-soft);
 }
 
 @media (max-width: 1200px) {

@@ -1,18 +1,18 @@
 .rating-histogram {
-  background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
+  background: linear-gradient(135deg, var(--ink-2) 0%, var(--ink-2) 100%);
   border-radius: 12px;
   padding: 1.25rem;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--rule);
 }
 
 .rating-histogram h3 {
   margin: 0 0 1rem 0;
   font-size: 1rem;
-  color: var(--text-primary);
+  color: var(--bone);
 }
 
 .histogram-empty {
-  color: var(--text-secondary);
+  color: var(--bone-dim);
   text-align: center;
   padding: 2rem 0;
 }
@@ -39,7 +39,7 @@
 .histogram-bar {
   width: 100%;
   max-width: 24px;
-  background: linear-gradient(180deg, var(--accent) 0%, var(--accent-hover) 100%);
+  background: linear-gradient(180deg, var(--ember) 0%, var(--ember-hi) 100%);
   border-radius: 4px 4px 0 0;
   min-height: 2px;
   position: relative;
@@ -59,7 +59,7 @@
   position: absolute;
   top: -18px;
   font-size: 0.65rem;
-  color: var(--text-secondary);
+  color: var(--bone-dim);
   font-weight: 600;
 }
 
@@ -67,7 +67,7 @@
   position: absolute;
   bottom: -1.5rem;
   font-size: 0.6rem;
-  color: var(--text-secondary);
+  color: var(--bone-dim);
   white-space: nowrap;
 }
 

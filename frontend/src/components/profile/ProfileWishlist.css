@@ -1,8 +1,8 @@
 .profile-wishlist {
-  background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
+  background: linear-gradient(135deg, var(--ink-2) 0%, var(--ink-2) 100%);
   border-radius: 12px;
   padding: 1.25rem;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--rule);
 }
 
 .profile-wishlist-header {
@@ -15,23 +15,23 @@
 .profile-wishlist-header h3 {
   margin: 0;
   font-size: 1rem;
-  color: var(--text-primary);
+  color: var(--bone);
 }
 
 .view-all-link {
   font-size: 0.8rem;
-  color: var(--accent);
+  color: var(--ember);
   text-decoration: none;
   transition: all 0.2s ease;
 }
 
 .view-all-link:hover {
-  color: var(--accent-hover);
+  color: var(--ember-hi);
   text-decoration: underline;
 }
 
 .wishlist-empty {
-  color: var(--text-secondary);
+  color: var(--bone-dim);
   text-align: center;
   padding: 1.5rem 0;
   margin: 0;
@@ -49,12 +49,12 @@
   gap: 0.75rem;
   padding: 0.5rem;
   border-radius: 8px;
-  background: var(--bg-secondary);
+  background: var(--ink-2);
   transition: all 0.2s ease;
 }
 
 .wishlist-preview-item:hover {
-  background: var(--bg-card-hover);
+  background: var(--ink-3);
 }
 
 .wishlist-preview-poster {
@@ -63,7 +63,7 @@
   border-radius: 4px;
   overflow: hidden;
   flex-shrink: 0;
-  background: var(--bg-primary);
+  background: var(--ink);
 }
 
 .wishlist-preview-poster img {
@@ -78,7 +78,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-muted);
+  color: var(--bone-mute);
   font-size: 0.8rem;
 }
 
@@ -92,7 +92,7 @@
 
 .wishlist-preview-title {
   font-size: 0.85rem;
-  color: var(--text-primary);
+  color: var(--bone);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -106,7 +106,7 @@
 }
 
 .wishlist-preview-rating {
-  color: var(--text-secondary);
+  color: var(--bone-dim);
 }
 
 .wishlist-preview-importance {

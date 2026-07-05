@@ -33,7 +33,7 @@
 }
 
 .movie-count {
-  color: var(--text-secondary);
+  color: var(--bone-dim);
   font-size: 0.9rem;
 }
 
@@ -42,10 +42,10 @@
 .empty-state {
   text-align: center;
   padding: 3rem;
-  background: var(--bg-card);
+  background: var(--ink-2);
   border-radius: 12px;
-  color: var(--text-secondary);
-  border: 1px solid var(--border-color);
+  color: var(--bone-dim);
+  border: 1px solid var(--rule);
 }
 
 .empty-state .btn-primary {
@@ -61,7 +61,7 @@
 }
 
 .error-state {
-  color: var(--danger);
+  color: var(--red);
 }
 
 /* Personal Movies Grid */
@@ -74,9 +74,9 @@
 
 /* Personal Movie Card */
 .personal-movie-card {
-  background: var(--bg-card);
+  background: var(--ink-2);
   border-radius: 12px;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--rule);
   display: flex;
   overflow: hidden;
   position: relative;
@@ -85,7 +85,7 @@
 }
 
 .personal-movie-card:hover {
-  border-color: var(--accent);
+  border-color: var(--ember);
   transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
 }
@@ -101,7 +101,7 @@
   right: 0.5rem;
   background: rgba(0, 0, 0, 0.7);
   border: none;
-  color: var(--text-secondary);
+  color: var(--bone-dim);
   width: 24px;
   height: 24px;
   border-radius: 50%;
@@ -120,7 +120,7 @@
 }
 
 .personal-movie-remove-btn:hover {
-  background: var(--danger);
+  background: var(--red);
   color: white;
 }
 
@@ -143,8 +143,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg-secondary);
-  color: var(--text-muted);
+  background: var(--ink-2);
+  color: var(--bone-mute);
   font-size: 0.75rem;
 }
 
@@ -172,7 +172,7 @@
 .personal-movie-meta {
   display: flex;
   gap: 0.75rem;
-  color: var(--text-secondary);
+  color: var(--bone-dim);
   font-size: 0.85rem;
 }
 
@@ -200,25 +200,25 @@
 }
 
 .personal-movie-rating .rating-stars {
-  color: var(--warning);
+  color: var(--gold);
   font-size: 0.9rem;
   letter-spacing: -1px;
 }
 
 .personal-movie-rating .rating-number {
-  color: var(--text-primary);
+  color: var(--bone);
   font-weight: 600;
   font-size: 0.9rem;
 }
 
 .personal-movie-watched {
-  color: var(--text-muted);
+  color: var(--bone-mute);
   font-size: 0.8rem;
   margin-top: auto;
 }
 
 .personal-movie-comment {
-  color: var(--text-secondary);
+  color: var(--bone-dim);
   font-size: 0.85rem;
   font-style: italic;
   line-height: 1.4;
@@ -246,30 +246,30 @@
   width: 100%;
   padding: 0.875rem 1rem;
   font-size: 1rem;
-  background: var(--bg-secondary);
-  color: var(--text-primary);
-  border: 1px solid var(--border-color);
+  background: var(--ink-2);
+  color: var(--bone);
+  border: 1px solid var(--rule);
   border-radius: 8px;
   transition: all 0.2s ease;
 }
 
 .search-input:focus {
   outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-glow);
+  border-color: var(--ember);
+  box-shadow: 0 0 0 3px var(--ember-soft);
 }
 
 .search-loading,
 .no-results {
   text-align: center;
   padding: 2rem;
-  color: var(--text-secondary);
+  color: var(--bone-dim);
 }
 
 .search-results {
   max-height: 400px;
   overflow-y: auto;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--rule);
   border-radius: 8px;
 }
 
@@ -278,7 +278,7 @@
   gap: 1rem;
   padding: 0.75rem;
   cursor: pointer;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--rule);
   transition: background 0.2s ease;
 }
 
@@ -287,7 +287,7 @@
 }
 
 .search-result-item:hover {
-  background: var(--bg-secondary);
+  background: var(--ink-2);
 }
 
 .result-poster {
@@ -310,8 +310,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg-secondary);
-  color: var(--text-muted);
+  background: var(--ink-2);
+  color: var(--bone-mute);
   font-size: 0.6rem;
 }
 
@@ -330,7 +330,7 @@
 .result-meta {
   display: flex;
   gap: 0.75rem;
-  color: var(--text-secondary);
+  color: var(--bone-dim);
   font-size: 0.85rem;
 }
 
@@ -344,7 +344,7 @@
 .back-button {
   background: none;
   border: none;
-  color: var(--accent);
+  color: var(--ember);
   cursor: pointer;
   font-size: 0.9rem;
   padding: 0;
@@ -360,7 +360,7 @@
   display: flex;
   gap: 1rem;
   padding: 1rem;
-  background: var(--bg-secondary);
+  background: var(--ink-2);
   border-radius: 8px;
 }
 
@@ -384,8 +384,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg-card);
-  color: var(--text-muted);
+  background: var(--ink-2);
+  color: var(--bone-mute);
   font-size: 0.7rem;
 }
 
@@ -405,12 +405,12 @@
 .selected-meta {
   display: flex;
   gap: 0.75rem;
-  color: var(--text-secondary);
+  color: var(--bone-dim);
   font-size: 0.9rem;
 }
 
 .selected-genres {
-  color: var(--text-secondary);
+  color: var(--bone-dim);
   font-size: 0.85rem;
 }
 
@@ -423,7 +423,7 @@
 
 .form-label {
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--bone);
   font-size: 0.9rem;
 }
 
@@ -435,7 +435,7 @@
 }
 
 .star-rating .star {
-  color: var(--text-muted);
+  color: var(--bone-mute);
   font-size: 1.25rem;
   transition: color 0.15s;
 }
@@ -445,7 +445,7 @@
 }
 
 .star-rating .star.filled {
-  color: var(--warning);
+  color: var(--gold);
 }
 
 .star-rating.editable .star {
@@ -458,14 +458,14 @@
 
 .star-rating .rating-value {
   margin-left: 0.5rem;
-  color: var(--text-secondary);
+  color: var(--bone-dim);
   font-size: 0.9rem;
 }
 
 .clear-rating {
   background: none;
   border: none;
-  color: var(--text-muted);
+  color: var(--bone-mute);
   font-size: 0.8rem;
   cursor: pointer;
   padding: 0;
@@ -474,7 +474,7 @@
 }
 
 .clear-rating:hover {
-  color: var(--text-secondary);
+  color: var(--bone-dim);
 }
 
 /* Watched Date */
@@ -488,17 +488,17 @@
   flex: 1;
   padding: 0.75rem 1rem;
   font-size: 0.95rem;
-  background: var(--bg-secondary);
-  color: var(--text-primary);
-  border: 1px solid var(--border-color);
+  background: var(--ink-2);
+  color: var(--bone);
+  border: 1px solid var(--rule);
   border-radius: 8px;
   transition: all 0.2s ease;
 }
 
 .date-input:focus {
   outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-glow);
+  border-color: var(--ember);
+  box-shadow: 0 0 0 3px var(--ember-soft);
 }
 
 .today-btn {
@@ -512,9 +512,9 @@
   padding: 0.875rem 1rem;
   font-size: 0.95rem;
   font-family: inherit;
-  background: var(--bg-secondary);
-  color: var(--text-primary);
-  border: 1px solid var(--border-color);
+  background: var(--ink-2);
+  color: var(--bone);
+  border: 1px solid var(--rule);
   border-radius: 8px;
   resize: vertical;
   min-height: 100px;
@@ -523,19 +523,19 @@
 
 .comment-input:focus {
   outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-glow);
+  border-color: var(--ember);
+  box-shadow: 0 0 0 3px var(--ember-soft);
 }
 
 .comment-input::placeholder {
-  color: var(--text-muted);
+  color: var(--bone-mute);
 }
 
 /* Modal Error */
 .modal-error {
   background: rgba(220, 38, 38, 0.1);
   border: 1px solid rgba(220, 38, 38, 0.3);
-  color: var(--danger);
+  color: var(--red);
   padding: 0.75rem 1rem;
   border-radius: 8px;
   font-size: 0.9rem;
@@ -553,22 +553,22 @@
 .filter-select {
   padding: 0.625rem 1rem;
   font-size: 0.9rem;
-  background: var(--bg-card);
-  color: var(--text-primary);
-  border: 1px solid var(--border-color);
+  background: var(--ink-2);
+  color: var(--bone);
+  border: 1px solid var(--rule);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .filter-select:hover {
-  border-color: var(--accent);
+  border-color: var(--ember);
 }
 
 .filter-select:focus {
   outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-glow);
+  border-color: var(--ember);
+  box-shadow: 0 0 0 3px var(--ember-soft);
 }
 
 /* Import Modal */
@@ -582,22 +582,22 @@
 
 .import-instructions {
   margin-bottom: 1.5rem;
-  background: var(--bg-secondary);
+  background: var(--ink-2);
   padding: 1.25rem;
   border-radius: 10px;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--rule);
 }
 
 .import-instructions h3 {
   margin: 0 0 1rem 0;
   font-size: 1rem;
-  color: var(--text-primary);
+  color: var(--bone);
 }
 
 .import-instructions ol {
   margin: 0 0 1rem 0;
   padding-left: 1.5rem;
-  color: var(--text-primary);
+  color: var(--bone);
 }
 
 .import-instructions ol li {
@@ -606,7 +606,7 @@
 }
 
 .import-instructions a {
-  color: var(--accent);
+  color: var(--ember);
   text-decoration: none;
   font-weight: 500;
 }
@@ -623,16 +623,16 @@
 
 .import-instructions .file-list li {
   margin-bottom: 0.35rem;
-  color: var(--text-secondary);
+  color: var(--bone-dim);
   font-size: 0.9rem;
 }
 
 .import-instructions .file-list code {
-  background: var(--bg-card);
+  background: var(--ink-2);
   padding: 0.15rem 0.4rem;
   border-radius: 4px;
   font-size: 0.85rem;
-  color: var(--accent);
+  color: var(--ember);
   font-family: monospace;
 }
 
@@ -651,7 +651,7 @@
 
 .file-label {
   font-weight: 500;
-  color: var(--text-primary);
+  color: var(--bone);
   font-size: 0.9rem;
   display: flex;
   align-items: center;
@@ -660,33 +660,33 @@
 }
 
 .file-label .optional {
-  color: var(--text-muted);
+  color: var(--bone-mute);
   font-weight: 400;
   font-size: 0.85rem;
 }
 
 .file-label .file-selected {
-  color: var(--accent);
+  color: var(--ember);
   font-weight: 400;
   font-size: 0.85rem;
 }
 
 .file-input {
   padding: 0.75rem;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
+  background: var(--ink-2);
+  border: 1px solid var(--rule);
   border-radius: 8px;
-  color: var(--text-primary);
+  color: var(--bone);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .file-input:hover {
-  border-color: var(--accent);
+  border-color: var(--ember);
 }
 
 .file-input::file-selector-button {
-  background: var(--accent);
+  background: var(--ember);
   color: white;
   border: none;
   padding: 0.5rem 1rem;
@@ -698,11 +698,11 @@
 }
 
 .file-input::file-selector-button:hover {
-  background: var(--accent-hover);
+  background: var(--ember-hi);
 }
 
 .import-note {
-  background: var(--bg-secondary);
+  background: var(--ink-2);
   padding: 0.75rem 1rem;
   border-radius: 8px;
   margin-bottom: 1rem;
@@ -710,7 +710,7 @@
 
 .import-note p {
   margin: 0;
-  color: var(--text-secondary);
+  color: var(--bone-dim);
   font-size: 0.85rem;
 }
 
@@ -723,7 +723,7 @@
 .movie-count-preview {
   background: rgba(34, 197, 94, 0.1);
   border: 1px solid rgba(34, 197, 94, 0.3);
-  color: var(--success);
+  color: var(--ember);
   padding: 0.75rem 1rem;
   border-radius: 8px;
   text-align: center;
@@ -737,16 +737,16 @@
   align-items: center;
   gap: 1rem;
   padding: 2rem 1rem;
-  background: var(--bg-secondary);
+  background: var(--ink-2);
   border-radius: 10px;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--rule);
 }
 
 .spinner {
   width: 48px;
   height: 48px;
-  border: 4px solid var(--border-color);
-  border-top-color: var(--accent);
+  border: 4px solid var(--rule);
+  border-top-color: var(--ember);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -758,14 +758,14 @@
 }
 
 .import-status {
-  color: var(--text-primary);
+  color: var(--bone);
   font-weight: 500;
   font-size: 1rem;
   text-align: center;
 }
 
 .import-estimate {
-  color: var(--text-muted);
+  color: var(--bone-mute);
   font-size: 0.85rem;
   text-align: center;
 }
@@ -795,25 +795,25 @@
 }
 
 .result-stat.success .stat-number {
-  color: var(--success);
+  color: var(--ember);
 }
 
 .result-stat.skipped .stat-number {
-  color: var(--warning);
+  color: var(--gold);
 }
 
 .result-stat.total .stat-number {
-  color: var(--text-primary);
+  color: var(--bone);
 }
 
 .stat-label {
-  color: var(--text-secondary);
+  color: var(--bone-dim);
   font-size: 0.85rem;
 }
 
 .failed-list {
   text-align: left;
-  background: var(--bg-secondary);
+  background: var(--ink-2);
   padding: 1rem;
   border-radius: 8px;
   margin-bottom: 1.5rem;
@@ -824,7 +824,7 @@
 .failed-list h4 {
   margin: 0 0 0.75rem 0;
   font-size: 0.9rem;
-  color: var(--text-primary);
+  color: var(--bone);
 }
 
 .failed-list ul {
@@ -833,13 +833,13 @@
 }
 
 .failed-list li {
-  color: var(--text-secondary);
+  color: var(--bone-dim);
   font-size: 0.85rem;
   margin-bottom: 0.35rem;
 }
 
 .failed-list li.more {
-  color: var(--text-muted);
+  color: var(--bone-mute);
   font-style: italic;
 }
 
@@ -925,11 +925,11 @@
   justify-content: center;
   margin-top: 1.5rem;
   padding-top: 1rem;
-  border-top: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
+  border-top: 1px solid var(--rule-strong, rgba(255, 255, 255, 0.1));
 }
 
 .my-movies-links a {
-  color: var(--accent, #7289da);
+  color: var(--ember, #7289da);
   text-decoration: none;
   font-size: 0.9rem;
 }

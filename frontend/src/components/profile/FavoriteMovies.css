@@ -1,8 +1,8 @@
 .favorite-movies {
-  background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
+  background: linear-gradient(135deg, var(--ink-2) 0%, var(--ink-2) 100%);
   border-radius: 12px;
   padding: 1.25rem;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--rule);
   transition: opacity 0.2s ease;
 }
 
@@ -21,28 +21,28 @@
 .favorite-movies-header h3 {
   margin: 0;
   font-size: 1rem;
-  color: var(--text-primary);
+  color: var(--bone);
 }
 
 .edit-favorites-btn {
   padding: 0.35rem 0.75rem;
   font-size: 0.8rem;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
+  background: var(--ink-2);
+  border: 1px solid var(--rule);
   border-radius: 6px;
-  color: var(--text-secondary);
+  color: var(--bone-dim);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .edit-favorites-btn:hover {
-  background: var(--bg-card-hover);
-  color: var(--text-primary);
+  background: var(--ink-3);
+  color: var(--bone);
 }
 
 .edit-favorites-btn.active {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: var(--ember);
+  border-color: var(--ember);
   color: white;
 }
 
@@ -57,8 +57,8 @@
   border-radius: 8px;
   overflow: hidden;
   position: relative;
-  background: var(--bg-secondary);
-  border: 2px solid var(--border-color);
+  background: var(--ink-2);
+  border: 2px solid var(--rule);
   transition: all 0.2s ease;
 }
 
@@ -71,12 +71,12 @@
 }
 
 .favorite-slot.editable:hover {
-  border-color: var(--accent);
+  border-color: var(--ember);
   transform: scale(1.02);
 }
 
 .favorite-slot.editable.empty:hover {
-  background: var(--bg-card-hover);
+  background: var(--ink-3);
 }
 
 .favorite-link {
@@ -139,8 +139,8 @@
   align-items: center;
   justify-content: center;
   font-size: 1.5rem;
-  color: var(--text-muted);
-  background: var(--bg-secondary);
+  color: var(--bone-mute);
+  background: var(--ink-2);
 }
 
 .favorite-info {
@@ -184,13 +184,13 @@
 .slot-number {
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--text-muted);
+  color: var(--bone-mute);
   opacity: 0.3;
 }
 
 .add-hint {
   font-size: 0.7rem;
-  color: var(--accent);
+  color: var(--ember);
   opacity: 0;
   transition: opacity 0.2s ease;
 }

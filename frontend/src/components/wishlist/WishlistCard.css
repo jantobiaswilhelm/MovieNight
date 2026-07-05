@@ -1,11 +1,11 @@
 .wishlist-card {
   display: flex;
-  background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
+  background: linear-gradient(135deg, var(--ink-2) 0%, var(--ink-2) 100%);
   border-radius: 12px;
   overflow: hidden;
   position: relative;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--rule);
 }
 
 .wishlist-card.clickable {
@@ -14,7 +14,7 @@
 
 .wishlist-card.clickable:hover {
   transform: translateY(-4px) scale(1.01);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--accent-glow);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--ember-soft);
   border-color: rgba(229, 9, 20, 0.3);
 }
 
@@ -63,7 +63,7 @@
   width: 100px;
   min-width: 100px;
   height: 150px;
-  background: var(--bg-secondary);
+  background: var(--ink-2);
   flex-shrink: 0;
   overflow: hidden;
 }
@@ -86,7 +86,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-muted);
+  color: var(--bone-mute);
   font-size: 0.75rem;
   text-align: center;
   padding: 0.5rem;
@@ -121,7 +121,7 @@
   display: flex;
   gap: 0.5rem;
   font-size: 0.75rem;
-  color: var(--text-secondary);
+  color: var(--bone-dim);
   flex-wrap: wrap;
 }
 
@@ -141,7 +141,7 @@
 
 .importance-label {
   font-size: 0.75rem;
-  color: var(--text-secondary);
+  color: var(--bone-dim);
 }
 
 .importance-stars {
@@ -174,19 +174,19 @@
   gap: 0.5rem;
   margin-top: 0.25rem;
   padding-top: 0.5rem;
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid var(--rule);
 }
 
 .wishlist-user-avatar {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  border: 2px solid var(--glass-border);
+  border: 2px solid var(--rule-strong);
 }
 
 .wishlist-username {
   font-size: 0.75rem;
-  color: var(--text-secondary);
+  color: var(--bone-dim);
 }
 
 @media (max-width: 768px) {

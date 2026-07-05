@@ -13,12 +13,12 @@
 }
 
 .quick-add-modal {
-  background: var(--bg-card);
+  background: var(--ink-2);
   border-radius: 12px;
   padding: 1.5rem;
   width: 90%;
   max-width: 400px;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--rule);
   animation: slideUp 0.3s ease-out;
 }
 
@@ -48,7 +48,7 @@
 .quick-add-close {
   background: none;
   border: none;
-  color: var(--text-secondary);
+  color: var(--bone-dim);
   font-size: 1.5rem;
   cursor: pointer;
   padding: 0;
@@ -56,7 +56,7 @@
 }
 
 .quick-add-close:hover {
-  color: var(--text-primary);
+  color: var(--bone);
 }
 
 .quick-add-movie {
@@ -64,7 +64,7 @@
   gap: 1rem;
   margin-bottom: 1.5rem;
   padding: 1rem;
-  background: var(--bg-secondary);
+  background: var(--ink-2);
   border-radius: 8px;
 }
 
@@ -88,7 +88,7 @@
 }
 
 .quick-add-year {
-  color: var(--text-secondary);
+  color: var(--bone-dim);
   font-size: 0.9rem;
 }
 
@@ -100,7 +100,7 @@
 .quick-add-importance label {
   display: block;
   margin-bottom: 0.75rem;
-  color: var(--text-secondary);
+  color: var(--bone-dim);
   font-size: 0.9rem;
 }
 
@@ -115,14 +115,14 @@
   background: none;
   border: none;
   font-size: 2rem;
-  color: var(--border-color);
+  color: var(--rule);
   cursor: pointer;
   padding: 0;
   transition: all 0.2s ease;
 }
 
 .importance-star.active {
-  color: var(--warning);
+  color: var(--gold);
 }
 
 .importance-star:hover {
@@ -131,7 +131,7 @@
 
 .importance-label {
   font-size: 0.85rem;
-  color: var(--text-secondary);
+  color: var(--bone-dim);
   font-style: italic;
 }
 
@@ -157,23 +157,23 @@
 }
 
 .quick-add-actions .btn-secondary {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  color: var(--text-primary);
+  background: var(--ink-2);
+  border: 1px solid var(--rule);
+  color: var(--bone);
 }
 
 .quick-add-actions .btn-secondary:hover {
-  background: var(--bg-card-hover);
+  background: var(--ink-3);
 }
 
 .quick-add-actions .btn-primary {
-  background: var(--accent);
+  background: var(--ember);
   border: none;
   color: white;
 }
 
 .quick-add-actions .btn-primary:hover {
-  background: var(--accent-hover);
+  background: var(--ember-hi);
 }
 
 .quick-add-actions button:disabled {

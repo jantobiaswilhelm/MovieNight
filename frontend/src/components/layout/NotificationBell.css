@@ -26,7 +26,7 @@
   position: absolute;
   top: 0;
   right: 0;
-  background: var(--accent);
+  background: var(--ember);
   color: white;
   font-size: 0.7rem;
   font-weight: bold;
@@ -45,8 +45,8 @@
   right: 0;
   width: 320px;
   max-height: 400px;
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
+  background: var(--ink-2);
+  border: 1px solid var(--rule);
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
   overflow: hidden;
@@ -59,7 +59,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 1rem;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--rule);
 }
 
 .notification-header h3 {
@@ -70,7 +70,7 @@
 .mark-all-read {
   background: none;
   border: none;
-  color: var(--accent);
+  color: var(--ember);
   font-size: 0.85rem;
   cursor: pointer;
   padding: 0;
@@ -89,13 +89,13 @@
 .notification-empty {
   padding: 2rem;
   text-align: center;
-  color: var(--text-secondary);
+  color: var(--bone-dim);
   font-size: 0.9rem;
 }
 
 .notification-item {
   position: relative;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--rule);
   transition: all 0.2s ease;
 }
 
@@ -104,7 +104,7 @@
 }
 
 .notification-item:hover {
-  background: var(--bg-secondary);
+  background: var(--ink-2);
 }
 
 .notification-item.unread {
@@ -131,7 +131,7 @@
 }
 
 .notification-message {
-  color: var(--text-secondary);
+  color: var(--bone-dim);
   font-size: 0.85rem;
   line-height: 1.4;
   margin-bottom: 0.25rem;
@@ -142,7 +142,7 @@
 }
 
 .notification-time {
-  color: var(--text-muted);
+  color: var(--bone-mute);
   font-size: 0.75rem;
 }
 
@@ -153,7 +153,7 @@
   transform: translateY(-50%);
   width: 8px;
   height: 8px;
-  background: var(--accent);
+  background: var(--ember);
   border-radius: 50%;
 }
 

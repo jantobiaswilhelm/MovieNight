@@ -1,24 +1,24 @@
 .hot-takes {
-  background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
+  background: linear-gradient(135deg, var(--ink-2) 0%, var(--ink-2) 100%);
   border-radius: 12px;
   padding: 1.25rem;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--rule);
 }
 
 .hot-takes h3 {
   margin: 0 0 0.25rem 0;
   font-size: 1rem;
-  color: var(--text-primary);
+  color: var(--bone);
 }
 
 .hot-takes-subtitle {
   margin: 0 0 1rem 0;
   font-size: 0.75rem;
-  color: var(--text-secondary);
+  color: var(--bone-dim);
 }
 
 .hot-takes-empty {
-  color: var(--text-secondary);
+  color: var(--bone-dim);
   text-align: center;
   padding: 2rem 0;
   font-size: 0.9rem;
@@ -36,14 +36,14 @@
   gap: 0.75rem;
   padding: 0.5rem;
   border-radius: 8px;
-  background: var(--bg-secondary);
+  background: var(--ink-2);
   text-decoration: none;
   color: inherit;
   transition: all 0.2s ease;
 }
 
 .hot-take-item:hover {
-  background: var(--bg-card-hover);
+  background: var(--ink-3);
   transform: translateX(4px);
 }
 
@@ -53,7 +53,7 @@
   border-radius: 4px;
   overflow: hidden;
   flex-shrink: 0;
-  background: var(--bg-primary);
+  background: var(--ink);
 }
 
 .hot-take-poster img {
@@ -68,7 +68,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-muted);
+  color: var(--bone-mute);
   font-size: 1rem;
 }
 
@@ -82,7 +82,7 @@
 
 .hot-take-title {
   font-size: 0.85rem;
-  color: var(--text-primary);
+  color: var(--bone);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -95,11 +95,11 @@
 }
 
 .hot-take-your-score {
-  color: var(--accent);
+  color: var(--ember);
 }
 
 .hot-take-avg-score {
-  color: var(--text-secondary);
+  color: var(--bone-dim);
 }
 
 .hot-take-diff {
@@ -113,7 +113,7 @@
 
 .hot-take-diff.higher {
   background: rgba(34, 197, 94, 0.15);
-  color: var(--success);
+  color: var(--ember);
 }
 
 .hot-take-diff.lower {

@@ -3,7 +3,7 @@
 }
 
 .reschedule-current {
-  color: var(--text-secondary);
+  color: var(--bone-dim);
   font-size: 0.9rem;
   line-height: 1.5;
   margin: 0 0 1.25rem 0;

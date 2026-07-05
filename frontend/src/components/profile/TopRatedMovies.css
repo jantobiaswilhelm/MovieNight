@@ -1,8 +1,8 @@
 .top-rated-movies {
-  background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
+  background: linear-gradient(135deg, var(--ink-2) 0%, var(--ink-2) 100%);
   border-radius: 12px;
   padding: 1.25rem;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--rule);
 }
 
 .top-rated-header {
@@ -15,27 +15,27 @@
 .top-rated-header h3 {
   margin: 0;
   font-size: 1rem;
-  color: var(--text-primary);
+  color: var(--bone);
 }
 
 .top-rated-toggle {
   padding: 0.35rem 0.75rem;
   font-size: 0.8rem;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
+  background: var(--ink-2);
+  border: 1px solid var(--rule);
   border-radius: 6px;
-  color: var(--text-secondary);
+  color: var(--bone-dim);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .top-rated-toggle:hover {
-  background: var(--bg-card-hover);
-  color: var(--text-primary);
+  background: var(--ink-3);
+  color: var(--bone);
 }
 
 .top-rated-empty {
-  color: var(--text-secondary);
+  color: var(--bone-dim);
   text-align: center;
   padding: 2rem 0;
   font-size: 0.9rem;
@@ -56,7 +56,7 @@
   border-radius: 8px;
   overflow: hidden;
   position: relative;
-  background: var(--bg-secondary);
+  background: var(--ink-2);
   border: 2px solid transparent;
   transition: all 0.2s ease;
   text-decoration: none;
@@ -66,7 +66,7 @@
 
 .top-rated-slot:hover {
   transform: scale(1.03);
-  border-color: var(--accent);
+  border-color: var(--ember);
 }
 
 .top-rated-slot:hover .top-rated-poster img {
@@ -96,8 +96,8 @@
   align-items: center;
   justify-content: center;
   font-size: 1.5rem;
-  color: var(--text-muted);
-  background: var(--bg-secondary);
+  color: var(--bone-mute);
+  background: var(--ink-2);
 }
 
 .top-rated-rank-badge {
@@ -113,7 +113,7 @@
   font-weight: 700;
   font-size: 0.75rem;
   background: rgba(0, 0, 0, 0.7);
-  color: var(--text-secondary);
+  color: var(--bone-dim);
   z-index: 2;
 }
 
@@ -139,7 +139,7 @@
   padding: 0.15rem 0.4rem;
   border-radius: 4px;
   background: rgba(0, 0, 0, 0.75);
-  color: var(--accent);
+  color: var(--ember);
   font-weight: 700;
   font-size: 0.7rem;
   z-index: 2;

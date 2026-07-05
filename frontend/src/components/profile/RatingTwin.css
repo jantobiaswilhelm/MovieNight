@@ -1,14 +1,14 @@
 .rating-twin {
-  background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
+  background: linear-gradient(135deg, var(--ink-2) 0%, var(--ink-2) 100%);
   border-radius: 12px;
   padding: 1.25rem;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--rule);
 }
 
 .rating-twin h3 {
   margin: 0 0 1rem 0;
   font-size: 1rem;
-  color: var(--text-primary);
+  color: var(--bone);
 }
 
 .rating-twin-empty {
@@ -18,12 +18,12 @@
 
 .rating-twin-empty p {
   margin: 0;
-  color: var(--text-secondary);
+  color: var(--bone-dim);
 }
 
 .rating-twin-hint {
   font-size: 0.8rem;
-  color: var(--text-muted);
+  color: var(--bone-mute);
   margin-top: 0.5rem;
 }
 
@@ -32,7 +32,7 @@
   align-items: center;
   gap: 1rem;
   padding: 1rem;
-  background: var(--bg-secondary);
+  background: var(--ink-2);
   border-radius: 10px;
   text-decoration: none;
   color: inherit;
@@ -41,8 +41,8 @@
 }
 
 .rating-twin-card:hover {
-  background: var(--bg-card-hover);
-  border-color: var(--accent-glow);
+  background: var(--ink-3);
+  border-color: var(--ember-soft);
   transform: translateY(-2px);
 }
 
@@ -52,8 +52,8 @@
   border-radius: 50%;
   overflow: hidden;
   flex-shrink: 0;
-  background: var(--bg-primary);
-  border: 2px solid var(--accent);
+  background: var(--ink);
+  border: 2px solid var(--ember);
 }
 
 .rating-twin-avatar img {
@@ -70,8 +70,8 @@
   justify-content: center;
   font-size: 1.25rem;
   font-weight: 600;
-  color: var(--accent);
-  background: var(--bg-secondary);
+  color: var(--ember);
+  background: var(--ink-2);
 }
 
 .rating-twin-info {
@@ -84,12 +84,12 @@
 .rating-twin-name {
   font-size: 1rem;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--bone);
 }
 
 .rating-twin-shared {
   font-size: 0.8rem;
-  color: var(--text-secondary);
+  color: var(--bone-dim);
 }
 
 .rating-twin-match {
@@ -104,12 +104,12 @@
 .match-percent {
   font-size: 1.25rem;
   font-weight: 700;
-  color: var(--accent);
+  color: var(--ember);
 }
 
 .match-label {
   font-size: 0.65rem;
-  color: var(--text-secondary);
+  color: var(--bone-dim);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -117,7 +117,7 @@
 .rating-twin-description {
   margin: 0.75rem 0 0 0;
   font-size: 0.75rem;
-  color: var(--text-muted);
+  color: var(--bone-mute);
   text-align: center;
 }
 

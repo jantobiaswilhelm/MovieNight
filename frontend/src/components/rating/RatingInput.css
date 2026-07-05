@@ -3,9 +3,9 @@
   flex-direction: column;
   gap: 1rem;
   padding: 1.5rem;
-  background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
+  background: linear-gradient(135deg, var(--ink-2) 0%, var(--ink-2) 100%);
   border-radius: 12px;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--rule);
 }
 
 .rating-selector {
@@ -15,34 +15,34 @@
 }
 
 .rating-selector label {
-  color: var(--text-secondary);
+  color: var(--bone-dim);
 }
 
 .rating-selector select {
   padding: 0.5rem 1rem;
   border-radius: 8px;
-  border: 1px solid var(--border-color);
-  background: var(--bg-secondary);
-  color: var(--text-primary);
+  border: 1px solid var(--rule);
+  background: var(--ink-2);
+  color: var(--bone);
   font-size: 1rem;
   transition: all 0.2s ease;
   cursor: pointer;
 }
 
 .rating-selector select:hover {
-  border-color: var(--accent);
+  border-color: var(--ember);
 }
 
 .rating-selector select:focus {
   outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-glow);
+  border-color: var(--ember);
+  box-shadow: 0 0 0 3px var(--ember-soft);
 }
 
 .rating-display {
   font-size: 1.5rem;
   font-weight: bold;
-  color: var(--warning);
+  color: var(--gold);
 }
 
 .rating-comment {
@@ -52,15 +52,15 @@
 }
 
 .rating-comment label {
-  color: var(--text-secondary);
+  color: var(--bone-dim);
 }
 
 .rating-comment textarea {
   padding: 0.75rem 1rem;
   border-radius: 8px;
-  border: 1px solid var(--border-color);
-  background: var(--bg-secondary);
-  color: var(--text-primary);
+  border: 1px solid var(--rule);
+  background: var(--ink-2);
+  color: var(--bone);
   font-size: 0.95rem;
   font-family: inherit;
   resize: vertical;
@@ -69,22 +69,22 @@
 }
 
 .rating-comment textarea:hover {
-  border-color: var(--accent);
+  border-color: var(--ember);
 }
 
 .rating-comment textarea:focus {
   outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-glow);
+  border-color: var(--ember);
+  box-shadow: 0 0 0 3px var(--ember-soft);
 }
 
 .rating-comment textarea::placeholder {
-  color: var(--text-muted);
+  color: var(--bone-mute);
 }
 
 .comment-counter {
   font-size: 0.8rem;
-  color: var(--text-muted);
+  color: var(--bone-mute);
   text-align: right;
 }
 

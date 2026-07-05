@@ -1,12 +1,12 @@
 .hero {
   position: relative;
-  background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
+  background: linear-gradient(135deg, var(--ink-2) 0%, var(--ink-2) 100%);
   border-radius: 16px;
   overflow: hidden;
   margin-bottom: 1rem;
   min-height: 320px;
   animation: fadeIn 0.5s ease-out;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--rule);
 }
 
 .hero--compact {
@@ -69,13 +69,13 @@
 }
 
 .hero-badge--upcoming {
-  background: linear-gradient(135deg, var(--accent) 0%, #be123c 100%);
+  background: linear-gradient(135deg, var(--ember) 0%, #be123c 100%);
   color: white;
-  box-shadow: 0 4px 15px var(--accent-glow);
+  box-shadow: 0 4px 15px var(--ember-soft);
 }
 
 .hero-badge--featured {
-  background: linear-gradient(135deg, var(--warning) 0%, #f59e0b 100%);
+  background: linear-gradient(135deg, var(--gold) 0%, #f59e0b 100%);
   color: #000;
   box-shadow: 0 4px 15px rgba(234, 179, 8, 0.4);
 }
@@ -89,7 +89,7 @@
 
 .hero-date {
   font-size: 1.1rem;
-  color: var(--text-secondary);
+  color: var(--bone-dim);
   margin: 0;
 }
 
@@ -101,12 +101,12 @@
 }
 
 .hero-votes {
-  color: var(--text-secondary);
+  color: var(--bone-dim);
   font-size: 0.9rem;
 }
 
 .hero-announcer {
-  color: var(--text-secondary);
+  color: var(--bone-dim);
   font-size: 0.9rem;
   margin: 0;
 }
@@ -116,21 +116,21 @@
   width: fit-content;
   margin-top: 1rem;
   padding: 12px 28px;
-  background: var(--accent);
+  background: var(--ember);
   color: white;
   border-radius: 8px;
   font-weight: 600;
   font-size: 1rem;
   text-decoration: none;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px var(--accent-glow);
+  box-shadow: 0 4px 15px var(--ember-soft);
 }
 
 .hero-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px var(--accent-glow);
+  box-shadow: 0 8px 25px var(--ember-soft);
   text-decoration: none;
-  background: var(--accent-hover);
+  background: var(--ember-hi);
 }
 
 .hero-poster {
@@ -141,7 +141,7 @@
   overflow: hidden;
   box-shadow: var(--shadow-lg);
   transition: transform 0.4s ease;
-  border: 1px solid var(--glass-border);
+  border: 1px solid var(--rule-strong);
 }
 
 .hero:hover .hero-poster {

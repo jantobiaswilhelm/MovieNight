@@ -6,10 +6,10 @@
   display: flex;
   gap: 1rem;
   padding: 1rem;
-  background: var(--bg-secondary);
+  background: var(--ink-2);
   border-radius: 8px;
   margin-bottom: 1.25rem;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--rule);
 }
 
 .preview-poster {
@@ -17,7 +17,7 @@
   height: 90px;
   object-fit: cover;
   border-radius: 4px;
-  border: 1px solid var(--glass-border);
+  border: 1px solid var(--rule-strong);
 }
 
 .preview-info {
@@ -32,7 +32,7 @@
 }
 
 .preview-year {
-  color: var(--text-secondary);
+  color: var(--bone-dim);
   font-size: 0.85rem;
 }
 
@@ -51,23 +51,23 @@
 .form-group label {
   font-size: 0.9rem;
   font-weight: 500;
-  color: var(--text-secondary);
+  color: var(--bone-dim);
 }
 
 .form-group input {
   padding: 0.75rem;
   font-size: 1rem;
-  background: var(--bg-secondary);
-  color: var(--text-primary);
-  border: 1px solid var(--border-color);
+  background: var(--ink-2);
+  color: var(--bone);
+  border: 1px solid var(--rule);
   border-radius: 8px;
   transition: all 0.2s ease;
 }
 
 .form-group input:focus {
   outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-glow);
+  border-color: var(--ember);
+  box-shadow: 0 0 0 3px var(--ember-soft);
 }
 
 .form-group input[type="date"],
@@ -77,7 +77,7 @@
 
 .form-error {
   background: rgba(239, 68, 68, 0.1);
-  color: var(--danger);
+  color: var(--red);
   padding: 0.75rem;
   border-radius: 8px;
   font-size: 0.9rem;
@@ -85,7 +85,7 @@
 }
 
 .announce-note {
-  color: var(--text-secondary);
+  color: var(--bone-dim);
   font-size: 0.85rem;
   text-align: center;
   margin: 0;
