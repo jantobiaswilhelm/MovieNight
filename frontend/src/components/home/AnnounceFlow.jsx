@@ -2,6 +2,10 @@ import { useState } from 'react';
 import { searchTMDB, getTMDBMovie, announceMovie } from '../../api/client';
 import { Icon, Chip } from '../ui';
 
+/** Format a Date as YYYY-MM-DD in the browser's local timezone (never UTC). */
+const localDateStr = (d) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
 /**
  * Inline Announce wizard — search → preview+schedule → success.
  * Designed to live in the Home hero sidebar but works anywhere.
@@ -17,7 +21,7 @@ const AnnounceFlow = ({ onAnnounced }) => {
     // Default to next Friday at 20:30
     const d = new Date();
     d.setDate(d.getDate() + ((5 + 7 - d.getDay()) % 7 || 7));
-    return d.toISOString().split('T')[0];
+    return localDateStr(d);
   });
   const [time, setTime] = useState('20:30');
   const [announcing, setAnnouncing] = useState(false);
@@ -222,7 +226,7 @@ const AnnounceFlow = ({ onAnnounced }) => {
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  min={new Date().toISOString().split('T')[0]}
+                  min={localDateStr(new Date())}
                   required
                 />
               </label>

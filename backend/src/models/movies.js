@@ -109,6 +109,15 @@ export const createPendingAnnouncement = async (data) => {
      RETURNING *`,
     [data.guildId, data.channelId, data.userId, data.wishlistId || null, data.title, data.imageUrl, data.backdropUrl, data.description, data.tmdbId, data.imdbId, data.tmdbRating, data.genres, data.runtime, data.releaseYear, data.trailerUrl, data.scheduledAt, data.isTest || false]
   );
+
+  // Wake the bot's announcement listener so it posts immediately. Non-fatal:
+  // if this fails, the bot's polling backstop still picks the row up.
+  try {
+    await pool.query('NOTIFY movie_announcement');
+  } catch (err) {
+    console.error('Failed to send movie_announcement NOTIFY:', err.message);
+  }
+
   return result.rows[0];
 };
 

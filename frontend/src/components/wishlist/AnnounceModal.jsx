@@ -2,6 +2,10 @@ import { useState } from 'react';
 import { announceFromWishlist } from '../../api/client';
 import './AnnounceModal.css';
 
+/** Format a Date as YYYY-MM-DD in the browser's local timezone (never UTC). */
+const localDateStr = (d) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
 const AnnounceModal = ({ item, isOpen, onClose, onAnnounced }) => {
   const [date, setDate] = useState('');
   const [time, setTime] = useState('20:00');
@@ -10,8 +14,8 @@ const AnnounceModal = ({ item, isOpen, onClose, onAnnounced }) => {
 
   if (!isOpen || !item) return null;
 
-  // Get today's date in YYYY-MM-DD format for min attribute
-  const today = new Date().toISOString().split('T')[0];
+  // Get today's date in YYYY-MM-DD format for min attribute (local, not UTC)
+  const today = localDateStr(new Date());
 
   const handleSubmit = async (e) => {
     e.preventDefault();

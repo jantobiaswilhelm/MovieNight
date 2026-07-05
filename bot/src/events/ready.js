@@ -1,6 +1,6 @@
 import { Events } from 'discord.js';
 import { startMovieStarterJob } from '../jobs/movieStarter.js';
-import { startAnnouncementProcessorJob } from '../jobs/announcementProcessor.js';
+import { startAnnouncementProcessorJob, startAnnouncementListener } from '../jobs/announcementProcessor.js';
 import { startRatingNotifierJob } from '../jobs/ratingNotifier.js';
 import { startChannelSyncJob } from '../jobs/channelSync.js';
 import {
@@ -74,8 +74,12 @@ export const execute = async (client) => {
   // Start the movie starter scheduled job
   startMovieStarterJob(client);
 
-  // Start the announcement processor job (for web-created announcements)
+  // Start the announcement processor job (backstop poll for web-created announcements)
   startAnnouncementProcessorJob(client);
+
+  // Listen for instant NOTIFY signals from the backend so web announcements
+  // post immediately instead of waiting for the next poll.
+  startAnnouncementListener(client);
 
   // Start the rating notifier job (sends rating prompt after runtime-10 min)
   startRatingNotifierJob(client);
