@@ -1,6 +1,8 @@
 import { useState, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
+import { useConfirm } from '../context/ConfirmContext';
 import { getMovies, deleteMovie } from '../api/client';
 import { useFetch } from '../hooks';
 import { formatDate, formatMonth, formatMonthYear } from '../utils/helpers';
@@ -20,6 +22,8 @@ const SORT_OPTIONS = [
 
 const MoviesPage = () => {
   const { isAdmin, user } = useAuth();
+  const { showError } = useToast();
+  const confirm = useConfirm();
   const [searchQuery, setSearchQuery] = useState('');
   const [reschedulingMovie, setReschedulingMovie] = useState(null);
   const [selectedMonth, setSelectedMonth] = useState('');
@@ -40,7 +44,7 @@ const MoviesPage = () => {
     e.preventDefault();
     e.stopPropagation();
 
-    if (!confirm(`Are you sure you want to delete "${movieTitle}"? This will also delete all ratings.`)) {
+    if (!(await confirm({ title: 'Delete movie?', message: `Delete "${movieTitle}"? This also deletes all its ratings.`, confirmLabel: 'Delete', danger: true }))) {
       return;
     }
 
@@ -49,11 +53,11 @@ const MoviesPage = () => {
       await deleteMovie(movieId);
       setMovies((prev) => prev.filter(m => m.id !== movieId));
     } catch (err) {
-      alert('Failed to delete movie: ' + err.message);
+      showError('Failed to delete movie: ' + err.message);
     } finally {
       setDeleting(null);
     }
-  }, [setMovies]);
+  }, [setMovies, confirm, showError]);
 
   const availableMonths = useMemo(() => {
     const months = new Set();

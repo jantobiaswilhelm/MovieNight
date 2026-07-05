@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
+import { useConfirm } from '../../context/ConfirmContext';
 import { getAvatarUrl } from '../../utils/helpers';
 import {
   getActiveVoting,
@@ -13,13 +15,19 @@ import {
   getTMDBMovie
 } from '../../api/client';
 
+/** Format a Date as YYYY-MM-DD in the browser's local timezone (never UTC). */
+const localDateStr = (d) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
 const VotingSection = ({ voting, setVoting, loading, onDataRefresh }) => {
   const { isAuthenticated, isAdmin, login } = useAuth();
+  const { showError } = useToast();
+  const confirm = useConfirm();
 
   // Voting management state
   const [showStartVoteModal, setShowStartVoteModal] = useState(false);
   const [showAddMovieModal, setShowAddMovieModal] = useState(false);
-  const [voteDate, setVoteDate] = useState(new Date().toISOString().split('T')[0]);
+  const [voteDate, setVoteDate] = useState(localDateStr(new Date()));
   const [voteTime, setVoteTime] = useState('20:00');
   const [creatingVote, setCreatingVote] = useState(false);
   const [endingVote, setEndingVote] = useState(false);
@@ -56,7 +64,12 @@ const VotingSection = ({ voting, setVoting, loading, onDataRefresh }) => {
 
   const handleDeleteSuggestion = async (e, suggestionId, suggestionTitle) => {
     e.stopPropagation();
-    if (!confirm(`Delete suggestion "${suggestionTitle}"?`)) return;
+    if (!(await confirm({
+      title: 'Delete suggestion?',
+      message: `Remove "${suggestionTitle}" from the vote?`,
+      confirmLabel: 'Delete',
+      danger: true
+    }))) return;
 
     setDeletingSuggestion(suggestionId);
     try {
@@ -65,7 +78,7 @@ const VotingSection = ({ voting, setVoting, loading, onDataRefresh }) => {
       setVoting(votingData);
     } catch (err) {
       console.error('Error deleting suggestion:', err);
-      alert('Failed to delete suggestion');
+      showError('Failed to delete suggestion');
     } finally {
       setDeletingSuggestion(null);
     }
@@ -74,7 +87,7 @@ const VotingSection = ({ voting, setVoting, loading, onDataRefresh }) => {
   const handleStartVote = async (e) => {
     e.preventDefault();
     if (!voteDate) {
-      alert('Please select a date');
+      showError('Please select a date');
       return;
     }
 
@@ -89,7 +102,7 @@ const VotingSection = ({ voting, setVoting, loading, onDataRefresh }) => {
       setVoteTime('20:00');
     } catch (err) {
       console.error('Error creating vote:', err);
-      alert('Failed to create vote: ' + err.message);
+      showError('Failed to create vote: ' + err.message);
     } finally {
       setCreatingVote(false);
     }
@@ -129,7 +142,7 @@ const VotingSection = ({ voting, setVoting, loading, onDataRefresh }) => {
       setVoting(null);
     } catch (err) {
       console.error('Error canceling vote:', err);
-      alert('Failed to cancel vote: ' + err.message);
+      showError('Failed to cancel vote: ' + err.message);
     } finally {
       setEndingVote(false);
     }
@@ -145,7 +158,7 @@ const VotingSection = ({ voting, setVoting, loading, onDataRefresh }) => {
       setSearchResults(results);
     } catch (err) {
       console.error('Error searching movies:', err);
-      alert('Failed to search movies');
+      showError('Failed to search movies');
     } finally {
       setSearching(false);
     }
@@ -179,7 +192,7 @@ const VotingSection = ({ voting, setVoting, loading, onDataRefresh }) => {
       setSearchResults([]);
     } catch (err) {
       console.error('Error adding movie:', err);
-      alert('Failed to add movie: ' + err.message);
+      showError('Failed to add movie: ' + err.message);
     } finally {
       setAddingMovie(null);
     }
@@ -365,7 +378,7 @@ const VotingSection = ({ voting, setVoting, loading, onDataRefresh }) => {
                       type="date"
                       value={voteDate}
                       onChange={(e) => setVoteDate(e.target.value)}
-                      min={new Date().toISOString().split('T')[0]}
+                      min={localDateStr(new Date())}
                       required
                     />
                   </div>

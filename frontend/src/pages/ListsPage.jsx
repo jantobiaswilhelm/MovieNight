@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useConfirm } from '../context/ConfirmContext';
 import {
   getMyLists, getPublicLists, createList, getList, deleteList,
   removeListItem, searchTMDB, addListItem
@@ -12,6 +13,7 @@ const ListsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+  const confirm = useConfirm();
   const [myLists, setMyLists] = useState([]);
   const [publicLists, setPublicLists] = useState([]);
   const [currentList, setCurrentList] = useState(null);
@@ -78,7 +80,7 @@ const ListsPage = () => {
   };
 
   const handleDeleteList = async () => {
-    if (!confirm('Are you sure you want to delete this list?')) return;
+    if (!(await confirm({ title: 'Delete list?', message: 'Are you sure you want to delete this list?', confirmLabel: 'Delete', danger: true }))) return;
     try {
       await deleteList(currentList.id);
       navigate('/lists');

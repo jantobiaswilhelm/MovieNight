@@ -1,0 +1,11 @@
+.ui-confirm-msg {
+  color: var(--bone-dim);
+  line-height: 1.5;
+  margin: 0 0 var(--s-4);
+}
+
+.ui-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--s-2);
+}

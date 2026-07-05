@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useToast } from '../../context/ToastContext';
+import { useConfirm } from '../../context/ConfirmContext';
 import {
   getGuildChannels,
   getGuildSettings,
@@ -7,6 +9,8 @@ import {
 } from '../../api/client';
 
 const AdminSettingsPanel = ({ onDataRefresh }) => {
+  const { showError } = useToast();
+  const confirm = useConfirm();
   const [showAdminSettings, setShowAdminSettings] = useState(false);
   const [testMode, setTestMode] = useState(false);
   const [testChannelId, setTestChannelId] = useState('');
@@ -47,14 +51,14 @@ const AdminSettingsPanel = ({ onDataRefresh }) => {
       });
     } catch (err) {
       console.error('Error saving settings:', err);
-      alert('Failed to save settings');
+      showError('Failed to save settings');
     } finally {
       setSavingSettings(false);
     }
   };
 
   const handleDeleteTestMovies = async () => {
-    if (!confirm(`Delete all ${testMovieCount} test movies? This cannot be undone.`)) return;
+    if (!(await confirm({ title: 'Delete test movies?', message: `Delete all ${testMovieCount} test movies? This cannot be undone.`, confirmLabel: 'Delete', danger: true }))) return;
 
     setDeletingTestMovies(true);
     try {
@@ -63,7 +67,7 @@ const AdminSettingsPanel = ({ onDataRefresh }) => {
       if (onDataRefresh) onDataRefresh();
     } catch (err) {
       console.error('Error deleting test movies:', err);
-      alert('Failed to delete test movies');
+      showError('Failed to delete test movies');
     } finally {
       setDeletingTestMovies(false);
     }

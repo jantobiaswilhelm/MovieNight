@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useConfirm } from '../../context/ConfirmContext';
 import { removeFavoriteMovie } from '../../api/client';
 import FavoriteMoviePicker from './FavoriteMoviePicker';
 import './FavoriteMovies.css';
@@ -8,6 +9,7 @@ const FavoriteMovies = ({ favorites, onUpdate, isOwner = true }) => {
   const [editMode, setEditMode] = useState(false);
   const [pickerPosition, setPickerPosition] = useState(null);
   const [isUpdating, setIsUpdating] = useState(false);
+  const confirm = useConfirm();
 
   // Create a map for quick lookup
   const favoritesByPosition = {};
@@ -24,7 +26,7 @@ const FavoriteMovies = ({ favorites, onUpdate, isOwner = true }) => {
 
   const handleRemove = async (position, e) => {
     e.stopPropagation();
-    if (!window.confirm('Remove this movie from your favorites?')) return;
+    if (!(await confirm({ title: 'Remove favorite?', message: 'Remove this movie from your favorites?', confirmLabel: 'Remove', danger: true }))) return;
 
     setIsUpdating(true);
     try {

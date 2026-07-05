@@ -3,6 +3,8 @@ import { Routes, Route } from 'react-router-dom';
 import { Header } from './components/layout';
 import { ErrorBoundary } from './components/common';
 import { NotificationProvider } from './context/NotificationContext';
+import { ToastProvider } from './context/ToastContext';
+import { ConfirmProvider } from './context/ConfirmContext';
 import './App.css';
 
 const Home = lazy(() => import('./pages/Home'));
@@ -22,6 +24,8 @@ const ActivityFeed = lazy(() => import('./pages/ActivityFeed'));
 function App() {
   return (
     <NotificationProvider>
+      <ToastProvider>
+      <ConfirmProvider>
       <div className="app">
         <Header />
         <main className="container">
@@ -55,6 +59,8 @@ function App() {
           </div>
         </footer>
       </div>
+      </ConfirmProvider>
+      </ToastProvider>
     </NotificationProvider>
   );
 }

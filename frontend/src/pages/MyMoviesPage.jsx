@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useConfirm } from '../context/ConfirmContext';
 import { getPersonalMovies, addPersonalMovie, updatePersonalMovie, deletePersonalMovie, searchTMDB, getTMDBMovie, importLetterboxd } from '../api/client';
 import { useFetch, useModal } from '../hooks';
 import { formatDate } from '../utils/helpers';
@@ -39,9 +40,10 @@ const StarRating = ({ value, editable, onChange, size = 'normal' }) => {
 
 const PersonalMovieCard = ({ movie, onEdit, onDelete }) => {
   const [isDeleting, setIsDeleting] = useState(false);
+  const confirm = useConfirm();
 
   const handleDelete = async () => {
-    if (!window.confirm(`Remove "${movie.title}" from your movies?`)) return;
+    if (!(await confirm({ title: 'Remove movie?', message: `Remove "${movie.title}" from your movies?`, confirmLabel: 'Remove', danger: true }))) return;
 
     setIsDeleting(true);
     try {

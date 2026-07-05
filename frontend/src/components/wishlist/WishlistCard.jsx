@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useConfirm } from '../../context/ConfirmContext';
 import { updateWishlistImportance, removeFromWishlist } from '../../api/client';
 import { getAvatarUrl } from '../../utils/helpers';
 import './WishlistCard.css';
@@ -35,6 +36,7 @@ const ImportanceStars = ({ value, editable, onChange }) => {
 
 const WishlistCard = ({ item, isOwner, showUser, onUpdate, onRemove, onClick }) => {
   const [isUpdating, setIsUpdating] = useState(false);
+  const confirm = useConfirm();
 
   const handleCardClick = (e) => {
     // Don't trigger if clicking on interactive elements
@@ -63,7 +65,7 @@ const WishlistCard = ({ item, isOwner, showUser, onUpdate, onRemove, onClick }) 
   };
 
   const handleRemove = async () => {
-    if (!window.confirm(`Remove "${item.title}" from wishlist?`)) return;
+    if (!(await confirm({ title: 'Remove from wishlist?', message: `Remove "${item.title}" from wishlist?`, confirmLabel: 'Remove', danger: true }))) return;
 
     setIsUpdating(true);
     try {

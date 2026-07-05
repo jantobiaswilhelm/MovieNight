@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
+import { useConfirm } from '../context/ConfirmContext';
 import { getMovie, submitRating, getMyRating, deleteMovie, getSimilarMovies, toggleAttendance, getMovieCredits } from '../api/client';
 import { sanitizeUrl, sanitizeImdbId, sanitizeImageUrl } from '../utils/sanitizeUrl';
 import { formatDate, formatRuntime, getLanguageName, getAvatarUrl } from '../utils/helpers';
@@ -15,6 +17,8 @@ const Movie = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, isAuthenticated, isAdmin, login } = useAuth();
+  const { showError } = useToast();
+  const confirm = useConfirm();
   const [movie, setMovie] = useState(null);
   const [myRating, setMyRating] = useState(null);
   const [myComment, setMyComment] = useState(null);
@@ -135,7 +139,7 @@ const Movie = () => {
   };
 
   const handleDelete = async () => {
-    if (!confirm(`Are you sure you want to delete "${movie.title}"? This will also delete all ratings.`)) {
+    if (!(await confirm({ title: 'Delete movie?', message: `Delete "${movie.title}"? This also deletes all its ratings.`, confirmLabel: 'Delete', danger: true }))) {
       return;
     }
     setDeleting(true);
@@ -143,7 +147,7 @@ const Movie = () => {
       await deleteMovie(id);
       navigate('/movies');
     } catch (err) {
-      alert('Failed to delete movie: ' + err.message);
+      showError('Failed to delete movie: ' + err.message);
       setDeleting(false);
     }
   };
