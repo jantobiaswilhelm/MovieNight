@@ -9,6 +9,31 @@ const MOVIE_NIGHT_ROLE_ID = process.env.MOVIE_NIGHT_ROLE_ID;
 
 const CRON_EVERY_MINUTE = '* * * * *';
 
+// Delay before the one-off voice snapshot. By ~10 min in, the audience has
+// settled, so a single pass captures everyone actually watching.
+const VOICE_SNAPSHOT_DELAY_MS = 10 * 60 * 1000;
+
+// Mark everyone currently in a non-AFK voice channel as present for the movie.
+// openVoicePresence is idempotent per open session, so this can't double-count
+// against the live join/leave tracking or a bot-restart reconcile.
+function scheduleVoicePresenceSnapshot(client, movieId, guildId) {
+  setTimeout(async () => {
+    try {
+      const guild = client.guilds.cache.get(guildId);
+      if (!guild) return;
+      const now = new Date();
+      for (const [, vs] of guild.voiceStates.cache) {
+        if (!vs.channelId || vs.channelId === guild.afkChannelId) continue;
+        if (vs.member?.user?.bot) continue;
+        await openVoicePresence(movieId, vs.id, now);
+      }
+      logger.info(`Voice snapshot taken for movie ${movieId}`);
+    } catch (err) {
+      logger.error(`Failed voice snapshot for movie ${movieId}`, err);
+    }
+  }, VOICE_SNAPSHOT_DELAY_MS);
+}
+
 export const startMovieStarterJob = (client) => {
   cron.schedule(CRON_EVERY_MINUTE, async () => {
     try {
@@ -21,24 +46,11 @@ export const startMovieStarterJob = (client) => {
           const started = await startMovieNight(movie.id);
           if (!started) continue;
 
-          // Snapshot anyone already sitting in voice at start. The voiceStateUpdate
-          // handler only fires on join/leave, so people already in the call when the
-          // movie begins would otherwise never be recorded — and get wrongly flagged
-          // "wasn't in the call". Counts any non-AFK voice channel, matching the
-          // live tracking. openVoicePresence is idempotent, so a concurrent join is safe.
-          try {
-            const guild = client.guilds.cache.get(movie.guild_id);
-            if (guild) {
-              const now = new Date();
-              for (const [, vs] of guild.voiceStates.cache) {
-                if (!vs.channelId || vs.channelId === guild.afkChannelId) continue;
-                if (vs.member?.user?.bot) continue;
-                await openVoicePresence(movie.id, vs.id, now);
-              }
-            }
-          } catch (err) {
-            logger.error(`Failed to snapshot voice presence for movie ${movie.id}`, err);
-          }
+          // Snapshot who's in voice ~10 min after start, so both people already in
+          // the call at start AND anyone who trickled in during the first 10 minutes
+          // get counted (the live voiceStateUpdate handler only fires on join/leave,
+          // so it misses people already seated before the movie began).
+          scheduleVoicePresenceSnapshot(client, movie.id, movie.guild_id);
 
           // Get the channel to send the announcement
           const channel = await client.channels.fetch(movie.channel_id);
