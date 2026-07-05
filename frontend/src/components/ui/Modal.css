@@ -1,0 +1,64 @@
+.ui-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: var(--s-4);
+  background: rgba(10, 8, 6, 0.72);
+  overflow-y: auto;
+}
+
+.ui-modal {
+  width: 100%;
+  max-width: 480px;
+  max-height: calc(100vh - var(--s-7));
+  overflow-y: auto;
+  background: var(--ink-2);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--r-3, 10px);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+}
+
+.ui-modal-sm { max-width: 400px; }
+.ui-modal-md { max-width: 480px; }
+.ui-modal-lg { max-width: 640px; }
+
+.ui-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-4) var(--s-4) var(--s-3);
+  border-bottom: 1px solid var(--rule);
+}
+
+.ui-modal-title {
+  margin: 0;
+  font-family: var(--font-display, inherit);
+  font-size: 1.25rem;
+  color: var(--bone);
+}
+
+.ui-modal-close {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--rule);
+  border-radius: var(--r-full, 999px);
+  background: transparent;
+  color: var(--bone-dim);
+  cursor: pointer;
+  transition:
+    color var(--dur-1) var(--ease-out),
+    border-color var(--dur-1) var(--ease-out);
+}
+.ui-modal-close:hover {
+  color: var(--ember);
+  border-color: var(--ember);
+}
+
+.ui-modal-body {
+  padding: var(--s-4);
+}

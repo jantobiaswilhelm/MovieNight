@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { rescheduleMovie } from '../../api/client';
 import { formatDate } from '../../utils/helpers';
+import { Modal } from '../ui';
 import './RescheduleModal.css';
 
 /** Format a Date as YYYY-MM-DD in the browser's local timezone (never UTC). */
@@ -56,55 +57,46 @@ const RescheduleModal = ({ movie, isOpen, onClose, onRescheduled }) => {
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content reschedule-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>Reschedule</h2>
-          <button className="modal-close" onClick={onClose}>×</button>
+    <Modal isOpen={isOpen} onClose={onClose} title="Reschedule" size="sm">
+      <p className="reschedule-current">
+        <strong>{movie.title}</strong> is currently set for {formatDate(movie.scheduled_at, 'long')}.
+      </p>
+
+      <form onSubmit={handleSubmit} className="announce-form">
+        <div className="form-group">
+          <label htmlFor="rs-date">New date</label>
+          <input
+            type="date"
+            id="rs-date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            min={today}
+            required
+          />
         </div>
 
-        <div className="modal-body">
-          <p className="reschedule-current">
-            <strong>{movie.title}</strong> is currently set for {formatDate(movie.scheduled_at, 'long')}.
-          </p>
-
-          <form onSubmit={handleSubmit} className="announce-form">
-            <div className="form-group">
-              <label htmlFor="rs-date">New date</label>
-              <input
-                type="date"
-                id="rs-date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                min={today}
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="rs-time">New time</label>
-              <input
-                type="time"
-                id="rs-time"
-                value={time}
-                onChange={(e) => setTime(e.target.value)}
-                required
-              />
-            </div>
-
-            {error && <div className="form-error">{error}</div>}
-
-            <p className="announce-note">
-              Updates the time everywhere and posts a note in the Discord channel.
-            </p>
-
-            <button type="submit" className="btn-primary submit-btn" disabled={isSubmitting}>
-              {isSubmitting ? 'Rescheduling…' : 'Reschedule'}
-            </button>
-          </form>
+        <div className="form-group">
+          <label htmlFor="rs-time">New time</label>
+          <input
+            type="time"
+            id="rs-time"
+            value={time}
+            onChange={(e) => setTime(e.target.value)}
+            required
+          />
         </div>
-      </div>
-    </div>
+
+        {error && <div className="form-error">{error}</div>}
+
+        <p className="announce-note">
+          Updates the time everywhere and posts a note in the Discord channel.
+        </p>
+
+        <button type="submit" className="btn-primary submit-btn" disabled={isSubmitting}>
+          {isSubmitting ? 'Rescheduling…' : 'Reschedule'}
+        </button>
+      </form>
+    </Modal>
   );
 };
 
