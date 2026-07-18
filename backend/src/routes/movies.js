@@ -187,12 +187,13 @@ router.get('/:id', validateIntParams('id'), optionalAuth, async (req, res) => {
       return res.status(404).json({ error: 'Movie not found' });
     }
 
-    const [ratings, attendees] = await Promise.all([
-      db.getRatingsForMovie(parseInt(id)),
-      db.getAttendees(parseInt(id))
+    const [ratings, attendees, screenings] = await Promise.all([
+      db.getCombinedRatingsForMovie(parseInt(id)),
+      db.getAttendees(parseInt(id)),
+      db.getMovieScreenings(parseInt(id))
     ]);
 
-    // Calculate average
+    // Average over the combined ratings (latest score per person)
     const avgRating = ratings.length > 0
       ? ratings.reduce((sum, r) => sum + parseFloat(r.score), 0) / ratings.length
       : 0;
@@ -209,6 +210,8 @@ router.get('/:id', validateIntParams('id'), optionalAuth, async (req, res) => {
       avg_rating: avgRating,
       rating_count: ratings.length,
       attendees,
+      screenings,
+      screening_count: screenings.length,
       is_attending: isAttending
     });
   } catch (err) {

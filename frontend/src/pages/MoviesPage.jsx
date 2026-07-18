@@ -171,8 +171,14 @@ const MoviesPage = () => {
     const year = calendarDate.getFullYear();
     const month = calendarDate.getMonth();
     return movies.filter(movie => {
-      const d = new Date(movie.scheduled_at);
-      return d.getFullYear() === year && d.getMonth() === month && d.getDate() === day;
+      // Collapsed rewatches carry every screening date, so the film shows on each one.
+      const dates = movie.screenings?.length
+        ? movie.screenings.map(s => s.scheduled_at)
+        : [movie.scheduled_at];
+      return dates.some(dt => {
+        const d = new Date(dt);
+        return d.getFullYear() === year && d.getMonth() === month && d.getDate() === day;
+      });
     });
   };
 
@@ -365,6 +371,10 @@ const MoviesPage = () => {
                         {movie.release_year && <span>{movie.release_year}</span>}
                         {movie.release_year && movie.scheduled_at && <span className="sep" />}
                         {movie.scheduled_at && <span>{formatDate(movie.scheduled_at)}</span>}
+                        {movie.screening_count > 1 && <span className="sep" />}
+                        {movie.screening_count > 1 && (
+                          <span className="mg-rewatch">Watched {movie.screening_count}×</span>
+                        )}
                       </div>
                       {movie.genres && (
                         <div className="mg-chips">

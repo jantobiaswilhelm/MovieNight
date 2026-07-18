@@ -219,6 +219,9 @@
   background: var(--bone-mute);
   border-radius: var(--r-full);
 }
+.mg-rewatch{
+  color: var(--ember);
+}
 .mg-chips{
   display: flex;
   flex-wrap: wrap;

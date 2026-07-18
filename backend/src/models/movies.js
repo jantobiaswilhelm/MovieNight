@@ -10,20 +10,74 @@ export const createMovieNight = async (title, scheduledAt, announcedBy, guildId,
   return result.rows[0];
 };
 
+// Archive listing. Screenings of the same film (same tmdb_id) collapse into one
+// row: the most recent screening represents the group, ratings are combined
+// (latest rating per user wins, so a re-rating on the rewatch replaces the old
+// score), and screening_count / screenings expose the repeats. Movies without a
+// tmdb_id fall back to their own id as the key, so they never merge with anything.
 export const getMovieNights = async (guildId, limit = 20, offset = 0, includeTest = false) => {
   const testFilter = includeTest ? '' : 'AND (mn.is_test = false OR mn.is_test IS NULL)';
   const result = await pool.query(
-    `SELECT mn.*, u.username as announced_by_name, u.discord_id as announced_by_discord_id,
-            COALESCE(AVG(r.score), 0) as avg_rating,
-            COUNT(r.id) as rating_count
-     FROM movie_nights mn
+    `WITH mk AS (
+       SELECT mn.*, COALESCE(mn.tmdb_id::text, 'mn-' || mn.id) AS canon_key
+       FROM movie_nights mn
+       WHERE mn.guild_id = $1 ${testFilter}
+     ),
+     rep AS (
+       SELECT DISTINCT ON (canon_key) canon_key, id AS rep_id
+       FROM mk
+       ORDER BY canon_key, scheduled_at DESC, id DESC
+     ),
+     dedup AS (
+       SELECT DISTINCT ON (mk.canon_key, r.user_id) mk.canon_key, r.score
+       FROM mk
+       JOIN ratings r ON r.movie_night_id = mk.id
+       ORDER BY mk.canon_key, r.user_id, r.updated_at DESC, r.id DESC
+     ),
+     agg AS (
+       SELECT canon_key, AVG(score) AS avg_rating, COUNT(*) AS rating_count
+       FROM dedup GROUP BY canon_key
+     ),
+     meta AS (
+       SELECT canon_key,
+              COUNT(*) AS screening_count,
+              MIN(scheduled_at) AS first_screening,
+              MAX(scheduled_at) AS last_screening,
+              json_agg(json_build_object('id', id, 'scheduled_at', scheduled_at)
+                       ORDER BY scheduled_at) AS screenings
+       FROM mk GROUP BY canon_key
+     )
+     SELECT mn.*, u.username as announced_by_name, u.discord_id as announced_by_discord_id,
+            COALESCE(agg.avg_rating, 0) as avg_rating,
+            COALESCE(agg.rating_count, 0) as rating_count,
+            meta.screening_count,
+            meta.first_screening,
+            meta.last_screening,
+            meta.screenings
+     FROM rep
+     JOIN movie_nights mn ON mn.id = rep.rep_id
      LEFT JOIN users u ON mn.announced_by = u.id
-     LEFT JOIN ratings r ON mn.id = r.movie_night_id
-     WHERE mn.guild_id = $1 ${testFilter}
-     GROUP BY mn.id, u.username, u.discord_id
+     JOIN meta ON meta.canon_key = rep.canon_key
+     LEFT JOIN agg ON agg.canon_key = rep.canon_key
      ORDER BY mn.scheduled_at DESC
      LIMIT $2 OFFSET $3`,
     [guildId, limit, offset]
+  );
+  return result.rows;
+};
+
+// All screenings that belong to the same film as the given movie_night, oldest
+// first. Used by the detail page to list every date the film was watched.
+export const getMovieScreenings = async (movieNightId) => {
+  const result = await pool.query(
+    `WITH target AS (SELECT id, guild_id, tmdb_id FROM movie_nights WHERE id = $1)
+     SELECT mn.id, mn.scheduled_at, mn.started_at
+     FROM movie_nights mn, target t
+     WHERE mn.guild_id = t.guild_id
+       AND ((t.tmdb_id IS NOT NULL AND mn.tmdb_id = t.tmdb_id)
+            OR (t.tmdb_id IS NULL AND mn.id = t.id))
+     ORDER BY mn.scheduled_at ASC`,
+    [movieNightId]
   );
   return result.rows;
 };

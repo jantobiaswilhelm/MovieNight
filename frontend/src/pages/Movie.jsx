@@ -243,6 +243,15 @@ const Movie = () => {
               {movie.started_at ? 'Past screening' : 'Scheduled'} · {formatDate(movie.scheduled_at, 'long')}
             </div>
 
+            {movie.screening_count > 1 && movie.screenings?.length > 0 && (
+              <div className="mv-screenings">
+                <Badge>Watched {movie.screening_count}×</Badge>
+                <span className="mv-screenings-dates">
+                  {movie.screenings.map((s) => formatDate(s.scheduled_at)).join(' · ')}
+                </span>
+              </div>
+            )}
+
             <h1 className="mv-title">{movie.title}</h1>
 
             {movie.tagline && (
@@ -551,6 +560,11 @@ const Movie = () => {
                 </Link>
                 {rating.attended === false && (
                   <Eyebrow className="mv-rating-absent">Wasn't in the call</Eyebrow>
+                )}
+                {rating.previous_score != null && (
+                  <Eyebrow className="mv-rating-prev">
+                    Previously rated {parseFloat(rating.previous_score).toFixed(1)}
+                  </Eyebrow>
                 )}
                 {rating.comment && (
                   <p className="mv-rating-comment">&ldquo;{rating.comment}&rdquo;</p>

@@ -129,6 +129,21 @@
   opacity: .8;
 }
 
+.mv-screenings{
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  margin-top: var(--s-3);
+}
+.mv-screenings-dates{
+  font-family: var(--font-mono);
+  font-size: var(--fs-11);
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--bone-mute);
+}
+
 .mv-title{
   font-family: var(--font-display);
   font-style: italic;
@@ -425,6 +440,11 @@
 .mv-rating:last-child{ border-bottom: none; }
 .mv-rating.is-absent{ opacity: .5; }
 .mv-rating-absent{
+  display: inline-block;
+  margin-top: var(--s-2);
+  color: var(--bone-mute);
+}
+.mv-rating-prev{
   display: inline-block;
   margin-top: var(--s-2);
   color: var(--bone-mute);

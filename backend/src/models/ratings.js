@@ -38,6 +38,41 @@ export const getRatingsForMovie = async (movieNightId) => {
   return result.rows;
 };
 
+// Combined ratings for a film across every screening (movie_nights sharing the
+// same tmdb_id). If the same person rated more than one screening, only their
+// latest score is kept; their prior score is returned as previous_score so the
+// UI can show "8 — previously rated 6". Films without a tmdb_id resolve to just
+// their own screening, so this behaves exactly like getRatingsForMovie for them.
+export const getCombinedRatingsForMovie = async (movieNightId) => {
+  const result = await pool.query(
+    `WITH target AS (SELECT id, guild_id, tmdb_id FROM movie_nights WHERE id = $1),
+     sibling AS (
+       SELECT mn.id FROM movie_nights mn, target t
+       WHERE mn.guild_id = t.guild_id
+         AND ((t.tmdb_id IS NOT NULL AND mn.tmdb_id = t.tmdb_id)
+              OR (t.tmdb_id IS NULL AND mn.id = t.id))
+     ),
+     rated AS (
+       SELECT r.id, r.movie_night_id, r.user_id, r.score, r.comment,
+              r.created_at, r.updated_at,
+              u.username, u.discord_id, u.avatar,
+              mn.scheduled_at AS screening_date,
+              ${ATTENDED_SQL} AS attended,
+              ROW_NUMBER() OVER (PARTITION BY r.user_id
+                                 ORDER BY r.updated_at DESC, r.id DESC) AS rn,
+              LEAD(r.score) OVER (PARTITION BY r.user_id
+                                  ORDER BY r.updated_at DESC, r.id DESC) AS previous_score
+       FROM ratings r
+       JOIN users u ON r.user_id = u.id
+       JOIN movie_nights mn ON r.movie_night_id = mn.id
+       WHERE r.movie_night_id IN (SELECT id FROM sibling)
+     )
+     SELECT * FROM rated WHERE rn = 1 ORDER BY created_at DESC`,
+    [movieNightId]
+  );
+  return result.rows;
+};
+
 export const getUserRatings = async (userId, limit = 20) => {
   const result = await pool.query(
     `SELECT r.id, r.movie_night_id, r.user_id, r.score, r.comment, r.created_at, r.updated_at,
