@@ -128,76 +128,39 @@ const migrate = async () => {
       )
     `);
 
-    // Voting sessions table
+    // ── Suggestion board (replaces voting) ─────────────────────────────
+    // Standing, guild-scoped board. Anyone suggests; everyone upvotes
+    // (one heart each); any user can announce a suggestion to a movie night.
     await client.query(`
-      CREATE TABLE IF NOT EXISTS voting_sessions (
+      CREATE TABLE IF NOT EXISTS board_suggestions (
         id SERIAL PRIMARY KEY,
         guild_id VARCHAR(20) NOT NULL,
-        channel_id VARCHAR(20),
-        message_id VARCHAR(20),
-        scheduled_at TIMESTAMP NOT NULL,
+        suggested_by INTEGER REFERENCES users(id),
         status VARCHAR(20) DEFAULT 'open',
-        created_by INTEGER REFERENCES users(id),
-        winner_id INTEGER,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        closed_at TIMESTAMP
-      )
-    `);
-
-    // Movie suggestions table
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS movie_suggestions (
-        id SERIAL PRIMARY KEY,
-        voting_session_id INTEGER REFERENCES voting_sessions(id) ON DELETE CASCADE,
+        scheduled_at TIMESTAMP,
+        scheduled_movie_night_id INTEGER,
         title VARCHAR(255) NOT NULL,
         image_url VARCHAR(500),
         backdrop_url VARCHAR(500),
         description TEXT,
-        tagline VARCHAR(500),
         tmdb_id INTEGER,
-        imdb_id VARCHAR(20),
         tmdb_rating DECIMAL(3,1),
         genres VARCHAR(255),
         runtime INTEGER,
         release_year INTEGER,
+        tagline VARCHAR(500),
+        imdb_id VARCHAR(20),
         original_language VARCHAR(10),
         collection_name VARCHAR(255),
         trailer_url VARCHAR(500),
-        suggested_by INTEGER REFERENCES users(id),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
 
-    // Add TMDB columns to movie_suggestions if they don't exist
-    const suggestionTmdbColumns = [
-      { name: 'description', type: 'TEXT' },
-      { name: 'tmdb_id', type: 'INTEGER' },
-      { name: 'tmdb_rating', type: 'DECIMAL(3,1)' },
-      { name: 'genres', type: 'VARCHAR(255)' },
-      { name: 'runtime', type: 'INTEGER' },
-      { name: 'release_year', type: 'INTEGER' },
-      { name: 'backdrop_url', type: 'VARCHAR(500)' },
-      { name: 'tagline', type: 'VARCHAR(500)' },
-      { name: 'imdb_id', type: 'VARCHAR(20)' },
-      { name: 'original_language', type: 'VARCHAR(10)' },
-      { name: 'collection_name', type: 'VARCHAR(255)' },
-      { name: 'trailer_url', type: 'VARCHAR(500)' }
-    ];
-    for (const col of suggestionTmdbColumns) {
-      const check = await client.query(`
-        SELECT column_name FROM information_schema.columns
-        WHERE table_name = 'movie_suggestions' AND column_name = $1
-      `, [col.name]);
-      if (check.rows.length === 0) {
-        await client.query(`ALTER TABLE movie_suggestions ADD COLUMN ${col.name} ${col.type}`);
-      }
-    }
-
-    // Votes table
     await client.query(`
-      CREATE TABLE IF NOT EXISTS votes (
+      CREATE TABLE IF NOT EXISTS board_upvotes (
         id SERIAL PRIMARY KEY,
-        suggestion_id INTEGER REFERENCES movie_suggestions(id) ON DELETE CASCADE,
+        suggestion_id INTEGER REFERENCES board_suggestions(id) ON DELETE CASCADE,
         user_id INTEGER REFERENCES users(id),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(suggestion_id, user_id)
@@ -350,15 +313,8 @@ const migrate = async () => {
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_movie_nights_announced_by ON movie_nights(announced_by)
     `);
-    await client.query(`
-      CREATE INDEX IF NOT EXISTS idx_voting_sessions_guild ON voting_sessions(guild_id)
-    `);
-    await client.query(`
-      CREATE INDEX IF NOT EXISTS idx_suggestions_session ON movie_suggestions(voting_session_id)
-    `);
-    await client.query(`
-      CREATE INDEX IF NOT EXISTS idx_votes_suggestion ON votes(suggestion_id)
-    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_board_suggestions_guild ON board_suggestions(guild_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_board_upvotes_suggestion ON board_upvotes(suggestion_id)`);
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_wishlists_user ON wishlists(user_id)
     `);
@@ -739,6 +695,9 @@ const migrate = async () => {
       CREATE INDEX IF NOT EXISTS idx_voice_presence_open
       ON movie_night_voice_presence(user_discord_id) WHERE left_at IS NULL
     `);
+
+    // Retire the legacy voting feature — replaced by the suggestion board.
+    await client.query(`DROP TABLE IF EXISTS votes, movie_suggestions, voting_sessions CASCADE`);
 
     await client.query('COMMIT');
     console.log('Migration completed successfully!');
