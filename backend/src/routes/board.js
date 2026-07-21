@@ -6,8 +6,6 @@ import * as db from '../models/index.js';
 
 const router = Router();
 
-const GUILD_ID = process.env.GUILD_ID;
-
 // GET /api/board — the active board + caller's own upvote state.
 router.get('/', validateGuildId, optionalAuth, async (req, res) => {
   try {
@@ -66,10 +64,11 @@ router.post('/suggestions', validateGuildId, authenticateToken, async (req, res)
 });
 
 // POST /api/board/suggestions/:id/upvote — add caller's heart (auth).
-router.post('/suggestions/:id/upvote', validateIntParams('id'), authenticateToken, async (req, res) => {
+router.post('/suggestions/:id/upvote', validateGuildId, validateIntParams('id'), authenticateToken, async (req, res) => {
   try {
     const suggestion = await db.getBoardSuggestionById(parseInt(req.params.id));
     if (!suggestion) return res.status(404).json({ error: 'Suggestion not found' });
+    if (suggestion.guild_id !== req.guildId) return res.status(404).json({ error: 'Suggestion not found' });
     await db.addUpvote(parseInt(req.params.id), req.user.id);
     res.json({ success: true });
   } catch (err) {
@@ -79,8 +78,11 @@ router.post('/suggestions/:id/upvote', validateIntParams('id'), authenticateToke
 });
 
 // DELETE /api/board/suggestions/:id/upvote — remove caller's heart (auth).
-router.delete('/suggestions/:id/upvote', validateIntParams('id'), authenticateToken, async (req, res) => {
+router.delete('/suggestions/:id/upvote', validateGuildId, validateIntParams('id'), authenticateToken, async (req, res) => {
   try {
+    const suggestion = await db.getBoardSuggestionById(parseInt(req.params.id));
+    if (!suggestion) return res.status(404).json({ error: 'Suggestion not found' });
+    if (suggestion.guild_id !== req.guildId) return res.status(404).json({ error: 'Suggestion not found' });
     await db.removeUpvote(parseInt(req.params.id), req.user.id);
     res.json({ success: true });
   } catch (err) {
@@ -90,7 +92,7 @@ router.delete('/suggestions/:id/upvote', validateIntParams('id'), authenticateTo
 });
 
 // POST /api/board/suggestions/:id/announce — any auth user promotes to a movie night.
-router.post('/suggestions/:id/announce', validateIntParams('id'), authenticateToken, async (req, res) => {
+router.post('/suggestions/:id/announce', validateGuildId, validateIntParams('id'), authenticateToken, async (req, res) => {
   const { scheduled_at } = req.body;
 
   if (!scheduled_at) {
@@ -107,6 +109,7 @@ router.post('/suggestions/:id/announce', validateIntParams('id'), authenticateTo
   try {
     const s = await db.getBoardSuggestionById(parseInt(req.params.id));
     if (!s) return res.status(404).json({ error: 'Suggestion not found' });
+    if (s.guild_id !== req.guildId) return res.status(404).json({ error: 'Suggestion not found' });
     if (s.status === 'scheduled') {
       return res.status(409).json({ error: 'That suggestion is already scheduled' });
     }
@@ -138,10 +141,11 @@ router.post('/suggestions/:id/announce', validateIntParams('id'), authenticateTo
 });
 
 // DELETE /api/board/suggestions/:id — suggester removes own; admin removes any.
-router.delete('/suggestions/:id', validateIntParams('id'), authenticateToken, async (req, res) => {
+router.delete('/suggestions/:id', validateGuildId, validateIntParams('id'), authenticateToken, async (req, res) => {
   try {
     const s = await db.getBoardSuggestionById(parseInt(req.params.id));
     if (!s) return res.status(404).json({ error: 'Suggestion not found' });
+    if (s.guild_id !== req.guildId) return res.status(404).json({ error: 'Suggestion not found' });
 
     const owns = s.suggested_by === req.user.id;
     if (!owns && !isAdmin(req.user.discord_id)) {
