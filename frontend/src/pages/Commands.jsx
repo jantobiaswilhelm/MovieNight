@@ -5,20 +5,16 @@ const commands = [
   { name: '/announce',   description: 'Announce a new movie night',       usage: '/announce title:"Movie Name" datetime:"tomorrow 8pm" image:"poster-url"', details: 'Schedule a movie night and post an announcement with rating buttons. The image is required and will be shown in the embed.', category: 'Movies' },
   { name: '/rate',       description: 'Rate a movie',                     usage: '/rate movie:"Movie Name" score:8.5', details: "Rate a movie with half-point precision (1-10). Use this for ratings like 7.5 or 8.5 that aren't available on the buttons.", category: 'Movies' },
   { name: '/history',    description: 'View movie history',               usage: '/history', details: 'See all past movie nights with their average ratings and vote counts.', category: 'Movies' },
-  { name: '/startvote',  description: 'Start a voting session',           usage: '/startvote datetime:"Saturday 8pm"', details: 'Start a new voting session with interactive buttons. Users can click "Add Suggestion" to suggest movies and vote with buttons. The message auto-updates as votes come in.', category: 'Voting' },
-  { name: '/suggest',    description: 'Suggest a movie for voting',       usage: '/suggest title:"Movie Name" image:"poster-url"', details: 'Alternative way to add a movie suggestion. You can also use the "Add Suggestion" button on the voting message.', category: 'Voting' },
-  { name: '/endvote',    description: 'End voting and announce winner',   usage: '/endvote or /endvote datetime:"Sunday 9pm"', details: 'Close the voting session, announce the winner, and automatically create a movie night announcement. Optionally override the planned datetime.', category: 'Voting' },
   { name: '/stats',      description: 'View server statistics',           usage: '/stats', details: 'See overall stats including total movies watched, top rated movies, and most active raters.', category: 'Stats' },
   { name: '/myratings',  description: 'View your ratings',                usage: '/myratings', details: "See all the movies you've rated and your personal average score.", category: 'Stats' },
   { name: '/help',       description: 'Show help message',                usage: '/help', details: 'Display all available commands in Discord.', category: 'Other' },
-  { name: '/admin',      description: 'Show admin controls (Admin only)', usage: '/admin', details: 'Shows delete buttons on the voting message. Only available to server admins.', category: 'Admin' },
   { name: '/delete',     description: 'Delete a movie (Admin only)',      usage: '/delete movie:"Movie Name"', details: 'Permanently delete a movie and all its ratings. Only available to server admins.', category: 'Admin' },
   { name: '/start',      description: 'Manually start a movie night (Admin only)', usage: '/start movie:"Movie Name"', details: 'Manually trigger the "starting now" announcement for a movie. Movies normally start automatically at their scheduled time.', category: 'Admin' },
   { name: '/reschedule', description: 'Reschedule a movie night (Admin only)',      usage: '/reschedule movie:"Movie Name" datetime:"new time"', details: "Change the scheduled time for a movie that hasn't started yet. Only available to server admins.", category: 'Admin' }
 ];
 
-const CATEGORY_ORDER = ['Movies', 'Voting', 'Stats', 'Other', 'Admin'];
-const CATEGORY_NUMS = { Movies: '01', Voting: '02', Stats: '03', Other: '04', Admin: '05' };
+const CATEGORY_ORDER = ['Movies', 'Stats', 'Other', 'Admin'];
+const CATEGORY_NUMS = { Movies: '01', Stats: '02', Other: '03', Admin: '04' };
 
 const Commands = () => {
   const grouped = CATEGORY_ORDER.map(cat => ({
