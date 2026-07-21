@@ -148,6 +148,14 @@ const SuggestionBoard = ({ onAnnounced }) => {
     }
   };
 
+  const closeAnnounce = () => {
+    setAnnounceFor(null);
+    const d = new Date();
+    d.setDate(d.getDate() + ((5 + 7 - d.getDay()) % 7 || 7)); // next Friday
+    setDate(localDateStr(d));
+    setTime('20:30');
+  };
+
   const canRemove = (s) => isAdmin || (user && s.suggested_by === user.id);
 
   return (
@@ -216,7 +224,7 @@ const SuggestionBoard = ({ onAnnounced }) => {
                   <button
                     className={`sb-heart ${s.user_upvoted ? 'on' : ''}`}
                     onClick={() => handleToggleUpvote(s)}
-                    disabled={!isAuthenticated || busyId === s.id || scheduled}
+                    disabled={!isAuthenticated || busyId !== null || scheduled}
                     title={isAuthenticated ? 'Upvote' : 'Log in to upvote'}
                   >
                     <Icon name="heart" size={14} />
@@ -260,7 +268,7 @@ const SuggestionBoard = ({ onAnnounced }) => {
           <div className="modal-content modal-large" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2>Suggest a movie</h2>
-              <button className="modal-close" onClick={() => setShowSuggest(false)}>
+              <button className="modal-close" aria-label="Close" onClick={() => setShowSuggest(false)}>
                 <Icon name="close" size={16} />
               </button>
             </div>
@@ -302,11 +310,11 @@ const SuggestionBoard = ({ onAnnounced }) => {
 
       {/* Announce modal */}
       {announceFor && (
-        <div className="modal-overlay" onClick={() => setAnnounceFor(null)}>
+        <div className="modal-overlay" onClick={closeAnnounce}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Announce “{announceFor.title}”</h2>
-              <button className="modal-close" onClick={() => setAnnounceFor(null)}>
+              <h2>Announce "{announceFor.title}"</h2>
+              <button className="modal-close" aria-label="Close" onClick={closeAnnounce}>
                 <Icon name="close" size={16} />
               </button>
             </div>

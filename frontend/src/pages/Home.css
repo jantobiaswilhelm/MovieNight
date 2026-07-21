@@ -1052,7 +1052,7 @@
 .sb-item.scheduled { opacity: .72; }
 .sb-poster { width: 34px; height: 51px; object-fit: cover; border-radius: var(--r-1); flex: none; }
 .sb-poster.no-poster { display: flex; align-items: center; justify-content: center; background: var(--ink-3); color: var(--bone-mute); }
-.sb-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.sb-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--s-1); }
 .sb-item-title { font-weight: 600; color: var(--bone); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sb-scheduled { font-family: var(--font-mono); font-size: var(--fs-11); letter-spacing: .04em; color: var(--ember); display: inline-flex; align-items: center; gap: 4px; }
 .sb-upvoters { display: flex; align-items: center; gap: 2px; }
@@ -1076,5 +1076,5 @@
 .sb-announce-form { display: flex; flex-direction: column; gap: var(--s-3); padding: var(--s-3) 0 0; }
 .sb-when-fields { display: flex; gap: var(--s-2); }
 .sb-field { display: flex; flex-direction: column; gap: 4px; flex: 1; }
-.sb-field span { font-family: var(--font-mono); font-size: var(--fs-11); letter-spacing: .1em; text-transform: uppercase; color: var(--bone-mute); }
+.sb-field span { font-family: var(--font-mono); font-size: var(--fs-11); letter-spacing: .28em; text-transform: uppercase; color: var(--bone-mute); }
 .sb-field input { width: 100%; }
