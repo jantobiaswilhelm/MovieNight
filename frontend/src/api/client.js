@@ -63,7 +63,9 @@ const fetchAPI = async (endpoint, options = {}, retried = false) => {
       clearTokens();
     }
     const error = await response.json().catch(() => ({ error: 'Request failed' }));
-    throw new Error(error.error || 'Request failed');
+    const err = new Error(error.error || 'Request failed');
+    err.status = response.status;
+    throw err;
   }
 
   return response.json();

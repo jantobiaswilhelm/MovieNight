@@ -1,0 +1,337 @@
+import { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
+import { useConfirm } from '../../context/ConfirmContext';
+import { getAvatarUrl } from '../../utils/helpers';
+import {
+  getBoard, addSuggestion, upvoteSuggestion, removeUpvote,
+  announceSuggestion, deleteSuggestion, searchTMDB, getTMDBMovie
+} from '../../api/client';
+import { Icon } from '../ui';
+
+/** Format a Date as YYYY-MM-DD in the browser's local timezone (never UTC). */
+const localDateStr = (d) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+/**
+ * Always-on suggestion board. Fetches its own data. Lives in the Home sidebar.
+ * Calls `onAnnounced()` after a successful announce so the parent can refresh
+ * its movie data (hero, calendar).
+ */
+const SuggestionBoard = ({ onAnnounced }) => {
+  const { isAuthenticated, isAdmin, user, login } = useAuth();
+  const { showError, showSuccess } = useToast();
+  const confirm = useConfirm();
+
+  const [board, setBoard] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState(null);
+
+  // Suggest modal
+  const [showSuggest, setShowSuggest] = useState(false);
+  const [search, setSearch] = useState('');
+  const [results, setResults] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const [addingId, setAddingId] = useState(null);
+
+  // Announce modal
+  const [announceFor, setAnnounceFor] = useState(null); // suggestion object
+  const [date, setDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + ((5 + 7 - d.getDay()) % 7 || 7)); // next Friday
+    return localDateStr(d);
+  });
+  const [time, setTime] = useState('20:30');
+  const [announcing, setAnnouncing] = useState(false);
+
+  const refresh = useCallback(async () => {
+    try {
+      const data = await getBoard();
+      setBoard(data);
+    } catch (err) {
+      console.error('Error loading board:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { refresh(); }, [refresh]);
+
+  const handleToggleUpvote = async (s) => {
+    if (!isAuthenticated || busyId) return;
+    setBusyId(s.id);
+    try {
+      if (s.user_upvoted) await removeUpvote(s.id);
+      else await upvoteSuggestion(s.id);
+      await refresh();
+    } catch (err) {
+      console.error('Error upvoting:', err);
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    if (!search.trim()) return;
+    setSearching(true);
+    try {
+      setResults(await searchTMDB(search));
+    } catch {
+      showError('Failed to search movies');
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const handleAdd = async (movie) => {
+    setAddingId(movie.id);
+    try {
+      const d = await getTMDBMovie(movie.id);
+      await addSuggestion(d.title, d.posterPath, {
+        description: d.overview, tmdbId: d.id, tmdbRating: d.rating,
+        genres: d.genres, runtime: d.runtime, releaseYear: d.year,
+        backdropUrl: d.backdropPath, tagline: d.tagline, imdbId: d.imdbId,
+        originalLanguage: d.originalLanguage, collectionName: d.collectionName,
+        trailerUrl: d.trailerUrl
+      });
+      setShowSuggest(false);
+      setSearch('');
+      setResults([]);
+      await refresh();
+    } catch (err) {
+      if (err.status === 409) showError('That movie is already on the board.');
+      else showError('Failed to add movie: ' + err.message);
+    } finally {
+      setAddingId(null);
+    }
+  };
+
+  const handleAnnounce = async (e) => {
+    e.preventDefault();
+    if (!announceFor) return;
+    const scheduledAt = new Date(`${date}T${time}`);
+    if (scheduledAt <= new Date()) {
+      showError('The time must be in the future.');
+      return;
+    }
+    setAnnouncing(true);
+    try {
+      await announceSuggestion(announceFor.id, scheduledAt.toISOString());
+      showSuccess(`${announceFor.title} is on the calendar.`);
+      setAnnounceFor(null);
+      await refresh();
+      if (onAnnounced) onAnnounced();
+    } catch (err) {
+      if (err.status === 409) showError('That suggestion is already scheduled.');
+      else showError('Failed to announce: ' + err.message);
+    } finally {
+      setAnnouncing(false);
+    }
+  };
+
+  const handleDelete = async (s) => {
+    if (!(await confirm({
+      title: 'Remove suggestion?',
+      message: `Remove "${s.title}" from the board?`,
+      confirmLabel: 'Remove',
+      danger: true
+    }))) return;
+    setBusyId(s.id);
+    try {
+      await deleteSuggestion(s.id);
+      await refresh();
+    } catch (err) {
+      showError('Failed to remove: ' + err.message);
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const canRemove = (s) => isAdmin || (user && s.suggested_by === user.id);
+
+  return (
+    <div className="sb">
+      <header className="sb-head">
+        <div>
+          <div className="sb-eyebrow">The board</div>
+          <h3 className="sb-title">Suggest a movie</h3>
+        </div>
+        {isAuthenticated && (
+          <button className="btn sm" onClick={() => setShowSuggest(true)}>
+            <Icon name="plus" size={14} /> <span>Suggest</span>
+          </button>
+        )}
+      </header>
+
+      {loading ? (
+        <div className="sb-empty"><p>Loading…</p></div>
+      ) : board.length === 0 ? (
+        <div className="sb-empty">
+          <Icon name="film" size={24} stroke={1.25} />
+          <p>No suggestions yet.</p>
+          {isAuthenticated
+            ? <small>Be the first — hit Suggest.</small>
+            : <small>Log in to suggest and upvote.</small>}
+        </div>
+      ) : (
+        <ul className="sb-list">
+          {board.map((s) => {
+            const count = parseInt(s.upvote_count) || 0;
+            const scheduled = s.status === 'scheduled';
+            return (
+              <li key={s.id} className={`sb-item ${scheduled ? 'scheduled' : ''}`}>
+                {s.image_url ? (
+                  <img src={s.image_url} alt="" className="sb-poster" loading="lazy" />
+                ) : (
+                  <div className="sb-poster no-poster"><Icon name="film" size={16} /></div>
+                )}
+                <div className="sb-info">
+                  <span className="sb-item-title">{s.title}</span>
+                  {scheduled ? (
+                    <span className="sb-scheduled">
+                      <Icon name="calendar" size={12} /> Scheduled ·{' '}
+                      {new Date(s.scheduled_at).toLocaleDateString('en-US', {
+                        weekday: 'short', month: 'short', day: 'numeric'
+                      })}
+                    </span>
+                  ) : (
+                    <div className="sb-upvoters">
+                      {(s.upvoters || []).slice(0, 4).map((v) => (
+                        <img
+                          key={v.discord_id}
+                          src={getAvatarUrl(v.discord_id, v.avatar)}
+                          alt={v.username}
+                          title={v.username}
+                          className="sb-upvoter-avatar"
+                          loading="lazy"
+                        />
+                      ))}
+                      {count > 4 && <span className="sb-upvoter-more">+{count - 4}</span>}
+                    </div>
+                  )}
+                </div>
+
+                <div className="sb-actions">
+                  <button
+                    className={`sb-heart ${s.user_upvoted ? 'on' : ''}`}
+                    onClick={() => handleToggleUpvote(s)}
+                    disabled={!isAuthenticated || busyId === s.id || scheduled}
+                    title={isAuthenticated ? 'Upvote' : 'Log in to upvote'}
+                  >
+                    <Icon name="heart" size={14} />
+                    <span>{count}</span>
+                  </button>
+                  {!scheduled && isAuthenticated && (
+                    <button
+                      className="sb-announce"
+                      onClick={() => setAnnounceFor(s)}
+                      title="Announce to movie night"
+                    >
+                      <Icon name="megaphone" size={14} />
+                    </button>
+                  )}
+                  {canRemove(s) && (
+                    <button
+                      className="sb-remove"
+                      onClick={() => handleDelete(s)}
+                      disabled={busyId === s.id}
+                      title="Remove"
+                    >
+                      <Icon name="close" size={12} />
+                    </button>
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      {!isAuthenticated && board.length > 0 && (
+        <div className="sb-login">
+          <button onClick={login} className="btn sm">Log in to upvote</button>
+        </div>
+      )}
+
+      {/* Suggest modal */}
+      {showSuggest && (
+        <div className="modal-overlay" onClick={() => setShowSuggest(false)}>
+          <div className="modal-content modal-large" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Suggest a movie</h2>
+              <button className="modal-close" onClick={() => setShowSuggest(false)}>
+                <Icon name="close" size={16} />
+              </button>
+            </div>
+            <form onSubmit={handleSearch} className="search-form">
+              <input
+                type="text"
+                placeholder="Search for a movie…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                autoFocus
+              />
+              <button type="submit" className="btn" disabled={searching}>
+                {searching ? 'Searching…' : 'Search'}
+              </button>
+            </form>
+            {results.length > 0 && (
+              <div className="search-results">
+                {results.map((movie) => (
+                  <div key={movie.id} className="search-result-item" onClick={() => handleAdd(movie)}>
+                    {movie.posterPath ? (
+                      <img src={movie.posterPath} alt="" className="result-poster" loading="lazy" />
+                    ) : (
+                      <div className="result-poster no-poster">No Image</div>
+                    )}
+                    <div className="result-info">
+                      <span className="result-title">{movie.title}</span>
+                      <span className="result-year">{movie.year}</span>
+                    </div>
+                    <button className="btn sm" disabled={addingId === movie.id}>
+                      {addingId === movie.id ? 'Adding…' : 'Add'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Announce modal */}
+      {announceFor && (
+        <div className="modal-overlay" onClick={() => setAnnounceFor(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Announce “{announceFor.title}”</h2>
+              <button className="modal-close" onClick={() => setAnnounceFor(null)}>
+                <Icon name="close" size={16} />
+              </button>
+            </div>
+            <form onSubmit={handleAnnounce} className="sb-announce-form">
+              <div className="sb-when-fields">
+                <label className="sb-field">
+                  <span>Date</span>
+                  <input type="date" value={date} min={localDateStr(new Date())}
+                    onChange={(e) => setDate(e.target.value)} required />
+                </label>
+                <label className="sb-field">
+                  <span>Time</span>
+                  <input type="time" value={time}
+                    onChange={(e) => setTime(e.target.value)} required />
+                </label>
+              </div>
+              <button type="submit" className="btn lg" disabled={announcing}>
+                {announcing ? 'Scheduling…' : <><Icon name="megaphone" size={16} /> <span>Announce screening</span></>}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default SuggestionBoard;
