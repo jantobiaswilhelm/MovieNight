@@ -508,23 +508,23 @@ export const addSuggestion = (title, imageUrl, tmdbData = null) =>
   });
 
 export const upvoteSuggestion = (suggestionId) =>
-  fetchAPI(`/api/board/suggestions/${suggestionId}/upvote`, {
+  fetchAPI(`/api/board/suggestions/${suggestionId}/upvote?guild_id=${GUILD_ID}`, {
     method: 'POST'
   });
 
 export const removeUpvote = (suggestionId) =>
-  fetchAPI(`/api/board/suggestions/${suggestionId}/upvote`, {
+  fetchAPI(`/api/board/suggestions/${suggestionId}/upvote?guild_id=${GUILD_ID}`, {
     method: 'DELETE'
   });
 
 export const announceSuggestion = (suggestionId, scheduledAt) =>
-  fetchAPI(`/api/board/suggestions/${suggestionId}/announce`, {
+  fetchAPI(`/api/board/suggestions/${suggestionId}/announce?guild_id=${GUILD_ID}`, {
     method: 'POST',
     body: JSON.stringify({ scheduled_at: scheduledAt })
   });
 
 export const deleteSuggestion = (suggestionId) =>
-  fetchAPI(`/api/board/suggestions/${suggestionId}`, {
+  fetchAPI(`/api/board/suggestions/${suggestionId}?guild_id=${GUILD_ID}`, {
     method: 'DELETE'
   });
 ```
