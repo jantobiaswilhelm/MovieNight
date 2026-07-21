@@ -15,7 +15,7 @@ export const createBoardSuggestion = async (guildId, suggestedBy, title, imageUr
      RETURNING *`,
     [
       guildId, suggestedBy, title, imageUrl || null, description || null,
-      tmdbId || null, tmdbRating || null, genres || null, runtime || null,
+      tmdbId || null, tmdbRating ?? null, genres || null, runtime ?? null,
       releaseYear || null, backdropUrl || null, tagline || null, imdbId || null,
       originalLanguage || null, collectionName || null, trailerUrl || null
     ]
@@ -32,7 +32,7 @@ export const getBoardSuggestions = async (guildId, userId = null) => {
             u.username  AS suggested_by_name,
             u.discord_id AS suggested_by_discord_id,
             COUNT(bu.id) AS upvote_count,
-            BOOL_OR(bu.user_id = $2) AS user_upvoted
+            COALESCE(BOOL_OR(bu.user_id = $2), false) AS user_upvoted
      FROM board_suggestions bs
      LEFT JOIN users u ON bs.suggested_by = u.id
      LEFT JOIN board_upvotes bu ON bs.id = bu.suggestion_id
