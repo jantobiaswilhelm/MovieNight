@@ -196,3 +196,29 @@ export const getStreakLeaderboard = async (guildId, limit = 10) => {
   );
   return result.rows;
 };
+
+export const getOnThisDay = async (guildId) => {
+  const result = await pool.query(
+    `SELECT
+       mn.id AS movie_night_id,
+       mn.title,
+       mn.image_url,
+       EXTRACT(YEAR FROM mn.scheduled_at)::integer AS watched_year,
+       (EXTRACT(YEAR FROM CURRENT_DATE) - EXTRACT(YEAR FROM mn.scheduled_at))::integer AS years_ago,
+       COALESCE(AVG(r.score), 0) AS avg_rating,
+       COUNT(r.id)::integer AS rating_count
+     FROM movie_nights mn
+     LEFT JOIN ratings r ON mn.id = r.movie_night_id
+     WHERE mn.guild_id = $1
+       AND (mn.is_test = false OR mn.is_test IS NULL)
+       AND mn.scheduled_at <= NOW()
+       AND EXTRACT(MONTH FROM mn.scheduled_at) = EXTRACT(MONTH FROM CURRENT_DATE)
+       AND EXTRACT(DAY   FROM mn.scheduled_at) = EXTRACT(DAY   FROM CURRENT_DATE)
+       AND EXTRACT(YEAR  FROM mn.scheduled_at) < EXTRACT(YEAR  FROM CURRENT_DATE)
+     GROUP BY mn.id, mn.title, mn.image_url, mn.scheduled_at
+     ORDER BY avg_rating DESC, mn.scheduled_at DESC
+     LIMIT 1`,
+    [guildId]
+  );
+  return result.rows[0] || null;
+};
