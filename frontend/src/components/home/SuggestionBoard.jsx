@@ -264,44 +264,64 @@ const SuggestionBoard = ({ onAnnounced }) => {
 
       {/* Suggest modal */}
       {showSuggest && (
-        <div className="modal-overlay" onClick={() => setShowSuggest(false)}>
-          <div className="modal-content modal-large" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
+        <div className="sb-modal-overlay" onClick={() => setShowSuggest(false)}>
+          <div className="sb-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="sb-modal-head">
               <h2>Suggest a movie</h2>
-              <button className="modal-close" aria-label="Close" onClick={() => setShowSuggest(false)}>
+              <button className="sb-modal-close" aria-label="Close" onClick={() => setShowSuggest(false)}>
                 <Icon name="close" size={16} />
               </button>
             </div>
-            <form onSubmit={handleSearch} className="search-form">
-              <input
-                type="text"
-                placeholder="Search for a movie…"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                autoFocus
-              />
-              <button type="submit" className="btn" disabled={searching}>
-                {searching ? 'Searching…' : 'Search'}
+            <form onSubmit={handleSearch} className="af-search">
+              <div className="af-search-input">
+                <span className="af-search-icon"><Icon name="search" size={16} /></span>
+                <input
+                  type="text"
+                  placeholder="Title, director, year…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  autoFocus
+                />
+                {search && (
+                  <button
+                    type="button"
+                    className="af-search-clear"
+                    onClick={() => { setSearch(''); setResults([]); }}
+                    aria-label="Clear"
+                  >
+                    <Icon name="close" size={12} />
+                  </button>
+                )}
+              </div>
+              <button type="submit" className="btn sm" disabled={searching || !search.trim()}>
+                {searching ? '…' : 'Search'}
               </button>
             </form>
-            {results.length > 0 && (
-              <div className="search-results">
-                {results.map((movie) => (
-                  <div key={movie.id} className="search-result-item" onClick={() => handleAdd(movie)}>
+            {results.length > 0 ? (
+              <ul className="af-results">
+                {results.slice(0, 10).map((movie) => (
+                  <li key={movie.id} className="af-result" onClick={() => handleAdd(movie)}>
                     {movie.posterPath ? (
-                      <img src={movie.posterPath} alt="" className="result-poster" loading="lazy" />
+                      <img src={movie.posterPath} alt="" className="af-result-poster" loading="lazy" />
                     ) : (
-                      <div className="result-poster no-poster">No Image</div>
+                      <div className="af-result-poster af-result-placeholder">
+                        {movie.title?.charAt(0) ?? '?'}
+                      </div>
                     )}
-                    <div className="result-info">
-                      <span className="result-title">{movie.title}</span>
-                      <span className="result-year">{movie.year}</span>
+                    <div className="af-result-info">
+                      <span className="af-result-title">{movie.title}</span>
+                      {movie.year && <span className="af-result-year">{movie.year}</span>}
                     </div>
-                    <button className="btn sm" disabled={addingId === movie.id}>
-                      {addingId === movie.id ? 'Adding…' : 'Add'}
-                    </button>
-                  </div>
+                    {addingId === movie.id
+                      ? <span className="af-result-year">Adding…</span>
+                      : <Icon name="arrow-right" size={14} className="af-result-arrow" />}
+                  </li>
                 ))}
+              </ul>
+            ) : !searching && (
+              <div className="af-hint">
+                <Icon name="film" size={24} stroke={1.25} />
+                <p>Search TMDB for any film to add it to the board.</p>
               </div>
             )}
           </div>
@@ -310,11 +330,11 @@ const SuggestionBoard = ({ onAnnounced }) => {
 
       {/* Announce modal */}
       {announceFor && (
-        <div className="modal-overlay" onClick={closeAnnounce}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
+        <div className="sb-modal-overlay" onClick={closeAnnounce}>
+          <div className="sb-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="sb-modal-head">
               <h2>Announce "{announceFor.title}"</h2>
-              <button className="modal-close" aria-label="Close" onClick={closeAnnounce}>
+              <button className="sb-modal-close" aria-label="Close" onClick={closeAnnounce}>
                 <Icon name="close" size={16} />
               </button>
             </div>

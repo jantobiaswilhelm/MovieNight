@@ -1078,3 +1078,61 @@
 .sb-field { display: flex; flex-direction: column; gap: 4px; flex: 1; }
 .sb-field span { font-family: var(--font-mono); font-size: var(--fs-11); letter-spacing: .28em; text-transform: uppercase; color: var(--bone-mute); }
 .sb-field input { width: 100%; }
+
+/* ── Board modals (suggest / announce) ─────────────────────────── */
+.sb-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, .8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--s-4);
+  z-index: 1000;
+}
+.sb-modal {
+  width: 100%;
+  max-width: 440px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  background: var(--ink-2);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--r-2);
+  padding: var(--s-4);
+  overflow: hidden;
+}
+.sb-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-2);
+}
+.sb-modal-head h2 {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 300;
+  font-size: var(--fs-24);
+  color: var(--bone);
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sb-modal-close {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: var(--r-1);
+  color: var(--bone-mute);
+  cursor: pointer;
+  transition: color var(--dur-1) var(--ease-out), border-color var(--dur-1) var(--ease-out);
+}
+.sb-modal-close:hover { color: var(--bone); border-color: var(--ember); }
