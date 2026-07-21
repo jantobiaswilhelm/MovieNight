@@ -196,6 +196,17 @@ const SuggestionBoard = ({ onAnnounced }) => {
                 )}
                 <div className="sb-info">
                   <span className="sb-item-title">{s.title}</span>
+                  {s.suggested_by_name && (
+                    <span className="sb-by">
+                      <img
+                        src={getAvatarUrl(s.suggested_by_discord_id, s.suggested_by_avatar)}
+                        alt=""
+                        className="sb-by-avatar"
+                        loading="lazy"
+                      />
+                      by {s.suggested_by_name}
+                    </span>
+                  )}
                   {scheduled ? (
                     <span className="sb-scheduled">
                       <Icon name="calendar" size={12} /> Scheduled ·{' '}

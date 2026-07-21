@@ -31,6 +31,7 @@ export const getBoardSuggestions = async (guildId, userId = null) => {
     `SELECT bs.*,
             u.username  AS suggested_by_name,
             u.discord_id AS suggested_by_discord_id,
+            u.avatar    AS suggested_by_avatar,
             COUNT(bu.id) AS upvote_count,
             COALESCE(BOOL_OR(bu.user_id = $2), false) AS user_upvoted
      FROM board_suggestions bs
@@ -38,7 +39,7 @@ export const getBoardSuggestions = async (guildId, userId = null) => {
      LEFT JOIN board_upvotes bu ON bs.id = bu.suggestion_id
      WHERE bs.guild_id = $1
        AND (bs.status = 'open' OR (bs.status = 'scheduled' AND bs.scheduled_at >= NOW()))
-     GROUP BY bs.id, u.username, u.discord_id
+     GROUP BY bs.id, u.username, u.discord_id, u.avatar
      ORDER BY upvote_count DESC, bs.created_at DESC`,
     [guildId, userId]
   );

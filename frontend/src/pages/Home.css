@@ -1054,6 +1054,8 @@
 .sb-poster.no-poster { display: flex; align-items: center; justify-content: center; background: var(--ink-3); color: var(--bone-mute); }
 .sb-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--s-1); }
 .sb-item-title { font-weight: 600; color: var(--bone); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sb-by { display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-11); color: var(--bone-mute); min-width: 0; }
+.sb-by-avatar { width: 15px; height: 15px; border-radius: var(--r-full); object-fit: cover; flex: none; }
 .sb-scheduled { font-family: var(--font-mono); font-size: var(--fs-11); letter-spacing: .04em; color: var(--ember); display: inline-flex; align-items: center; gap: 4px; }
 .sb-upvoters { display: flex; align-items: center; gap: 2px; }
 .sb-upvoter-avatar { width: 18px; height: 18px; border-radius: var(--r-full); border: 1px solid var(--ink); margin-left: -4px; object-fit: cover; }
