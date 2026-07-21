@@ -63,7 +63,9 @@ const fetchAPI = async (endpoint, options = {}, retried = false) => {
       clearTokens();
     }
     const error = await response.json().catch(() => ({ error: 'Request failed' }));
-    throw new Error(error.error || 'Request failed');
+    const err = new Error(error.error || 'Request failed');
+    err.status = response.status;
+    throw err;
   }
 
   return response.json();
@@ -127,40 +129,34 @@ export const getMyStats = () => fetchAPI('/api/stats/me');
 
 export const getUserStats = (userId) => fetchAPI(`/api/stats/user/${userId}`);
 
-// Voting
-export const getActiveVoting = () =>
-  fetchAPI(`/api/voting/active?guild_id=${GUILD_ID}`);
+// Suggestion board
+export const getBoard = () =>
+  fetchAPI(`/api/board?guild_id=${GUILD_ID}`);
 
-export const createVotingSession = (scheduledAt) =>
-  fetchAPI('/api/voting', {
-    method: 'POST',
-    body: JSON.stringify({ scheduled_at: scheduledAt, guild_id: GUILD_ID })
-  });
-
-export const closeVotingSession = (sessionId, createMovie = true) =>
-  fetchAPI(`/api/voting/${sessionId}/close`, {
-    method: 'POST',
-    body: JSON.stringify({ create_movie: createMovie })
-  });
-
-export const deleteVotingSession = (sessionId) =>
-  fetchAPI(`/api/voting/${sessionId}`, {
-    method: 'DELETE'
-  });
-
-export const submitSuggestion = (sessionId, title, imageUrl, tmdbData = null) =>
-  fetchAPI(`/api/voting/${sessionId}/suggestions`, {
+export const addSuggestion = (title, imageUrl, tmdbData = null) =>
+  fetchAPI(`/api/board/suggestions?guild_id=${GUILD_ID}`, {
     method: 'POST',
     body: JSON.stringify({ title, image_url: imageUrl, tmdb_data: tmdbData })
   });
 
-export const castVote = (suggestionId) =>
-  fetchAPI(`/api/voting/suggestions/${suggestionId}/vote`, {
+export const upvoteSuggestion = (suggestionId) =>
+  fetchAPI(`/api/board/suggestions/${suggestionId}/upvote?guild_id=${GUILD_ID}`, {
     method: 'POST'
   });
 
-export const removeVote = (suggestionId) =>
-  fetchAPI(`/api/voting/suggestions/${suggestionId}/vote`, {
+export const removeUpvote = (suggestionId) =>
+  fetchAPI(`/api/board/suggestions/${suggestionId}/upvote?guild_id=${GUILD_ID}`, {
+    method: 'DELETE'
+  });
+
+export const announceSuggestion = (suggestionId, scheduledAt) =>
+  fetchAPI(`/api/board/suggestions/${suggestionId}/announce?guild_id=${GUILD_ID}`, {
+    method: 'POST',
+    body: JSON.stringify({ scheduled_at: scheduledAt })
+  });
+
+export const deleteSuggestion = (suggestionId) =>
+  fetchAPI(`/api/board/suggestions/${suggestionId}?guild_id=${GUILD_ID}`, {
     method: 'DELETE'
   });
 
@@ -169,11 +165,6 @@ export const checkAdmin = () => fetchAPI('/api/admin/check');
 
 export const deleteMovie = (movieId) =>
   fetchAPI(`/api/admin/movies/${movieId}`, {
-    method: 'DELETE'
-  });
-
-export const deleteSuggestion = (suggestionId) =>
-  fetchAPI(`/api/admin/suggestions/${suggestionId}`, {
     method: 'DELETE'
   });
 
