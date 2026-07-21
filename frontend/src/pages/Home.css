@@ -1138,3 +1138,17 @@
   transition: color var(--dur-1) var(--ease-out), border-color var(--dur-1) var(--ease-out);
 }
 .sb-modal-close:hover { color: var(--bone); border-color: var(--ember); }
+
+/* ═══ Homepage stat counter band ═══ */
+.home-stats-band {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--s-7);
+  margin: var(--s-7) 0;
+}
+@media (max-width: 640px) {
+  .home-stats-band {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}

@@ -8,10 +8,11 @@ import {
   getNextMovieWithAttendees,
   getUpcomingMoviesWithAttendees,
   getRandomComments,
-  toggleAttendance
+  toggleAttendance,
+  getStats
 } from '../api/client';
 import { StarRating, MovieCard, MovieCardSkeleton } from '../components/common';
-import { AdminSettingsPanel, UsersSection, AnnounceFlow, SuggestionBoard } from '../components/home';
+import { AdminSettingsPanel, UsersSection, AnnounceFlow, SuggestionBoard, HomeStatsBand } from '../components/home';
 import { Icon, SectionHead, Skeleton, EmptyState, Badge } from '../components/ui';
 import './Home.css';
 
@@ -23,20 +24,23 @@ const Home = () => {
   const [nextMovieWithAttendees, setNextMovieWithAttendees] = useState(null);
   const [upcomingWithAttendees, setUpcomingWithAttendees] = useState([]);
   const [reviews, setReviews] = useState([]);
+  const [stats, setStats] = useState(null);
   const [togglingAttendance, setTogglingAttendance] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
-      const [moviesData, nextMovieData, upcomingData, reviewsData] = await Promise.all([
+      const [moviesData, nextMovieData, upcomingData, reviewsData, statsData] = await Promise.all([
         getMovies(100, 0),
         getNextMovieWithAttendees().catch(() => null),
         getUpcomingMoviesWithAttendees(5).catch(() => []),
-        getRandomComments(12).catch(() => [])
+        getRandomComments(12).catch(() => []),
+        getStats().catch(() => null)
       ]);
       setMovies(moviesData);
       setNextMovieWithAttendees(nextMovieData);
       setUpcomingWithAttendees(upcomingData);
       setReviews(reviewsData);
+      setStats(statsData);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -293,6 +297,8 @@ const Home = () => {
           onAnnounced={fetchData}
         />
       </section>
+
+      {stats && <HomeStatsBand stats={stats} />}
 
       {/* ═══ Reviews carousel — auto-scrolling ═══ */}
       {reviews.length > 0 && (
