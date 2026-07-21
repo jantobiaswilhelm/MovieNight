@@ -138,7 +138,7 @@ const migrate = async () => {
         suggested_by INTEGER REFERENCES users(id),
         status VARCHAR(20) DEFAULT 'open',
         scheduled_at TIMESTAMP,
-        scheduled_movie_night_id INTEGER,
+        scheduled_movie_night_id INTEGER REFERENCES movie_nights(id) ON DELETE SET NULL,
         title VARCHAR(255) NOT NULL,
         image_url VARCHAR(500),
         backdrop_url VARCHAR(500),
@@ -313,8 +313,12 @@ const migrate = async () => {
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_movie_nights_announced_by ON movie_nights(announced_by)
     `);
-    await client.query(`CREATE INDEX IF NOT EXISTS idx_board_suggestions_guild ON board_suggestions(guild_id)`);
-    await client.query(`CREATE INDEX IF NOT EXISTS idx_board_upvotes_suggestion ON board_upvotes(suggestion_id)`);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_board_suggestions_guild ON board_suggestions(guild_id)
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_board_upvotes_suggestion ON board_upvotes(suggestion_id)
+    `);
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_wishlists_user ON wishlists(user_id)
     `);
