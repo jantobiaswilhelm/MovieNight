@@ -740,6 +740,73 @@ const migrate = async () => {
     // Retire the legacy voting feature — replaced by the suggestion board.
     await client.query(`DROP TABLE IF EXISTS votes, movie_suggestions, voting_sessions CASCADE`);
 
+    // ── Marathons ──────────────────────────────────────────────────────
+    // A marathon is a named, ordered set of films with a schedule that rolls
+    // out one movie night at a time. Items store TMDB metadata inline (like
+    // board_suggestions) so scheduling needs no re-fetch.
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS marathons (
+        id SERIAL PRIMARY KEY,
+        guild_id VARCHAR(20) NOT NULL,
+        created_by INTEGER REFERENCES users(id),
+        name VARCHAR(255) NOT NULL,
+        description TEXT,
+        status VARCHAR(20) DEFAULT 'draft',
+        cadence_type VARCHAR(20),
+        current_position INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS marathon_items (
+        id SERIAL PRIMARY KEY,
+        marathon_id INTEGER REFERENCES marathons(id) ON DELETE CASCADE,
+        position INTEGER NOT NULL,
+        status VARCHAR(20) DEFAULT 'pending',
+        scheduled_at TIMESTAMP,
+        scheduled_movie_night_id INTEGER REFERENCES movie_nights(id) ON DELETE SET NULL,
+        tmdb_id INTEGER,
+        title VARCHAR(255) NOT NULL,
+        image_url VARCHAR(500),
+        backdrop_url VARCHAR(500),
+        description TEXT,
+        tmdb_rating DECIMAL(3,1),
+        genres VARCHAR(255),
+        runtime INTEGER,
+        release_year INTEGER,
+        tagline VARCHAR(500),
+        imdb_id VARCHAR(20),
+        original_language VARCHAR(10),
+        trailer_url VARCHAR(500),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Marathon context carried on the announcement queue so the embed can show
+    // the ribbon + progress and the processor can back-link the item.
+    const marathonPaCols = [
+      { name: 'marathon_id', type: 'INTEGER' },
+      { name: 'marathon_item_id', type: 'INTEGER' },
+      { name: 'marathon_name', type: 'VARCHAR(255)' },
+      { name: 'marathon_position', type: 'INTEGER' },
+      { name: 'marathon_total', type: 'INTEGER' }
+    ];
+    for (const col of marathonPaCols) {
+      const check = await client.query(`
+        SELECT column_name FROM information_schema.columns
+        WHERE table_name = 'pending_announcements' AND column_name = $1
+      `, [col.name]);
+      if (check.rows.length === 0) {
+        await client.query(`ALTER TABLE pending_announcements ADD COLUMN ${col.name} ${col.type}`);
+      }
+    }
+
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_marathons_guild ON marathons(guild_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_marathon_items_marathon ON marathon_items(marathon_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_marathon_items_next ON marathon_items(marathon_id, status, position)`);
+
     await client.query('COMMIT');
     console.log('Migration completed successfully!');
   } catch (err) {
