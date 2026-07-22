@@ -240,6 +240,17 @@ router.get('/comments/random', validateGuildId, async (req, res) => {
   }
 });
 
+// Get the highest-rated movie watched on today's date in a prior year (nostalgia banner)
+router.get('/on-this-day', validateGuildId, async (req, res) => {
+  try {
+    const movie = await db.getOnThisDay(req.guildId);
+    res.json(movie);
+  } catch (err) {
+    console.error('Error fetching on this day:', err);
+    res.status(500).json({ error: 'Failed to fetch on this day' });
+  }
+});
+
 // Get another user's profile (public preview)
 router.get('/user/:userId/profile', validateGuildId, async (req, res) => {
   const { userId } = req.params;

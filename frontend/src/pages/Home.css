@@ -1138,3 +1138,95 @@
   transition: color var(--dur-1) var(--ease-out), border-color var(--dur-1) var(--ease-out);
 }
 .sb-modal-close:hover { color: var(--bone); border-color: var(--ember); }
+
+/* ═══ Homepage stat counter band ═══ */
+.home-stats-band {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--s-7);
+  margin: var(--s-7) 0;
+}
+@media (max-width: 640px) {
+  .home-stats-band {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}
+
+/* ═══ On This Day banner ═══ */
+.on-this-day {
+  border: 1px solid var(--rule);
+  border-left: 2px solid var(--ember);
+  padding: var(--s-4) var(--s-5);
+  margin: var(--s-6) 0 0;
+}
+.on-this-day .otd-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-11);
+  letter-spacing: .28em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+}
+.on-this-day .otd-body {
+  margin: var(--s-2) 0 0;
+  font-family: var(--font-ui);
+  color: var(--bone-dim);
+}
+.on-this-day .otd-title {
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--bone);
+}
+.on-this-day .otd-title:hover {
+  color: var(--ember);
+}
+
+/* ═══ Seasonal accents ═══ */
+/* Homepage-scoped accent swap. Reassigning the --ember token (rather than
+   hardcoding hex in properties) keeps the single-accent rule intact. */
+.home--halloween { --ember: #c2410c; }  /* blood-orange */
+.home--christmas { --ember: #2f6b3f; }  /* evergreen */
+.home--newyear   { --ember: var(--gold); }
+
+/* ═══ Seasonal decoration ═══ */
+.seasonal-decoration {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 5;
+}
+.season-particle {
+  position: absolute;
+  top: -5%;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--r-full);
+  opacity: .8;
+  animation-name: season-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+.season-particle--christmas { background: var(--bone); }
+.season-particle--halloween {
+  background: var(--ember);
+  border-radius: 2px;
+  opacity: .7;
+}
+.season-particle--newyear {
+  width: 6px;
+  height: 10px;
+  border-radius: 1px;
+  background: var(--gold);
+  opacity: .9;
+}
+@keyframes season-fall {
+  0%   { transform: translateY(-10vh) rotate(0deg); }
+  100% { transform: translateY(110vh) rotate(220deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .seasonal-decoration { display: none; }
+}

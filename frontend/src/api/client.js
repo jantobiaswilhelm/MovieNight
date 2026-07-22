@@ -125,6 +125,9 @@ export const getStats = (month = null) => {
   return fetchAPI(`/api/stats?${params}`);
 };
 
+export const getOnThisDay = () =>
+  fetchAPI(`/api/stats/on-this-day?guild_id=${GUILD_ID}`);
+
 export const getMyStats = () => fetchAPI('/api/stats/me');
 
 export const getUserStats = (userId) => fetchAPI(`/api/stats/user/${userId}`);

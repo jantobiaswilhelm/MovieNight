@@ -7,8 +7,16 @@ import {
   updateGuildSettings,
   deleteTestMovies
 } from '../../api/client';
+import { SEASONAL_KEYS } from '../../utils/seasonalTheme';
 
-const AdminSettingsPanel = ({ onDataRefresh }) => {
+const SEASON_LABELS = {
+  halloween: 'Halloween',
+  christmas: 'Christmas',
+  newyear: "New Year's",
+  aprilfools: 'April Fools'
+};
+
+const AdminSettingsPanel = ({ onDataRefresh, seasonPreview = null, onSeasonPreviewChange = () => {} }) => {
   const { showError } = useToast();
   const confirm = useConfirm();
   const [showAdminSettings, setShowAdminSettings] = useState(false);
@@ -106,6 +114,22 @@ const AdminSettingsPanel = ({ onDataRefresh }) => {
               {channels.map((ch) => (
                 <option key={ch.channel_id} value={ch.channel_id}>
                   #{ch.channel_name} {ch.parent_name ? `(${ch.parent_name})` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="admin-setting-row">
+            <label className="admin-setting-label">Preview Theme</label>
+            <select
+              className="admin-channel-select"
+              value={seasonPreview || ''}
+              onChange={(e) => onSeasonPreviewChange(e.target.value || null)}
+            >
+              <option value="">Off (use date)</option>
+              {SEASONAL_KEYS.map((key) => (
+                <option key={key} value={key}>
+                  {SEASON_LABELS[key] || key}
                 </option>
               ))}
             </select>

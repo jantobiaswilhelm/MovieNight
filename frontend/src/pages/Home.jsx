@@ -8,10 +8,13 @@ import {
   getNextMovieWithAttendees,
   getUpcomingMoviesWithAttendees,
   getRandomComments,
-  toggleAttendance
+  toggleAttendance,
+  getStats,
+  getOnThisDay
 } from '../api/client';
+import { getSeasonalTheme } from '../utils/seasonalTheme';
 import { StarRating, MovieCard, MovieCardSkeleton } from '../components/common';
-import { AdminSettingsPanel, UsersSection, AnnounceFlow, SuggestionBoard } from '../components/home';
+import { AdminSettingsPanel, UsersSection, AnnounceFlow, SuggestionBoard, HomeStatsBand, OnThisDay, SeasonalDecoration } from '../components/home';
 import { Icon, SectionHead, Skeleton, EmptyState, Badge } from '../components/ui';
 import './Home.css';
 
@@ -23,20 +26,27 @@ const Home = () => {
   const [nextMovieWithAttendees, setNextMovieWithAttendees] = useState(null);
   const [upcomingWithAttendees, setUpcomingWithAttendees] = useState([]);
   const [reviews, setReviews] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [seasonPreview, setSeasonPreview] = useState(null);
+  const [onThisDay, setOnThisDay] = useState(null);
   const [togglingAttendance, setTogglingAttendance] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
-      const [moviesData, nextMovieData, upcomingData, reviewsData] = await Promise.all([
+      const [moviesData, nextMovieData, upcomingData, reviewsData, statsData, onThisDayData] = await Promise.all([
         getMovies(100, 0),
         getNextMovieWithAttendees().catch(() => null),
         getUpcomingMoviesWithAttendees(5).catch(() => []),
-        getRandomComments(12).catch(() => [])
+        getRandomComments(12).catch(() => []),
+        getStats().catch(() => null),
+        getOnThisDay().catch(() => null)
       ]);
       setMovies(moviesData);
       setNextMovieWithAttendees(nextMovieData);
       setUpcomingWithAttendees(upcomingData);
       setReviews(reviewsData);
+      setStats(statsData);
+      setOnThisDay(onThisDayData);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -86,6 +96,14 @@ const Home = () => {
     return <div className="error">Error: {error}</div>;
   }
 
+  const seasonOverride =
+    typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search).get('season')
+      : null;
+  // Admin theme preview (from the Admin Settings switch) takes precedence over
+  // the ?season= URL override, which takes precedence over today's real date.
+  const seasonal = getSeasonalTheme(new Date(), seasonPreview || seasonOverride);
+
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
@@ -129,8 +147,15 @@ const Home = () => {
     : null;
 
   return (
-    <div className="home">
-      {isAdmin && <AdminSettingsPanel onDataRefresh={handleDataRefresh} />}
+    <div className={`home ${seasonal ? seasonal.className : ''}`.trim()}>
+      {seasonal && <SeasonalDecoration theme={seasonal.key} />}
+      {isAdmin && (
+        <AdminSettingsPanel
+          onDataRefresh={handleDataRefresh}
+          seasonPreview={seasonPreview}
+          onSeasonPreviewChange={setSeasonPreview}
+        />
+      )}
 
       {/* ═══ HERO — Feature + voting ═══ */}
       <section className="hero-split">
@@ -146,7 +171,9 @@ const Home = () => {
 
           <div className="hero-top">
             <span className="eyebrow">
-              {isHeroPast ? 'Last screening' : 'Tonight\u2019s feature'}
+              {seasonal && !isHeroPast
+                ? seasonal.eyebrow
+                : (isHeroPast ? 'Last screening' : 'Tonight\u2019s feature')}
             </span>
             {!isHeroPast && nextMovie?.attendees?.length > 0 && (
               <Badge live>
@@ -293,6 +320,9 @@ const Home = () => {
           onAnnounced={fetchData}
         />
       </section>
+
+      {onThisDay && <OnThisDay movie={onThisDay} />}
+      {stats && <HomeStatsBand stats={stats} seasonalKey={seasonal?.key || null} />}
 
       {/* ═══ Reviews carousel — auto-scrolling ═══ */}
       {reviews.length > 0 && (
