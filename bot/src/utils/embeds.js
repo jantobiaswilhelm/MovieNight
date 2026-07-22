@@ -17,6 +17,38 @@ export const createAnnouncementEmbed = (title, scheduledAt, imageUrl, announcerN
   return embed;
 };
 
+// Binge kickoff: one embed for the whole evening. items = ordered marathon_items
+// (each with scheduled_at + runtime). Mirrors mockup 05 (ribbon + "N films · one
+// sitting" + doors line + a time-stamped lineup).
+export const createBingeAnnouncementEmbed = (marathonName, items, announcerName) => {
+  const doors = items[0]?.scheduled_at ? new Date(items[0].scheduled_at) : new Date();
+  const doorsTs = Math.floor(doors.getTime() / 1000);
+
+  const runtimeStr = (m) => {
+    if (!m) return '';
+    const h = Math.floor(m / 60), min = m % 60;
+    return ` · ${h ? `${h}h ` : ''}${min}m`;
+  };
+
+  const lineup = items.map((it) => {
+    const ts = it.scheduled_at ? Math.floor(new Date(it.scheduled_at).getTime() / 1000) : null;
+    const when = ts ? `<t:${ts}:t>` : '—';
+    const year = it.release_year ? ` (${it.release_year})` : '';
+    return `**${when}** — ${it.title}${year}${runtimeStr(it.runtime)}`;
+  }).join('\n');
+
+  const embed = new EmbedBuilder()
+    .setAuthor({ name: marathonName })
+    .setTitle(`${items.length} films · one sitting`)
+    .setDescription(`Doors <t:${doorsTs}:F>. We run straight through with short breaks.\n\n${lineup}`)
+    .setColor(0xD4663A)
+    .setFooter({ text: `Marathon started by ${announcerName}` })
+    .setTimestamp();
+
+  if (items[0]?.image_url) embed.setThumbnail(items[0].image_url);
+  return embed;
+};
+
 export const createRatingButtons = (movieId) => {
   const row1 = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
