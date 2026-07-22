@@ -32,15 +32,17 @@ export const getBoardSuggestions = async (guildId, userId = null) => {
             u.username  AS suggested_by_name,
             u.discord_id AS suggested_by_discord_id,
             u.avatar    AS suggested_by_avatar,
-            COUNT(bu.id) AS upvote_count,
-            COALESCE(BOOL_OR(bu.user_id = $2), false) AS user_upvoted
+            (COUNT(*) FILTER (WHERE bu.vote = 1))::integer  AS upvote_count,
+            (COUNT(*) FILTER (WHERE bu.vote = -1))::integer AS downvote_count,
+            COALESCE(SUM(bu.vote), 0)::integer AS score,
+            COALESCE(MAX(bu.vote) FILTER (WHERE bu.user_id = $2), 0)::integer AS user_vote
      FROM board_suggestions bs
      LEFT JOIN users u ON bs.suggested_by = u.id
      LEFT JOIN board_upvotes bu ON bs.id = bu.suggestion_id
      WHERE bs.guild_id = $1
        AND (bs.status = 'open' OR (bs.status = 'scheduled' AND bs.scheduled_at >= NOW()))
      GROUP BY bs.id, u.username, u.discord_id, u.avatar
-     ORDER BY upvote_count DESC, bs.created_at DESC`,
+     ORDER BY score DESC, bs.created_at DESC`,
     [guildId, userId]
   );
   return result.rows;
@@ -69,18 +71,18 @@ export const findOpenSuggestionByTmdb = async (guildId, tmdbId) => {
   return result.rows[0];
 };
 
-export const addUpvote = async (suggestionId, userId) => {
+export const setVote = async (suggestionId, userId, vote) => {
   const result = await pool.query(
-    `INSERT INTO board_upvotes (suggestion_id, user_id)
-     VALUES ($1, $2)
-     ON CONFLICT (suggestion_id, user_id) DO NOTHING
+    `INSERT INTO board_upvotes (suggestion_id, user_id, vote)
+     VALUES ($1, $2, $3)
+     ON CONFLICT (suggestion_id, user_id) DO UPDATE SET vote = EXCLUDED.vote
      RETURNING *`,
-    [suggestionId, userId]
+    [suggestionId, userId, vote]
   );
   return result.rows[0];
 };
 
-export const removeUpvote = async (suggestionId, userId) => {
+export const clearVote = async (suggestionId, userId) => {
   const result = await pool.query(
     `DELETE FROM board_upvotes WHERE suggestion_id = $1 AND user_id = $2 RETURNING *`,
     [suggestionId, userId]
@@ -95,7 +97,7 @@ export const getUpvotersForBoard = async (guildId) => {
      FROM board_upvotes bu
      JOIN users u ON bu.user_id = u.id
      JOIN board_suggestions bs ON bu.suggestion_id = bs.id
-     WHERE bs.guild_id = $1
+     WHERE bs.guild_id = $1 AND bu.vote = 1
      ORDER BY bu.created_at ASC`,
     [guildId]
   );
