@@ -2,9 +2,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { useConfirm } from '../../context/ConfirmContext';
-import { getAvatarUrl } from '../../utils/helpers';
+import { getAvatarUrl, formatRuntime } from '../../utils/helpers';
+import { sanitizeUrl, sanitizeImdbId, sanitizeImageUrl } from '../../utils/sanitizeUrl';
 import {
-  getBoard, addSuggestion, upvoteSuggestion, removeUpvote,
+  getBoard, addSuggestion, setSuggestionVote, clearSuggestionVote,
   announceSuggestion, deleteSuggestion, searchTMDB, getTMDBMovie
 } from '../../api/client';
 import { Icon } from '../ui';
@@ -26,6 +27,7 @@ const SuggestionBoard = ({ onAnnounced }) => {
   const [board, setBoard] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState(null);
+  const [detailsFor, setDetailsFor] = useState(null);
 
   // Suggest modal
   const [showSuggest, setShowSuggest] = useState(false);
@@ -57,15 +59,15 @@ const SuggestionBoard = ({ onAnnounced }) => {
 
   useEffect(() => { refresh(); }, [refresh]);
 
-  const handleToggleUpvote = async (s) => {
+  const handleVote = async (s, dir) => {
     if (!isAuthenticated || busyId) return;
     setBusyId(s.id);
     try {
-      if (s.user_upvoted) await removeUpvote(s.id);
-      else await upvoteSuggestion(s.id);
+      if (s.user_vote === dir) await clearSuggestionVote(s.id);
+      else await setSuggestionVote(s.id, dir);
       await refresh();
     } catch (err) {
-      console.error('Error upvoting:', err);
+      showError('Failed to vote');
     } finally {
       setBusyId(null);
     }
@@ -180,7 +182,7 @@ const SuggestionBoard = ({ onAnnounced }) => {
           <p>No suggestions yet.</p>
           {isAuthenticated
             ? <small>Be the first — hit Suggest.</small>
-            : <small>Log in to suggest and upvote.</small>}
+            : <small>Log in to suggest and vote.</small>}
         </div>
       ) : (
         <ul className="sb-list">
@@ -190,12 +192,20 @@ const SuggestionBoard = ({ onAnnounced }) => {
             return (
               <li key={s.id} className={`sb-item ${scheduled ? 'scheduled' : ''}`}>
                 {s.image_url ? (
-                  <img src={s.image_url} alt="" className="sb-poster" loading="lazy" />
+                  <img
+                    src={s.image_url}
+                    alt=""
+                    className="sb-poster sb-poster-open"
+                    loading="lazy"
+                    onClick={() => setDetailsFor(s)}
+                  />
                 ) : (
-                  <div className="sb-poster no-poster"><Icon name="film" size={16} /></div>
+                  <div className="sb-poster no-poster sb-poster-open" onClick={() => setDetailsFor(s)}>
+                    <Icon name="film" size={16} />
+                  </div>
                 )}
                 <div className="sb-info">
-                  <span className="sb-item-title">{s.title}</span>
+                  <button type="button" className="sb-item-title" onClick={() => setDetailsFor(s)}>{s.title}</button>
                   {s.suggested_by_name && (
                     <span className="sb-by">
                       <img
@@ -232,15 +242,26 @@ const SuggestionBoard = ({ onAnnounced }) => {
                 </div>
 
                 <div className="sb-actions">
-                  <button
-                    className={`sb-heart ${s.user_upvoted ? 'on' : ''}`}
-                    onClick={() => handleToggleUpvote(s)}
-                    disabled={!isAuthenticated || busyId !== null || scheduled}
-                    title={isAuthenticated ? 'Upvote' : 'Log in to upvote'}
-                  >
-                    <Icon name="heart" size={14} />
-                    <span>{count}</span>
-                  </button>
+                  <div className="sb-vote">
+                    <button
+                      className={`sb-vote-btn up ${s.user_vote === 1 ? 'on' : ''}`}
+                      onClick={() => handleVote(s, 1)}
+                      disabled={!isAuthenticated || busyId !== null || scheduled}
+                      title={isAuthenticated ? 'Upvote' : 'Log in to vote'}
+                    >
+                      <Icon name="chevron-up" size={14} />
+                      <span>{parseInt(s.upvote_count) || 0}</span>
+                    </button>
+                    <button
+                      className={`sb-vote-btn down ${s.user_vote === -1 ? 'on' : ''}`}
+                      onClick={() => handleVote(s, -1)}
+                      disabled={!isAuthenticated || busyId !== null || scheduled}
+                      title={isAuthenticated ? 'Downvote' : 'Log in to vote'}
+                    >
+                      <Icon name="chevron-down" size={14} />
+                      <span>{parseInt(s.downvote_count) || 0}</span>
+                    </button>
+                  </div>
                   {!scheduled && isAuthenticated && (
                     <button
                       className="sb-announce"
@@ -269,7 +290,7 @@ const SuggestionBoard = ({ onAnnounced }) => {
 
       {!isAuthenticated && board.length > 0 && (
         <div className="sb-login">
-          <button onClick={login} className="btn sm">Log in to upvote</button>
+          <button onClick={login} className="btn sm">Log in to vote</button>
         </div>
       )}
 
@@ -366,6 +387,57 @@ const SuggestionBoard = ({ onAnnounced }) => {
                 {announcing ? 'Scheduling…' : <><Icon name="megaphone" size={16} /> <span>Announce screening</span></>}
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Details modal (read-only) */}
+      {detailsFor && (
+        <div className="sb-modal-overlay" onClick={() => setDetailsFor(null)}>
+          <div className="sb-modal sb-modal--wide" onClick={(e) => e.stopPropagation()}>
+            <div className="sb-modal-head">
+              <h2>{detailsFor.title}{detailsFor.release_year ? ` (${detailsFor.release_year})` : ''}</h2>
+              <button className="sb-modal-close" aria-label="Close" onClick={() => setDetailsFor(null)}>
+                <Icon name="close" size={16} />
+              </button>
+            </div>
+            {(sanitizeImageUrl(detailsFor.backdrop_url) || sanitizeImageUrl(detailsFor.image_url)) && (
+              <div
+                className="sb-details-backdrop"
+                style={{ backgroundImage: `url(${sanitizeImageUrl(detailsFor.backdrop_url) || sanitizeImageUrl(detailsFor.image_url)})` }}
+                aria-hidden="true"
+              />
+            )}
+            <div className="sb-details-meta">
+              {detailsFor.runtime > 0 && <span>{formatRuntime(detailsFor.runtime)}</span>}
+              {detailsFor.genres && <span>{detailsFor.genres}</span>}
+              {detailsFor.tmdb_rating > 0 && <span>TMDB {parseFloat(detailsFor.tmdb_rating).toFixed(1)}</span>}
+            </div>
+            {detailsFor.tagline && <p className="sb-details-tagline">{detailsFor.tagline}</p>}
+            {detailsFor.description && <p className="sb-details-desc">{detailsFor.description}</p>}
+            <div className="sb-details-links">
+              {detailsFor.trailer_url && (
+                <a href={sanitizeUrl(detailsFor.trailer_url)} target="_blank" rel="noopener noreferrer" className="btn sm">
+                  <Icon name="play" size={14} /> <span>Trailer</span>
+                </a>
+              )}
+              {sanitizeImdbId(detailsFor.imdb_id) && (
+                <a href={`https://www.imdb.com/title/${sanitizeImdbId(detailsFor.imdb_id)}`} target="_blank" rel="noopener noreferrer" className="btn text">
+                  IMDb &rarr;
+                </a>
+              )}
+            </div>
+            {detailsFor.suggested_by_name && (
+              <div className="sb-details-by">
+                <img
+                  src={getAvatarUrl(detailsFor.suggested_by_discord_id, detailsFor.suggested_by_avatar)}
+                  alt=""
+                  className="sb-by-avatar"
+                  loading="lazy"
+                />
+                Suggested by {detailsFor.suggested_by_name}
+              </div>
+            )}
           </div>
         </div>
       )}

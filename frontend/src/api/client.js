@@ -142,13 +142,14 @@ export const addSuggestion = (title, imageUrl, tmdbData = null) =>
     body: JSON.stringify({ title, image_url: imageUrl, tmdb_data: tmdbData })
   });
 
-export const upvoteSuggestion = (suggestionId) =>
-  fetchAPI(`/api/board/suggestions/${suggestionId}/upvote?guild_id=${GUILD_ID}`, {
-    method: 'POST'
+export const setSuggestionVote = (suggestionId, vote) =>
+  fetchAPI(`/api/board/suggestions/${suggestionId}/vote?guild_id=${GUILD_ID}`, {
+    method: 'POST',
+    body: JSON.stringify({ vote })
   });
 
-export const removeUpvote = (suggestionId) =>
-  fetchAPI(`/api/board/suggestions/${suggestionId}/upvote?guild_id=${GUILD_ID}`, {
+export const clearSuggestionVote = (suggestionId) =>
+  fetchAPI(`/api/board/suggestions/${suggestionId}/vote?guild_id=${GUILD_ID}`, {
     method: 'DELETE'
   });
 

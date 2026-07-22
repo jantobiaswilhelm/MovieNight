@@ -167,6 +167,18 @@ const migrate = async () => {
       )
     `);
 
+    // board_upvotes now stores a signed vote (+1 up / -1 down). Existing rows
+    // default to +1 (they were upvotes). The table keeps its name.
+    await client.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'board_upvotes' AND column_name = 'vote') THEN
+          ALTER TABLE board_upvotes ADD COLUMN vote SMALLINT NOT NULL DEFAULT 1;
+          ALTER TABLE board_upvotes ADD CONSTRAINT board_upvotes_vote_check CHECK (vote IN (1, -1));
+        END IF;
+      END $$;
+    `);
+
     // Wishlists table
     await client.query(`
       CREATE TABLE IF NOT EXISTS wishlists (
