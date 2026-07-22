@@ -1279,3 +1279,23 @@
 @media (prefers-reduced-motion: reduce) {
   .seasonal-decoration { display: none; }
 }
+
+/* ── Board up/down vote buttons ───────────────────────── */
+.sb-vote{ display: flex; flex-direction: column; gap: 3px; }
+.sb-vote-btn{
+  display: inline-flex; align-items: center; gap: 4px;
+  min-width: 46px;
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: var(--r-1);
+  color: var(--bone-dim);
+  padding: 3px 7px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-11);
+  cursor: pointer;
+  transition: border-color var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
+}
+.sb-vote-btn:hover:not(:disabled){ border-color: var(--rule-strong); color: var(--bone); }
+.sb-vote-btn:disabled{ opacity: .5; cursor: default; }
+.sb-vote-btn.up.on{ border-color: var(--ember); color: var(--ember); }
+.sb-vote-btn.down.on{ border-color: var(--bone-dim); color: var(--bone); }

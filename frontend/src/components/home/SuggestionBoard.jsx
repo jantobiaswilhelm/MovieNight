@@ -4,7 +4,7 @@ import { useToast } from '../../context/ToastContext';
 import { useConfirm } from '../../context/ConfirmContext';
 import { getAvatarUrl } from '../../utils/helpers';
 import {
-  getBoard, addSuggestion, upvoteSuggestion, removeUpvote,
+  getBoard, addSuggestion, setSuggestionVote, clearSuggestionVote,
   announceSuggestion, deleteSuggestion, searchTMDB, getTMDBMovie
 } from '../../api/client';
 import { Icon } from '../ui';
@@ -57,15 +57,15 @@ const SuggestionBoard = ({ onAnnounced }) => {
 
   useEffect(() => { refresh(); }, [refresh]);
 
-  const handleToggleUpvote = async (s) => {
+  const handleVote = async (s, dir) => {
     if (!isAuthenticated || busyId) return;
     setBusyId(s.id);
     try {
-      if (s.user_upvoted) await removeUpvote(s.id);
-      else await upvoteSuggestion(s.id);
+      if (s.user_vote === dir) await clearSuggestionVote(s.id);
+      else await setSuggestionVote(s.id, dir);
       await refresh();
     } catch (err) {
-      console.error('Error upvoting:', err);
+      showError('Failed to vote');
     } finally {
       setBusyId(null);
     }
@@ -180,7 +180,7 @@ const SuggestionBoard = ({ onAnnounced }) => {
           <p>No suggestions yet.</p>
           {isAuthenticated
             ? <small>Be the first — hit Suggest.</small>
-            : <small>Log in to suggest and upvote.</small>}
+            : <small>Log in to suggest and vote.</small>}
         </div>
       ) : (
         <ul className="sb-list">
@@ -232,15 +232,26 @@ const SuggestionBoard = ({ onAnnounced }) => {
                 </div>
 
                 <div className="sb-actions">
-                  <button
-                    className={`sb-heart ${s.user_upvoted ? 'on' : ''}`}
-                    onClick={() => handleToggleUpvote(s)}
-                    disabled={!isAuthenticated || busyId !== null || scheduled}
-                    title={isAuthenticated ? 'Upvote' : 'Log in to upvote'}
-                  >
-                    <Icon name="heart" size={14} />
-                    <span>{count}</span>
-                  </button>
+                  <div className="sb-vote">
+                    <button
+                      className={`sb-vote-btn up ${s.user_vote === 1 ? 'on' : ''}`}
+                      onClick={() => handleVote(s, 1)}
+                      disabled={!isAuthenticated || busyId !== null || scheduled}
+                      title={isAuthenticated ? 'Upvote' : 'Log in to vote'}
+                    >
+                      <Icon name="chevron-up" size={14} />
+                      <span>{parseInt(s.upvote_count) || 0}</span>
+                    </button>
+                    <button
+                      className={`sb-vote-btn down ${s.user_vote === -1 ? 'on' : ''}`}
+                      onClick={() => handleVote(s, -1)}
+                      disabled={!isAuthenticated || busyId !== null || scheduled}
+                      title={isAuthenticated ? 'Downvote' : 'Log in to vote'}
+                    >
+                      <Icon name="chevron-down" size={14} />
+                      <span>{parseInt(s.downvote_count) || 0}</span>
+                    </button>
+                  </div>
                   {!scheduled && isAuthenticated && (
                     <button
                       className="sb-announce"
@@ -269,7 +280,7 @@ const SuggestionBoard = ({ onAnnounced }) => {
 
       {!isAuthenticated && board.length > 0 && (
         <div className="sb-login">
-          <button onClick={login} className="btn sm">Log in to upvote</button>
+          <button onClick={login} className="btn sm">Log in to vote</button>
         </div>
       )}
 
