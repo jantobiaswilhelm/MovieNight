@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNotification } from '../../context/NotificationContext';
+import { useToast } from '../../context/ToastContext';
 import * as api from '../../api/client';
 import { Icon } from '../ui';
 
@@ -17,7 +17,7 @@ const toLocalInput = (date) =>
   `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 
 export default function MarathonWizard({ onClose, onLaunched }) {
-  const { showError } = useNotification();
+  const { showError } = useToast();
   const [step, setStep] = useState(1);           // 1 name, 2 lineup, 3 schedule
   const [marathonId, setMarathonId] = useState(null);
   const [name, setName] = useState('');

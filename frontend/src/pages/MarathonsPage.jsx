@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useNotification } from '../context/NotificationContext';
+import { useToast } from '../context/ToastContext';
 import * as api from '../api/client';
 import { Icon } from '../components/ui';
 import MarathonWizard from '../components/marathons/MarathonWizard';
@@ -48,7 +48,7 @@ export default function MarathonsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
-  const { showError } = useNotification();
+  const { showError } = useToast();
   const [marathons, setMarathons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [wizardOpen, setWizardOpen] = useState(false);
