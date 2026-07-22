@@ -1,0 +1,18 @@
+.otc { border: 1px solid var(--rule); border-radius: var(--r-3); overflow: hidden; }
+.otc-day { display: flex; gap: 20px; padding: 16px 22px; border-top: 1px solid var(--rule); }
+.otc-day:first-child { border-top: none; }
+.otc-daycol { width: 72px; flex-shrink: 0; text-align: right; padding-top: 4px; }
+.otc-daycol .dow { font-family: var(--font-mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--bone-mute); }
+.otc-daycol .dnum { font-family: var(--font-display); font-style: italic; font-size: 30px; color: var(--bone); line-height: 1; margin-top: 1px; }
+.otc-daycol .mon { font-family: var(--font-mono); font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: var(--bone-mute); margin-top: 3px; }
+.otc-daycol.today .dnum, .otc-daycol.today .dow { color: var(--ember); }
+.otc-slots { flex: 1; display: flex; flex-direction: column; gap: 9px; min-width: 0; }
+.otc-ev { display: flex; align-items: center; gap: 13px; }
+.otc-poster { width: 34px; height: 51px; border-radius: 4px; background: var(--ink-3) center/cover no-repeat; flex-shrink: 0; }
+.otc-info { flex: 1; min-width: 0; }
+.otc-info h4 { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.otc-meta { display: flex; align-items: center; gap: 9px; margin-top: 3px; font-size: 12px; color: var(--bone-mute); }
+.otc-tag { font-family: var(--font-mono); font-size: 9px; letter-spacing: .12em; text-transform: uppercase; padding: 3px 8px; border-radius: var(--r-full); border: 1px solid var(--rule-strong); color: var(--bone-mute); display: inline-flex; align-items: center; gap: 5px; }
+.otc-tag.mara { color: var(--ember); border-color: var(--ember-dim); background: var(--ember-soft); }
+.otc-sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.otc-time { font-family: var(--font-mono); font-size: 12px; color: var(--bone-dim); white-space: nowrap; }

@@ -10,3 +10,4 @@ export { default as HomeStatsBand } from './HomeStatsBand';
 export { default as OnThisDay } from './OnThisDay';
 export { default as SeasonalDecoration } from './SeasonalDecoration';
 export { default as ReviewsFeature } from './ReviewsFeature';
+export { default as OnTheCalendar } from './OnTheCalendar';
