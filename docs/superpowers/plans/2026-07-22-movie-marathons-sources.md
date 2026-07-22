@@ -540,7 +540,7 @@ In `MarathonWizardPage.jsx`, replace the `SOURCES` constant so person/franchise/
 ```jsx
 const SOURCES = [
   { key: 'manual',    icon: 'search',   title: 'Pick movies yourself',  desc: 'Search TMDB and add films one by one. Full control over order.', tag: 'Manual' },
-  { key: 'person',    icon: 'user',     title: 'By actor or director',  desc: 'Search a person → pull their films straight from TMDB. Zero guesswork.', tag: 'TMDB credits' },
+  { key: 'person',    icon: 'user',     title: 'By actor, actress, or director',  desc: 'Search a person → pull their films straight from TMDB. Zero guesswork.', tag: 'TMDB credits' },
   { key: 'franchise', icon: 'layers',   title: 'From a franchise',      desc: 'Grab a whole collection in order — trilogies, sagas.', tag: 'Collections' },
   { key: 'vibe',      icon: 'sparkles', title: 'Describe a vibe',       desc: 'Describe a mood or theme and get a lineup you review before it schedules.', tag: 'AI · Gemini' },
 ];
@@ -675,7 +675,7 @@ Immediately after the grid, add the panels (matches mockup 02's inline expansion
               <div className="mara-seg" style={{ maxWidth: 260, marginBottom: 14 }}>
                 {['acting', 'directing'].map((r) => (
                   <button key={r} type="button" className={personRole === r ? 'on' : ''}
-                    onClick={() => setPersonRole(r)}>{r === 'acting' ? 'As actor' : 'As director'}</button>
+                    onClick={() => setPersonRole(r)}>{r === 'acting' ? 'As actor/actress' : 'As director'}</button>
                 ))}
               </div>
               <form className="mara-searchrow" onSubmit={searchPerson}>
