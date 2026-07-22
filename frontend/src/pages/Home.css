@@ -1010,6 +1010,14 @@
   grid-template-columns: 1fr 1fr;
   gap: var(--s-2);
 }
+.af-compose{
+  display: flex;
+  align-items: flex-end;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+}
+.af-compose-when{ font-size: 13px; color: var(--bone-dim); }
+.af-compose-when b{ color: var(--bone); }
 .af-field{
   display: flex;
   flex-direction: column;

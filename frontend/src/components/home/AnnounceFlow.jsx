@@ -1,10 +1,7 @@
-import { useState } from 'react';
-import { searchTMDB, getTMDBMovie, announceMovie } from '../../api/client';
+import { useState, useEffect } from 'react';
+import { searchTMDB, getTMDBMovie, announceMovie, getCalendar } from '../../api/client';
 import { Icon, Chip } from '../ui';
-
-/** Format a Date as YYYY-MM-DD in the browser's local timezone (never UTC). */
-const localDateStr = (d) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+import InlineScheduler from './InlineScheduler';
 
 /**
  * Inline Announce wizard — search → preview+schedule → success.
@@ -17,20 +14,21 @@ const AnnounceFlow = ({ onAnnounced }) => {
   const [search, setSearch] = useState('');
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
-  const [date, setDate] = useState(() => {
-    // Default to next Friday at 20:30
-    const d = new Date();
-    d.setDate(d.getDate() + ((5 + 7 - d.getDay()) % 7 || 7));
-    return localDateStr(d);
-  });
+  const [selectedDay, setSelectedDay] = useState(null);   // Date of the chosen night
+  const [occupancy, setOccupancy] = useState([]);
   const [time, setTime] = useState('20:30');
   const [announcing, setAnnouncing] = useState(false);
   const [error, setError] = useState(null);
   const [announcedTitle, setAnnouncedTitle] = useState('');
 
+  useEffect(() => {
+    getCalendar().then(setOccupancy).catch(() => setOccupancy([]));
+  }, []);
+
   const reset = () => {
     setStep('search');
     setSelectedMovie(null);
+    setSelectedDay(null);
     setSearch('');
     setResults([]);
     setError(null);
@@ -68,11 +66,12 @@ const AnnounceFlow = ({ onAnnounced }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!selectedMovie || !date || !time) {
-      setError('Pick a date and time.');
+    if (!selectedMovie || !selectedDay || !time) {
+      setError('Pick a day and time.');
       return;
     }
-    const scheduledAt = new Date(`${date}T${time}`);
+    const [hh, mm] = time.split(':').map(Number);
+    const scheduledAt = new Date(selectedDay.getFullYear(), selectedDay.getMonth(), selectedDay.getDate(), hh, mm);
     if (scheduledAt <= new Date()) {
       setError('The time must be in the future.');
       return;
@@ -219,27 +218,22 @@ const AnnounceFlow = ({ onAnnounced }) => {
 
           <div className="af-when">
             <div className="af-when-label">When</div>
-            <div className="af-when-fields">
-              <label className="af-field">
-                <span>Date</span>
-                <input
-                  type="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  min={localDateStr(new Date())}
-                  required
-                />
-              </label>
-              <label className="af-field">
-                <span>Time</span>
-                <input
-                  type="time"
-                  value={time}
-                  onChange={(e) => setTime(e.target.value)}
-                  required
-                />
-              </label>
-            </div>
+            <InlineScheduler
+              occupancy={occupancy}
+              value={selectedDay}
+              onChange={setSelectedDay}
+              renderCompose={(day) => (
+                <div className="af-compose">
+                  <div className="af-compose-when">
+                    Scheduling for <b>{day.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}</b>
+                  </div>
+                  <label className="af-field">
+                    <span>Time</span>
+                    <input type="time" value={time} onChange={(e) => setTime(e.target.value)} required />
+                  </label>
+                </div>
+              )}
+            />
           </div>
 
           {error && <div className="af-error">{error}</div>}
