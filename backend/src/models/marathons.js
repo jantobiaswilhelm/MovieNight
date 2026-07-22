@@ -1,0 +1,175 @@
+import pool from '../config/database.js';
+
+// Create a draft marathon. Items are added separately.
+export const createMarathon = async (guildId, userId, name, description = null) => {
+  const result = await pool.query(
+    `INSERT INTO marathons (guild_id, created_by, name, description)
+     VALUES ($1, $2, $3, $4)
+     RETURNING *`,
+    [guildId, userId, name, description]
+  );
+  return result.rows[0];
+};
+
+// Browse list: one row per marathon with counts, next-up, and poster fan.
+// Ordered active → paused → draft → completed, newest-updated first.
+export const getMarathons = async (guildId) => {
+  const result = await pool.query(
+    `SELECT m.*,
+            u.username AS created_by_name,
+            u.discord_id AS created_by_discord_id,
+            u.avatar AS created_by_avatar,
+            (SELECT COUNT(*) FROM marathon_items mi WHERE mi.marathon_id = m.id)::int AS item_count,
+            (SELECT COUNT(*) FROM marathon_items mi
+               WHERE mi.marathon_id = m.id AND mi.scheduled_at IS NOT NULL AND mi.scheduled_at < NOW())::int AS watched_count,
+            (SELECT json_build_object('title', mi.title, 'scheduled_at', mi.scheduled_at)
+               FROM marathon_items mi
+               WHERE mi.marathon_id = m.id AND (mi.scheduled_at IS NULL OR mi.scheduled_at >= NOW())
+               ORDER BY mi.position ASC LIMIT 1) AS next_item,
+            (SELECT json_agg(mi.image_url ORDER BY mi.position)
+               FROM marathon_items mi WHERE mi.marathon_id = m.id) AS poster_urls
+     FROM marathons m
+     LEFT JOIN users u ON m.created_by = u.id
+     WHERE m.guild_id = $1
+     ORDER BY CASE m.status
+                WHEN 'active' THEN 0 WHEN 'paused' THEN 1
+                WHEN 'draft' THEN 2 ELSE 3 END,
+              m.updated_at DESC`,
+    [guildId]
+  );
+  return result.rows;
+};
+
+export const getMarathonById = async (id) => {
+  const result = await pool.query(
+    `SELECT m.*, u.username AS created_by_name, u.discord_id AS created_by_discord_id
+     FROM marathons m LEFT JOIN users u ON m.created_by = u.id
+     WHERE m.id = $1`,
+    [id]
+  );
+  return result.rows[0];
+};
+
+export const getMarathonItems = async (marathonId) => {
+  const result = await pool.query(
+    `SELECT * FROM marathon_items WHERE marathon_id = $1 ORDER BY position ASC`,
+    [marathonId]
+  );
+  return result.rows;
+};
+
+// Append a film. movie carries TMDB metadata (from GET /api/tmdb/:id).
+export const addMarathonItem = async (marathonId, movie) => {
+  const posResult = await pool.query(
+    `SELECT COALESCE(MAX(position), -1) + 1 AS pos FROM marathon_items WHERE marathon_id = $1`,
+    [marathonId]
+  );
+  const position = posResult.rows[0].pos;
+  const {
+    tmdbId, title, imageUrl, backdropUrl, description, tmdbRating,
+    genres, runtime, releaseYear, tagline, imdbId, originalLanguage, trailerUrl
+  } = movie;
+  const result = await pool.query(
+    `INSERT INTO marathon_items
+       (marathon_id, position, tmdb_id, title, image_url, backdrop_url, description,
+        tmdb_rating, genres, runtime, release_year, tagline, imdb_id, original_language, trailer_url)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+     RETURNING *`,
+    [
+      marathonId, position, tmdbId || null, title, imageUrl || null, backdropUrl || null,
+      description || null, tmdbRating ?? null, genres || null, runtime ?? null,
+      releaseYear || null, tagline || null, imdbId || null, originalLanguage || null, trailerUrl || null
+    ]
+  );
+  return result.rows[0];
+};
+
+export const removeMarathonItem = async (marathonId, itemId) => {
+  const result = await pool.query(
+    `DELETE FROM marathon_items WHERE id = $1 AND marathon_id = $2 RETURNING *`,
+    [itemId, marathonId]
+  );
+  return result.rows[0];
+};
+
+// Reorder: orderedItemIds is the full list of item ids in the new order.
+export const reorderMarathonItems = async (marathonId, orderedItemIds) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    for (let i = 0; i < orderedItemIds.length; i++) {
+      await client.query(
+        `UPDATE marathon_items SET position = $1 WHERE id = $2 AND marathon_id = $3`,
+        [i, orderedItemIds[i], marathonId]
+      );
+    }
+    await client.query('COMMIT');
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+  return getMarathonItems(marathonId);
+};
+
+export const updateMarathonItemDate = async (marathonId, itemId, scheduledAt) => {
+  const result = await pool.query(
+    `UPDATE marathon_items SET scheduled_at = $1 WHERE id = $2 AND marathon_id = $3 RETURNING *`,
+    [scheduledAt, itemId, marathonId]
+  );
+  return result.rows[0];
+};
+
+// Launch: persist per-item dates + cadence, flip to active. items = [{ id, scheduled_at }].
+export const launchMarathon = async (marathonId, cadenceType, items) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    for (const it of items) {
+      await client.query(
+        `UPDATE marathon_items SET scheduled_at = $1, status = 'pending' WHERE id = $2 AND marathon_id = $3`,
+        [it.scheduled_at, it.id, marathonId]
+      );
+    }
+    const result = await client.query(
+      `UPDATE marathons
+       SET status = 'active', cadence_type = $2, current_position = 0, updated_at = NOW()
+       WHERE id = $1 RETURNING *`,
+      [marathonId, cadenceType]
+    );
+    await client.query('COMMIT');
+    return result.rows[0];
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+};
+
+export const setMarathonStatus = async (marathonId, status) => {
+  const result = await pool.query(
+    `UPDATE marathons SET status = $2, updated_at = NOW() WHERE id = $1 RETURNING *`,
+    [marathonId, status]
+  );
+  return result.rows[0];
+};
+
+export const updateMarathon = async (marathonId, { name, description }) => {
+  const result = await pool.query(
+    `UPDATE marathons
+     SET name = COALESCE($2, name), description = COALESCE($3, description), updated_at = NOW()
+     WHERE id = $1 RETURNING *`,
+    [marathonId, name ?? null, description ?? null]
+  );
+  return result.rows[0];
+};
+
+export const deleteMarathon = async (marathonId) => {
+  const result = await pool.query(
+    `DELETE FROM marathons WHERE id = $1 RETURNING *`,
+    [marathonId]
+  );
+  return result.rows[0];
+};

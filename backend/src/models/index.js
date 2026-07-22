@@ -12,3 +12,4 @@ export * from './achievements.js';
 export * from './notifications.js';
 export * from './lists.js';
 export * from './guild.js';
+export * from './marathons.js';
