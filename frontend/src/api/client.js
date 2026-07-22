@@ -262,6 +262,13 @@ export const getNextMovieWithAttendees = () =>
 export const getUpcomingMoviesWithAttendees = (limit = 10) =>
   fetchAPI(`/api/movies/upcoming/with-attendees?guild_id=${GUILD_ID}&limit=${limit}`);
 
+export const getCalendar = (start, end) => {
+  const params = new URLSearchParams({ guild_id: GUILD_ID });
+  if (start) params.append('start', start);
+  if (end) params.append('end', end);
+  return fetchAPI(`/api/movies/calendar?${params}`);
+};
+
 // Profile
 export const getMyProfileStats = () =>
   fetchAPI(`/api/stats/me/profile?guild_id=${GUILD_ID}`);
