@@ -1140,16 +1140,36 @@
 .sb-modal-close:hover { color: var(--bone); border-color: var(--ember); }
 
 /* ═══ Homepage stat counter band ═══ */
+/* A framed "featured numbers" strip: a lifted surface, an ember top accent, and
+   hairline column dividers make it stand out from the page — without enlarging
+   the type. The rating carries the gold accent as a focal point. */
 .home-stats-band {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: var(--s-7);
+  gap: 0;
   margin: var(--s-7) 0;
+  background: var(--ink-2);
+  border-top: 2px solid var(--ember);
+  border-bottom: 1px solid var(--rule-strong);
+}
+.home-stats-band .ui-stat {
+  border-top: none;
+  padding: var(--s-5) var(--s-6);
+}
+.home-stats-band .ui-stat + .ui-stat {
+  border-left: 1px solid var(--rule);
+}
+/* Gold = ratings only — gives the strip a focal point without growing the type. */
+.home-stats-band .ui-stat:last-child .stat-value {
+  color: var(--gold);
 }
 @media (max-width: 640px) {
   .home-stats-band {
     grid-template-columns: 1fr;
-    gap: 0;
+  }
+  .home-stats-band .ui-stat + .ui-stat {
+    border-left: none;
+    border-top: 1px solid var(--rule);
   }
 }
 
