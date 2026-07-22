@@ -10,11 +10,12 @@ import {
   getRandomComments,
   toggleAttendance,
   getStats,
-  getOnThisDay
+  getOnThisDay,
+  getCalendar
 } from '../api/client';
 import { getSeasonalTheme } from '../utils/seasonalTheme';
 import { StarRating, MovieCard, MovieCardSkeleton } from '../components/common';
-import { AdminSettingsPanel, UsersSection, AnnounceFlow, SuggestionBoard, HomeStatsBand, OnThisDay, SeasonalDecoration, ReviewsFeature } from '../components/home';
+import { AdminSettingsPanel, UsersSection, AnnounceFlow, SuggestionBoard, HomeStatsBand, OnThisDay, SeasonalDecoration, ReviewsFeature, OnTheCalendar } from '../components/home';
 import { Icon, SectionHead, Skeleton, EmptyState, Badge } from '../components/ui';
 import './Home.css';
 
@@ -29,17 +30,19 @@ const Home = () => {
   const [stats, setStats] = useState(null);
   const [seasonPreview, setSeasonPreview] = useState(null);
   const [onThisDay, setOnThisDay] = useState(null);
+  const [calendar, setCalendar] = useState([]);
   const [togglingAttendance, setTogglingAttendance] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
-      const [moviesData, nextMovieData, upcomingData, reviewsData, statsData, onThisDayData] = await Promise.all([
+      const [moviesData, nextMovieData, upcomingData, reviewsData, statsData, onThisDayData, calendarData] = await Promise.all([
         getMovies(100, 0),
         getNextMovieWithAttendees().catch(() => null),
         getUpcomingMoviesWithAttendees(5).catch(() => []),
         getRandomComments(12).catch(() => []),
         getStats().catch(() => null),
-        getOnThisDay().catch(() => null)
+        getOnThisDay().catch(() => null),
+        getCalendar().catch(() => [])
       ]);
       setMovies(moviesData);
       setNextMovieWithAttendees(nextMovieData);
@@ -47,6 +50,7 @@ const Home = () => {
       setReviews(reviewsData);
       setStats(statsData);
       setOnThisDay(onThisDayData);
+      setCalendar(calendarData);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -337,7 +341,7 @@ const Home = () => {
         <section className="home-block">
           <SectionHead
             num="03"
-            title={hasUpcomingExtras ? 'On the calendar' : 'Last screenings'}
+            title={calendar.length > 0 ? 'On the calendar' : 'Last screenings'}
             meta={<Link to="/movies" className="btn text">Archive →</Link>}
           />
           {loading ? (
@@ -346,22 +350,23 @@ const Home = () => {
               <MovieCardSkeleton />
               <MovieCardSkeleton />
             </div>
-          ) : hasUpcomingExtras ? (
-            <div className="upcoming-grid">
-              {upcomingWithAttendees.slice(1, 4).map((movie) => (
-                <MovieCard key={movie.id} movie={movie} variant="compact" />
-              ))}
-            </div>
-          ) : lastScreenings.length > 0 ? (
-            <div className="upcoming-grid">
-              {lastScreenings.map((movie) => (
-                <MovieCard key={movie.id} movie={movie} variant="compact" />
-              ))}
-            </div>
           ) : (
-            <EmptyState
-              title="Nothing queued."
-              body="Announce a movie to start the next screening."
+            <OnTheCalendar
+              items={calendar}
+              fallback={
+                lastScreenings.length > 0 ? (
+                  <div className="upcoming-grid">
+                    {lastScreenings.map((movie) => (
+                      <MovieCard key={movie.id} movie={movie} variant="compact" />
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyState
+                    title="Nothing queued."
+                    body="Announce a movie to start the next screening."
+                  />
+                )
+              }
             />
           )}
         </section>
