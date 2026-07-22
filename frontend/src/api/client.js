@@ -221,6 +221,15 @@ export const searchTMDB = (query) =>
 export const getTMDBMovie = (id) =>
   fetchAPI(`/api/tmdb/${id}`);
 
+export const searchTMDBPerson = (query) =>
+  fetchAPI(`/api/tmdb/person?query=${encodeURIComponent(query)}`);
+
+export const getPersonMovies = (personId, role = 'acting') =>
+  fetchAPI(`/api/tmdb/person/${personId}/movies?role=${role}`);
+
+export const getMovieCollection = (tmdbId) =>
+  fetchAPI(`/api/tmdb/${tmdbId}/collection`);
+
 export const getSimilarMovies = (tmdbId) =>
   fetchAPI(`/api/tmdb/${tmdbId}/similar`);
 
@@ -552,3 +561,18 @@ export const resumeMarathon = (id) =>
 
 export const deleteMarathon = (id) =>
   fetchAPI(`/api/marathons/${id}?guild_id=${GUILD_ID}`, { method: 'DELETE' });
+
+export const bulkAddMarathonItems = (id, tmdbIds) =>
+  fetchAPI(`/api/marathons/${id}/items/bulk?guild_id=${GUILD_ID}`, {
+    method: 'POST',
+    body: JSON.stringify({ tmdb_ids: tmdbIds })
+  });
+
+export const getCurateStatus = () =>
+  fetchAPI(`/api/marathons/curate?guild_id=${GUILD_ID}`);
+
+export const curateMarathon = (prompt) =>
+  fetchAPI(`/api/marathons/curate?guild_id=${GUILD_ID}`, {
+    method: 'POST',
+    body: JSON.stringify({ prompt })
+  });
