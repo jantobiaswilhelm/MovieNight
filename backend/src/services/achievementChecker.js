@@ -1,5 +1,20 @@
 import * as db from '../models/index.js';
 
+// Secret cult-movie badges, keyed by TMDB id (resolved via resolve-cult-ids.mjs).
+const MOVIE_BADGES = {
+  17473: 'cult_the_room', // The Room (2003)
+  26914: 'cult_troll_2', // Troll 2 (1990)
+  10513: 'cult_plan_9', // Plan 9 from Outer Space (1957)
+  40016: 'cult_birdemic', // Birdemic: Shock and Terror (2010)
+  205321: 'cult_sharknado', // Sharknado (2013)
+  536869: 'cult_cats', // Cats (2019)
+  9708: 'cult_wicker_man', // The Wicker Man (2006)
+  5491: 'cult_battlefield_earth', // Battlefield Earth (2000)
+  115: 'cult_lebowski', // The Big Lebowski (1998)
+  762: 'cult_holy_grail', // Monty Python and the Holy Grail (1975)
+  813: 'cult_airplane', // Airplane! (1980)
+};
+
 export const checkAndUnlockAchievements = async (userId, guildId) => {
   const progress = await db.getAchievementProgress(userId, guildId);
   const unlockedAchievements = [];
@@ -113,7 +128,7 @@ export const checkAndUnlockAchievements = async (userId, guildId) => {
   return unlockedAchievements;
 };
 
-export const checkRatingAchievements = async (userId, score) => {
+export const checkRatingAchievements = async (userId, score, tmdbId = null) => {
   const unlockedAchievements = [];
 
   // Perfect 10
@@ -132,6 +147,12 @@ export const checkRatingAchievements = async (userId, score) => {
   const hour = new Date().getUTCHours();
   if (hour >= 0 && hour < 5) {
     const achievement = await db.unlockAchievement(userId, 'night_owl');
+    if (achievement) unlockedAchievements.push(achievement);
+  }
+
+  // Secret cult-movie badge
+  if (tmdbId && MOVIE_BADGES[tmdbId]) {
+    const achievement = await db.unlockAchievement(userId, MOVIE_BADGES[tmdbId]);
     if (achievement) unlockedAchievements.push(achievement);
   }
 
