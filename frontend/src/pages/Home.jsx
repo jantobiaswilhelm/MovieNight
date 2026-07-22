@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { sanitizeUrl, sanitizeImdbId, sanitizeImageUrl } from '../utils/sanitizeUrl';
-import { formatDate, formatRuntime, getAvatarUrl, formatRelativeTime } from '../utils/helpers';
+import { formatDate, formatRuntime, getAvatarUrl } from '../utils/helpers';
 import {
   getMovies,
   getNextMovieWithAttendees,
@@ -14,7 +14,7 @@ import {
 } from '../api/client';
 import { getSeasonalTheme } from '../utils/seasonalTheme';
 import { StarRating, MovieCard, MovieCardSkeleton } from '../components/common';
-import { AdminSettingsPanel, UsersSection, AnnounceFlow, SuggestionBoard, HomeStatsBand, OnThisDay, SeasonalDecoration } from '../components/home';
+import { AdminSettingsPanel, UsersSection, AnnounceFlow, SuggestionBoard, HomeStatsBand, OnThisDay, SeasonalDecoration, ReviewsFeature } from '../components/home';
 import { Icon, SectionHead, Skeleton, EmptyState, Badge } from '../components/ui';
 import './Home.css';
 
@@ -324,49 +324,11 @@ const Home = () => {
       {onThisDay && <OnThisDay movie={onThisDay} />}
       {stats && <HomeStatsBand stats={stats} seasonalKey={seasonal?.key || null} />}
 
-      {/* ═══ Reviews carousel — auto-scrolling ═══ */}
+      {/* ═══ Reviews — featured pull-quote ═══ */}
       {reviews.length > 0 && (
         <section className="home-block">
-          <SectionHead num="02" title="Recent dispatches" meta={`${reviews.length} reviews · live`} />
-          <div className="reviews-wrap">
-            <div className="reviews-marquee">
-              <div className="reviews-track">
-                {[...reviews, ...reviews].map((review, i) => (
-                  <article key={i} className="review-card" aria-hidden={i >= reviews.length ? 'true' : undefined}>
-                    <header className="review-head">
-                      <img
-                        src={getAvatarUrl(review.discord_id, review.avatar)}
-                        alt=""
-                        className="review-avatar"
-                        loading="lazy"
-                      />
-                      <div className="review-who">
-                        <span className="review-username">{review.username}</span>
-                        {review.created_at && (
-                          <span className="review-time">{formatRelativeTime(review.created_at)}</span>
-                        )}
-                      </div>
-                    </header>
-                    <div className="review-body">
-                      {review.image_url && (
-                        <img src={review.image_url} alt="" className="review-poster" loading="lazy" />
-                      )}
-                      <div className="review-main">
-                        <div className="review-score">
-                          <span className="score-num">{parseFloat(review.score).toFixed(1)}</span>
-                          <span className="score-denom">/ 10</span>
-                        </div>
-                        <div className="review-movie">{review.movie_title}</div>
-                      </div>
-                    </div>
-                    {review.comment && (
-                      <p className="review-comment">&ldquo;{review.comment}&rdquo;</p>
-                    )}
-                  </article>
-                ))}
-              </div>
-            </div>
-          </div>
+          <SectionHead num="02" title="Recent dispatches" meta={`${reviews.length} reviews`} />
+          <ReviewsFeature reviews={reviews} />
         </section>
       )}
 
