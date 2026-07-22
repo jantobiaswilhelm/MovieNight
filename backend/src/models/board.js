@@ -25,7 +25,7 @@ export const createBoardSuggestion = async (guildId, suggestedBy, title, imageUr
 
 // Active board: open suggestions + still-upcoming scheduled ones.
 // Past-dated scheduled rows drop off automatically (auto-clear, no cron).
-// Includes aggregated upvote_count and, when userId given, user_upvoted.
+// Includes upvote_count, downvote_count, net score, and (when userId given) the caller's user_vote.
 export const getBoardSuggestions = async (guildId, userId = null) => {
   const result = await pool.query(
     `SELECT bs.*,

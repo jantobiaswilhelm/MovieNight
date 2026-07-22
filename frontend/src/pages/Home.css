@@ -1092,13 +1092,11 @@
 .sb-upvoter-more { font-size: var(--fs-11); color: var(--bone-mute); margin-left: 4px; }
 
 .sb-actions { display: flex; align-items: center; gap: var(--s-1); flex: none; }
-.sb-heart, .sb-announce, .sb-remove {
+.sb-announce, .sb-remove {
   display: inline-flex; align-items: center; gap: 4px; cursor: pointer;
   background: none; border: 1px solid var(--rule);
   border-radius: var(--r-full); padding: 4px 8px; color: var(--bone-dim);
 }
-.sb-heart.on { color: var(--ember); border-color: var(--ember); }
-.sb-heart:disabled { cursor: default; }
 .sb-announce:hover, .sb-remove:hover { color: var(--bone); }
 .sb-remove:hover { color: var(--red); border-color: var(--red); }
 
