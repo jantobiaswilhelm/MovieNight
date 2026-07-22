@@ -27,6 +27,7 @@ const Home = () => {
   const [upcomingWithAttendees, setUpcomingWithAttendees] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [stats, setStats] = useState(null);
+  const [seasonPreview, setSeasonPreview] = useState(null);
   const [onThisDay, setOnThisDay] = useState(null);
   const [togglingAttendance, setTogglingAttendance] = useState(false);
 
@@ -99,7 +100,9 @@ const Home = () => {
     typeof window !== 'undefined'
       ? new URLSearchParams(window.location.search).get('season')
       : null;
-  const seasonal = getSeasonalTheme(new Date(), seasonOverride);
+  // Admin theme preview (from the Admin Settings switch) takes precedence over
+  // the ?season= URL override, which takes precedence over today's real date.
+  const seasonal = getSeasonalTheme(new Date(), seasonPreview || seasonOverride);
 
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -146,7 +149,13 @@ const Home = () => {
   return (
     <div className={`home ${seasonal ? seasonal.className : ''}`.trim()}>
       {seasonal && <SeasonalDecoration theme={seasonal.key} />}
-      {isAdmin && <AdminSettingsPanel onDataRefresh={handleDataRefresh} />}
+      {isAdmin && (
+        <AdminSettingsPanel
+          onDataRefresh={handleDataRefresh}
+          seasonPreview={seasonPreview}
+          onSeasonPreviewChange={setSeasonPreview}
+        />
+      )}
 
       {/* ═══ HERO — Feature + voting ═══ */}
       <section className="hero-split">
