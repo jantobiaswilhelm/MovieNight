@@ -63,31 +63,37 @@ router.post('/suggestions', validateGuildId, authenticateToken, async (req, res)
   }
 });
 
-// POST /api/board/suggestions/:id/upvote — add caller's heart (auth).
-router.post('/suggestions/:id/upvote', validateGuildId, validateIntParams('id'), authenticateToken, async (req, res) => {
+// POST /api/board/suggestions/:id/vote — set caller's vote (+1 up / -1 down).
+router.post('/suggestions/:id/vote', validateGuildId, validateIntParams('id'), authenticateToken, async (req, res) => {
+  const { vote } = req.body;
+  if (vote !== 1 && vote !== -1) {
+    return res.status(400).json({ error: 'vote must be 1 or -1' });
+  }
   try {
     const suggestion = await db.getBoardSuggestionById(parseInt(req.params.id));
-    if (!suggestion) return res.status(404).json({ error: 'Suggestion not found' });
-    if (suggestion.guild_id !== req.guildId) return res.status(404).json({ error: 'Suggestion not found' });
-    await db.addUpvote(parseInt(req.params.id), req.user.id);
+    if (!suggestion || suggestion.guild_id !== req.guildId) {
+      return res.status(404).json({ error: 'Suggestion not found' });
+    }
+    await db.setVote(parseInt(req.params.id), req.user.id, vote);
     res.json({ success: true });
   } catch (err) {
-    console.error('Error adding upvote:', err);
-    res.status(500).json({ error: 'Failed to upvote' });
+    console.error('Error setting vote:', err);
+    res.status(500).json({ error: 'Failed to vote' });
   }
 });
 
-// DELETE /api/board/suggestions/:id/upvote — remove caller's heart (auth).
-router.delete('/suggestions/:id/upvote', validateGuildId, validateIntParams('id'), authenticateToken, async (req, res) => {
+// DELETE /api/board/suggestions/:id/vote — clear caller's vote.
+router.delete('/suggestions/:id/vote', validateGuildId, validateIntParams('id'), authenticateToken, async (req, res) => {
   try {
     const suggestion = await db.getBoardSuggestionById(parseInt(req.params.id));
-    if (!suggestion) return res.status(404).json({ error: 'Suggestion not found' });
-    if (suggestion.guild_id !== req.guildId) return res.status(404).json({ error: 'Suggestion not found' });
-    await db.removeUpvote(parseInt(req.params.id), req.user.id);
+    if (!suggestion || suggestion.guild_id !== req.guildId) {
+      return res.status(404).json({ error: 'Suggestion not found' });
+    }
+    await db.clearVote(parseInt(req.params.id), req.user.id);
     res.json({ success: true });
   } catch (err) {
-    console.error('Error removing upvote:', err);
-    res.status(500).json({ error: 'Failed to remove upvote' });
+    console.error('Error clearing vote:', err);
+    res.status(500).json({ error: 'Failed to clear vote' });
   }
 });
 
