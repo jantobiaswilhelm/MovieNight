@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import * as tmdb from '../services/tmdb.js';
 
 const router = Router();
 
@@ -48,6 +49,20 @@ router.get('/search', async (req, res) => {
   }
 });
 
+// Search people (actors/directors) — registered before /:id so the bare
+// "person" segment isn't captured as a movie id.
+router.get('/person', async (req, res) => {
+  const { query } = req.query;
+  if (!query) return res.status(400).json({ error: 'query parameter is required' });
+  if (!TMDB_API_KEY) return res.status(500).json({ error: 'TMDB API key not configured' });
+  try {
+    res.json(await tmdb.searchPeople(query));
+  } catch (err) {
+    console.error('TMDB person search error:', err);
+    res.status(502).json({ error: 'TMDB API error' });
+  }
+});
+
 // Get movie details
 router.get('/:id', async (req, res) => {
   const { id } = req.params;
@@ -61,52 +76,39 @@ router.get('/:id', async (req, res) => {
   }
 
   try {
-    const [detailsResponse, videosResponse] = await Promise.all([
-      fetch(`${TMDB_BASE_URL}/movie/${id}?api_key=${TMDB_API_KEY}`),
-      fetch(`${TMDB_BASE_URL}/movie/${id}/videos?api_key=${TMDB_API_KEY}`)
-    ]);
-
-    if (!detailsResponse.ok) {
-      if (detailsResponse.status === 404) {
-        return res.status(404).json({ error: 'Movie not found' });
-      }
-      return res.status(502).json({ error: 'TMDB API error' });
-    }
-
-    const movie = await detailsResponse.json();
-
-    // Get trailer URL
-    let trailerUrl = null;
-    if (videosResponse.ok) {
-      const videosData = await videosResponse.json();
-      const trailer = videosData.results?.find(v => v.type === 'Trailer' && v.site === 'YouTube' && v.official) ||
-                      videosData.results?.find(v => v.type === 'Trailer' && v.site === 'YouTube') ||
-                      videosData.results?.find(v => v.type === 'Teaser' && v.site === 'YouTube');
-      if (trailer) {
-        trailerUrl = `https://www.youtube.com/watch?v=${trailer.key}`;
-      }
-    }
-
-    res.json({
-      id: movie.id,
-      title: movie.title,
-      year: movie.release_date ? parseInt(movie.release_date.split('-')[0]) : null,
-      overview: movie.overview,
-      posterPath: movie.poster_path ? `${TMDB_IMAGE_BASE}${movie.poster_path}` : null,
-      backdropPath: movie.backdrop_path ? `${TMDB_BACKDROP_BASE}${movie.backdrop_path}` : null,
-      rating: movie.vote_average ? parseFloat(movie.vote_average.toFixed(1)) : null,
-      releaseDate: movie.release_date,
-      runtime: movie.runtime || null,
-      genres: movie.genres?.map(g => g.name).join(', ') || null,
-      tagline: movie.tagline || null,
-      imdbId: movie.imdb_id || null,
-      originalLanguage: movie.original_language || null,
-      collectionName: movie.belongs_to_collection?.name || null,
-      trailerUrl
-    });
+    const detail = await tmdb.getMovieDetail(id);
+    res.json(detail);
   } catch (err) {
+    if (err.status === 404) return res.status(404).json({ error: 'Movie not found' });
     console.error('TMDB details error:', err);
-    res.status(500).json({ error: 'Failed to get movie details' });
+    res.status(502).json({ error: 'TMDB API error' });
+  }
+});
+
+// A person's movies (role=acting|directing)
+router.get('/person/:id/movies', async (req, res) => {
+  const { id } = req.params;
+  const role = req.query.role === 'directing' ? 'directing' : 'acting';
+  if (!/^\d+$/.test(id)) return res.status(400).json({ error: 'Invalid person ID' });
+  if (!TMDB_API_KEY) return res.status(500).json({ error: 'TMDB API key not configured' });
+  try {
+    res.json(await tmdb.getPersonMovies(id, role));
+  } catch (err) {
+    console.error('TMDB person movies error:', err);
+    res.status(502).json({ error: 'TMDB API error' });
+  }
+});
+
+// A movie's franchise/collection parts, in order
+router.get('/:id/collection', async (req, res) => {
+  const { id } = req.params;
+  if (!/^\d+$/.test(id)) return res.status(400).json({ error: 'Invalid movie ID' });
+  if (!TMDB_API_KEY) return res.status(500).json({ error: 'TMDB API key not configured' });
+  try {
+    res.json(await tmdb.getMovieCollection(id));
+  } catch (err) {
+    console.error('TMDB collection error:', err);
+    res.status(502).json({ error: 'TMDB API error' });
   }
 });
 
