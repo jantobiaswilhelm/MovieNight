@@ -1305,7 +1305,7 @@
 .sb-item-title{ background: none; border: none; padding: 0; text-align: left; cursor: pointer; }
 .sb-item-title:hover{ color: var(--ember); }
 
-.sb-modal--wide{ max-width: 560px; }
+.sb-modal--wide{ max-width: 560px; max-height: 85vh; overflow-y: auto; }
 .sb-details-backdrop{
   width: 100%;
   height: 150px;
