@@ -72,9 +72,11 @@ export default function MarathonWizardPage() {
   const [busy, setBusy] = useState(false);
 
   // cadence
+  const [cadenceMode, setCadenceMode] = useState('interval');  // 'interval' | 'binge'
   const [repeat, setRepeat] = useState('weekly');     // daily | weekly | custom
   const [customN, setCustomN] = useState(2);
   const [customUnit, setCustomUnit] = useState('week');
+  const [breakMin, setBreakMin] = useState(15);
   const [start, setStart] = useState(toLocalInput(new Date(Date.now() + 3 * 864e5)));
 
   const [dragIndex, setDragIndex] = useState(null);
@@ -204,6 +206,15 @@ export default function MarathonWizardPage() {
     setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, scheduled_at: value } : it)));
 
   const autofill = () => {
+    if (cadenceMode === 'binge') {
+      let cursor = new Date(start).getTime();
+      setItems((prev) => prev.map((it) => {
+        const at = toLocalInput(new Date(cursor));
+        cursor += ((it.runtime || 120) + breakMin) * 60000;   // next film after runtime + break
+        return { ...it, scheduled_at: at };
+      }));
+      return;
+    }
     const base = new Date(start);
     const stepMs = stepDays() * 864e5;
     setItems((prev) => prev.map((it, i) => ({
@@ -223,13 +234,14 @@ export default function MarathonWizardPage() {
     setBusy(true);
     try {
       await api.reorderMarathonItems(marathonId, items.map((i) => i.id));
-      await api.launchMarathon(marathonId, 'interval',
+      await api.launchMarathon(marathonId, cadenceMode,
         items.map((i) => ({ id: i.id, scheduled_at: new Date(i.scheduled_at).toISOString() })));
       navigate(`/marathons/${marathonId}`);
     } catch (err) { showError(err.message); } finally { setBusy(false); }
   };
 
-  const cadenceLabel = repeat === 'daily' ? 'Daily'
+  const cadenceLabel = cadenceMode === 'binge' ? 'Back-to-back'
+    : repeat === 'daily' ? 'Daily'
     : repeat === 'weekly' ? 'Weekly'
     : `Every ${customN} ${customUnit}${customN > 1 ? 's' : ''}`;
 
@@ -407,42 +419,55 @@ export default function MarathonWizardPage() {
             <div className="mara-panel">
               <label className="mara-label">Cadence <span className="sublabel">— a template for the dates</span></label>
               <div className="mara-modes">
-                <button type="button" className="mara-mode sel">
+                <button type="button" className={`mara-mode ${cadenceMode === 'interval' ? 'sel' : ''}`}
+                  onClick={() => setCadenceMode('interval')}>
                   <span className="ic"><Icon name="calendar-clock" size={18} /></span>
                   <h4>Spread out</h4><p>One film per interval, over time</p>
                 </button>
-                <button type="button" className="mara-mode disabled" disabled>
-                  <span className="tag">Soon</span>
+                <button type="button" className={`mara-mode ${cadenceMode === 'binge' ? 'sel' : ''}`}
+                  onClick={() => setCadenceMode('binge')}>
                   <span className="ic"><Icon name="film" size={18} /></span>
                   <h4>Back-to-back</h4><p>All in one sitting, by runtime</p>
                 </button>
               </div>
 
-              <label className="mara-label">Repeat</label>
-              <div className="mara-seg">
-                {['daily', 'weekly', 'custom'].map((r) => (
-                  <button key={r} type="button" className={repeat === r ? 'on' : ''} onClick={() => setRepeat(r)}>
-                    {r[0].toUpperCase() + r.slice(1)}
-                  </button>
-                ))}
-              </div>
-
-              {repeat === 'custom' && (
-                <div className="mara-field">
-                  <label className="mara-label">Every</label>
-                  <div className="mara-inrow">
-                    <input type="number" min="1" value={customN}
-                           onChange={(e) => setCustomN(Math.max(1, parseInt(e.target.value) || 1))} style={{ maxWidth: 90 }} />
-                    <select value={customUnit} onChange={(e) => setCustomUnit(e.target.value)}>
-                      <option value="day">day(s)</option>
-                      <option value="week">week(s)</option>
-                    </select>
+              {cadenceMode === 'interval' && (
+                <>
+                  <label className="mara-label">Repeat</label>
+                  <div className="mara-seg">
+                    {['daily', 'weekly', 'custom'].map((r) => (
+                      <button key={r} type="button" className={repeat === r ? 'on' : ''} onClick={() => setRepeat(r)}>
+                        {r[0].toUpperCase() + r.slice(1)}
+                      </button>
+                    ))}
                   </div>
+
+                  {repeat === 'custom' && (
+                    <div className="mara-field">
+                      <label className="mara-label">Every</label>
+                      <div className="mara-inrow">
+                        <input type="number" min="1" value={customN}
+                               onChange={(e) => setCustomN(Math.max(1, parseInt(e.target.value) || 1))} style={{ maxWidth: 90 }} />
+                        <select value={customUnit} onChange={(e) => setCustomUnit(e.target.value)}>
+                          <option value="day">day(s)</option>
+                          <option value="week">week(s)</option>
+                        </select>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {cadenceMode === 'binge' && (
+                <div className="mara-field">
+                  <label className="mara-label">Break between films (min)</label>
+                  <input type="number" min="0" value={breakMin}
+                         onChange={(e) => setBreakMin(Math.max(0, parseInt(e.target.value) || 0))} style={{ maxWidth: 110 }} />
                 </div>
               )}
 
               <div className="mara-field">
-                <label className="mara-label">Starts</label>
+                <label className="mara-label">{cadenceMode === 'binge' ? 'Doors open' : 'Starts'}</label>
                 <input type="datetime-local" value={start} onChange={(e) => setStart(e.target.value)} style={{ width: '100%' }} />
               </div>
 
@@ -452,7 +477,9 @@ export default function MarathonWizardPage() {
 
               <div className="mara-rollnote">
                 <Icon name="info" size={16} />
-                <p><b>Rolls out one at a time.</b> Only the next film posts to Discord; the rest stay editable and you can pause between any two.</p>
+                {cadenceMode === 'binge'
+                  ? <p><b>One night, one embed.</b> The whole lineup posts as a single Discord kickoff — each film still becomes a rateable movie night.</p>
+                  : <p><b>Rolls out one at a time.</b> Only the next film posts to Discord; the rest stay editable and you can pause between any two.</p>}
               </div>
             </div>
           </div>
