@@ -144,7 +144,16 @@ const Home = () => {
     .filter((movie) => new Date(movie.scheduled_at) <= now)
     .filter((movie) => !(isHeroPast && heroMovie && movie.id === heroMovie.id))
     .sort((a, b) => new Date(b.scheduled_at) - new Date(a.scheduled_at))
-    .slice(0, 3);
+    .slice(0, 4);
+
+  // The calendar slot always renders the compact agenda: upcoming nights when we
+  // have them, otherwise recent screenings mapped into the same shape.
+  const calendarItems = calendar.length > 0
+    ? calendar
+    : lastScreenings.map((m) => ({
+        id: m.id, kind: 'one-off', title: m.title, scheduled_at: m.scheduled_at,
+        image_url: m.image_url, runtime: m.runtime, release_year: m.release_year
+      }));
 
   const heroBackdrop = heroMovie
     ? sanitizeImageUrl(heroMovie.backdrop_url) || sanitizeImageUrl(heroMovie.image_url)
@@ -352,20 +361,12 @@ const Home = () => {
             </div>
           ) : (
             <OnTheCalendar
-              items={calendar}
+              items={calendarItems}
               fallback={
-                lastScreenings.length > 0 ? (
-                  <div className="upcoming-grid">
-                    {lastScreenings.map((movie) => (
-                      <MovieCard key={movie.id} movie={movie} variant="compact" />
-                    ))}
-                  </div>
-                ) : (
-                  <EmptyState
-                    title="Nothing queued."
-                    body="Announce a movie to start the next screening."
-                  />
-                )
+                <EmptyState
+                  title="Nothing queued."
+                  body="Announce a movie to start the next screening."
+                />
               }
             />
           )}
