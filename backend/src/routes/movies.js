@@ -31,6 +31,22 @@ router.get('/upcoming/with-attendees', validateGuildId, parsePagination, optiona
   }
 });
 
+// GET /api/movies/calendar?start=ISO&end=ISO — occupancy for the home calendar. (before /:id)
+router.get('/calendar', validateGuildId, optionalAuth, async (req, res) => {
+  try {
+    const now = new Date();
+    const start = req.query.start && !isNaN(new Date(req.query.start)) ? new Date(req.query.start) : now;
+    const end = req.query.end && !isNaN(new Date(req.query.end))
+      ? new Date(req.query.end)
+      : new Date(now.getTime() + 90 * 864e5);
+    const items = await db.getCalendar(req.guildId, start.toISOString(), end.toISOString());
+    res.json(items);
+  } catch (err) {
+    console.error('Error fetching calendar:', err);
+    res.status(500).json({ error: 'Failed to fetch calendar' });
+  }
+});
+
 // Get next movie with attendees (for homepage hero) (must be before /:id)
 router.get('/next/with-attendees', validateGuildId, optionalAuth, async (req, res) => {
   try {

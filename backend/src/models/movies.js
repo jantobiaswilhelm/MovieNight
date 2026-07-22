@@ -209,3 +209,39 @@ export const getMovieCredits = async (movieNightId) => {
   );
   return result.rows;
 };
+
+// Everything scheduled in [start, end): upcoming one-off movie_nights UNIONed
+// with upcoming marathon films not yet posted to Discord. Tagged by kind so the
+// UI can show the ember "Marathon" ribbon. No collision logic — pure read.
+export const getCalendar = async (guildId, startISO, endISO) => {
+  const result = await pool.query(
+    `SELECT * FROM (
+       SELECT mn.id::text AS id, 'one-off' AS kind, mn.title, mn.scheduled_at,
+              mn.image_url, mn.runtime, mn.release_year,
+              NULL::int AS marathon_id, NULL::text AS marathon_name,
+              NULL::int AS marathon_position, NULL::int AS marathon_total,
+              NULL::varchar AS cadence_type
+       FROM movie_nights mn
+       WHERE mn.guild_id = $1 AND mn.started_at IS NULL
+         AND mn.scheduled_at >= $2 AND mn.scheduled_at < $3
+         AND (mn.is_test = false OR mn.is_test IS NULL)
+
+       UNION ALL
+
+       SELECT 'mi-' || mi.id::text AS id, 'marathon' AS kind, mi.title, mi.scheduled_at,
+              mi.image_url, mi.runtime, mi.release_year,
+              m.id AS marathon_id, m.name AS marathon_name,
+              mi.position + 1 AS marathon_position,
+              (SELECT COUNT(*)::int FROM marathon_items x WHERE x.marathon_id = m.id) AS marathon_total,
+              m.cadence_type
+       FROM marathon_items mi
+       JOIN marathons m ON mi.marathon_id = m.id
+       WHERE m.guild_id = $1 AND m.status = 'active'
+         AND mi.scheduled_movie_night_id IS NULL
+         AND mi.scheduled_at >= $2 AND mi.scheduled_at < $3
+     ) cal
+     ORDER BY cal.scheduled_at ASC`,
+    [guildId, startISO, endISO]
+  );
+  return result.rows;
+};
