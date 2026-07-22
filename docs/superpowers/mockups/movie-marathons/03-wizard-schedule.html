@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>New Marathon — Lineup &amp; Schedule</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400;1,9..144,600&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  :root{
+    --ink:#14110D; --ink-2:#1C1915; --ink-3:#252119; --ink-4:#2F2A21;
+    --bone:#E8DFC9; --bone-dim:#A89E88; --bone-mute:#6B6556;
+    --ember:#D4663A; --ember-hi:#E27A4C; --ember-soft:rgba(212,102,58,.14);
+    --gold:#E0A23A; --red:#C8321A;
+    --rule:rgba(232,223,201,.08); --rule-strong:rgba(232,223,201,.16);
+    --font-display:"Fraunces",ui-serif,Georgia,serif;
+    --font-ui:"Figtree",ui-sans-serif,system-ui,sans-serif;
+    --font-mono:"JetBrains Mono",ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--ink);color:var(--bone);font-family:var(--font-ui);line-height:1.5;-webkit-font-smoothing:antialiased;padding-bottom:84px}
+  .wrap{max-width:1040px;margin:0 auto;padding:0 40px}
+  .label{font-family:var(--font-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--bone-dim);display:block;margin-bottom:10px}
+
+  .stepper{display:flex;align-items:center;padding:40px 0 6px}
+  .step{display:flex;align-items:center;gap:10px;font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--bone-mute)}
+  .step .n{width:24px;height:24px;border-radius:999px;border:1px solid var(--rule-strong);display:grid;place-items:center;font-size:11px}
+  .step.on{color:var(--bone)} .step.on .n{background:var(--ember);border-color:var(--ember);color:var(--ink);font-weight:600}
+  .step.done{color:var(--bone-dim)} .step.done .n{background:var(--ink-3);border-color:var(--rule-strong);color:var(--ember)}
+  .step .line{width:40px;height:1px;background:var(--rule-strong);margin:0 12px}
+
+  header.h{padding:22px 0 22px;border-bottom:1px solid var(--rule);margin-bottom:22px}
+  header.h h1{font-family:var(--font-display);font-style:italic;font-weight:400;font-size:clamp(26px,3vw,36px)}
+  header.h .sub{color:var(--bone-dim);font-size:14px;margin-top:8px}
+
+  .cols{display:grid;grid-template-columns:1.4fr 1fr;gap:34px;align-items:start}
+
+  .hintline{font-size:12.5px;color:var(--bone-mute);margin:-2px 0 14px;display:flex;align-items:center;gap:7px}
+  .hintline svg{width:14px;color:var(--bone-dim)}
+
+  /* lineup */
+  .li{display:flex;align-items:center;gap:13px;background:var(--ink-2);border:1px solid var(--rule);border-radius:8px;padding:10px 12px;margin-bottom:9px}
+  .li .grip{color:var(--bone-mute);cursor:grab;display:grid;place-items:center}
+  .li .grip svg{width:16px}
+  .li .pos{font-family:var(--font-mono);font-size:12px;color:var(--bone-mute);width:16px;text-align:center}
+  .li .poster{width:34px;height:51px;border-radius:4px;background:var(--ink-3);display:grid;place-items:center;text-align:center;font-family:var(--font-mono);font-size:7px;color:var(--bone-mute);padding:3px;overflow:hidden;flex-shrink:0}
+  .li .t{flex:1;min-width:0}
+  .li .t h4{font-size:14.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .li .t .m{font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--bone-mute);margin-top:3px}
+
+  /* editable date pill */
+  .datebtn{display:inline-flex;flex-direction:column;align-items:flex-end;gap:1px;background:var(--ink);border:1px solid var(--rule-strong);border-radius:6px;padding:6px 10px;cursor:pointer;min-width:112px;position:relative}
+  .datebtn:hover{border-color:var(--ember)}
+  .datebtn b{font-weight:600;color:var(--bone);font-size:12.5px}
+  .datebtn small{color:var(--bone-dim);font-size:11px}
+  .datebtn .pen{position:absolute;top:6px;left:8px;color:var(--bone-mute);opacity:0}
+  .datebtn:hover .pen{opacity:1}
+  .datebtn .pen svg{width:11px}
+  .datebtn.edited{border-color:var(--ember);background:var(--ember-soft)}
+  .datebtn.edited b{color:var(--ember)}
+  .edtag{font-family:var(--font-mono);font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:var(--ember);position:absolute;top:-7px;right:8px;background:var(--ink-2);padding:0 4px}
+
+  .li .x{color:var(--bone-mute);cursor:pointer;padding:4px}
+  .li .x:hover{color:var(--red)} .li .x svg{width:15px}
+  .additem{width:100%;border:1px dashed var(--rule-strong);background:transparent;color:var(--bone-dim);border-radius:8px;padding:11px;font-size:13.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:4px}
+  .additem:hover{border-color:var(--ember);color:var(--ember)}
+
+  /* schedule panel */
+  .panel{background:var(--ink-2);border:1px solid var(--rule);border-radius:10px;padding:22px;position:sticky;top:20px}
+  .modes{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:22px}
+  .mode{border:1px solid var(--rule-strong);border-radius:8px;padding:14px;cursor:pointer}
+  .mode.sel{border-color:var(--ember);background:var(--ember-soft)}
+  .mode .ic{color:var(--ember);margin-bottom:9px} .mode .ic svg{width:19px}
+  .mode h4{font-size:14px;font-weight:600;margin-bottom:3px}
+  .mode p{font-size:11.5px;color:var(--bone-dim);line-height:1.4}
+
+  /* segmented Daily/Weekly/Custom */
+  .seg{display:flex;background:var(--ink);border:1px solid var(--rule-strong);border-radius:6px;padding:3px;gap:3px;margin-bottom:16px}
+  .seg button{flex:1;background:transparent;border:none;color:var(--bone-dim);font-family:var(--font-ui);font-size:13px;font-weight:500;padding:8px;border-radius:4px;cursor:pointer}
+  .seg button.on{background:var(--ember);color:var(--ink);font-weight:600}
+
+  .field{margin-bottom:16px}
+  .inrow{display:flex;gap:10px}
+  .ctl{background:var(--ink);border:1px solid var(--rule-strong);border-radius:6px;color:var(--bone);font-family:var(--font-ui);font-size:14px;padding:11px 12px;width:100%}
+  .ctl:focus{outline:none;border-color:var(--ember)}
+  select.ctl{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%23A89E88' stroke-width='2'%3E%3Cpath d='M2 4l4 4 4-4'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:30px}
+
+  .applyrow{display:flex;align-items:center;gap:9px;margin-top:4px}
+  .btn-apply{flex:1;background:var(--ink-3);border:1px solid var(--rule-strong);color:var(--bone);font-family:var(--font-ui);font-size:13px;font-weight:600;padding:10px;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:7px}
+  .btn-apply:hover{border-color:var(--ember);color:var(--ember)}
+  .btn-apply svg{width:14px}
+
+  .rollnote{display:flex;gap:10px;background:var(--ink-3);border-radius:8px;padding:13px 14px;margin-top:16px}
+  .rollnote svg{width:16px;color:var(--ember);flex-shrink:0;margin-top:1px}
+  .rollnote p{font-size:12px;color:var(--bone-dim);line-height:1.5} .rollnote b{color:var(--bone)}
+
+  .footer{position:fixed;bottom:0;left:0;right:0;background:var(--ink-2);border-top:1px solid var(--rule-strong);padding:14px 0}
+  .footer .fw{max-width:1040px;margin:0 auto;padding:0 40px;display:flex;justify-content:space-between;align-items:center}
+  .footinfo{font-size:12.5px;color:var(--bone-dim)} .footinfo b{color:var(--bone)}
+  .fbtns{display:flex;gap:12px}
+  .btn-ghost{background:transparent;border:1px solid var(--rule-strong);color:var(--bone-dim);font-weight:500;font-size:14px;padding:11px 18px;border-radius:6px;cursor:pointer}
+  .btn-ghost:hover{color:var(--bone)}
+  .btn-next{background:var(--ember);color:var(--ink);border:none;font-weight:600;font-size:14px;padding:12px 22px;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="stepper">
+      <span class="step done"><span class="n"><i data-lucide="check" style="width:13px"></i></span> Source</span><span class="line"></span>
+      <span class="step on"><span class="n">2</span> Lineup</span><span class="line"></span>
+      <span class="step on"><span class="n">3</span> Schedule</span><span class="line"></span>
+      <span class="step"><span class="n">4</span> Review</span>
+    </div>
+
+    <header class="h">
+      <h1>Build &amp; schedule the lineup</h1>
+      <div class="sub">Drag to reorder. Pick a cadence to auto-fill dates — then fine-tune any night by hand.</div>
+    </header>
+
+    <div class="cols">
+      <!-- LINEUP -->
+      <div>
+        <label class="label">Lineup · 6 films</label>
+        <div class="hintline"><i data-lucide="mouse-pointer-click"></i> Dates are filled from the cadence. Click any date to override just that one.</div>
+
+        <div class="li">
+          <span class="grip"><i data-lucide="grip-vertical"></i></span>
+          <span class="pos">1</span>
+          <span class="poster">Zero Dark Thirty</span>
+          <div class="t"><h4>Zero Dark Thirty</h4><div class="m">2012 · 2h 37m</div></div>
+          <button class="datebtn"><span class="pen"><i data-lucide="pencil"></i></span><b>Sun, Jul 27</b><small>7:00 PM</small></button>
+          <span class="x"><i data-lucide="x"></i></span>
+        </div>
+        <div class="li">
+          <span class="grip"><i data-lucide="grip-vertical"></i></span>
+          <span class="pos">2</span>
+          <span class="poster">The Help</span>
+          <div class="t"><h4>The Help</h4><div class="m">2011 · 2h 26m</div></div>
+          <button class="datebtn"><span class="pen"><i data-lucide="pencil"></i></span><b>Sun, Aug 3</b><small>7:00 PM</small></button>
+          <span class="x"><i data-lucide="x"></i></span>
+        </div>
+        <div class="li">
+          <span class="grip"><i data-lucide="grip-vertical"></i></span>
+          <span class="pos">3</span>
+          <span class="poster">Molly's Game</span>
+          <div class="t"><h4>Molly’s Game</h4><div class="m">2017 · 2h 20m</div></div>
+          <button class="datebtn edited"><span class="edtag">edited</span><span class="pen"><i data-lucide="pencil"></i></span><b>Mon, Aug 11</b><small>8:30 PM</small></button>
+          <span class="x"><i data-lucide="x"></i></span>
+        </div>
+        <div class="li">
+          <span class="grip"><i data-lucide="grip-vertical"></i></span>
+          <span class="pos">4</span>
+          <span class="poster">Interstellar</span>
+          <div class="t"><h4>Interstellar</h4><div class="m">2014 · 2h 49m</div></div>
+          <button class="datebtn"><span class="pen"><i data-lucide="pencil"></i></span><b>Sun, Aug 17</b><small>7:00 PM</small></button>
+          <span class="x"><i data-lucide="x"></i></span>
+        </div>
+        <div class="li" style="opacity:.62">
+          <span class="grip"><i data-lucide="grip-vertical"></i></span>
+          <span class="pos">5</span>
+          <span class="poster">Miss Sloane</span>
+          <div class="t"><h4>Miss Sloane</h4><div class="m">2016 · 2h 12m</div></div>
+          <button class="datebtn"><span class="pen"><i data-lucide="pencil"></i></span><b>Sun, Aug 24</b><small>7:00 PM</small></button>
+          <span class="x"><i data-lucide="x"></i></span>
+        </div>
+        <div class="li" style="opacity:.62">
+          <span class="grip"><i data-lucide="grip-vertical"></i></span>
+          <span class="pos">6</span>
+          <span class="poster">The Martian</span>
+          <div class="t"><h4>The Martian</h4><div class="m">2015 · 2h 24m</div></div>
+          <button class="datebtn"><span class="pen"><i data-lucide="pencil"></i></span><b>Sun, Aug 31</b><small>7:00 PM</small></button>
+          <span class="x"><i data-lucide="x"></i></span>
+        </div>
+
+        <button class="additem"><i data-lucide="plus" style="width:15px"></i> Add another film</button>
+      </div>
+
+      <!-- SCHEDULE -->
+      <div class="panel">
+        <label class="label">Cadence <span style="color:var(--bone-mute);text-transform:none;letter-spacing:0;font-family:var(--font-ui)">— a template for the dates</span></label>
+        <div class="modes">
+          <div class="mode sel">
+            <div class="ic"><i data-lucide="calendar-clock"></i></div>
+            <h4>Spread out</h4>
+            <p>One film per interval, over time</p>
+          </div>
+          <div class="mode">
+            <div class="ic"><i data-lucide="film"></i></div>
+            <h4>Back-to-back</h4>
+            <p>All in one sitting, by runtime</p>
+          </div>
+        </div>
+
+        <label class="label">Repeat</label>
+        <div class="seg">
+          <button>Daily</button>
+          <button class="on">Weekly</button>
+          <button>Custom</button>
+        </div>
+
+        <div class="field">
+          <label class="label">Starts</label>
+          <div class="inrow">
+            <input class="ctl" type="text" value="Sun, Jul 27 2026" style="flex:1.5">
+            <input class="ctl" type="text" value="7:00 PM" style="flex:1">
+          </div>
+        </div>
+
+        <div class="applyrow">
+          <button class="btn-apply"><i data-lucide="wand-2"></i> Auto-fill dates</button>
+        </div>
+
+        <div class="rollnote">
+          <i data-lucide="git-commit-vertical"></i>
+          <p><b>Rolls out one at a time.</b> Only the next film posts to Discord; the rest stay editable and you can pause between any two.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="fw">
+      <div class="footinfo">Screen 3 (v2) · Cadence = template · dates hand-editable on the left · <b>Daily / Weekly / Custom</b></div>
+      <div class="fbtns">
+        <button class="btn-ghost">Back</button>
+        <button class="btn-next">Review &amp; launch <i data-lucide="arrow-right" style="width:16px"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <script>lucide.createIcons();</script>
+</body>
+</html>

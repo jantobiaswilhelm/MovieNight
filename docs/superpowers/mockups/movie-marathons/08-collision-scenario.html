@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Marathon vs scheduled movies</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;1,400;1,600&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  :root{
+    --ink:#14110D; --ink-2:#1C1915; --ink-3:#252119; --ink-4:#2F2A21;
+    --bone:#E8DFC9; --bone-dim:#A89E88; --bone-mute:#6B6556;
+    --ember:#D4663A; --ember-hi:#E27A4C; --ember-soft:rgba(212,102,58,.14);
+    --gold:#E0A23A; --red:#C8321A;
+    --rule:rgba(232,223,201,.08); --rule-strong:rgba(232,223,201,.16);
+    --font-display:"Fraunces",serif; --font-ui:"Figtree",sans-serif; --font-mono:"JetBrains Mono",monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--ink);color:var(--bone);font-family:var(--font-ui);padding:34px 40px 80px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:920px;margin:0 auto}
+  .eyebrow{font-family:var(--font-mono);font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--bone-mute)}
+  h1{font-family:var(--font-display);font-style:italic;font-weight:400;font-size:34px;margin-top:12px}
+  .sub{color:var(--bone-dim);font-size:14.5px;margin-top:10px;max-width:600px}
+
+  /* warning banner */
+  .warn{display:flex;align-items:center;gap:13px;background:rgba(224,162,58,.10);border:1px solid rgba(224,162,58,.4);border-radius:10px;padding:15px 18px;margin:30px 0 24px}
+  .warn .ic{color:var(--gold);flex-shrink:0} .warn .ic svg{width:20px}
+  .warn .tx{flex:1;font-size:14px;color:var(--bone)}
+  .warn .tx b{color:var(--gold)}
+  .warn .act{font-family:var(--font-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);border:1px solid rgba(224,162,58,.4);border-radius:999px;padding:7px 13px;cursor:pointer;background:transparent}
+
+  .label{font-family:var(--font-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--bone-dim);margin:26px 0 14px}
+
+  /* upcoming list */
+  .day{display:flex;gap:18px;margin-bottom:12px}
+  .daycol{width:88px;flex-shrink:0;text-align:right;padding-top:14px}
+  .daycol .dow{font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--bone-mute)}
+  .daycol .dnum{font-family:var(--font-display);font-style:italic;font-size:26px;color:var(--bone);line-height:1}
+  .daycol .mon{font-family:var(--font-mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--bone-mute);margin-top:2px}
+
+  .slots{flex:1;display:flex;flex-direction:column;gap:8px}
+  .ev{display:flex;align-items:center;gap:14px;background:var(--ink-2);border:1px solid var(--rule);border-radius:8px;padding:11px 14px}
+  .ev .poster{width:34px;height:51px;border-radius:4px;background:var(--ink-3);flex-shrink:0;display:grid;place-items:center;text-align:center;font-family:var(--font-mono);font-size:7px;color:var(--bone-mute);padding:3px}
+  .ev .info{flex:1;min-width:0}
+  .ev .info h4{font-size:15px;font-weight:600}
+  .ev .info .m{font-size:12px;color:var(--bone-dim);margin-top:2px;display:flex;align-items:center;gap:8px}
+  .ev .time{font-family:var(--font-mono);font-size:12px;color:var(--bone-dim)}
+  .tag{font-family:var(--font-mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;padding:3px 8px;border-radius:999px;border:1px solid var(--rule-strong);color:var(--bone-mute)}
+  .tag.mara{color:var(--ember);border-color:rgba(212,102,58,.4);background:var(--ember-soft)}
+  .tag.oneoff{color:var(--bone-dim)}
+
+  /* the conflict day */
+  .day.clash .slots{position:relative;border-left:2px solid var(--gold);padding-left:14px;margin-left:-14px}
+  .clashlabel{font-family:var(--font-mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:2px;display:flex;align-items:center;gap:6px}
+  .clashlabel svg{width:12px}
+  .ev.hot{border-color:rgba(224,162,58,.45)}
+
+  .foot{margin-top:34px;font-size:13px;color:var(--bone-dim);background:var(--ink-2);border:1px solid var(--rule);border-radius:8px;padding:15px 17px;display:flex;gap:11px}
+  .foot svg{width:16px;color:var(--ember);flex-shrink:0;margin-top:1px}
+  .foot b{color:var(--bone)}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="eyebrow">Tonight · upcoming</div>
+    <h1>When a marathon meets the main schedule</h1>
+    <p class="sub">Marathon films land on the same calendar as one-off movies you plan from the home page. Sometimes they’ll collide. Here’s the scenario — the question is what should happen.</p>
+
+    <div class="warn">
+      <span class="ic"><i data-lucide="alert-triangle"></i></span>
+      <span class="tx"><b>Heads up — Sun, Aug 3 is double-booked.</b> The “Chastain Marathon” film overlaps a movie Raj scheduled.</span>
+      <button class="act">Resolve</button>
+    </div>
+
+    <div class="label">Next 2 weeks</div>
+
+    <!-- Fri Aug 1 : clean one-off -->
+    <div class="day">
+      <div class="daycol"><div class="dow">Fri</div><div class="dnum">1</div><div class="mon">Aug</div></div>
+      <div class="slots">
+        <div class="ev">
+          <div class="poster">Dune II</div>
+          <div class="info"><h4>Dune: Part Two</h4><div class="m"><span class="tag oneoff">One-off</span> scheduled by raj</div></div>
+          <div class="time">8:00 PM</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sun Aug 3 : CLASH -->
+    <div class="day clash">
+      <div class="daycol"><div class="dow">Sun</div><div class="dnum">3</div><div class="mon">Aug</div></div>
+      <div class="slots">
+        <div class="clashlabel"><i data-lucide="alert-triangle"></i> Two movies, same evening</div>
+        <div class="ev hot">
+          <div class="poster">The Help</div>
+          <div class="info"><h4>The Help</h4><div class="m"><span class="tag mara"><i data-lucide="layers" style="width:10px;vertical-align:-1px"></i> Marathon · 2/6</span> Chastain Marathon</div></div>
+          <div class="time">7:00 PM</div>
+        </div>
+        <div class="ev hot">
+          <div class="poster">Sinners</div>
+          <div class="info"><h4>Sinners</h4><div class="m"><span class="tag oneoff">One-off</span> scheduled by raj</div></div>
+          <div class="time">8:30 PM</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sun Aug 10 : clean marathon -->
+    <div class="day">
+      <div class="daycol"><div class="dow">Sun</div><div class="dnum">10</div><div class="mon">Aug</div></div>
+      <div class="slots">
+        <div class="ev">
+          <div class="poster">Molly's Game</div>
+          <div class="info"><h4>Molly’s Game</h4><div class="m"><span class="tag mara"><i data-lucide="layers" style="width:10px;vertical-align:-1px"></i> Marathon · 3/6</span> Chastain Marathon</div></div>
+          <div class="time">7:00 PM</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="foot">
+      <i data-lucide="git-commit-vertical"></i>
+      <div>Because a marathon <b>rolls out one at a time</b>, only the nearest film is actually queued to Discord — so a clash can be caught the moment it’s about to post, not just at launch. The three ways to handle it are on the right. <b>Which do you want?</b></div>
+    </div>
+  </div>
+  <script>lucide.createIcons();</script>
+</body>
+</html>

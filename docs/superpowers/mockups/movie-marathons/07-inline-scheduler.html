@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inline scheduling calendar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;1,400;1,600&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  :root{
+    --ink:#14110D; --ink-2:#1C1915; --ink-3:#252119; --ink-4:#2F2A21;
+    --bone:#E8DFC9; --bone-dim:#A89E88; --bone-mute:#6B6556;
+    --ember:#D4663A; --ember-hi:#E27A4C; --ember-soft:rgba(212,102,58,.14);
+    --gold:#E0A23A; --red:#C8321A;
+    --rule:rgba(232,223,201,.08); --rule-strong:rgba(232,223,201,.16);
+    --font-display:"Fraunces",serif; --font-ui:"Figtree",sans-serif; --font-mono:"JetBrains Mono",monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--ink);color:var(--bone);font-family:var(--font-ui);padding:30px 40px 80px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1060px;margin:0 auto}
+  .eyebrow{font-family:var(--font-mono);font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--ember)}
+  h1{font-family:var(--font-display);font-style:italic;font-weight:400;font-size:30px;margin-top:12px}
+  .sub{color:var(--bone-dim);font-size:14px;margin-top:9px;max-width:640px}
+
+  .panel{background:var(--ink-2);border:1px solid var(--rule);border-radius:14px;padding:24px 26px;margin-top:26px}
+
+  .calhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+  .calhead .mtitle{font-family:var(--font-display);font-style:italic;font-size:22px}
+  .calhead .nav{display:flex;gap:8px}
+  .calhead .nav button{width:32px;height:32px;border-radius:6px;border:1px solid var(--rule-strong);background:transparent;color:var(--bone-dim);cursor:pointer;display:grid;place-items:center}
+  .calhead .nav button:hover{color:var(--ember);border-color:var(--ember)}
+  .calhead .nav button svg{width:16px}
+  .legend{display:flex;gap:16px;font-size:12px;color:var(--bone-dim);align-items:center}
+  .legend i{width:9px;height:9px;border-radius:3px;display:inline-block;margin-right:6px;vertical-align:0}
+  .legend .oneoff i{background:var(--bone-mute)} .legend .mara i{background:var(--ember)} .legend .free i{background:var(--ink-4)}
+
+  .dow{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:8px}
+  .dow span{font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--bone-mute);text-align:left;padding-left:4px}
+
+  .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+  .cell{min-height:96px;border:1px solid var(--rule);border-radius:8px;background:var(--ink);padding:8px 9px;cursor:pointer;transition:border-color .12s,background .12s;position:relative;display:flex;flex-direction:column;gap:5px}
+  .cell:hover{border-color:var(--rule-strong);background:var(--ink-3)}
+  .cell.empty{background:transparent;border-color:transparent;cursor:default}
+  .cell.past{opacity:.4;cursor:default}
+  .cell.past:hover{border-color:var(--rule);background:var(--ink)}
+  .cell .dn{font-family:var(--font-mono);font-size:12px;color:var(--bone-dim)}
+  .cell.today .dn{color:var(--ember);font-weight:600}
+  .cell.today{border-color:rgba(212,102,58,.35)}
+  .cell.sel{border-color:var(--ember);background:var(--ember-soft)}
+
+  .evt{font-size:10.5px;line-height:1.25;border-radius:4px;padding:4px 6px;display:flex;align-items:center;gap:5px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+  .evt.oneoff{background:var(--ink-3);color:var(--bone-dim)}
+  .evt.mara{background:var(--ember-soft);color:var(--ember);border:1px solid rgba(212,102,58,.3)}
+  .evt svg{width:9px;flex-shrink:0}
+  .freehint{margin-top:auto;font-family:var(--font-mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--bone-mute);opacity:0}
+  .cell:not(.past):not(.busy):hover .freehint{opacity:1}
+  .cell .plus{position:absolute;top:8px;right:8px;color:var(--ember);opacity:0}
+  .cell.sel .plus{opacity:1}
+
+  /* inline compose — appears in-page, NOT a popup */
+  .compose{margin-top:18px;border:1px solid var(--ember);border-radius:10px;background:var(--ink);padding:18px 20px}
+  .compose .ch{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+  .compose .ch .k{font-family:var(--font-mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ember)}
+  .compose .ch h3{font-family:var(--font-display);font-style:italic;font-size:20px}
+  .compose .close{margin-left:auto;color:var(--bone-mute);cursor:pointer} .compose .close svg{width:17px}
+  .crow{display:flex;gap:12px;align-items:center}
+  .pick{flex:1;display:flex;align-items:center;gap:12px;background:var(--ink-2);border:1px solid var(--rule-strong);border-radius:8px;padding:9px 12px}
+  .pick .poster{width:34px;height:51px;border-radius:4px;background:var(--ink-3);display:grid;place-items:center;font-family:var(--font-mono);font-size:7px;color:var(--bone-mute);text-align:center;padding:2px}
+  .pick .pt{flex:1} .pick .pt h4{font-size:14px;font-weight:600} .pick .pt .m{font-size:11.5px;color:var(--bone-mute);margin-top:2px}
+  .pick .change{font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--bone-dim);border:1px solid var(--rule-strong);border-radius:999px;padding:6px 11px;cursor:pointer}
+  .pick .change:hover{color:var(--ember);border-color:var(--ember)}
+  .timec{background:var(--ink-2);border:1px solid var(--rule-strong);border-radius:8px;color:var(--bone);font-size:14px;padding:12px 14px;width:130px}
+  .go{background:var(--ember);color:var(--ink);border:none;border-radius:8px;font-weight:600;font-size:14px;padding:12px 20px;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+  .go svg{width:15px}
+
+  .foot{margin-top:26px;font-size:13px;color:var(--bone-dim);background:var(--ink-2);border:1px solid var(--rule);border-radius:8px;padding:14px 16px;display:flex;gap:10px}
+  .foot svg{width:16px;color:var(--ember);flex-shrink:0;margin-top:1px} .foot b{color:var(--bone)}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="eyebrow">Home · schedule a movie</div>
+    <h1>Pick a date, right on the page</h1>
+    <p class="sub">Instead of a date popup, the “Schedule” action opens this calendar inline — you can see what’s already booked and drop a movie onto any open night.</p>
+
+    <div class="panel">
+      <div class="calhead">
+        <div style="display:flex;align-items:center;gap:16px">
+          <span class="mtitle">August 2026</span>
+          <span class="nav" style="display:inline-flex"><button><i data-lucide="chevron-left"></i></button><button><i data-lucide="chevron-right"></i></button></span>
+        </div>
+        <div class="legend">
+          <span class="mara"><i></i>Marathon</span>
+          <span class="oneoff"><i></i>One-off</span>
+          <span class="free"><i></i>Open</span>
+        </div>
+      </div>
+
+      <div class="dow"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div>
+      <div class="grid">
+        <!-- week 1: Aug 1 = Sat -->
+        <div class="cell empty"></div><div class="cell empty"></div><div class="cell empty"></div><div class="cell empty"></div><div class="cell empty"></div><div class="cell empty"></div>
+        <div class="cell past"><span class="dn">1</span></div>
+
+        <!-- week 2 -->
+        <div class="cell busy"><span class="dn">2</span><div class="evt mara"><i data-lucide="layers"></i>The Help</div></div>
+        <div class="cell past"><span class="dn">3</span></div>
+        <div class="cell past"><span class="dn">4</span></div>
+        <div class="cell today"><span class="dn">5</span><span class="freehint">Today</span></div>
+        <div class="cell"><span class="dn">6</span><span class="freehint">+ schedule</span></div>
+        <div class="cell busy"><span class="dn">7</span><div class="evt oneoff"><i data-lucide="film"></i>Dune: Part Two</div></div>
+        <div class="cell busy"><span class="dn">8</span><div class="evt mara"><i data-lucide="film"></i>Alien Binge ×4</div></div>
+
+        <!-- week 3 -->
+        <div class="cell busy"><span class="dn">9</span><div class="evt mara"><i data-lucide="layers"></i>Molly’s Game</div></div>
+        <div class="cell"><span class="dn">10</span><span class="freehint">+ schedule</span></div>
+        <div class="cell"><span class="dn">11</span><span class="freehint">+ schedule</span></div>
+        <div class="cell"><span class="dn">12</span><span class="freehint">+ schedule</span></div>
+        <div class="cell sel"><span class="dn">13</span><span class="plus"><i data-lucide="plus-circle"></i></span></div>
+        <div class="cell"><span class="dn">14</span><span class="freehint">+ schedule</span></div>
+        <div class="cell busy"><span class="dn">15</span><div class="evt oneoff"><i data-lucide="film"></i>Sinners</div></div>
+
+        <!-- week 4 -->
+        <div class="cell busy"><span class="dn">16</span><div class="evt mara"><i data-lucide="layers"></i>Interstellar</div></div>
+        <div class="cell"><span class="dn">17</span><span class="freehint">+ schedule</span></div>
+        <div class="cell"><span class="dn">18</span><span class="freehint">+ schedule</span></div>
+        <div class="cell"><span class="dn">19</span><span class="freehint">+ schedule</span></div>
+        <div class="cell"><span class="dn">20</span><span class="freehint">+ schedule</span></div>
+        <div class="cell"><span class="dn">21</span><span class="freehint">+ schedule</span></div>
+        <div class="cell"><span class="dn">22</span><span class="freehint">+ schedule</span></div>
+      </div>
+
+      <!-- INLINE COMPOSE (day 13 selected) -->
+      <div class="compose">
+        <div class="ch">
+          <span class="k">Schedule for</span>
+          <h3>Thursday, Aug 13</h3>
+          <span class="close"><i data-lucide="x"></i></span>
+        </div>
+        <div class="crow">
+          <div class="pick">
+            <div class="poster">Poor Things</div>
+            <div class="pt"><h4>Poor Things <span style="color:var(--bone-mute);font-weight:400">(2023)</span></h4><div class="m">From your wishlist · 2h 21m</div></div>
+            <span class="change">Change movie</span>
+          </div>
+          <input class="timec" value="8:00 PM">
+          <button class="go"><i data-lucide="calendar-check"></i> Schedule it</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="foot">
+      <i data-lucide="info"></i>
+      <div><b>No popup.</b> Occupied nights show their movie (ember = marathon film, grey = one-off); open nights invite a click. Pick a day → an inline row lets you choose the movie (search or wishlist) + time and schedule on the spot. Same busy-ness the marathon roll-out sees, so everyone’s working from one picture.</div>
+    </div>
+  </div>
+  <script>lucide.createIcons();</script>
+</body>
+</html>

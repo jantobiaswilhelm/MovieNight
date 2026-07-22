@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Home — with calendar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;1,400;1,600&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  :root{
+    --ink:#14110D; --ink-2:#1C1915; --ink-3:#252119; --ink-4:#2F2A21;
+    --bone:#E8DFC9; --bone-dim:#A89E88; --bone-mute:#6B6556;
+    --ember:#D4663A; --ember-hi:#E27A4C; --ember-soft:rgba(212,102,58,.14);
+    --gold:#E0A23A; --red:#C8321A;
+    --rule:rgba(232,223,201,.08); --rule-strong:rgba(232,223,201,.16);
+    --font-display:"Fraunces",serif; --font-ui:"Figtree",sans-serif; --font-mono:"JetBrains Mono",monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--ink);color:var(--bone);font-family:var(--font-ui);-webkit-font-smoothing:antialiased;padding-bottom:70px}
+  .mono{font-family:var(--font-mono)}
+
+  nav{display:flex;align-items:center;gap:26px;padding:18px 40px;border-bottom:1px solid var(--rule)}
+  .brand{font-family:var(--font-display);font-style:italic;font-weight:600;font-size:21px;margin-right:6px}
+  .navlink{font-size:14px;color:var(--bone-dim);text-decoration:none;position:relative}
+  .navlink:hover{color:var(--bone)}
+  .navlink.active{color:var(--bone)}
+  .navlink.active::after{content:"";position:absolute;left:0;right:0;bottom:-19px;height:2px;background:var(--ember)}
+  .sp{flex:1}
+  .avatar{width:31px;height:31px;border-radius:50%;background:var(--ink-3);border:1px solid var(--rule-strong);display:grid;place-items:center;color:var(--bone-dim)}
+
+  .wrap{max-width:1120px;margin:0 auto;padding:0 40px}
+
+  /* hero */
+  .hero{display:grid;grid-template-columns:1.7fr 1fr;gap:36px;padding:44px 0 20px;align-items:stretch}
+  .feature{background:var(--ink-2);border:1px solid var(--rule);border-radius:14px;overflow:hidden;display:flex}
+  .feature .backdrop{width:180px;flex-shrink:0;background:linear-gradient(160deg,#2a2018,#14110D);position:relative;display:grid;place-items:center;color:var(--bone-mute);font-family:var(--font-mono);font-size:9px;text-align:center;padding:10px}
+  .feature .fb{padding:26px 28px;flex:1}
+  .eyebrow{font-family:var(--font-mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--ember);margin-bottom:14px}
+  .feature h1{font-family:var(--font-display);font-style:italic;font-weight:400;font-size:38px;line-height:1.04;margin-bottom:14px}
+  .feature .when{display:flex;align-items:center;gap:8px;color:var(--bone-dim);font-size:13.5px;margin-bottom:18px}
+  .feature .when svg{width:15px;color:var(--ember)}
+  .feature p{color:var(--bone-dim);font-size:13.5px;line-height:1.55;margin-bottom:20px;max-width:420px}
+  .btnrow{display:flex;gap:10px;align-items:center}
+  .btn{border-radius:6px;font-size:13.5px;font-weight:600;padding:11px 17px;cursor:pointer;display:inline-flex;align-items:center;gap:7px;border:1px solid var(--rule-strong);background:transparent;color:var(--bone-dim)}
+  .btn svg{width:15px} .btn:hover{color:var(--bone)}
+  .btn.primary{background:var(--ember);color:var(--ink);border-color:var(--ember)}
+  .att{display:flex;align-items:center;gap:-6px;margin-left:6px}
+  .att span{width:26px;height:26px;border-radius:50%;background:var(--ink-4);border:2px solid var(--ink-2);margin-left:-8px;display:grid;place-items:center;font-size:10px;color:var(--bone-dim)}
+
+  .side{background:var(--ink-2);border:1px solid var(--rule);border-radius:14px;padding:22px}
+  .side .st{font-family:var(--font-mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--bone-mute);margin-bottom:16px}
+  .side .u{display:flex;align-items:center;gap:11px;padding:9px 0}
+  .side .u .a{width:30px;height:30px;border-radius:50%;background:var(--ink-3);display:grid;place-items:center;color:var(--bone-dim);font-size:12px}
+  .side .u .nm{font-size:13.5px;color:var(--bone)}
+  .side .u .r{margin-left:auto;font-family:var(--font-mono);font-size:11px;color:var(--gold)}
+
+  /* SECTION HEAD */
+  .sechead{display:flex;align-items:baseline;justify-content:space-between;margin:46px 0 22px}
+  .sechead .l{display:flex;align-items:baseline;gap:14px}
+  .sechead .num{font-family:var(--font-mono);font-size:11px;color:var(--bone-mute)}
+  .sechead h2{font-family:var(--font-display);font-style:italic;font-weight:400;font-size:26px}
+  .sechead a{font-size:13px;color:var(--bone-dim);text-decoration:none} .sechead a:hover{color:var(--ember)}
+
+  /* CALENDAR STRIP (the new bit) */
+  .cal{border:1px solid var(--rule);border-radius:12px;overflow:hidden}
+  .day{display:flex;gap:20px;padding:16px 22px;border-top:1px solid var(--rule)}
+  .day:first-child{border-top:none}
+  .daycol{width:72px;flex-shrink:0;text-align:right;padding-top:4px}
+  .daycol .dow{font-family:var(--font-mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--bone-mute)}
+  .daycol .dnum{font-family:var(--font-display);font-style:italic;font-size:30px;color:var(--bone);line-height:1;margin-top:1px}
+  .daycol .mon{font-family:var(--font-mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--bone-mute);margin-top:3px}
+  .daycol.today .dnum{color:var(--ember)}
+  .daycol.today .dow{color:var(--ember)}
+
+  .slots{flex:1;display:flex;flex-direction:column;gap:9px}
+  .ev{display:flex;align-items:center;gap:13px}
+  .ev .poster{width:34px;height:51px;border-radius:4px;background:var(--ink-3);flex-shrink:0;display:grid;place-items:center;text-align:center;font-family:var(--font-mono);font-size:7px;color:var(--bone-mute);padding:3px;overflow:hidden}
+  .ev .info{flex:1;min-width:0}
+  .ev .info h4{font-size:15px;font-weight:600}
+  .ev .info .m{font-size:12px;margin-top:3px;display:flex;align-items:center;gap:9px;color:var(--bone-mute)}
+  .ev .time{font-family:var(--font-mono);font-size:12px;color:var(--bone-dim)}
+  .tag{font-family:var(--font-mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;padding:3px 8px;border-radius:999px;border:1px solid var(--rule-strong);color:var(--bone-mute);display:inline-flex;align-items:center;gap:5px}
+  .tag.mara{color:var(--ember);border-color:rgba(212,102,58,.4);background:var(--ember-soft)}
+  .tag.mara svg{width:10px}
+  .empty{color:var(--bone-mute);font-size:13px;font-style:italic;padding-top:14px}
+
+  .foot{max-width:1120px;margin:28px auto 0;padding:0 40px}
+  .footin{font-size:13px;color:var(--bone-dim);background:var(--ink-2);border:1px solid var(--rule);border-radius:8px;padding:14px 16px;display:flex;gap:10px}
+  .footin svg{width:16px;color:var(--ember);flex-shrink:0;margin-top:1px} .footin b{color:var(--bone)}
+</style>
+</head>
+<body>
+  <nav>
+    <span class="brand">MovieNight</span>
+    <a class="navlink active" href="#">Tonight</a>
+    <a class="navlink" href="#">Archive</a>
+    <a class="navlink" href="#">Marathons</a>
+    <a class="navlink" href="#">Wishlist</a>
+    <a class="navlink" href="#">Stats</a>
+    <a class="navlink" href="#">Feed</a>
+    <span class="sp"></span>
+    <span class="avatar"><i data-lucide="user" style="width:16px"></i></span>
+  </nav>
+
+  <div class="wrap">
+    <!-- HERO (unchanged) -->
+    <div class="hero">
+      <div class="feature">
+        <div class="backdrop">Dune: Part Two<br>backdrop</div>
+        <div class="fb">
+          <div class="eyebrow">Tonight’s feature</div>
+          <h1>Dune: Part&nbsp;Two</h1>
+          <div class="when"><i data-lucide="calendar"></i> Next · Friday, Aug 1 · 8:00 PM</div>
+          <p>Paul Atreides unites with the Fremen to wage war against House Harkonnen…</p>
+          <div class="btnrow">
+            <button class="btn primary"><i data-lucide="check"></i> Attending</button>
+            <button class="btn"><i data-lucide="play"></i> Trailer</button>
+            <span class="att"><span>R</span><span>E</span><span>+3</span></span>
+          </div>
+        </div>
+      </div>
+      <div class="side">
+        <div class="st">Who’s around</div>
+        <div class="u"><span class="a">R</span><span class="nm">raj</span><span class="r">142 rated</span></div>
+        <div class="u"><span class="a">E</span><span class="nm">emy</span><span class="r">98 rated</span></div>
+        <div class="u"><span class="a">N</span><span class="nm">norris</span><span class="r">76 rated</span></div>
+        <div class="u"><span class="a">S</span><span class="nm">shrimp</span><span class="r">51 rated</span></div>
+      </div>
+    </div>
+
+    <!-- NEW: calendar strip replaces the "Last screenings" card row -->
+    <div class="sechead">
+      <div class="l"><span class="num">03</span><h2>On the calendar</h2></div>
+      <a href="#">Full archive →</a>
+    </div>
+
+    <div class="cal">
+      <div class="day">
+        <div class="daycol today"><div class="dow">Fri</div><div class="dnum">1</div><div class="mon">Aug</div></div>
+        <div class="slots">
+          <div class="ev">
+            <div class="poster">Dune II</div>
+            <div class="info"><h4>Dune: Part Two</h4><div class="m"><span class="tag">One-off</span> by raj · 6 attending</div></div>
+            <div class="time">8:00 PM</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="day">
+        <div class="daycol"><div class="dow">Sun</div><div class="dnum">3</div><div class="mon">Aug</div></div>
+        <div class="slots">
+          <div class="ev">
+            <div class="poster">The Help</div>
+            <div class="info"><h4>The Help</h4><div class="m"><span class="tag mara"><i data-lucide="layers"></i> Marathon 2/6</span> Chastain Marathon</div></div>
+            <div class="time">7:00 PM</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="day">
+        <div class="daycol"><div class="dow">Sat</div><div class="dnum">9</div><div class="mon">Aug</div></div>
+        <div class="slots">
+          <div class="ev">
+            <div class="poster">Alien saga</div>
+            <div class="info"><h4>Alien Saga — Binge Night</h4><div class="m"><span class="tag mara"><i data-lucide="film"></i> Marathon · 4 films</span> back-to-back from 6:00 PM</div></div>
+            <div class="time">6:00 PM</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="day">
+        <div class="daycol"><div class="dow">Sun</div><div class="dnum">10</div><div class="mon">Aug</div></div>
+        <div class="slots">
+          <div class="ev">
+            <div class="poster">Molly's Game</div>
+            <div class="info"><h4>Molly’s Game</h4><div class="m"><span class="tag mara"><i data-lucide="layers"></i> Marathon 3/6</span> Chastain Marathon</div></div>
+            <div class="time">7:00 PM</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <div class="footin">
+      <i data-lucide="info"></i>
+      <div>This replaces the old <b>“Last screenings”</b> card row. It merges <b>one-off movies and every active marathon’s films</b> into one date-ordered agenda — the ember <b>Marathon</b> tag is the only thing distinguishing them. When nothing’s upcoming it falls back to recent screenings, as it does today.</div>
+    </div>
+  </div>
+
+  <script>lucide.createIcons();</script>
+</body>
+</html>

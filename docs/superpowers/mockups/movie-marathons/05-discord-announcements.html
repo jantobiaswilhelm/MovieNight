@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Marathon — Discord announcements</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,600;1,600&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  :root{
+    --ink:#14110D; --ink-2:#1C1915; --ink-3:#252119;
+    --bone:#E8DFC9; --bone-dim:#A89E88; --bone-mute:#6B6556;
+    --ember:#D4663A; --gold:#E0A23A;
+    --rule:rgba(232,223,201,.08); --rule-strong:rgba(232,223,201,.16);
+    --font-ui:"Figtree",sans-serif; --font-mono:"JetBrains Mono",monospace; --font-display:"Fraunces",serif;
+    /* discord palette */
+    --dc-chat:#313338; --dc-embed:#2b2d31; --dc-input:#383a40; --dc-btn:#4e5058;
+    --dc-text:#dbdee1; --dc-muted:#949ba4; --dc-head:#f2f3f5; --dc-link:#00a8fc; --dc-mention:#3f4270; --dc-mention-tx:#c9cdfb;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--ink);color:var(--bone);font-family:var(--font-ui);padding:34px 40px 70px;-webkit-font-smoothing:antialiased}
+  .head{max-width:1060px;margin:0 auto 26px}
+  .eyebrow{font-family:var(--font-mono);font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--bone-mute)}
+  .head h1{font-family:var(--font-display);font-style:italic;font-weight:600;font-size:30px;margin-top:12px}
+  .head p{color:var(--bone-dim);font-size:14px;margin-top:8px;max-width:640px}
+
+  .grid{max-width:1060px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:22px;align-items:start}
+  .caption{font-family:var(--font-mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--bone-dim);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+  .caption .pill{color:var(--ember);border:1px solid rgba(212,102,58,.4);border-radius:999px;padding:2px 8px;background:rgba(212,102,58,.12)}
+
+  /* discord channel frame */
+  .dc{background:var(--dc-chat);border-radius:10px;padding:16px 18px 20px;font-size:15px;color:var(--dc-text);line-height:1.375}
+  .msg{display:flex;gap:14px}
+  .bot-av{width:40px;height:40px;border-radius:50%;background:var(--ember);flex-shrink:0;display:grid;place-items:center;color:var(--ink)}
+  .bot-av svg{width:22px}
+  .mbody{flex:1;min-width:0}
+  .mhead{display:flex;align-items:center;gap:8px;margin-bottom:2px}
+  .mhead .nm{color:var(--dc-head);font-weight:600;font-size:15px}
+  .mhead .bot{background:var(--ember);color:var(--ink);font-size:10px;font-weight:700;padding:1px 5px;border-radius:4px;letter-spacing:.02em}
+  .mhead .ts{color:var(--dc-muted);font-size:12px}
+  .mention{background:var(--dc-mention);color:var(--dc-mention-tx);border-radius:4px;padding:0 3px;font-weight:500}
+  .pretext{margin:2px 0 8px}
+
+  /* embed */
+  .embed{border-left:4px solid var(--ember);background:var(--dc-embed);border-radius:5px;padding:14px 16px 16px;max-width:520px;display:grid;grid-template-columns:1fr auto;gap:14px}
+  .embed .author{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--dc-muted);font-weight:600;margin-bottom:8px;letter-spacing:.02em}
+  .embed .author svg{width:13px;color:var(--ember)}
+  .embed .etitle{color:var(--dc-head);font-weight:700;font-size:16px;margin-bottom:6px;line-height:1.25}
+  .embed .etitle a{color:#4fc0ff;text-decoration:none}
+  .embed .edesc{color:var(--dc-text);font-size:14px;margin-bottom:12px}
+  .fields{display:flex;gap:26px;flex-wrap:wrap;margin-bottom:12px}
+  .field .k{color:var(--dc-head);font-weight:700;font-size:12.5px;margin-bottom:2px}
+  .field .v{color:var(--dc-text);font-size:14px}
+  .field .v.hl{color:var(--ember);font-weight:600}
+  .efoot{display:flex;align-items:center;gap:7px;color:var(--dc-muted);font-size:12px;margin-top:2px}
+  .efoot .dotc{width:3px;height:3px;border-radius:50%;background:var(--dc-muted)}
+  .thumb{width:92px;height:138px;border-radius:5px;background:var(--ink-3);display:grid;place-items:center;text-align:center;font-family:var(--font-mono);font-size:9px;color:var(--bone-mute);padding:6px;grid-row:span 3;align-self:start}
+
+  /* progress dots for marathon */
+  .prog{display:flex;align-items:center;gap:5px;margin-bottom:12px}
+  .prog .d{width:9px;height:9px;border-radius:50%;background:var(--dc-btn)}
+  .prog .d.done{background:var(--ember)}
+  .prog .d.now{background:var(--ember);box-shadow:0 0 0 3px rgba(212,102,58,.25)}
+  .prog .lab{font-size:12px;color:var(--dc-muted);margin-left:6px}
+
+  /* lineup list inside binge embed */
+  .lineup{grid-column:1 / -1;margin-top:2px}
+  .lineup .r{display:flex;align-items:center;gap:10px;padding:7px 0;border-top:1px solid rgba(255,255,255,.06);font-size:14px}
+  .lineup .r:first-child{border-top:none}
+  .lineup .r .tm{font-family:var(--font-mono);font-size:12px;color:var(--ember);width:64px}
+  .lineup .r .ti{flex:1;color:var(--dc-text)}
+  .lineup .r .rt{font-size:12px;color:var(--dc-muted)}
+
+  .btns{display:flex;gap:8px;margin-top:12px}
+  .db{background:var(--dc-btn);color:#fff;border:none;border-radius:4px;padding:9px 15px;font-family:var(--font-ui);font-size:13.5px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
+  .db svg{width:15px}
+  .db.primary{background:var(--ember);color:var(--ink)}
+
+  .foot{max-width:1060px;margin:26px auto 0;font-size:13px;color:var(--bone-dim);background:var(--ink-2);border:1px solid var(--rule);border-radius:8px;padding:14px 16px;display:flex;gap:10px}
+  .foot svg{width:16px;color:var(--ember);flex-shrink:0;margin-top:1px}
+  .foot b{color:var(--bone)}
+</style>
+</head>
+<body>
+  <div class="head">
+    <div class="eyebrow">Bot output</div>
+    <h1>How a marathon posts to Discord</h1>
+    <p>Two shapes, matching the two cadences. Weekly drops one embed per film as its night arrives; a binge drops a single embed listing the whole evening.</p>
+  </div>
+
+  <div class="grid">
+    <!-- WEEKLY: per-film -->
+    <div>
+      <div class="caption"><span class="pill">Weekly cadence</span> one embed per film, week by week</div>
+      <div class="dc">
+        <div class="msg">
+          <div class="bot-av"><i data-lucide="clapperboard"></i></div>
+          <div class="mbody">
+            <div class="mhead"><span class="nm">MovieNight</span><span class="bot">BOT</span><span class="ts">Today at 9:00 AM</span></div>
+            <div class="pretext"><span class="mention">@MovieNight</span> — next up in a marathon 🎬</div>
+            <div class="embed">
+              <div style="min-width:0">
+                <div class="author"><i data-lucide="layers"></i> EMY’S JESSICA CHASTAIN MARATHON</div>
+                <div class="prog">
+                  <span class="d done"></span><span class="d now"></span><span class="d"></span><span class="d"></span><span class="d"></span><span class="d"></span>
+                  <span class="lab">Film 2 of 6</span>
+                </div>
+                <div class="etitle"><a href="#">The Help</a> <span style="color:var(--dc-muted);font-weight:400">(2011)</span></div>
+                <div class="edesc">An aspiring author during the civil rights era decides to write a book detailing the African American maids’ point of view…</div>
+                <div class="fields">
+                  <div class="field"><div class="k">When</div><div class="v hl">Sun, Aug 3 · 7:00 PM</div></div>
+                  <div class="field"><div class="k">Runtime</div><div class="v">2h 26m</div></div>
+                  <div class="field"><div class="k">Up next</div><div class="v">Molly’s Game →</div></div>
+                </div>
+                <div class="efoot"><span>Started by @emy</span><span class="dotc"></span><span>TMDB 7.8</span></div>
+                <div class="btns">
+                  <button class="db primary"><i data-lucide="check"></i> I’m in</button>
+                  <button class="db"><i data-lucide="calendar-plus"></i> Remind me</button>
+                </div>
+              </div>
+              <div class="thumb">The Help — poster</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BINGE: kickoff -->
+    <div>
+      <div class="caption"><span class="pill">Back-to-back</span> one embed, the full evening</div>
+      <div class="dc">
+        <div class="msg">
+          <div class="bot-av"><i data-lucide="clapperboard"></i></div>
+          <div class="mbody">
+            <div class="mhead"><span class="nm">MovieNight</span><span class="bot">BOT</span><span class="ts">Today at 10:15 AM</span></div>
+            <div class="pretext"><span class="mention">@MovieNight</span> — marathon night is set 🍿</div>
+            <div class="embed">
+              <div style="min-width:0">
+                <div class="author"><i data-lucide="film"></i> ALIEN SAGA — BINGE NIGHT</div>
+                <div class="etitle" style="font-family:var(--font-display);font-style:italic">4 films · one sitting</div>
+                <div class="edesc">Saturday, Aug 9 — doors at 6:00 PM. We run straight through with short breaks.</div>
+              </div>
+              <div class="thumb">Alien saga art</div>
+              <div class="lineup">
+                <div class="r"><span class="tm">6:00 PM</span><span class="ti">Alien</span><span class="rt">1h 57m</span></div>
+                <div class="r"><span class="tm">8:12 PM</span><span class="ti">Aliens</span><span class="rt">2h 34m</span></div>
+                <div class="r"><span class="tm">11:01 PM</span><span class="ti">Alien³</span><span class="rt">1h 54m</span></div>
+                <div class="r"><span class="tm">1:10 AM</span><span class="ti">Alien Resurrection</span><span class="rt">1h 49m</span></div>
+                <div class="btns">
+                  <button class="db primary"><i data-lucide="check"></i> Count me in</button>
+                  <button class="db"><i data-lucide="list"></i> Full lineup</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <i data-lucide="info"></i>
+    <div><b>Reuses your existing pipeline.</b> Each embed still creates a real <b>movie_night</b> behind it, so ratings, attendance and stats work exactly as today. Weekly = one movie_night per week (rolled out); binge = the whole night created up front. The only new thing is the marathon ribbon + progress dots on the embed.</div>
+  </div>
+
+  <script>lucide.createIcons();</script>
+</body>
+</html>
