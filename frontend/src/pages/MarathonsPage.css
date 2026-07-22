@@ -155,6 +155,15 @@
 .mara-guardrail { display: flex; align-items: center; gap: 7px; margin-top: 14px; font-size: 12px; color: var(--bone-mute); }
 .mara-guardrail svg { color: var(--ember); flex-shrink: 0; }
 
+/* Selectable source preview (pick which films to add) */
+.mara-preview-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.mara-li.pick { width: 100%; font-family: inherit; color: var(--bone); text-align: left; cursor: pointer; }
+.mara-li.pick:hover { border-color: var(--rule-strong); }
+.mara-li.pick.on { border-color: var(--ember); background: var(--ember-soft); }
+.mara-check { width: 20px; height: 20px; flex-shrink: 0; border: 1px solid var(--rule-strong);
+  border-radius: var(--r-2); display: grid; place-items: center; color: var(--ember); }
+.mara-li.pick.on .mara-check { border-color: var(--ember); }
+
 /* Build step: two columns (lineup | schedule) */
 .mara-build { display: grid; grid-template-columns: 1.5fr 1fr; gap: 30px; margin-top: 26px; align-items: start; }
 .mara-hintline { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--bone-mute); margin-bottom: 14px; }

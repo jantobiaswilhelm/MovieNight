@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useToast } from '../context/ToastContext';
 import * as api from '../api/client';
 import { Icon } from '../components/ui';
@@ -59,6 +59,7 @@ function Stepper({ phase }) {
 
 export default function MarathonWizardPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { showError } = useToast();
 
   const [phase, setPhase] = useState('source');       // source | build | review
@@ -90,12 +91,33 @@ export default function MarathonWizardPage() {
   const [franchiseQuery, setFranchiseQuery] = useState('');
   const [franchiseHits, setFranchiseHits] = useState([]);
   const [vibe, setVibe] = useState('');
-  const [preview, setPreview] = useState([]);     // [{tmdbId,title,year,posterPath}]
+  const [preview, setPreview] = useState([]);        // [{tmdbId,title,year,posterPath}]
+  const [selectedIds, setSelectedIds] = useState(() => new Set());  // which preview films to add
   const [sourceBusy, setSourceBusy] = useState(false);
 
+  // Set the preview and default every film to selected.
+  const applyPreview = (list) => {
+    setPreview(list);
+    setSelectedIds(new Set(list.map((p) => p.tmdbId)));
+  };
+  const toggleSelected = (tmdbId) => setSelectedIds((prev) => {
+    const next = new Set(prev);
+    if (next.has(tmdbId)) next.delete(tmdbId); else next.add(tmdbId);
+    return next;
+  });
+  const allSelected = preview.length > 0 && selectedIds.size === preview.length;
+  const toggleAll = () => setSelectedIds(allSelected ? new Set() : new Set(preview.map((p) => p.tmdbId)));
+  const chooseSource = (key) => { setSource(key); setPreview([]); setSelectedIds(new Set()); };
+
+  // Pre-select a source when arriving from a "Start from a set" card (?source=…),
+  // and learn whether AI curation is available.
   useEffect(() => {
-    api.getCurateStatus().then((r) => setCurateAvailable(!!r.available)).catch(() => setCurateAvailable(false));
-  }, []);
+    const qs = searchParams.get('source');
+    if (qs && ['person', 'franchise', 'vibe'].includes(qs)) setSource(qs);
+    api.getCurateStatus()
+      .then((r) => { setCurateAvailable(!!r.available); if (!r.available && qs === 'vibe') setSource('manual'); })
+      .catch(() => { setCurateAvailable(false); if (qs === 'vibe') setSource('manual'); });
+  }, [searchParams]);
 
   const searchPerson = async (e) => {
     e.preventDefault();
@@ -109,7 +131,7 @@ export default function MarathonWizardPage() {
     setSourceBusy(true);
     try {
       const movies = await api.getPersonMovies(person.id, personRole);
-      setPreview(movies); setPeople([]); setPersonQuery(person.name);
+      applyPreview(movies); setPeople([]); setPersonQuery(person.name);
       if (!name.trim()) setName(`${person.name} Marathon`);
     } catch (err) { showError(err.message); } finally { setSourceBusy(false); }
   };
@@ -127,7 +149,7 @@ export default function MarathonWizardPage() {
     try {
       const { name: cName, parts } = await api.getMovieCollection(movie.id);
       if (!parts.length) { showError('That film isn’t part of a franchise on TMDB — try another.'); return; }
-      setPreview(parts); setFranchiseHits([]); setFranchiseQuery(cName || movie.title);
+      applyPreview(parts); setFranchiseHits([]); setFranchiseQuery(cName || movie.title);
       if (!name.trim() && cName) setName(cName);
     } catch (err) { showError(err.message); } finally { setSourceBusy(false); }
   };
@@ -135,7 +157,7 @@ export default function MarathonWizardPage() {
   const generateVibe = async () => {
     if (!vibe.trim()) return showError('Describe the vibe first');
     setSourceBusy(true);
-    try { setPreview(await api.curateMarathon(vibe.trim())); }
+    try { applyPreview(await api.curateMarathon(vibe.trim())); }
     catch (err) { showError(err.message); } finally { setSourceBusy(false); }
   };
 
@@ -150,15 +172,18 @@ export default function MarathonWizardPage() {
   // the resolved preview after creating the draft. All land on the Build step.
   const startBuild = async () => {
     if (!name.trim()) return showError('Give the marathon a name');
-    if (source !== 'manual' && preview.length === 0) {
-      return showError('Build a lineup from your chosen source first');
+    let chosen = [];
+    if (source !== 'manual') {
+      if (preview.length === 0) return showError('Build a lineup from your chosen source first');
+      chosen = preview.filter((p) => selectedIds.has(p.tmdbId)).map((p) => p.tmdbId);
+      if (chosen.length === 0) return showError('Pick at least one film from your source');
     }
     setBusy(true);
     try {
       const m = await api.createMarathon(name.trim());
       setMarathonId(m.id);
       if (source !== 'manual') {
-        const added = await api.bulkAddMarathonItems(m.id, preview.map((p) => p.tmdbId));
+        const added = await api.bulkAddMarathonItems(m.id, chosen);
         setItems(added);
       }
       setPhase('build');
@@ -267,7 +292,7 @@ export default function MarathonWizardPage() {
             {SOURCES.filter((s) => s.key !== 'vibe' || curateAvailable).map((s) => (
               <button key={s.key} type="button"
                 className={`mara-src ${source === s.key ? 'sel' : ''}`}
-                onClick={() => { setSource(s.key); setPreview([]); }}>
+                onClick={() => chooseSource(s.key)}>
                 {source === s.key && <span className="check"><Icon name="check-circle" size={18} /></span>}
                 <div className="ic"><Icon name={s.icon} size={20} /></div>
                 <h3>{s.title}</h3>
@@ -341,13 +366,21 @@ export default function MarathonWizardPage() {
 
           {source !== 'manual' && preview.length > 0 && (
             <div className="mara-srcpanel">
-              <label className="mara-label">Preview · {preview.length} film{preview.length === 1 ? '' : 's'} — you can trim &amp; reorder next</label>
-              {preview.map((p) => (
-                <div key={p.tmdbId} className="mara-li">
-                  <div className="thumb" style={{ backgroundImage: p.posterPath ? `url(${p.posterPath})` : 'none' }} />
-                  <div className="grow"><h4>{p.title}</h4><div className="sub">{p.year || '—'}</div></div>
-                </div>
-              ))}
+              <div className="mara-preview-head">
+                <label className="mara-label" style={{ margin: 0 }}>Pick films · {selectedIds.size} of {preview.length} selected</label>
+                <button type="button" className="btn text" onClick={toggleAll}>{allSelected ? 'Clear all' : 'Select all'}</button>
+              </div>
+              {preview.map((p) => {
+                const on = selectedIds.has(p.tmdbId);
+                return (
+                  <button type="button" key={p.tmdbId} className={`mara-li pick ${on ? 'on' : ''}`}
+                    onClick={() => toggleSelected(p.tmdbId)}>
+                    <span className="mara-check">{on && <Icon name="check" size={13} />}</span>
+                    <div className="thumb" style={{ backgroundImage: p.posterPath ? `url(${p.posterPath})` : 'none' }} />
+                    <div className="grow"><h4>{p.title}</h4><div className="sub">{p.year || '—'}</div></div>
+                  </button>
+                );
+              })}
             </div>
           )}
 

@@ -148,10 +148,10 @@ export default function MarathonsPage() {
 
       {isAuthenticated && (
         <>
-          <div className="mara-sechead"><h2>Start from a set</h2><span className="muted">more coming soon</span></div>
+          <div className="mara-sechead"><h2>Start from a set</h2></div>
           <div className="mara-srow">
             {IDEAS.map((idea) => (
-              <Link key={idea.key} to="/marathons/new" className="mara-scard">
+              <Link key={idea.key} to={`/marathons/new?source=${idea.key}`} className="mara-scard">
                 <div className="strip">
                   <div className="t"><Icon name={idea.icon} size={20} /></div>
                   <div className="t"><Icon name="film" size={20} /></div>
