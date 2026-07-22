@@ -4,6 +4,7 @@ import { validateIntParams, validateGuildId } from '../middleware/validate.js';
 import { isAdmin } from '../utils/admin.js';
 import * as db from '../models/index.js';
 import * as tmdb from '../services/tmdb.js';
+import * as curator from '../services/curator.js';
 
 const router = Router();
 
@@ -31,6 +32,31 @@ router.get('/', validateGuildId, optionalAuth, async (req, res) => {
   } catch (err) {
     console.error('Error fetching marathons:', err);
     res.status(500).json({ error: 'Failed to fetch marathons' });
+  }
+});
+
+// GET /api/marathons/curate — is the "describe a vibe" path available?
+// Registered before /:id so the static "curate" segment isn't read as an id.
+router.get('/curate', validateGuildId, optionalAuth, (req, res) => {
+  res.json({ available: curator.isCurationAvailable() });
+});
+
+// POST /api/marathons/curate — body: { prompt } → resolved TMDB preview lineup for review.
+router.post('/curate', validateGuildId, authenticateToken, async (req, res) => {
+  const { prompt } = req.body;
+  if (!prompt || typeof prompt !== 'string' || !prompt.trim()) {
+    return res.status(400).json({ error: 'A prompt is required' });
+  }
+  if (!curator.isCurationAvailable()) {
+    return res.status(503).json({ error: 'AI curation is not configured' });
+  }
+  try {
+    const items = await curator.curateLineup(prompt.trim().slice(0, 300));
+    if (items.length === 0) return res.status(502).json({ error: 'No films could be resolved — try rephrasing' });
+    res.json(items);
+  } catch (err) {
+    console.error('Error curating marathon:', err);
+    res.status(err.status || 500).json({ error: 'Failed to curate' });
   }
 });
 
