@@ -9,18 +9,18 @@
 .isch-legend .mara i { background: var(--ember); }
 .isch-legend .oneoff i { background: var(--bone-mute); }
 .isch-legend .free i { background: var(--ink-4); }
-.isch-dow { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 8px; }
-.isch-dow span { font-family: var(--font-mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--bone-mute); padding-left: 4px; }
-.isch-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
-.isch-cell { min-height: 92px; border: 1px solid var(--rule); border-radius: var(--r-2); background: var(--ink); padding: 8px 9px; cursor: pointer; display: flex; flex-direction: column; gap: 5px; text-align: left; font-family: inherit; color: var(--bone); transition: border-color var(--dur-1), background var(--dur-1); }
+.isch-dow { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-bottom: 6px; }
+.isch-dow span { font-family: var(--font-mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--bone-mute); padding-left: 2px; }
+.isch-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.isch-cell { min-height: 54px; border: 1px solid var(--rule); border-radius: var(--r-2); background: var(--ink); padding: 6px 7px; cursor: pointer; display: flex; flex-direction: column; gap: 3px; text-align: left; font-family: inherit; color: var(--bone); transition: border-color var(--dur-1), background var(--dur-1); }
 .isch-cell:hover:not(.past):not(.empty) { border-color: var(--rule-strong); background: var(--ink-3); }
 .isch-cell.empty { background: transparent; border-color: transparent; cursor: default; }
 .isch-cell.past { opacity: .4; cursor: default; }
 .isch-cell.today { border-color: var(--ember-dim); }
 .isch-cell.sel { border-color: var(--ember); background: var(--ember-soft); }
-.isch-cell .dn { font-family: var(--font-mono); font-size: 12px; color: var(--bone-dim); }
+.isch-cell .dn { font-family: var(--font-mono); font-size: 11px; color: var(--bone-dim); }
 .isch-cell.today .dn { color: var(--ember); font-weight: 600; }
-.isch-evt { font-size: 10.5px; line-height: 1.25; border-radius: 4px; padding: 4px 6px; display: flex; align-items: center; gap: 5px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.isch-evt { font-size: 9.5px; line-height: 1.2; border-radius: 4px; padding: 3px 5px; display: flex; align-items: center; gap: 4px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .isch-evt.oneoff { background: var(--ink-3); color: var(--bone-dim); }
 .isch-evt.mara { background: var(--ember-soft); color: var(--ember); border: 1px solid var(--ember-dim); }
 .isch-evt svg { flex-shrink: 0; }
