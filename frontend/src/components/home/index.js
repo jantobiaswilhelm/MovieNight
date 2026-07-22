@@ -7,3 +7,4 @@ export { default as NextMovieHero } from './NextMovieHero';
 export { default as SuggestionBoard } from './SuggestionBoard';
 export { default as ExploreSection } from './ExploreSection';
 export { default as HomeStatsBand } from './HomeStatsBand';
+export { default as OnThisDay } from './OnThisDay';

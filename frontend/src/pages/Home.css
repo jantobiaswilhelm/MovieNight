@@ -1152,3 +1152,34 @@
     gap: 0;
   }
 }
+
+/* ═══ On This Day banner ═══ */
+.on-this-day {
+  border: 1px solid var(--rule);
+  border-left: 2px solid var(--ember);
+  padding: var(--s-4) var(--s-5);
+  margin: var(--s-6) 0 0;
+}
+.on-this-day .otd-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-11);
+  letter-spacing: .28em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+}
+.on-this-day .otd-body {
+  margin: var(--s-2) 0 0;
+  font-family: var(--font-ui);
+  color: var(--ink-2);
+}
+.on-this-day .otd-title {
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--ink);
+}
+.on-this-day .otd-title:hover {
+  color: var(--ember);
+}
