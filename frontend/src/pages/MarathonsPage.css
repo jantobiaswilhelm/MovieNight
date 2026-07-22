@@ -1,59 +1,300 @@
+/* ============================================================================
+   Movie Marathons — styles translated from the design mockups
+   (docs/superpowers/mockups/movie-marathons/*.html). Colors/fonts use the
+   app's design tokens (index.css); the mockups share those exact values.
+   ============================================================================ */
+
 .mara-page { max-width: 1120px; margin: 0 auto; }
-.mara-header { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px;
-  padding: 32px 0; border-bottom: 1px solid var(--rule); margin-bottom: 32px; }
 .mara-eyebrow { font-family: var(--font-mono); font-size: 11px; letter-spacing: .28em;
   text-transform: uppercase; color: var(--bone-mute); }
+
+/* ── Browse header ─────────────────────────────────────────────────────── */
+.mara-header { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px;
+  padding: 32px 0; border-bottom: 1px solid var(--rule); margin-bottom: 40px; }
 .mara-header h1 { font-family: var(--font-display); font-style: italic; font-weight: 400;
-  font-size: var(--fs-48); margin-top: 12px; }
-.mara-header p { color: var(--bone-dim); margin-top: 10px; max-width: 440px; }
+  font-size: var(--fs-48); letter-spacing: -.01em; line-height: 1.02; margin-top: 12px; }
+.mara-header p { color: var(--bone-dim); font-size: 15px; margin-top: 12px; max-width: 460px; }
 
+.mara-sechead { display: flex; align-items: baseline; justify-content: space-between; margin: 44px 0 20px; }
+.mara-sechead h2 { font-family: var(--font-display); font-style: italic; font-weight: 400; font-size: 24px; }
+.mara-sechead .muted { font-size: 13px; }
+
+/* ── Browse cards ──────────────────────────────────────────────────────── */
 .mara-list { display: flex; flex-direction: column; gap: 16px; }
-.mara-card { display: grid; grid-template-columns: auto 1fr; gap: 22px; align-items: center;
+.mara-card { display: grid; grid-template-columns: auto 1fr auto; gap: 26px; align-items: center;
   background: var(--ink-2); border: 1px solid var(--rule); border-radius: var(--r-3);
-  padding: 18px 20px; text-decoration: none; color: var(--bone); transition: border-color var(--dur-1), background var(--dur-1); }
+  padding: 20px 22px; text-decoration: none; color: var(--bone);
+  transition: border-color var(--dur-1), background var(--dur-1); }
 .mara-card:hover { border-color: var(--rule-strong); background: var(--ink-3); }
-.mara-posters { display: flex; }
-.mara-poster { width: 44px; height: 66px; border-radius: var(--r-2); margin-left: -14px;
-  border: 2px solid var(--ink-2); background: var(--ink-3) center/cover no-repeat; }
-.mara-poster:first-child { margin-left: 0; }
-.mara-body { min-width: 0; }
-.mara-body h3 { font-family: var(--font-display); font-style: italic; font-weight: 600; font-size: 20px; }
-.mara-meta { display: flex; align-items: center; gap: 10px; margin: 8px 0 12px; }
-.mara-chip { font-family: var(--font-mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase;
-  padding: 4px 9px; border-radius: var(--r-full); border: 1px solid var(--rule-strong); color: var(--bone-dim); }
-.mara-chip.active { color: var(--ember); border-color: var(--ember-dim); background: var(--ember-soft); }
-.mara-chip.paused { color: var(--gold); }
-.mara-cadence { font-size: 13px; color: var(--bone-dim); }
-.mara-bar { height: 5px; background: var(--ink-4); border-radius: var(--r-full); overflow: hidden; max-width: 320px; }
-.mara-bar i { display: block; height: 100%; background: var(--ember); border-radius: var(--r-full); }
-.mara-progress-meta { display: flex; justify-content: space-between; max-width: 320px; margin-top: 8px;
-  font-size: 12.5px; color: var(--bone-dim); }
 
-/* Wizard + detail shared bits */
-.mara-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: flex;
-  align-items: flex-start; justify-content: center; padding: 40px 20px; overflow-y: auto; z-index: 50; }
-.mara-modal { background: var(--ink-2); border: 1px solid var(--rule-strong); border-radius: var(--r-3);
-  width: 100%; max-width: 760px; padding: 28px; }
-.mara-modal h2 { font-family: var(--font-display); font-style: italic; font-weight: 400; font-size: var(--fs-32); }
-.mara-field { margin: 18px 0; }
+.mara-posters { display: flex; }
+.mara-poster { width: 46px; height: 69px; border-radius: var(--r-2); margin-left: -16px;
+  border: 2px solid var(--ink-2); background: var(--ink-3) center/cover no-repeat;
+  display: grid; place-items: center; overflow: hidden; box-shadow: 0 6px 14px -8px rgba(0,0,0,.7); }
+.mara-poster:first-child { margin-left: 0; }
+.mara-poster.more { background: var(--ink-4); color: var(--bone-dim); font-family: var(--font-mono);
+  font-size: 12px; }
+.mara-card:hover .mara-poster { border-color: var(--ink-3); }
+
+.mara-cardinfo { min-width: 0; }
+.mara-cardinfo h3 { font-family: var(--font-display); font-style: italic; font-weight: 600;
+  font-size: 20px; margin-bottom: 6px; }
+.mara-cardmeta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.mara-cadence { font-size: 13px; color: var(--bone-dim); display: inline-flex; align-items: center; gap: 6px; }
+.mara-cadence svg { width: 14px; height: 14px; color: var(--bone-mute); }
+.mara-dot { width: 3px; height: 3px; border-radius: 50%; background: var(--bone-mute); }
+
+.mara-chip { font-family: var(--font-mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase;
+  padding: 4px 9px; border-radius: var(--r-full); border: 1px solid var(--rule-strong); color: var(--bone-dim);
+  display: inline-flex; align-items: center; gap: 6px; }
+.mara-chip.active { color: var(--ember); border-color: var(--ember-dim); background: var(--ember-soft); }
+.mara-chip.paused { color: var(--gold); border-color: rgba(224,162,58,.35); }
+.mara-chip.draft { color: var(--bone-mute); }
+.mara-chip.completed { color: var(--bone-dim); }
+
+.mara-progress { margin-top: 2px; }
+.mara-bar { height: 5px; background: var(--ink-4); border-radius: var(--r-full); overflow: hidden;
+  width: 280px; max-width: 100%; }
+.mara-bar i { display: block; height: 100%; background: var(--ember); border-radius: var(--r-full); }
+.mara-bar.paused i { background: var(--gold); }
+.mara-progress-meta { display: flex; justify-content: space-between; width: 280px; max-width: 100%; margin-top: 8px; }
+.mara-progress-meta .next { font-size: 12.5px; color: var(--bone-dim); }
+.mara-progress-meta .next b { color: var(--bone); font-weight: 600; }
+.mara-progress-meta .count { font-family: var(--font-mono); font-size: 10px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--bone-mute); }
+
+.mara-cardactions { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; justify-self: end; }
+.mara-iconbtn { width: 34px; height: 34px; border-radius: var(--r-2); border: 1px solid var(--rule-strong);
+  background: transparent; color: var(--bone-dim); display: grid; place-items: center; cursor: pointer;
+  transition: color var(--dur-1), border-color var(--dur-1); }
+.mara-iconbtn:hover { color: var(--ember); border-color: var(--ember); }
+.mara-iconbtn.danger:hover { color: var(--red); border-color: var(--red); }
+.mara-iconbtn svg { width: 16px; height: 16px; }
+
+/* "Start from a set" suggested row */
+.mara-srow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.mara-scard { background: var(--ink-2); border: 1px solid var(--rule); border-radius: var(--r-3);
+  overflow: hidden; text-decoration: none; color: var(--bone); transition: border-color var(--dur-1); display: block; }
+.mara-scard:hover { border-color: var(--rule-strong); }
+.mara-scard .strip { display: flex; height: 96px; }
+.mara-scard .strip .t { flex: 1; border-right: 1px solid var(--ink); background: var(--ink-3);
+  display: grid; place-items: center; color: var(--ember); }
+.mara-scard .strip .t svg { width: 20px; height: 20px; }
+.mara-scard .strip .t:last-child { border-right: none; }
+.mara-scard .sbody { padding: 14px 16px; }
+.mara-scard .sbody .k { font-family: var(--font-mono); font-size: 10px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--ember); margin-bottom: 6px; }
+.mara-scard .sbody h4 { font-family: var(--font-display); font-style: italic; font-weight: 600;
+  font-size: 17px; margin-bottom: 4px; }
+.mara-scard .sbody p { font-size: 12.5px; color: var(--bone-dim); }
+
+/* ── Empty state ───────────────────────────────────────────────────────── */
+.mara-empty { text-align: center; padding: 64px 0; }
+.mara-empty h3 { font-family: var(--font-display); font-style: italic; font-size: 22px; margin-bottom: 8px; }
+.mara-empty p { color: var(--bone-dim); }
+
+/* ========================================================================== */
+/*  CREATE WIZARD (routed page)                                                */
+/* ========================================================================== */
+.mara-wizard { max-width: 880px; margin: 0 auto; }
+
+.mara-stepper { display: flex; align-items: center; gap: 0; padding: 8px 0 10px; }
+.mara-step { display: flex; align-items: center; gap: 10px; font-family: var(--font-mono);
+  font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--bone-mute); }
+.mara-step .n { width: 24px; height: 24px; border-radius: var(--r-full); border: 1px solid var(--rule-strong);
+  display: grid; place-items: center; font-size: 11px; }
+.mara-step .n svg { width: 13px; height: 13px; }
+.mara-step.on { color: var(--bone); }
+.mara-step.on .n { background: var(--ember); border-color: var(--ember); color: var(--ink); font-weight: 600; }
+.mara-step.done .n { border-color: var(--ember); color: var(--ember); }
+.mara-stepline { width: 44px; height: 1px; background: var(--rule-strong); margin: 0 14px; }
+
+.mara-wiz-head { padding: 26px 0 8px; }
+.mara-wiz-head h1 { font-family: var(--font-display); font-style: italic; font-weight: 400;
+  font-size: clamp(30px, 3.4vw, 42px); letter-spacing: -.01em; }
+.mara-wiz-head p { color: var(--bone-dim); font-size: 15px; margin-top: 10px; max-width: 520px; }
+
+.mara-namewrap { margin: 30px 0 8px; }
 .mara-label { font-family: var(--font-mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase;
   color: var(--bone-dim); display: block; margin-bottom: 8px; }
-.mara-row { display: flex; align-items: center; gap: 12px; }
-.mara-item { display: flex; align-items: center; gap: 12px; background: var(--ink); border: 1px solid var(--rule);
-  border-radius: var(--r-2); padding: 10px 12px; margin-bottom: 8px; }
-.mara-item .pos { font-family: var(--font-mono); font-size: 12px; color: var(--bone-mute); width: 18px; text-align: center; }
-.mara-item .thumb { width: 34px; height: 51px; border-radius: 4px; background: var(--ink-3) center/cover no-repeat; flex-shrink: 0; }
-.mara-item .grow { flex: 1; min-width: 0; }
-.mara-item .grow h4 { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.mara-item .grow .sub { font-size: 12px; color: var(--bone-mute); margin-top: 2px; }
-.mara-iconbtn { background: none; border: none; color: var(--bone-mute); cursor: pointer; padding: 4px; }
-.mara-iconbtn:hover { color: var(--ember); }
-.mara-iconbtn.danger:hover { color: var(--red); }
-.mara-actions { display: flex; justify-content: space-between; gap: 12px; margin-top: 24px;
-  padding-top: 20px; border-top: 1px solid var(--rule); }
-.mara-search-results { max-height: 260px; overflow-y: auto; margin-top: 8px; }
-.mara-datewrap { display: flex; gap: 8px; }
-.mara-datewrap input { flex: 1; }
+.mara-name { width: 100%; background: var(--ink-2); border: 1px solid var(--rule-strong); border-radius: var(--r-2);
+  color: var(--bone); font-family: var(--font-display); font-style: italic; font-size: 20px; padding: 14px 16px; }
+.mara-name:focus { outline: none; border-color: var(--ember); }
+.mara-name::placeholder { color: var(--bone-mute); font-style: italic; }
 
-/* Detail: owner action buttons — inherit .btn but allow a destructive tint */
-.mara-page .btn.danger:hover { color: var(--red); border-color: var(--red); }
+/* Source grid */
+.mara-srcgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 30px; }
+.mara-src { text-align: left; background: var(--ink-2); border: 1px solid var(--rule); border-radius: var(--r-3);
+  padding: 22px; cursor: pointer; position: relative; color: var(--bone);
+  transition: border-color var(--dur-1), background var(--dur-1); }
+.mara-src:hover:not(.disabled) { border-color: var(--rule-strong); background: var(--ink-3); }
+.mara-src.sel { border-color: var(--ember); background: var(--ember-soft); }
+.mara-src.disabled { opacity: .5; cursor: not-allowed; }
+.mara-src .ic { width: 38px; height: 38px; border-radius: var(--r-2); background: var(--ink-3);
+  display: grid; place-items: center; margin-bottom: 16px; color: var(--ember); }
+.mara-src.sel .ic { background: var(--ember); color: var(--ink); }
+.mara-src .ic svg { width: 20px; height: 20px; }
+.mara-src h3 { font-family: var(--font-display); font-style: italic; font-weight: 600; font-size: 19px; margin-bottom: 6px; }
+.mara-src p { font-size: 13px; color: var(--bone-dim); line-height: 1.5; }
+.mara-src .tag { position: absolute; top: 18px; right: 18px; font-family: var(--font-mono); font-size: 9px;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--bone-mute); border: 1px solid var(--rule-strong);
+  padding: 3px 8px; border-radius: var(--r-full); }
+.mara-src .check { position: absolute; top: 16px; right: 16px; color: var(--ember); display: inline-flex; }
+
+/* Build step: two columns (lineup | schedule) */
+.mara-build { display: grid; grid-template-columns: 1.5fr 1fr; gap: 30px; margin-top: 26px; align-items: start; }
+.mara-hintline { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--bone-mute); margin-bottom: 14px; }
+.mara-hintline svg { width: 14px; height: 14px; }
+.mara-searchrow { display: flex; gap: 10px; margin-bottom: 14px; }
+.mara-searchrow input { flex: 1; }
+.mara-results { max-height: 280px; overflow-y: auto; margin-bottom: 14px;
+  border: 1px solid var(--rule); border-radius: var(--r-2); }
+.mara-results:empty { display: none; }
+
+.mara-li { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--rule);
+  border-radius: var(--r-2); margin-bottom: 8px; background: var(--ink-2); }
+.mara-li.result { border: none; border-bottom: 1px solid var(--rule); border-radius: 0; margin-bottom: 0; background: transparent; }
+.mara-li.result:last-child { border-bottom: none; }
+.mara-li.dragging { opacity: .4; }
+.mara-li.dragover { border-color: var(--ember); }
+.mara-li .grip { color: var(--bone-mute); cursor: grab; display: inline-flex; }
+.mara-li .grip svg { width: 15px; height: 15px; }
+.mara-li .pos { font-family: var(--font-mono); font-size: 12px; color: var(--bone-mute); width: 18px; text-align: center; }
+.mara-li .thumb { width: 34px; height: 51px; border-radius: 4px; background: var(--ink-3) center/cover no-repeat; flex-shrink: 0; }
+.mara-li .grow { flex: 1; min-width: 0; }
+.mara-li .grow h4 { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mara-li .grow .sub { font-size: 12px; color: var(--bone-mute); margin-top: 2px; }
+.mara-li .li-date { background: var(--ink); border: 1px solid var(--rule-strong); border-radius: var(--r-2);
+  color: var(--bone); font-family: var(--font-ui); font-size: 12px; padding: 6px 8px; }
+.mara-li .li-date:focus { outline: none; border-color: var(--ember); }
+
+.mara-additem { width: 100%; margin-top: 6px; }
+
+/* Schedule panel */
+.mara-panel { background: var(--ink-2); border: 1px solid var(--rule); border-radius: var(--r-3); padding: 22px; }
+.mara-panel .sublabel { color: var(--bone-mute); text-transform: none; letter-spacing: 0; font-family: var(--font-ui); }
+.mara-modes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 22px; }
+.mara-mode { text-align: left; background: var(--ink); border: 1px solid var(--rule); border-radius: var(--r-2);
+  padding: 14px; cursor: pointer; color: var(--bone); position: relative; }
+.mara-mode:hover:not(.disabled) { border-color: var(--rule-strong); }
+.mara-mode.sel { border-color: var(--ember); background: var(--ember-soft); }
+.mara-mode.disabled { opacity: .5; cursor: not-allowed; }
+.mara-mode .ic { color: var(--ember); margin-bottom: 8px; display: inline-flex; }
+.mara-mode .ic svg { width: 18px; height: 18px; }
+.mara-mode h4 { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+.mara-mode p { font-size: 11.5px; color: var(--bone-dim); }
+.mara-mode .tag { position: absolute; top: 12px; right: 12px; font-family: var(--font-mono); font-size: 8px;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--bone-mute); border: 1px solid var(--rule-strong);
+  padding: 2px 6px; border-radius: var(--r-full); }
+
+.mara-seg { display: flex; gap: 0; border: 1px solid var(--rule-strong); border-radius: var(--r-2);
+  overflow: hidden; margin-bottom: 22px; }
+.mara-seg button { flex: 1; background: transparent; border: none; border-right: 1px solid var(--rule-strong);
+  color: var(--bone-dim); font-family: var(--font-ui); font-size: 13px; padding: 9px 0; cursor: pointer; }
+.mara-seg button:last-child { border-right: none; }
+.mara-seg button.on { background: var(--ember); color: var(--ink); font-weight: 600; }
+
+.mara-field { margin-bottom: 18px; }
+.mara-inrow { display: flex; gap: 10px; }
+.mara-inrow input { flex: 1; }
+
+.mara-rollnote { display: flex; gap: 10px; margin-top: 18px; font-size: 12.5px; color: var(--bone-dim);
+  background: var(--ink); border: 1px solid var(--rule); border-radius: var(--r-2); padding: 12px 14px; }
+.mara-rollnote svg { width: 16px; height: 16px; color: var(--ember); flex-shrink: 0; margin-top: 1px; }
+.mara-rollnote b { color: var(--bone); }
+
+/* Review step */
+.mara-review-sum { background: var(--ink-2); border: 1px solid var(--rule); border-radius: var(--r-3);
+  padding: 22px; margin-top: 26px; }
+.mara-review-sum .row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--rule); }
+.mara-review-sum .row:last-child { border-bottom: none; }
+.mara-review-sum .row .k { font-family: var(--font-mono); font-size: 11px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--bone-mute); }
+.mara-review-sum .row .v { color: var(--bone); font-size: 14px; text-align: right; }
+
+.mara-wiz-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 34px;
+  padding-top: 22px; border-top: 1px solid var(--rule); }
+
+/* ========================================================================== */
+/*  DETAIL PAGE                                                                 */
+/* ========================================================================== */
+.mara-detail { max-width: 940px; margin: 0 auto; }
+.mara-back { display: inline-flex; align-items: center; gap: 7px; color: var(--bone-dim); font-size: 13px;
+  background: none; border: none; cursor: pointer; padding: 8px 0 22px; }
+.mara-back:hover { color: var(--ember); }
+.mara-back svg { width: 15px; height: 15px; }
+
+.mara-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px;
+  padding-bottom: 22px; border-bottom: 1px solid var(--rule); }
+.mara-eyebrow2 { font-family: var(--font-mono); font-size: 11px; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--ember); display: flex; align-items: center; gap: 7px; margin-bottom: 12px; }
+.mara-eyebrow2 svg { width: 13px; height: 13px; }
+.mara-top h1 { font-family: var(--font-display); font-style: italic; font-weight: 400;
+  font-size: clamp(28px, 3.4vw, 42px); line-height: 1.05; }
+.mara-submeta { display: flex; align-items: center; gap: 12px; margin-top: 14px; color: var(--bone-dim);
+  font-size: 13px; flex-wrap: wrap; }
+.mara-actions { display: flex; gap: 9px; flex-shrink: 0; }
+
+.mara-band { display: flex; align-items: center; gap: 22px; margin: 24px 0 30px; }
+.mara-band .txt { font-family: var(--font-mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--bone-dim); white-space: nowrap; }
+.mara-band .txt b { color: var(--bone); }
+.mara-band .pbar { flex: 1; height: 6px; background: var(--ink-3); border-radius: var(--r-full); overflow: hidden; }
+.mara-band .pbar i { display: block; height: 100%; background: var(--ember); border-radius: var(--r-full); }
+
+/* Next-up hero */
+.mara-nextcard { display: flex; gap: 18px; background: var(--ink-2); border: 1px solid var(--ember-dim);
+  border-radius: var(--r-3); padding: 18px; margin-bottom: 34px; }
+.mara-nextcard .poster { width: 96px; height: 144px; border-radius: var(--r-2); background: var(--ink-3) center/cover no-repeat;
+  flex-shrink: 0; }
+.mara-nextcard .nb { flex: 1; min-width: 0; }
+.mara-nextcard .k { font-family: var(--font-mono); font-size: 10px; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--ember); margin-bottom: 8px; }
+.mara-nextcard h3 { font-family: var(--font-display); font-style: italic; font-weight: 600; font-size: 23px; margin-bottom: 8px; }
+.mara-nextcard h3 .yr { color: var(--bone-mute); font-weight: 400; font-style: normal; font-family: var(--font-ui); font-size: 16px; }
+.mara-nextcard .when { display: flex; align-items: center; gap: 9px; color: var(--bone); font-size: 14px; margin-bottom: 6px; }
+.mara-nextcard .when svg { width: 15px; height: 15px; color: var(--ember); }
+.mara-nextcard .post { color: var(--bone-mute); font-size: 12.5px; display: flex; align-items: center; gap: 7px; margin-bottom: 16px; }
+.mara-nextcard .post svg { width: 13px; height: 13px; }
+.mara-nextcard .row { display: flex; gap: 9px; flex-wrap: wrap; }
+
+.mara-sectitle { font-family: var(--font-mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--bone-mute); margin: 6px 0 14px; }
+
+/* Detail lineup rows */
+.mara-li2 { display: flex; align-items: center; gap: 14px; padding: 13px 14px; border: 1px solid var(--rule);
+  border-radius: var(--r-2); margin-bottom: 8px; background: var(--ink-2); }
+.mara-li2.past { background: transparent; border-color: transparent; opacity: .85; }
+.mara-li2.dragging { opacity: .4; }
+.mara-li2.dragover { border-color: var(--ember); }
+.mara-li2 .num { font-family: var(--font-mono); font-size: 12px; color: var(--bone-mute); width: 20px; text-align: center; }
+.mara-li2 .state { width: 24px; flex-shrink: 0; display: grid; place-items: center; }
+.mara-li2 .state svg { width: 18px; height: 18px; }
+.mara-li2 .state.done, .mara-li2 .state.next { color: var(--ember); }
+.mara-li2 .state.wait { color: var(--bone-mute); }
+.mara-li2 .poster { width: 32px; height: 48px; border-radius: 4px; background: var(--ink-3) center/cover no-repeat; flex-shrink: 0; }
+.mara-li2 .t { flex: 1; min-width: 0; }
+.mara-li2 .t h4 { font-size: 14.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mara-li2 .t .m { font-size: 12px; color: var(--bone-mute); margin-top: 2px; display: flex; align-items: center; gap: 8px; }
+.mara-li2 .date { text-align: right; font-size: 12.5px; color: var(--bone-dim); white-space: nowrap; }
+.mara-li2 .date b { display: block; color: var(--bone); font-weight: 600; }
+.mara-li2 .grip { color: var(--bone-mute); cursor: grab; display: inline-flex; }
+.mara-li2 .grip svg { width: 15px; height: 15px; }
+.mara-badge-next { font-family: var(--font-mono); font-size: 9px; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--ember); border: 1px solid var(--ember-dim); border-radius: var(--r-full); padding: 2px 7px; }
+
+.mara-foot { margin-top: 30px; font-size: 13px; color: var(--bone-dim); background: var(--ink-2);
+  border: 1px solid var(--rule); border-radius: var(--r-2); padding: 14px 16px; display: flex; gap: 10px; }
+.mara-foot svg { width: 16px; height: 16px; color: var(--ember); flex-shrink: 0; margin-top: 1px; }
+.mara-foot b { color: var(--bone); }
+
+/* Detail owner action button danger tint (uses global .btn) */
+.mara-detail .btn.danger:hover { color: var(--red); border-color: var(--red); }
+
+@media (max-width: 760px) {
+  .mara-card { grid-template-columns: auto 1fr; }
+  .mara-cardactions { display: none; }
+  .mara-build { grid-template-columns: 1fr; }
+  .mara-srcgrid { grid-template-columns: 1fr; }
+  .mara-srow { grid-template-columns: 1fr; }
+}

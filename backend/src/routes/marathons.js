@@ -14,7 +14,11 @@ const canManage = (marathon, user) =>
 router.get('/', validateGuildId, optionalAuth, async (req, res) => {
   try {
     const marathons = await db.getMarathons(req.guildId);
-    res.json(marathons);
+    const withOwner = marathons.map((m) => ({
+      ...m,
+      is_owner: req.user ? canManage(m, req.user) : false
+    }));
+    res.json(withOwner);
   } catch (err) {
     console.error('Error fetching marathons:', err);
     res.status(500).json({ error: 'Failed to fetch marathons' });

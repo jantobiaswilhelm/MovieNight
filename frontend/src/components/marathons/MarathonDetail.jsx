@@ -3,18 +3,37 @@ import { useToast } from '../../context/ToastContext';
 import * as api from '../../api/client';
 import { Icon } from '../ui';
 
-const fmt = (d) =>
-  d ? new Date(d).toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'unscheduled';
+const fmtWhen = (d) =>
+  d ? new Date(d).toLocaleString(undefined, { weekday: 'long', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'unscheduled';
+const fmtDay = (d) =>
+  d ? new Date(d).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }) : '—';
+const fmtTime = (d) =>
+  d ? new Date(d).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }) : '';
+
+const pad = (n) => String(n).padStart(2, '0');
+const toLocalInput = (v) => {
+  const date = new Date(v);
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+};
 
 const itemState = (it) => {
-  if (!it.scheduled_at) return 'pending';
+  if (!it.scheduled_at) return 'wait';
   return new Date(it.scheduled_at) < new Date() ? 'watched' : 'upcoming';
+};
+
+const runtimeStr = (mins) => {
+  if (!mins) return null;
+  const h = Math.floor(mins / 60), m = mins % 60;
+  return `${h ? `${h}h ` : ''}${m}m`;
 };
 
 export default function MarathonDetail({ id, onBack }) {
   const { showError, showSuccess } = useToast();
   const [m, setM] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [editingDate, setEditingDate] = useState(null);   // item id being date-edited
+  const [dragIndex, setDragIndex] = useState(null);
+  const [dragOver, setDragOver] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -24,9 +43,29 @@ export default function MarathonDetail({ id, onBack }) {
 
   useEffect(() => { load(); }, [load]);
 
-  const doAction = async (fn, msg) => {
-    try { await fn(); showSuccess(msg); load(); }
+  const doAction = async (fn, msg, after) => {
+    try { await fn(); showSuccess(msg); if (after) after(); else load(); }
     catch (err) { showError(err.message); }
+  };
+
+  const changeDate = async (item, value) => {
+    if (!value) return;
+    setEditingDate(null);
+    try {
+      await api.updateMarathonItemDate(m.id, item.id, new Date(value).toISOString());
+      showSuccess('Date updated'); load();
+    } catch (err) { showError(err.message); }
+  };
+
+  const onDrop = async (items, idx) => {
+    if (dragIndex === null || dragIndex === idx) { setDragIndex(null); setDragOver(null); return; }
+    const next = [...items];
+    const [moved] = next.splice(dragIndex, 1);
+    next.splice(idx, 0, moved);
+    setDragIndex(null); setDragOver(null);
+    setM((prev) => ({ ...prev, items: next }));
+    try { await api.reorderMarathonItems(m.id, next.map((i) => i.id)); load(); }
+    catch (err) { showError(err.message); load(); }
   };
 
   if (loading) return <p className="muted">Loading…</p>;
@@ -37,56 +76,110 @@ export default function MarathonDetail({ id, onBack }) {
   const watched = items.filter((it) => itemState(it) === 'watched').length;
   const pct = total ? Math.round((watched / total) * 100) : 0;
   const nextItem = items.find((it) => itemState(it) !== 'watched');
+  const totalRuntime = runtimeStr(items.reduce((s, it) => s + (it.runtime || 0), 0));
+  const cadenceText = m.cadence_type === 'binge' ? 'Back-to-back' : 'Weekly';
+  const schedHint = items[0]?.scheduled_at
+    ? ` · ${new Date(items[0].scheduled_at).toLocaleDateString(undefined, { weekday: 'long' })}s ${fmtTime(items[0].scheduled_at)}`
+    : '';
 
   return (
-    <div className="mara-page">
-      <button className="btn text" onClick={onBack}><Icon name="chevron-left" size={16} /> All marathons</button>
+    <div className="mara-detail">
+      <button className="mara-back" onClick={onBack}><Icon name="arrow-left" size={15} /> All marathons</button>
 
-      <header className="mara-header">
+      <div className="mara-top">
         <div>
-          <div className="mara-eyebrow">Marathon · {m.cadence_type === 'binge' ? 'Back-to-back' : 'Weekly'}</div>
+          <div className="mara-eyebrow2"><Icon name="layers" size={13} /> Marathon · {cadenceText}{schedHint}</div>
           <h1>{m.name}</h1>
-          <div className="mara-meta">
+          <div className="mara-submeta">
             <span className={`mara-chip ${m.status}`}>{m.status}</span>
-            <span className="mara-cadence">{m.created_by_name ? `by ${m.created_by_name}` : ''} · {total} films</span>
+            {m.created_by_name && <><span className="mara-dot" /><span>Started by {m.created_by_name}</span></>}
+            <span className="mara-dot" /><span>{total} film{total === 1 ? '' : 's'}{totalRuntime ? ` · ${totalRuntime}` : ''}</span>
           </div>
         </div>
         {m.is_owner && (
-          <div className="mara-row">
-            {m.status === 'active' && <button className="btn ghost" onClick={() => doAction(() => api.pauseMarathon(m.id), 'Paused')}><Icon name="pause" size={16} /> Pause</button>}
-            {m.status === 'paused' && <button className="btn ghost" onClick={() => doAction(() => api.resumeMarathon(m.id), 'Resumed')}><Icon name="play" size={16} /> Resume</button>}
-            <button className="btn ghost danger" onClick={() => doAction(() => api.deleteMarathon(m.id), 'Deleted')}><Icon name="trash" size={16} /></button>
+          <div className="mara-actions">
+            {m.status === 'active' && <button className="btn" onClick={() => doAction(() => api.pauseMarathon(m.id), 'Paused')}><Icon name="pause" size={15} /> Pause</button>}
+            {m.status === 'paused' && <button className="btn" onClick={() => doAction(() => api.resumeMarathon(m.id), 'Resumed')}><Icon name="play" size={15} /> Resume</button>}
+            <button className="btn danger" title="Delete marathon" onClick={() => {
+              if (window.confirm('Delete this marathon? This cannot be undone.')) {
+                doAction(() => api.deleteMarathon(m.id), 'Deleted', onBack);
+              }
+            }}><Icon name="trash" size={15} /></button>
           </div>
         )}
-      </header>
-
-      <div className="mara-field">
-        <div className="mara-bar" style={{ maxWidth: 'none' }}><i style={{ width: `${pct}%` }} /></div>
-        <div className="mara-progress-meta" style={{ maxWidth: 'none' }}>
-          <span>{watched} of {total} watched</span>
-          <span>{nextItem ? `Next: ${nextItem.title} · ${fmt(nextItem.scheduled_at)}` : 'Complete'}</span>
-        </div>
       </div>
 
-      <div className="mara-field">
-        <label className="mara-label">The lineup</label>
-        {items.map((it, idx) => {
-          const st = itemState(it);
-          return (
-            <div key={it.id} className="mara-item">
-              <span className="pos">{idx + 1}</span>
-              <div className="thumb" style={{ backgroundImage: it.image_url ? `url(${it.image_url})` : 'none' }} />
-              <div className="grow">
-                <h4>{it.title}</h4>
-                <div className="sub">
-                  {st === 'watched' ? 'Watched' : st === 'upcoming' ? (it.id === nextItem?.id ? 'Next up' : 'Upcoming') : 'Not scheduled'}
-                  {' · '}{fmt(it.scheduled_at)}
-                </div>
-              </div>
-              {st === 'watched' && <Icon name="check" size={16} />}
+      <div className="mara-band">
+        <span className="txt"><b>{watched}</b> of {total} watched</span>
+        <div className="pbar"><i style={{ width: `${pct}%` }} /></div>
+        <span className="txt">{total - watched} to go</span>
+      </div>
+
+      {/* Next-up hero */}
+      {nextItem && (
+        <div className="mara-nextcard">
+          <div className="poster" style={{ backgroundImage: nextItem.image_url ? `url(${nextItem.image_url})` : 'none' }} />
+          <div className="nb">
+            <div className="k">Up next</div>
+            <h3>{nextItem.title}{nextItem.release_year ? <span className="yr"> ({nextItem.release_year})</span> : null}</h3>
+            <div className="when"><Icon name="calendar-clock" size={15} /> {fmtWhen(nextItem.scheduled_at)}</div>
+            <div className="post"><Icon name="send" size={13} /> Posts to Discord automatically as the date approaches</div>
+            <div className="row">
+              {editingDate === nextItem.id ? (
+                <input className="li-date" type="datetime-local" autoFocus
+                  defaultValue={nextItem.scheduled_at ? toLocalInput(nextItem.scheduled_at) : ''}
+                  onBlur={(e) => changeDate(nextItem, e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') changeDate(nextItem, e.target.value); }} />
+              ) : (
+                m.is_owner && <button className="btn" onClick={() => setEditingDate(nextItem.id)}><Icon name="calendar" size={15} /> Change date</button>
+              )}
+              <button className="btn" disabled title="Available once the film posts to Discord"><Icon name="check" size={15} /> I&rsquo;m attending</button>
+              <button className="btn" disabled title="Manual posting coming in a later update"><Icon name="send" size={15} /> Post now</button>
             </div>
-          );
-        })}
+          </div>
+        </div>
+      )}
+
+      {/* Lineup */}
+      <div className="mara-sectitle">The lineup</div>
+      {items.map((it, idx) => {
+        const st = itemState(it);
+        const isNext = it.id === nextItem?.id;
+        const stateCls = st === 'watched' ? 'done' : isNext ? 'next' : 'wait';
+        const stateIcon = st === 'watched' ? 'check-circle' : isNext ? 'play-circle' : 'clock';
+        const reorderable = m.is_owner && st !== 'watched' && !isNext;
+        const prev = items[idx - 1];
+        return (
+          <div key={it.id}
+            className={`mara-li2 ${st === 'watched' ? 'past' : ''} ${dragIndex === idx ? 'dragging' : ''} ${dragOver === idx ? 'dragover' : ''}`}
+            draggable={reorderable}
+            onDragStart={() => reorderable && setDragIndex(idx)}
+            onDragOver={(e) => { if (dragIndex !== null) { e.preventDefault(); setDragOver(idx); } }}
+            onDragLeave={() => setDragOver((o) => (o === idx ? null : o))}
+            onDrop={() => onDrop(items, idx)}
+            onDragEnd={() => { setDragIndex(null); setDragOver(null); }}>
+            <span className="num">{idx + 1}</span>
+            <span className={`state ${stateCls}`}><Icon name={stateIcon} size={18} /></span>
+            <div className="poster" style={{ backgroundImage: it.image_url ? `url(${it.image_url})` : 'none' }} />
+            <div className="t">
+              <h4>{it.title}</h4>
+              <div className="m">
+                {st === 'watched' ? `Watched ${fmtDay(it.scheduled_at)}`
+                  : isNext ? <span className="mara-badge-next">Next up</span>
+                  : prev ? `Queues after ${prev.title}` : 'Queued'}
+              </div>
+            </div>
+            <div className="date"><b>{fmtDay(it.scheduled_at)}</b>{fmtTime(it.scheduled_at) || 'unscheduled'}</div>
+            {reorderable && <span className="grip"><Icon name="grip" size={15} /></span>}
+          </div>
+        );
+      })}
+
+      <div className="mara-foot">
+        <Icon name="info" size={16} />
+        <div>{nextItem
+          ? <><b>Only “{nextItem.title}” is queued next.</b> Everything below it is editable — drag to reorder or change a date — until it becomes next-up. Pause anytime and the roll-out stops.</>
+          : <>All films have been scheduled. This marathon is complete.</>}</div>
       </div>
     </div>
   );

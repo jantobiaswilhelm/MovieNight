@@ -38,6 +38,16 @@ import {
   Eye,
   EyeOff,
   MoreHorizontal,
+  CalendarClock,
+  Layers,
+  Sparkles,
+  Wand2,
+  GripVertical,
+  Info,
+  Send,
+  PlayCircle,
+  CheckCircle2,
+  Rocket,
 } from 'lucide-react';
 
 const REGISTRY = {
@@ -80,6 +90,16 @@ const REGISTRY = {
   eye:       Eye,
   'eye-off': EyeOff,
   more:      MoreHorizontal,
+  'calendar-clock': CalendarClock,
+  layers:    Layers,
+  sparkles:  Sparkles,
+  wand:      Wand2,
+  grip:      GripVertical,
+  info:      Info,
+  send:      Send,
+  'play-circle':  PlayCircle,
+  'check-circle': CheckCircle2,
+  rocket:    Rocket,
 };
 
 export default function Icon({ name, size = 18, stroke = 1.75, className = '', ...rest }) {
