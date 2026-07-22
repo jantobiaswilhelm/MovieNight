@@ -15,6 +15,10 @@ const ICON_MAP = {
   'thumbs-down': 'close',
   'thumbs-up': 'check',
   clock: 'clock',
+  list: 'list',
+  globe: 'pin',
+  calendar: 'calendar',
+  eye: 'eye',
   folder: 'folder',
   'check-circle': 'check',
   rocket: 'play',
@@ -22,14 +26,15 @@ const ICON_MAP = {
   default: 'trophy'
 };
 
-const CATEGORY_ORDER = ['ratings', 'streaks', 'watchtime', 'collections', 'special'];
+const CATEGORY_ORDER = ['ratings', 'streaks', 'watchtime', 'collections', 'explorer', 'special'];
 
 const CATEGORY_META = {
   ratings:     { num: '02', label: 'Ratings' },
   streaks:     { num: '03', label: 'Streaks' },
   watchtime:   { num: '04', label: 'Watchtime' },
   collections: { num: '05', label: 'Collections' },
-  special:     { num: '06', label: 'Special' },
+  explorer:    { num: '06', label: 'Explorer' },
+  special:     { num: '07', label: 'Special' },
 };
 
 const AchievementsPage = () => {

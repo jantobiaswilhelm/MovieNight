@@ -274,7 +274,7 @@ router.post('/:id/ratings', validateIntParams('id'), authenticateToken, async (r
     try {
       const [generalAchievements, ratingAchievements] = await Promise.all([
         checkAndUnlockAchievements(req.user.id, movie.guild_id),
-        checkRatingAchievements(req.user.id, score)
+        checkRatingAchievements(req.user.id, score, movie.tmdb_id)
       ]);
       newAchievements = [...generalAchievements, ...ratingAchievements];
 
