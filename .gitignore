@@ -27,3 +27,6 @@ pids
 *.pid
 *.seed
 *.pid.lock
+
+# Brainstorming visual companion mockups
+.superpowers/
