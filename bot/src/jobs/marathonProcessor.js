@@ -2,7 +2,9 @@ import cron from 'node-cron';
 import {
   getActiveMarathons, getNextPendingMarathonItem, countMarathonItems,
   createMarathonPendingAnnouncement, markMarathonItemScheduled,
-  advanceMarathonPosition, completeMarathonIfDone
+  advanceMarathonPosition, completeMarathonIfDone,
+  getMarathonItemsByMarathon, markAllMarathonItemsScheduled,
+  createBingeKickoffPendingAnnouncement
 } from '../models/index.js';
 import { createLogger } from '../utils/logger.js';
 
@@ -23,6 +25,24 @@ export const processMarathons = async () => {
     const marathons = await getActiveMarathons();
     for (const marathon of marathons) {
       try {
+        if (marathon.cadence_type === 'binge') {
+          // Whole evening at once: queue a single kickoff when doors near.
+          const items = await getMarathonItemsByMarathon(marathon.id);
+          const pending = items.filter((it) => it.status === 'pending');
+          if (pending.length === 0) { await completeMarathonIfDone(marathon.id); continue; }
+          const doors = pending[0].scheduled_at;
+          if (!doors) continue;
+          const due = new Date(doors).getTime() - Date.now() <= ANNOUNCE_LEAD_MS;
+          if (!due) continue;
+
+          await createBingeKickoffPendingAnnouncement(pending[0], marathon, items.length);
+          await markAllMarathonItemsScheduled(marathon.id);
+          await advanceMarathonPosition(marathon.id, items.length);
+          logger.info(`Queued BINGE kickoff for marathon ${marathon.id} (${items.length} films)`);
+          continue;
+        }
+
+        // Interval (weekly) — one film per pass, as before.
         const item = await getNextPendingMarathonItem(marathon.id);
         if (!item) { await completeMarathonIfDone(marathon.id); continue; }
         if (!item.scheduled_at) continue;
