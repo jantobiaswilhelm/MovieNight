@@ -12,8 +12,9 @@ import {
   getStats,
   getOnThisDay
 } from '../api/client';
+import { getSeasonalTheme } from '../utils/seasonalTheme';
 import { StarRating, MovieCard, MovieCardSkeleton } from '../components/common';
-import { AdminSettingsPanel, UsersSection, AnnounceFlow, SuggestionBoard, HomeStatsBand, OnThisDay } from '../components/home';
+import { AdminSettingsPanel, UsersSection, AnnounceFlow, SuggestionBoard, HomeStatsBand, OnThisDay, SeasonalDecoration } from '../components/home';
 import { Icon, SectionHead, Skeleton, EmptyState, Badge } from '../components/ui';
 import './Home.css';
 
@@ -94,6 +95,12 @@ const Home = () => {
     return <div className="error">Error: {error}</div>;
   }
 
+  const seasonOverride =
+    typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search).get('season')
+      : null;
+  const seasonal = getSeasonalTheme(new Date(), seasonOverride);
+
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
@@ -137,7 +144,8 @@ const Home = () => {
     : null;
 
   return (
-    <div className="home">
+    <div className={`home ${seasonal ? seasonal.className : ''}`.trim()}>
+      {seasonal && <SeasonalDecoration theme={seasonal.key} />}
       {isAdmin && <AdminSettingsPanel onDataRefresh={handleDataRefresh} />}
 
       {/* ═══ HERO — Feature + voting ═══ */}
@@ -154,7 +162,9 @@ const Home = () => {
 
           <div className="hero-top">
             <span className="eyebrow">
-              {isHeroPast ? 'Last screening' : 'Tonight\u2019s feature'}
+              {seasonal && !isHeroPast
+                ? seasonal.eyebrow
+                : (isHeroPast ? 'Last screening' : 'Tonight\u2019s feature')}
             </span>
             {!isHeroPast && nextMovie?.attendees?.length > 0 && (
               <Badge live>
@@ -303,7 +313,7 @@ const Home = () => {
       </section>
 
       {onThisDay && <OnThisDay movie={onThisDay} />}
-      {stats && <HomeStatsBand stats={stats} />}
+      {stats && <HomeStatsBand stats={stats} seasonalKey={seasonal?.key || null} />}
 
       {/* ═══ Reviews carousel — auto-scrolling ═══ */}
       {reviews.length > 0 && (
