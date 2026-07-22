@@ -173,3 +173,45 @@ export const deleteMarathon = async (marathonId) => {
   );
   return result.rows[0];
 };
+
+// Append many films at once (source-built lineups). movies = array of the same
+// shape addMarathonItem accepts (camelCase TMDB fields). Preserves array order.
+export const addMarathonItemsBulk = async (marathonId, movies) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const posResult = await client.query(
+      `SELECT COALESCE(MAX(position), -1) + 1 AS pos FROM marathon_items WHERE marathon_id = $1`,
+      [marathonId]
+    );
+    let position = posResult.rows[0].pos;
+    const inserted = [];
+    for (const m of movies) {
+      const {
+        tmdbId, title, imageUrl, backdropUrl, description, tmdbRating,
+        genres, runtime, releaseYear, tagline, imdbId, originalLanguage, trailerUrl
+      } = m;
+      const r = await client.query(
+        `INSERT INTO marathon_items
+           (marathon_id, position, tmdb_id, title, image_url, backdrop_url, description,
+            tmdb_rating, genres, runtime, release_year, tagline, imdb_id, original_language, trailer_url)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+         RETURNING *`,
+        [
+          marathonId, position, tmdbId || null, title, imageUrl || null, backdropUrl || null,
+          description || null, tmdbRating ?? null, genres || null, runtime ?? null,
+          releaseYear || null, tagline || null, imdbId || null, originalLanguage || null, trailerUrl || null
+        ]
+      );
+      inserted.push(r.rows[0]);
+      position += 1;
+    }
+    await client.query('COMMIT');
+    return inserted;
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+};

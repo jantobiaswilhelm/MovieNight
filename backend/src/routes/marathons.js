@@ -3,12 +3,21 @@ import { authenticateToken, optionalAuth } from '../middleware/auth.js';
 import { validateIntParams, validateGuildId } from '../middleware/validate.js';
 import { isAdmin } from '../utils/admin.js';
 import * as db from '../models/index.js';
+import * as tmdb from '../services/tmdb.js';
 
 const router = Router();
 
 // Owner-or-admin guard for mutations.
 const canManage = (marathon, user) =>
   marathon.created_by === user.id || isAdmin(user.discord_id);
+
+// TMDB detail (services/tmdb.getMovieDetail) → addMarathonItem/Bulk input shape.
+const detailToItem = (d) => ({
+  tmdbId: d.id, title: d.title, imageUrl: d.posterPath, backdropUrl: d.backdropPath,
+  description: d.overview, tmdbRating: d.rating, genres: d.genres, runtime: d.runtime,
+  releaseYear: d.year, tagline: d.tagline, imdbId: d.imdbId,
+  originalLanguage: d.originalLanguage, trailerUrl: d.trailerUrl
+});
 
 // GET /api/marathons — browse list for the guild.
 router.get('/', validateGuildId, optionalAuth, async (req, res) => {
@@ -87,6 +96,30 @@ router.post('/:id/items', validateGuildId, validateIntParams('id'), authenticate
   } catch (err) {
     console.error('Error adding marathon item:', err);
     res.status(500).json({ error: 'Failed to add item' });
+  }
+});
+
+// POST /api/marathons/:id/items/bulk — body: { tmdb_ids: [int, ...] }
+// Enriches each id to full metadata server-side so source-built films carry the
+// same genres/runtime/trailer as manually-added ones.
+router.post('/:id/items/bulk', validateGuildId, validateIntParams('id'), authenticateToken, async (req, res) => {
+  const { tmdb_ids } = req.body;
+  if (!Array.isArray(tmdb_ids) || tmdb_ids.length === 0) {
+    return res.status(400).json({ error: 'tmdb_ids array is required' });
+  }
+  const ids = tmdb_ids.filter((n) => Number.isInteger(n)).slice(0, 30);
+  if (ids.length === 0) return res.status(400).json({ error: 'No valid tmdb_ids' });
+  try {
+    const marathon = await loadManageable(req, res);
+    if (!marathon) return;
+    const details = await Promise.all(ids.map((tid) => tmdb.getMovieDetail(tid).catch(() => null)));
+    const movies = details.filter(Boolean).map(detailToItem);
+    if (movies.length === 0) return res.status(502).json({ error: 'Could not resolve any films from TMDB' });
+    const items = await db.addMarathonItemsBulk(marathon.id, movies);
+    res.json(items);
+  } catch (err) {
+    console.error('Error bulk-adding marathon items:', err);
+    res.status(500).json({ error: 'Failed to add items' });
   }
 });
 
