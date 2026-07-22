@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { announceMovie } from '../../api/client';
 import { Icon, Chip } from '../ui';
 import InlineScheduler from './InlineScheduler';
@@ -15,6 +15,12 @@ export default function ScheduleSection({ movie, occupancy = [], onScheduled, on
   const [announcing, setAnnouncing] = useState(false);
   const [error, setError] = useState(null);
   const [done, setDone] = useState(false);
+  const ref = useRef(null);
+
+  // Bring the calendar into view when a movie is picked.
+  useEffect(() => {
+    ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
 
   const schedule = async () => {
     if (!selectedDay || !time) { setError('Pick a day and time.'); return; }
@@ -46,7 +52,7 @@ export default function ScheduleSection({ movie, occupancy = [], onScheduled, on
   }
 
   return (
-    <section className="sched-section">
+    <section className="sched-section" ref={ref}>
       <div className="sched-head">
         <div className="mara-eyebrow">Schedule a movie</div>
         <button type="button" className="btn text" onClick={onCancel}>

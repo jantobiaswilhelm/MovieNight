@@ -762,25 +762,24 @@
   flex: 1;
   min-height: 0;
 }
-/* Picked-movie confirmation (scheduling happens in the full-width section below) */
+/* Picked-movie confirmation — centered so it fills the fixed-height panel while
+   scheduling happens in the full-width section below. */
 .af-picked{
-  flex-direction: row;
   align-items: center;
+  justify-content: center;
+  text-align: center;
   gap: var(--s-3);
-  flex: 0;
-  padding: var(--s-3);
-  border: 1px solid var(--ember-dim);
-  background: var(--ember-soft);
-  border-radius: var(--r-2);
+  flex: 1;
 }
+.af-picked-poster{ width: 104px; border-radius: var(--r-2); box-shadow: 0 10px 26px -12px rgba(0,0,0,.8); }
 .af-picked-check{
-  width: 34px; height: 34px; border-radius: var(--r-full);
+  width: 48px; height: 48px; border-radius: var(--r-full);
   background: var(--ember); color: var(--ink);
-  display: grid; place-items: center; flex-shrink: 0;
+  display: grid; place-items: center;
 }
-.af-picked-info{ flex: 1; min-width: 0; }
-.af-picked-title{ font-weight: 600; color: var(--bone); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.af-picked-sub{ font-size: 12.5px; color: var(--bone-dim); margin-top: 2px; }
+.af-picked-title{ font-family: var(--font-display); font-style: italic; font-weight: 600; font-size: 20px; color: var(--bone); }
+.af-picked-sub{ display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--ember); }
+.af-picked-sub svg{ transform: translateY(1px); }
 /* The schedule step (movie preview + month calendar + submit) can exceed the
    fixed-height sidebar — let it scroll inside instead of clipping the calendar. */
 .af-flow-scroll{

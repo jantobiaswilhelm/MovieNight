@@ -2,6 +2,7 @@
   margin-top: var(--s-6);
   padding-top: var(--s-5);
   border-top: 1px solid var(--rule);
+  scroll-margin-top: 80px;
 }
 .sched-head {
   display: flex;

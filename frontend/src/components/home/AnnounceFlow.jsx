@@ -52,12 +52,12 @@ const AnnounceFlow = ({ onPick, pickedMovie }) => {
 
       {pickedMovie ? (
         <div className="af-flow-body af-picked">
-          <div className="af-picked-check"><Icon name="check" size={20} /></div>
-          <div className="af-picked-info">
-            <div className="af-picked-title">{pickedMovie.title}</div>
-            <div className="af-picked-sub">Pick a date on the calendar below ↓</div>
-          </div>
-          <button type="button" className="btn text" onClick={() => onPick(null)}>Change</button>
+          {pickedMovie.posterPath
+            ? <img src={pickedMovie.posterPath} alt="" className="af-picked-poster" loading="lazy" />
+            : <div className="af-picked-check"><Icon name="check" size={22} /></div>}
+          <div className="af-picked-title">{pickedMovie.title}</div>
+          <div className="af-picked-sub"><Icon name="chevron" size={14} /> Pick a date on the calendar below</div>
+          <button type="button" className="btn ghost sm" onClick={() => onPick(null)}>Choose a different movie</button>
         </div>
       ) : (
         <div className="af-flow-body">
