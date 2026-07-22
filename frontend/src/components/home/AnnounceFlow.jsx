@@ -168,7 +168,7 @@ const AnnounceFlow = ({ onAnnounced }) => {
 
       {/* ── Step: preview + schedule ── */}
       {step === 'preview' && selectedMovie && (
-        <form className="af-flow-body" onSubmit={handleSubmit}>
+        <form className="af-flow-body af-flow-scroll" onSubmit={handleSubmit}>
           <button
             type="button"
             className="af-back"

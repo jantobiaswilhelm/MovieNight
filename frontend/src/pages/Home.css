@@ -762,6 +762,13 @@
   flex: 1;
   min-height: 0;
 }
+/* The schedule step (movie preview + month calendar + submit) can exceed the
+   fixed-height sidebar — let it scroll inside instead of clipping the calendar. */
+.af-flow-scroll{
+  overflow-y: auto;
+  padding-right: 4px;
+  padding-bottom: var(--s-2);
+}
 
 /* Search row */
 .af-search{
