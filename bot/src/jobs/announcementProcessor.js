@@ -1,5 +1,8 @@
 import cron from 'node-cron';
-import { getPendingAnnouncements, markAnnouncementProcessed, createMovieNight, findOrCreateUser } from '../models/index.js';
+import {
+  getPendingAnnouncements, markAnnouncementProcessed, createMovieNight, findOrCreateUser,
+  linkMarathonItemMovieNight, completeMarathonIfDone
+} from '../models/index.js';
 import { createAnnouncementEmbed } from '../utils/embeds.js';
 import { createLogger } from '../utils/logger.js';
 
@@ -119,15 +122,25 @@ async function processAnnouncement(client, announcement, channel) {
     announcerName
   );
 
+  // Marathon context: ribbon + progress, when this announcement is part of a marathon.
+  if (announcement.marathon_name) {
+    embed.setAuthor({ name: announcement.marathon_name });
+    embed.addFields({
+      name: 'Marathon',
+      value: `Film ${announcement.marathon_position} of ${announcement.marathon_total}`,
+      inline: true
+    });
+  }
+
   // Send the announcement with role ping
   const content = MOVIE_NIGHT_ROLE_ID ? `<@&${MOVIE_NIGHT_ROLE_ID}>` : undefined;
   const reply = await channel.send({ content, embeds: [embed] });
 
   // Get or create the user (if we have their discord_id)
-  let userId = announcement.user_id;
+  const userId = announcement.user_id;
 
   // Create the movie night in the database
-  await createMovieNight(
+  const movieNight = await createMovieNight(
     announcement.title,
     scheduledAt,
     userId,
@@ -148,6 +161,12 @@ async function processAnnouncement(client, announcement, channel) {
     },
     announcement.is_test || false
   );
+
+  // Back-link the marathon item and complete the marathon if this was the last film.
+  if (announcement.marathon_item_id) {
+    await linkMarathonItemMovieNight(announcement.marathon_item_id, movieNight.id);
+    await completeMarathonIfDone(announcement.marathon_id);
+  }
 
   // Mark as processed
   await markAnnouncementProcessed(announcement.id, 'processed');
