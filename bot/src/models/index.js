@@ -626,3 +626,82 @@ export const zeroOutPresenceById = async (ids) => {
     [ids]
   );
 };
+
+// ── Marathons (bot side) ─────────────────────────────────────────────────────
+export const getActiveMarathons = async () => {
+  const result = await pool.query(`SELECT * FROM marathons WHERE status = 'active'`);
+  return result.rows;
+};
+
+// Next film still waiting to be queued, in order.
+export const getNextPendingMarathonItem = async (marathonId) => {
+  const result = await pool.query(
+    `SELECT * FROM marathon_items
+     WHERE marathon_id = $1 AND status = 'pending'
+     ORDER BY position ASC LIMIT 1`,
+    [marathonId]
+  );
+  return result.rows[0];
+};
+
+export const countMarathonItems = async (marathonId) => {
+  const result = await pool.query(
+    `SELECT COUNT(*)::int AS n FROM marathon_items WHERE marathon_id = $1`,
+    [marathonId]
+  );
+  return result.rows[0].n;
+};
+
+// Queue one film onto the shared announcement pipeline, carrying marathon context.
+// Fires NOTIFY so the existing announcement processor posts it immediately.
+export const createMarathonPendingAnnouncement = async (item, marathon, total) => {
+  const title = item.release_year ? `${item.title} (${item.release_year})` : item.title;
+  const result = await pool.query(
+    `INSERT INTO pending_announcements
+       (guild_id, channel_id, user_id, title, image_url, backdrop_url, description,
+        tmdb_id, imdb_id, tmdb_rating, genres, runtime, release_year, trailer_url,
+        scheduled_at, marathon_id, marathon_item_id, marathon_name, marathon_position, marathon_total)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+     RETURNING *`,
+    [
+      marathon.guild_id, null, marathon.created_by, title, item.image_url, item.backdrop_url,
+      item.description, item.tmdb_id, item.imdb_id, item.tmdb_rating, item.genres, item.runtime,
+      item.release_year, item.trailer_url, item.scheduled_at,
+      marathon.id, item.id, marathon.name, item.position + 1, total
+    ]
+  );
+  try { await pool.query('NOTIFY movie_announcement'); } catch (err) {
+    console.error('Failed to NOTIFY movie_announcement:', err.message);
+  }
+  return result.rows[0];
+};
+
+export const markMarathonItemScheduled = async (itemId) => {
+  await pool.query(`UPDATE marathon_items SET status = 'scheduled' WHERE id = $1`, [itemId]);
+};
+
+export const advanceMarathonPosition = async (marathonId, position) => {
+  await pool.query(
+    `UPDATE marathons SET current_position = $2, updated_at = NOW() WHERE id = $1`,
+    [marathonId, position]
+  );
+};
+
+// Back-link the created movie night to its marathon item (called at post time).
+export const linkMarathonItemMovieNight = async (itemId, movieNightId) => {
+  await pool.query(
+    `UPDATE marathon_items SET scheduled_movie_night_id = $2 WHERE id = $1`,
+    [itemId, movieNightId]
+  );
+};
+
+// Complete a marathon once nothing is pending and no scheduled film is still upcoming.
+export const completeMarathonIfDone = async (marathonId) => {
+  await pool.query(
+    `UPDATE marathons SET status = 'completed', updated_at = NOW()
+     WHERE id = $1 AND status = 'active'
+       AND NOT EXISTS (SELECT 1 FROM marathon_items WHERE marathon_id = $1 AND status = 'pending')
+       AND NOT EXISTS (SELECT 1 FROM marathon_items WHERE marathon_id = $1 AND scheduled_at >= NOW())`,
+    [marathonId]
+  );
+};

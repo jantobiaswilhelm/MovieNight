@@ -1,6 +1,7 @@
 import { Events } from 'discord.js';
 import { startMovieStarterJob } from '../jobs/movieStarter.js';
 import { startAnnouncementProcessorJob, processPendingAnnouncements } from '../jobs/announcementProcessor.js';
+import { startMarathonProcessorJob } from '../jobs/marathonProcessor.js';
 import { postRescheduleNote } from '../jobs/rescheduleNotifier.js';
 import { postCancelNote } from '../jobs/cancelNotifier.js';
 import { startRatingNotifierJob } from '../jobs/ratingNotifier.js';
@@ -79,6 +80,9 @@ export const execute = async (client) => {
 
   // Start the announcement processor job (backstop poll for web-created announcements)
   startAnnouncementProcessorJob(client);
+
+  // Start the marathon processor job (queues the next due film per active marathon)
+  startMarathonProcessorJob();
 
   // Listen for instant NOTIFY signals from the backend: post web announcements
   // immediately, and post a note when a movie is rescheduled from the web.
