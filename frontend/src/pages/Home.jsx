@@ -15,7 +15,7 @@ import {
 } from '../api/client';
 import { getSeasonalTheme } from '../utils/seasonalTheme';
 import { StarRating, MovieCard, MovieCardSkeleton } from '../components/common';
-import { AdminSettingsPanel, UsersSection, AnnounceFlow, SuggestionBoard, HomeStatsBand, OnThisDay, SeasonalDecoration, ReviewsFeature, OnTheCalendar } from '../components/home';
+import { AdminSettingsPanel, UsersSection, AnnounceFlow, SuggestionBoard, HomeStatsBand, OnThisDay, SeasonalDecoration, ReviewsFeature, OnTheCalendar, ScheduleSection } from '../components/home';
 import { Icon, SectionHead, Skeleton, EmptyState, Badge } from '../components/ui';
 import './Home.css';
 
@@ -31,6 +31,7 @@ const Home = () => {
   const [seasonPreview, setSeasonPreview] = useState(null);
   const [onThisDay, setOnThisDay] = useState(null);
   const [calendar, setCalendar] = useState([]);
+  const [scheduleMovie, setScheduleMovie] = useState(null);   // picked movie → full-width scheduler
   const [togglingAttendance, setTogglingAttendance] = useState(false);
 
   const fetchData = useCallback(async () => {
@@ -331,8 +332,19 @@ const Home = () => {
           isAuthenticated={isAuthenticated}
           loading={loading}
           onAnnounced={fetchData}
+          onPick={setScheduleMovie}
+          pickedMovie={scheduleMovie}
         />
       </section>
+
+      {scheduleMovie && (
+        <ScheduleSection
+          movie={scheduleMovie}
+          occupancy={calendar}
+          onCancel={() => setScheduleMovie(null)}
+          onScheduled={() => { setScheduleMovie(null); fetchData(); }}
+        />
+      )}
 
       {onThisDay && <OnThisDay movie={onThisDay} />}
       {stats && <HomeStatsBand stats={stats} seasonalKey={seasonal?.key || null} />}
@@ -424,7 +436,7 @@ const Home = () => {
 /* ═══════════════════════════════════════════════════════════════════════
    Home sidebar — toggles between Announce and Board in the same slot.
    ═══════════════════════════════════════════════════════════════════════ */
-function HomeSidebar({ isAuthenticated, loading, onAnnounced }) {
+function HomeSidebar({ isAuthenticated, loading, onAnnounced, onPick, pickedMovie }) {
   const [tab, setTab] = useState(isAuthenticated ? 'announce' : 'board');
 
   return (
@@ -453,7 +465,7 @@ function HomeSidebar({ isAuthenticated, loading, onAnnounced }) {
       <div className="hs-panel" role="tabpanel">
         {tab === 'announce' ? (
           isAuthenticated ? (
-            <AnnounceFlow onAnnounced={onAnnounced} />
+            <AnnounceFlow onPick={onPick} pickedMovie={pickedMovie} />
           ) : (
             <div className="hs-login">
               <div className="hs-login-eyebrow">Host the next night</div>

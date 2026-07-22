@@ -1,0 +1,40 @@
+.sched-section {
+  margin-top: var(--s-6);
+  padding-top: var(--s-5);
+  border-top: 1px solid var(--rule);
+}
+.sched-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: var(--s-4);
+}
+.sched-body {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: var(--s-6);
+  align-items: start;
+}
+.sched-poster { width: 120px; border-radius: var(--r-2); margin-bottom: var(--s-3); display: block; }
+.sched-movie h3 { font-family: var(--font-display); font-style: italic; font-weight: 600; font-size: 22px; }
+.sched-meta { display: flex; gap: 6px; flex-wrap: wrap; color: var(--bone-dim); font-size: 13px; margin-top: 6px; }
+.sched-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
+.sched-hint { color: var(--bone-mute); font-size: 13px; margin-top: 14px; }
+.sched-hint b { color: var(--bone-dim); }
+.sched-compose { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+.sched-compose-when { font-size: 13px; color: var(--bone-dim); }
+.sched-compose-when b { color: var(--bone); }
+.sched-done { text-align: center; padding: 48px 0; }
+.sched-done-check {
+  width: 56px; height: 56px; border-radius: var(--r-full);
+  background: var(--ember-soft); color: var(--ember);
+  display: grid; place-items: center; margin: 0 auto 16px;
+}
+.sched-done h4 { font-family: var(--font-display); font-style: italic; font-size: 22px; }
+.sched-done p { color: var(--bone-dim); margin-top: 6px; }
+
+@media (max-width: 760px) {
+  .sched-body { grid-template-columns: 1fr; }
+}

@@ -1,39 +1,17 @@
-import { useState, useEffect } from 'react';
-import { searchTMDB, getTMDBMovie, announceMovie, getCalendar } from '../../api/client';
-import { Icon, Chip } from '../ui';
-import InlineScheduler from './InlineScheduler';
+import { useState } from 'react';
+import { searchTMDB, getTMDBMovie } from '../../api/client';
+import { Icon } from '../ui';
 
 /**
- * Inline Announce wizard — search → preview+schedule → success.
- * Designed to live in the Home hero sidebar but works anywhere.
- * Calls `onAnnounced()` on success so the parent can refetch data.
+ * Announce — search & pick a movie. Scheduling happens in the full-width
+ * ScheduleSection (rendered by Home once a movie is picked).
+ * Controlled: `onPick(movie|null)` reports the selection; `pickedMovie` reflects it.
  */
-const AnnounceFlow = ({ onAnnounced }) => {
-  const [step, setStep] = useState('search');
-  const [selectedMovie, setSelectedMovie] = useState(null);
+const AnnounceFlow = ({ onPick, pickedMovie }) => {
   const [search, setSearch] = useState('');
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
-  const [selectedDay, setSelectedDay] = useState(null);   // Date of the chosen night
-  const [occupancy, setOccupancy] = useState([]);
-  const [time, setTime] = useState('20:30');
-  const [announcing, setAnnouncing] = useState(false);
   const [error, setError] = useState(null);
-  const [announcedTitle, setAnnouncedTitle] = useState('');
-
-  useEffect(() => {
-    getCalendar().then(setOccupancy).catch(() => setOccupancy([]));
-  }, []);
-
-  const reset = () => {
-    setStep('search');
-    setSelectedMovie(null);
-    setSelectedDay(null);
-    setSearch('');
-    setResults([]);
-    setError(null);
-    setAnnouncedTitle('');
-  };
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -55,43 +33,11 @@ const AnnounceFlow = ({ onAnnounced }) => {
     setError(null);
     try {
       const details = await getTMDBMovie(movie.id);
-      setSelectedMovie(details);
-      setStep('preview');
+      onPick && onPick(details);
     } catch {
       setError('Failed to load movie details');
     } finally {
       setSearching(false);
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!selectedMovie || !selectedDay || !time) {
-      setError('Pick a day and time.');
-      return;
-    }
-    const [hh, mm] = time.split(':').map(Number);
-    const scheduledAt = new Date(selectedDay.getFullYear(), selectedDay.getMonth(), selectedDay.getDate(), hh, mm);
-    if (scheduledAt <= new Date()) {
-      setError('The time must be in the future.');
-      return;
-    }
-    setAnnouncing(true);
-    setError(null);
-    try {
-      await announceMovie(selectedMovie, scheduledAt.toISOString());
-      setAnnouncedTitle(selectedMovie.title);
-      setStep('success');
-      if (onAnnounced) {
-        // Give the success card a beat to render, then let the parent refresh
-        setTimeout(() => onAnnounced(), 1200);
-      }
-      // Auto-reset after a while in case the panel is still mounted
-      setTimeout(reset, 4500);
-    } catch (err) {
-      setError(err.message || 'Failed to announce movie');
-    } finally {
-      setAnnouncing(false);
     }
   };
 
@@ -104,8 +50,16 @@ const AnnounceFlow = ({ onAnnounced }) => {
         </div>
       </header>
 
-      {/* ── Step: search ── */}
-      {step === 'search' && (
+      {pickedMovie ? (
+        <div className="af-flow-body af-picked">
+          <div className="af-picked-check"><Icon name="check" size={20} /></div>
+          <div className="af-picked-info">
+            <div className="af-picked-title">{pickedMovie.title}</div>
+            <div className="af-picked-sub">Pick a date on the calendar below ↓</div>
+          </div>
+          <button type="button" className="btn text" onClick={() => onPick(null)}>Change</button>
+        </div>
+      ) : (
         <div className="af-flow-body">
           <form onSubmit={handleSearch} className="af-search">
             <div className="af-search-input">
@@ -160,100 +114,9 @@ const AnnounceFlow = ({ onAnnounced }) => {
           ) : !searching && (
             <div className="af-hint">
               <Icon name="film" size={24} stroke={1.25} />
-              <p>Search TMDB for any film — you'll set the date next.</p>
+              <p>Search TMDB for any film — you&rsquo;ll set the date next.</p>
             </div>
           )}
-        </div>
-      )}
-
-      {/* ── Step: preview + schedule ── */}
-      {step === 'preview' && selectedMovie && (
-        <form className="af-flow-body af-flow-scroll" onSubmit={handleSubmit}>
-          <button
-            type="button"
-            className="af-back"
-            onClick={() => { setSelectedMovie(null); setStep('search'); }}
-          >
-            <Icon name="arrow-left" size={12} /> Choose a different one
-          </button>
-
-          <div className="af-preview">
-            {selectedMovie.posterPath && (
-              <img
-                src={selectedMovie.posterPath}
-                alt={selectedMovie.title}
-                className="af-preview-poster"
-                loading="lazy"
-              />
-            )}
-            <div className="af-preview-body">
-              <h4 className="af-preview-title">{selectedMovie.title}</h4>
-              <div className="af-preview-meta">
-                {selectedMovie.year && <span>{selectedMovie.year}</span>}
-                {selectedMovie.runtime > 0 && (
-                  <>
-                    <span className="sep" />
-                    <span>{Math.floor(selectedMovie.runtime / 60)}h {selectedMovie.runtime % 60}m</span>
-                  </>
-                )}
-                {selectedMovie.rating > 0 && (
-                  <>
-                    <span className="sep" />
-                    <span>TMDB {selectedMovie.rating}</span>
-                  </>
-                )}
-              </div>
-              {selectedMovie.genres && (
-                <div className="af-preview-chips">
-                  {selectedMovie.genres.split(', ').slice(0, 3).map((g, i) => (
-                    <Chip key={i} variant={i === 0 ? 'accent' : 'default'}>{g}</Chip>
-                  ))}
-                </div>
-              )}
-              {selectedMovie.overview && (
-                <p className="af-preview-desc">{selectedMovie.overview}</p>
-              )}
-            </div>
-          </div>
-
-          <div className="af-when">
-            <div className="af-when-label">When</div>
-            <InlineScheduler
-              occupancy={occupancy}
-              value={selectedDay}
-              onChange={setSelectedDay}
-              renderCompose={(day) => (
-                <div className="af-compose">
-                  <div className="af-compose-when">
-                    Scheduling for <b>{day.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}</b>
-                  </div>
-                  <label className="af-field">
-                    <span>Time</span>
-                    <input type="time" value={time} onChange={(e) => setTime(e.target.value)} required />
-                  </label>
-                </div>
-              )}
-            />
-          </div>
-
-          {error && <div className="af-error">{error}</div>}
-
-          <button type="submit" className="btn lg af-submit" disabled={announcing}>
-            {announcing
-              ? 'Scheduling…'
-              : <><Icon name="megaphone" size={16} /> <span>Announce screening</span></>}
-          </button>
-        </form>
-      )}
-
-      {/* ── Step: success ── */}
-      {step === 'success' && (
-        <div className="af-flow-body af-success">
-          <div className="af-success-check">
-            <Icon name="check" size={28} stroke={2} />
-          </div>
-          <h4>It's on the calendar.</h4>
-          <p><em>{announcedTitle}</em> is announced. Updating the page…</p>
         </div>
       )}
     </div>

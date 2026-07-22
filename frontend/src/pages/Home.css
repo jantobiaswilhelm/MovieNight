@@ -762,6 +762,25 @@
   flex: 1;
   min-height: 0;
 }
+/* Picked-movie confirmation (scheduling happens in the full-width section below) */
+.af-picked{
+  flex-direction: row;
+  align-items: center;
+  gap: var(--s-3);
+  flex: 0;
+  padding: var(--s-3);
+  border: 1px solid var(--ember-dim);
+  background: var(--ember-soft);
+  border-radius: var(--r-2);
+}
+.af-picked-check{
+  width: 34px; height: 34px; border-radius: var(--r-full);
+  background: var(--ember); color: var(--ink);
+  display: grid; place-items: center; flex-shrink: 0;
+}
+.af-picked-info{ flex: 1; min-width: 0; }
+.af-picked-title{ font-weight: 600; color: var(--bone); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.af-picked-sub{ font-size: 12.5px; color: var(--bone-dim); margin-top: 2px; }
 /* The schedule step (movie preview + month calendar + submit) can exceed the
    fixed-height sidebar — let it scroll inside instead of clipping the calendar. */
 .af-flow-scroll{
