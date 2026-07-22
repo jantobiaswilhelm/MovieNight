@@ -1,9 +1,9 @@
 import cron from 'node-cron';
 import {
   getPendingAnnouncements, markAnnouncementProcessed, createMovieNight, findOrCreateUser,
-  linkMarathonItemMovieNight, completeMarathonIfDone
+  linkMarathonItemMovieNight, completeMarathonIfDone, getMarathonItemsByMarathon
 } from '../models/index.js';
-import { createAnnouncementEmbed } from '../utils/embeds.js';
+import { createAnnouncementEmbed, createBingeAnnouncementEmbed } from '../utils/embeds.js';
 import { createLogger } from '../utils/logger.js';
 
 const logger = createLogger('announcementProcessor');
@@ -114,6 +114,11 @@ async function processAnnouncement(client, announcement, channel) {
   const scheduledAt = new Date(announcement.scheduled_at);
   const announcerName = announcement.username || 'Website';
 
+  // Binge kickoff: one embed for the whole evening, N movie_nights behind it.
+  if (announcement.marathon_binge) {
+    return processBingeAnnouncement(client, announcement, channel, announcerName);
+  }
+
   // Create the announcement embed
   const embed = createAnnouncementEmbed(
     announcement.title,
@@ -172,4 +177,48 @@ async function processAnnouncement(client, announcement, channel) {
   await markAnnouncementProcessed(announcement.id, 'processed');
 
   logger.info(`Processed announcement: ${announcement.title} (ID: ${announcement.id})`);
+}
+
+async function processBingeAnnouncement(client, announcement, channel, announcerName) {
+  const items = await getMarathonItemsByMarathon(announcement.marathon_id);
+  if (items.length === 0) {
+    await markAnnouncementProcessed(announcement.id, 'failed');
+    return;
+  }
+
+  const embed = createBingeAnnouncementEmbed(announcement.marathon_name, items, announcerName);
+  const content = MOVIE_NIGHT_ROLE_ID ? `<@&${MOVIE_NIGHT_ROLE_ID}>` : undefined;
+  const reply = await channel.send({ content, embeds: [embed] });
+
+  // One movie_night per film. The first carries the kickoff message; the rest
+  // are "silent" (no message of their own) but are still real, ratable nights.
+  for (let i = 0; i < items.length; i++) {
+    const it = items[i];
+    const movieNight = await createMovieNight(
+      it.release_year ? `${it.title} (${it.release_year})` : it.title,
+      new Date(it.scheduled_at),
+      announcement.user_id,
+      announcement.guild_id,
+      channel.id,
+      i === 0 ? reply.id : null,
+      it.image_url,
+      {
+        description: it.description,
+        tmdbId: it.tmdb_id,
+        tmdbRating: it.tmdb_rating,
+        genres: it.genres,
+        runtime: it.runtime,
+        releaseYear: it.release_year,
+        backdropUrl: it.backdrop_url,
+        imdbId: it.imdb_id,
+        trailerUrl: it.trailer_url
+      },
+      announcement.is_test || false
+    );
+    await linkMarathonItemMovieNight(it.id, movieNight.id);
+  }
+
+  await completeMarathonIfDone(announcement.marathon_id);
+  await markAnnouncementProcessed(announcement.id, 'processed');
+  logger.info(`Processed BINGE kickoff: ${announcement.marathon_name} (${items.length} films)`);
 }
