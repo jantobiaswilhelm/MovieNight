@@ -479,6 +479,31 @@ const migrate = async () => {
       `);
     }
 
+    // Newer achievements — added idempotently so they land on existing databases.
+    await client.query(`
+      INSERT INTO achievements (code, name, description, icon, category, points, is_hidden) VALUES
+        ('genre_hopper', 'Genre Hopper', 'Rate movies across 10 different genres', 'list', 'explorer', 40, false),
+        ('polyglot', 'Polyglot', 'Rate movies in 5 different languages', 'globe', 'explorer', 40, false),
+        ('time_traveler', 'Time Traveler', 'Rate a film released before 1970', 'clock', 'explorer', 25, false),
+        ('decade_hopper', 'Decade Hopper', 'Rate movies from 5 different decades', 'calendar', 'explorer', 40, false),
+        ('oracle', 'The Oracle', 'Rate a movie within 0.5 of the group average', 'eye', 'special', 20, false),
+        ('prophet', 'Prophet', 'Match the group average on 10 different movies', 'eye', 'special', 60, false),
+        ('ratings_250', 'Film Fanatic', 'Rate 250 movies', 'trophy', 'ratings', 300, false),
+        ('ratings_500', 'Silver Screen Sage', 'Rate 500 movies', 'award', 'ratings', 500, false),
+        ('cult_the_room', 'So Bad It''s Good', 'Rate The Room (2003)', 'film', 'special', 30, true),
+        ('cult_troll_2', 'Best Worst Movie', 'Rate Troll 2 (1990)', 'film', 'special', 30, true),
+        ('cult_plan_9', 'Ed Would Be Proud', 'Rate Plan 9 from Outer Space (1959)', 'film', 'special', 30, true),
+        ('cult_birdemic', 'Shock and Terror', 'Rate Birdemic: Shock and Terror (2010)', 'film', 'special', 30, true),
+        ('cult_sharknado', 'There''s a Shark in the Sky', 'Rate Sharknado (2013)', 'film', 'special', 30, true),
+        ('cult_cats', 'Jellicle Choice', 'Rate Cats (2019)', 'film', 'special', 30, true),
+        ('cult_wicker_man', 'Not the Bees!', 'Rate The Wicker Man (2006)', 'film', 'special', 30, true),
+        ('cult_battlefield_earth', 'Crushing Defeat', 'Rate Battlefield Earth (2000)', 'film', 'special', 30, true),
+        ('cult_lebowski', 'The Dude Abides', 'Rate The Big Lebowski (1998)', 'film', 'special', 30, true),
+        ('cult_holy_grail', '''Tis But a Scratch', 'Rate Monty Python and the Holy Grail (1975)', 'film', 'special', 30, true),
+        ('cult_airplane', 'Surely You Can''t Be Serious', 'Rate Airplane! (1980)', 'film', 'special', 30, true)
+      ON CONFLICT (code) DO NOTHING
+    `);
+
     // Notifications table
     await client.query(`
       CREATE TABLE IF NOT EXISTS notifications (
