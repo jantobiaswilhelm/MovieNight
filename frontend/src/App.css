@@ -11,6 +11,7 @@ main{
 }
 
 .app-footer{
+  margin-top: var(--s-8);
   padding: var(--s-5) 0 var(--s-7);
   border-top: 1px solid var(--rule);
   color: var(--bone-mute);
