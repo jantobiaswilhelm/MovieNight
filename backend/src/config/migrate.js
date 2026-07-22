@@ -791,7 +791,8 @@ const migrate = async () => {
       { name: 'marathon_item_id', type: 'INTEGER' },
       { name: 'marathon_name', type: 'VARCHAR(255)' },
       { name: 'marathon_position', type: 'INTEGER' },
-      { name: 'marathon_total', type: 'INTEGER' }
+      { name: 'marathon_total', type: 'INTEGER' },
+      { name: 'marathon_binge', type: 'BOOLEAN' }
     ];
     for (const col of marathonPaCols) {
       const check = await client.query(`
