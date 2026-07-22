@@ -503,3 +503,52 @@ export const removeSharedWishlistMember = (wishlistId, userId) =>
   fetchAPI(`/api/social/wishlists/${wishlistId}/members/${userId}`, {
     method: 'DELETE'
   });
+
+// ── Marathons ──────────────────────────────────────────────────────────────
+export const getMarathons = () =>
+  fetchAPI(`/api/marathons?guild_id=${GUILD_ID}`);
+
+export const getMarathon = (id) =>
+  fetchAPI(`/api/marathons/${id}?guild_id=${GUILD_ID}`);
+
+export const createMarathon = (name, description) =>
+  fetchAPI(`/api/marathons?guild_id=${GUILD_ID}`, {
+    method: 'POST',
+    body: JSON.stringify({ name, description })
+  });
+
+export const addMarathonItem = (id, tmdbData) =>
+  fetchAPI(`/api/marathons/${id}/items?guild_id=${GUILD_ID}`, {
+    method: 'POST',
+    body: JSON.stringify({ tmdb_data: tmdbData })
+  });
+
+export const removeMarathonItem = (id, itemId) =>
+  fetchAPI(`/api/marathons/${id}/items/${itemId}?guild_id=${GUILD_ID}`, { method: 'DELETE' });
+
+export const reorderMarathonItems = (id, itemIds) =>
+  fetchAPI(`/api/marathons/${id}/reorder?guild_id=${GUILD_ID}`, {
+    method: 'PUT',
+    body: JSON.stringify({ item_ids: itemIds })
+  });
+
+export const updateMarathonItemDate = (id, itemId, scheduledAt) =>
+  fetchAPI(`/api/marathons/${id}/items/${itemId}?guild_id=${GUILD_ID}`, {
+    method: 'PUT',
+    body: JSON.stringify({ scheduled_at: scheduledAt })
+  });
+
+export const launchMarathon = (id, cadenceType, items) =>
+  fetchAPI(`/api/marathons/${id}/launch?guild_id=${GUILD_ID}`, {
+    method: 'POST',
+    body: JSON.stringify({ cadence_type: cadenceType, items })
+  });
+
+export const pauseMarathon = (id) =>
+  fetchAPI(`/api/marathons/${id}/pause?guild_id=${GUILD_ID}`, { method: 'POST' });
+
+export const resumeMarathon = (id) =>
+  fetchAPI(`/api/marathons/${id}/resume?guild_id=${GUILD_ID}`, { method: 'POST' });
+
+export const deleteMarathon = (id) =>
+  fetchAPI(`/api/marathons/${id}?guild_id=${GUILD_ID}`, { method: 'DELETE' });
