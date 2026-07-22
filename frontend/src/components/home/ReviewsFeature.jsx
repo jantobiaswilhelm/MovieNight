@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getAvatarUrl, formatRelativeTime } from '../../utils/helpers';
+import { sanitizeImageUrl } from '../../utils/sanitizeUrl';
 import { Icon } from '../ui';
 
 const ROTATE_MS = 6000;
@@ -31,6 +32,7 @@ export default function ReviewsFeature({ reviews }) {
 
   const review = reviews[index % count];
   const go = (n) => setIndex((n + count) % count);
+  const backdrop = sanitizeImageUrl(review.backdrop_url) || sanitizeImageUrl(review.image_url);
 
   return (
     <div
@@ -38,6 +40,14 @@ export default function ReviewsFeature({ reviews }) {
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
+      {backdrop && (
+        <div
+          key={`bg-${index}`}
+          className="rf-bg"
+          style={{ backgroundImage: `url(${backdrop})` }}
+          aria-hidden="true"
+        />
+      )}
       <div className="rf-stage">
         {count > 1 && (
           <button className="rf-nav" onClick={() => go(index - 1)} aria-label="Previous review">

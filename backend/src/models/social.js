@@ -69,7 +69,7 @@ export const getFollowCounts = async (userId) => {
 
 export const getRandomComments = async (guildId, limit = 10) => {
   const result = await pool.query(
-    `SELECT r.comment, r.score, r.created_at, mn.title as movie_title, mn.image_url, u.username, u.discord_id, u.avatar
+    `SELECT r.comment, r.score, r.created_at, mn.title as movie_title, mn.image_url, mn.backdrop_url, u.username, u.discord_id, u.avatar
      FROM ratings r
      JOIN movie_nights mn ON r.movie_night_id = mn.id
      JOIN users u ON r.user_id = u.id
