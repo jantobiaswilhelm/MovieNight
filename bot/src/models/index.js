@@ -705,3 +705,44 @@ export const completeMarathonIfDone = async (marathonId) => {
     [marathonId]
   );
 };
+
+// All items of a marathon in play order (for building the binge embed + rows).
+export const getMarathonItemsByMarathon = async (marathonId) => {
+  const result = await pool.query(
+    `SELECT * FROM marathon_items WHERE marathon_id = $1 ORDER BY position ASC`,
+    [marathonId]
+  );
+  return result.rows;
+};
+
+// Mark every still-pending item scheduled in one shot (binge queues the whole night at once).
+export const markAllMarathonItemsScheduled = async (marathonId) => {
+  await pool.query(
+    `UPDATE marathon_items SET status = 'scheduled' WHERE marathon_id = $1 AND status = 'pending'`,
+    [marathonId]
+  );
+};
+
+// Queue ONE kickoff announcement for a binge marathon. Carries marathon_binge=true
+// so the announcement processor knows to expand it into the whole evening.
+// firstItem seeds the thumbnail/title; the processor reads all items for the lineup.
+export const createBingeKickoffPendingAnnouncement = async (firstItem, marathon, total) => {
+  const result = await pool.query(
+    `INSERT INTO pending_announcements
+       (guild_id, channel_id, user_id, title, image_url, backdrop_url, description,
+        tmdb_id, imdb_id, tmdb_rating, genres, runtime, release_year, trailer_url,
+        scheduled_at, marathon_id, marathon_name, marathon_total, marathon_binge)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+     RETURNING *`,
+    [
+      marathon.guild_id, null, marathon.created_by, marathon.name, firstItem.image_url,
+      firstItem.backdrop_url, firstItem.description, firstItem.tmdb_id, firstItem.imdb_id,
+      firstItem.tmdb_rating, firstItem.genres, firstItem.runtime, firstItem.release_year,
+      firstItem.trailer_url, firstItem.scheduled_at, marathon.id, marathon.name, total, true
+    ]
+  );
+  try { await pool.query('NOTIFY movie_announcement'); } catch (err) {
+    console.error('Failed to NOTIFY movie_announcement:', err.message);
+  }
+  return result.rows[0];
+};
