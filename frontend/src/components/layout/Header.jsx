@@ -9,6 +9,7 @@ import './Header.css';
 const PRIMARY_NAV = [
   { to: '/',            label: 'Tonight',  icon: 'home',  end: true },
   { to: '/movies',      label: 'Archive',  icon: 'film' },
+  { to: '/marathons',   label: 'Marathons', icon: 'calendar' },
   { to: '/wishlist',    label: 'Wishlist', icon: 'bookmark' },
   { to: '/stats',       label: 'Stats',    icon: 'chart' },
   { to: '/feed',        label: 'Feed',     icon: 'feed' },

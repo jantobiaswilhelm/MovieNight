@@ -20,6 +20,7 @@ const CollectionsPage = lazy(() => import('./pages/CollectionsPage'));
 const ListsPage = lazy(() => import('./pages/ListsPage'));
 const AchievementsPage = lazy(() => import('./pages/AchievementsPage'));
 const ActivityFeed = lazy(() => import('./pages/ActivityFeed'));
+const MarathonsPage = lazy(() => import('./pages/MarathonsPage'));
 
 function App() {
   return (
@@ -47,6 +48,8 @@ function App() {
             <Route path="/lists/:id" element={<ListsPage />} />
             <Route path="/achievements" element={<AchievementsPage />} />
             <Route path="/feed" element={<ActivityFeed />} />
+            <Route path="/marathons" element={<MarathonsPage />} />
+            <Route path="/marathons/:id" element={<MarathonsPage />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
           </Routes>
           </Suspense>

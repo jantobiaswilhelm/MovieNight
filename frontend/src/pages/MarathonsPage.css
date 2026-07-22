@@ -1,0 +1,59 @@
+.mara-page { max-width: 1120px; margin: 0 auto; }
+.mara-header { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px;
+  padding: 32px 0; border-bottom: 1px solid var(--rule); margin-bottom: 32px; }
+.mara-eyebrow { font-family: var(--font-mono); font-size: 11px; letter-spacing: .28em;
+  text-transform: uppercase; color: var(--bone-mute); }
+.mara-header h1 { font-family: var(--font-display); font-style: italic; font-weight: 400;
+  font-size: var(--fs-48); margin-top: 12px; }
+.mara-header p { color: var(--bone-dim); margin-top: 10px; max-width: 440px; }
+
+.mara-list { display: flex; flex-direction: column; gap: 16px; }
+.mara-card { display: grid; grid-template-columns: auto 1fr; gap: 22px; align-items: center;
+  background: var(--ink-2); border: 1px solid var(--rule); border-radius: var(--r-3);
+  padding: 18px 20px; text-decoration: none; color: var(--bone); transition: border-color var(--dur-1), background var(--dur-1); }
+.mara-card:hover { border-color: var(--rule-strong); background: var(--ink-3); }
+.mara-posters { display: flex; }
+.mara-poster { width: 44px; height: 66px; border-radius: var(--r-2); margin-left: -14px;
+  border: 2px solid var(--ink-2); background: var(--ink-3) center/cover no-repeat; }
+.mara-poster:first-child { margin-left: 0; }
+.mara-body { min-width: 0; }
+.mara-body h3 { font-family: var(--font-display); font-style: italic; font-weight: 600; font-size: 20px; }
+.mara-meta { display: flex; align-items: center; gap: 10px; margin: 8px 0 12px; }
+.mara-chip { font-family: var(--font-mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase;
+  padding: 4px 9px; border-radius: var(--r-full); border: 1px solid var(--rule-strong); color: var(--bone-dim); }
+.mara-chip.active { color: var(--ember); border-color: var(--ember-dim); background: var(--ember-soft); }
+.mara-chip.paused { color: var(--gold); }
+.mara-cadence { font-size: 13px; color: var(--bone-dim); }
+.mara-bar { height: 5px; background: var(--ink-4); border-radius: var(--r-full); overflow: hidden; max-width: 320px; }
+.mara-bar i { display: block; height: 100%; background: var(--ember); border-radius: var(--r-full); }
+.mara-progress-meta { display: flex; justify-content: space-between; max-width: 320px; margin-top: 8px;
+  font-size: 12.5px; color: var(--bone-dim); }
+
+/* Wizard + detail shared bits */
+.mara-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: flex;
+  align-items: flex-start; justify-content: center; padding: 40px 20px; overflow-y: auto; z-index: 50; }
+.mara-modal { background: var(--ink-2); border: 1px solid var(--rule-strong); border-radius: var(--r-3);
+  width: 100%; max-width: 760px; padding: 28px; }
+.mara-modal h2 { font-family: var(--font-display); font-style: italic; font-weight: 400; font-size: var(--fs-32); }
+.mara-field { margin: 18px 0; }
+.mara-label { font-family: var(--font-mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--bone-dim); display: block; margin-bottom: 8px; }
+.mara-row { display: flex; align-items: center; gap: 12px; }
+.mara-item { display: flex; align-items: center; gap: 12px; background: var(--ink); border: 1px solid var(--rule);
+  border-radius: var(--r-2); padding: 10px 12px; margin-bottom: 8px; }
+.mara-item .pos { font-family: var(--font-mono); font-size: 12px; color: var(--bone-mute); width: 18px; text-align: center; }
+.mara-item .thumb { width: 34px; height: 51px; border-radius: 4px; background: var(--ink-3) center/cover no-repeat; flex-shrink: 0; }
+.mara-item .grow { flex: 1; min-width: 0; }
+.mara-item .grow h4 { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mara-item .grow .sub { font-size: 12px; color: var(--bone-mute); margin-top: 2px; }
+.mara-iconbtn { background: none; border: none; color: var(--bone-mute); cursor: pointer; padding: 4px; }
+.mara-iconbtn:hover { color: var(--ember); }
+.mara-iconbtn.danger:hover { color: var(--red); }
+.mara-actions { display: flex; justify-content: space-between; gap: 12px; margin-top: 24px;
+  padding-top: 20px; border-top: 1px solid var(--rule); }
+.mara-search-results { max-height: 260px; overflow-y: auto; margin-top: 8px; }
+.mara-datewrap { display: flex; gap: 8px; }
+.mara-datewrap input { flex: 1; }
+
+/* Detail: owner action buttons — inherit .btn but allow a destructive tint */
+.mara-page .btn.danger:hover { color: var(--red); border-color: var(--red); }
