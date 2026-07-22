@@ -24,7 +24,14 @@ export const curateLineup = async (vibe) => {
     })
   });
   if (!res.ok) {
-    const e = new Error(`Gemini error ${res.status}`); e.status = 502; throw e;
+    // Surface Google's actual reason (bad key, model not found, API disabled…).
+    const body = await res.text().catch(() => '');
+    let reason = body;
+    try { reason = JSON.parse(body)?.error?.message || body; } catch { /* keep raw */ }
+    console.error(`Gemini API ${res.status} (model ${GEMINI_MODEL}):`, reason);
+    const e = new Error(`Gemini ${res.status}: ${String(reason).slice(0, 200)}`);
+    e.status = 502;
+    throw e;
   }
   const data = await res.json();
   const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '[]';

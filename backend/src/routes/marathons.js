@@ -56,7 +56,7 @@ router.post('/curate', validateGuildId, authenticateToken, async (req, res) => {
     res.json(items);
   } catch (err) {
     console.error('Error curating marathon:', err);
-    res.status(err.status || 500).json({ error: 'Failed to curate' });
+    res.status(err.status || 500).json({ error: err.message ? `Curation failed — ${err.message}` : 'Failed to curate' });
   }
 });
 
