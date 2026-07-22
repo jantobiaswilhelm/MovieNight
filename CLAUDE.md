@@ -111,7 +111,7 @@ Admin can create test movie nights (`is_test = true`). Production queries filter
 
 ## Environment Variables
 
-**backend/.env**: DATABASE_URL, DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, JWT_SECRET, FRONTEND_URL, TMDB_API_KEY, PORT, ADMIN_IDS
+**backend/.env**: DATABASE_URL, DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, JWT_SECRET, FRONTEND_URL, TMDB_API_KEY, PORT, ADMIN_IDS, GEMINI_API_KEY (optional — enables marathon "describe a vibe" AI curation; absent = the vibe source is hidden), GEMINI_MODEL (optional, default `gemini-2.0-flash`)
 
 **bot/.env**: DISCORD_TOKEN, DISCORD_CLIENT_ID, DATABASE_URL, GUILD_ID, TMDB_API_KEY, ANNOUNCEMENT_CHANNEL_ID, ADMIN_IDS
 
