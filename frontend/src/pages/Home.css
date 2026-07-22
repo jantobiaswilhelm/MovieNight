@@ -1299,3 +1299,56 @@
 .sb-vote-btn:disabled{ opacity: .5; cursor: default; }
 .sb-vote-btn.up.on{ border-color: var(--ember); color: var(--ember); }
 .sb-vote-btn.down.on{ border-color: var(--bone-dim); color: var(--bone); }
+
+/* ── Board details modal ────────────────────────────────────────────────── */
+.sb-poster-open{ cursor: pointer; }
+.sb-item-title{ background: none; border: none; padding: 0; text-align: left; cursor: pointer; }
+.sb-item-title:hover{ color: var(--ember); }
+
+.sb-modal--wide{ max-width: 560px; }
+.sb-details-backdrop{
+  width: 100%;
+  height: 150px;
+  background-size: cover;
+  background-position: center;
+  border-radius: var(--r-2);
+  margin-bottom: var(--s-4);
+}
+.sb-details-meta{
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+  font-family: var(--font-mono);
+  font-size: var(--fs-11);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+  margin-bottom: var(--s-3);
+}
+.sb-details-tagline{
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--bone-dim);
+  margin: 0 0 var(--s-3);
+}
+.sb-details-desc{
+  color: var(--bone-dim);
+  font-size: var(--fs-14);
+  line-height: 1.6;
+  margin: 0 0 var(--s-4);
+}
+.sb-details-links{
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  margin-bottom: var(--s-4);
+}
+.sb-details-by{
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--fs-13);
+  color: var(--bone-mute);
+  border-top: 1px solid var(--rule);
+  padding-top: var(--s-3);
+}
