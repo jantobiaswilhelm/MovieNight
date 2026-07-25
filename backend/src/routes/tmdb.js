@@ -63,6 +63,40 @@ router.get('/person', async (req, res) => {
   }
 });
 
+// Popular / trending movies right now — fills the idle "Announce" panel with
+// one-tap pick candidates. Registered before /:id so the word isn't read as an id.
+router.get('/popular', async (req, res) => {
+  if (!TMDB_API_KEY) {
+    return res.status(500).json({ error: 'TMDB API key not configured' });
+  }
+  try {
+    const response = await fetch(
+      `${TMDB_BASE_URL}/trending/movie/week?api_key=${TMDB_API_KEY}`
+    );
+    if (!response.ok) {
+      console.error('TMDB API error:', response.status);
+      return res.status(502).json({ error: 'TMDB API error' });
+    }
+    const data = await response.json();
+    const results = (data.results || [])
+      .filter((movie) => movie.poster_path)
+      .slice(0, 12)
+      .map((movie) => ({
+        id: movie.id,
+        title: movie.title,
+        year: movie.release_date ? movie.release_date.split('-')[0] : null,
+        overview: movie.overview,
+        posterPath: `${TMDB_IMAGE_BASE}${movie.poster_path}`,
+        rating: movie.vote_average ? parseFloat(movie.vote_average.toFixed(1)) : null,
+        releaseDate: movie.release_date
+      }));
+    res.json(results);
+  } catch (err) {
+    console.error('TMDB popular error:', err);
+    res.status(500).json({ error: 'Failed to fetch popular movies' });
+  }
+});
+
 // Get movie details
 router.get('/:id', async (req, res) => {
   const { id } = req.params;

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { searchTMDB, getTMDBMovie } from '../../api/client';
+import { useState, useEffect } from 'react';
+import { searchTMDB, getTMDBMovie, getPopularMovies } from '../../api/client';
 import { Icon } from '../ui';
 
 /**
@@ -12,6 +12,17 @@ const AnnounceFlow = ({ onPick, pickedMovie }) => {
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState(null);
+  const [popular, setPopular] = useState([]);
+
+  // Popular-right-now candidates fill the idle panel so hosting is one tap even
+  // before you search. Silent on failure — the search box still works.
+  useEffect(() => {
+    let alive = true;
+    getPopularMovies()
+      .then((list) => { if (alive) setPopular(Array.isArray(list) ? list : []); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -40,6 +51,23 @@ const AnnounceFlow = ({ onPick, pickedMovie }) => {
       setSearching(false);
     }
   };
+
+  const renderResult = (movie) => (
+    <li key={movie.id} className="af-result" onClick={() => handleSelectMovie(movie)}>
+      {movie.posterPath ? (
+        <img src={movie.posterPath} alt="" className="af-result-poster" loading="lazy" />
+      ) : (
+        <div className="af-result-poster af-result-placeholder">
+          {movie.title?.charAt(0) ?? '?'}
+        </div>
+      )}
+      <div className="af-result-info">
+        <span className="af-result-title">{movie.title}</span>
+        {movie.year && <span className="af-result-year">{movie.year}</span>}
+      </div>
+      <Icon name="arrow-right" size={14} className="af-result-arrow" />
+    </li>
+  );
 
   return (
     <div className="af-flow">
@@ -90,32 +118,25 @@ const AnnounceFlow = ({ onPick, pickedMovie }) => {
 
           {results.length > 0 ? (
             <ul className="af-results">
-              {results.slice(0, 10).map((movie) => (
-                <li
-                  key={movie.id}
-                  className="af-result"
-                  onClick={() => handleSelectMovie(movie)}
-                >
-                  {movie.posterPath ? (
-                    <img src={movie.posterPath} alt="" className="af-result-poster" loading="lazy" />
-                  ) : (
-                    <div className="af-result-poster af-result-placeholder">
-                      {movie.title?.charAt(0) ?? '?'}
-                    </div>
-                  )}
-                  <div className="af-result-info">
-                    <span className="af-result-title">{movie.title}</span>
-                    {movie.year && <span className="af-result-year">{movie.year}</span>}
-                  </div>
-                  <Icon name="arrow-right" size={14} className="af-result-arrow" />
-                </li>
-              ))}
+              {results.slice(0, 10).map((movie) => renderResult(movie))}
             </ul>
           ) : !searching && (
-            <div className="af-hint">
-              <Icon name="film" size={24} stroke={1.25} />
-              <p>Search TMDB for any film — you&rsquo;ll set the date next.</p>
-            </div>
+            popular.length > 0 ? (
+              <div className="af-popular">
+                <div className="af-popular-head">
+                  <Icon name="sparkles" size={13} />
+                  <span>Popular right now</span>
+                </div>
+                <ul className="af-results">
+                  {popular.map((movie) => renderResult(movie))}
+                </ul>
+              </div>
+            ) : (
+              <div className="af-hint">
+                <Icon name="film" size={24} stroke={1.25} />
+                <p>Search TMDB for any film — you&rsquo;ll set the date next.</p>
+              </div>
+            )
           )}
         </div>
       )}

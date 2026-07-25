@@ -225,6 +225,9 @@ export const searchTMDB = (query) =>
 export const getTMDBMovie = (id) =>
   fetchAPI(`/api/tmdb/${id}`);
 
+export const getPopularMovies = () =>
+  fetchAPI(`/api/tmdb/popular`);
+
 export const searchTMDBPerson = (query) =>
   fetchAPI(`/api/tmdb/person?query=${encodeURIComponent(query)}`);
 

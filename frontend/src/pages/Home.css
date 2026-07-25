@@ -882,6 +882,25 @@
   min-height: 0;
   border-top: 1px solid var(--rule);
 }
+/* Idle "Popular right now" wrapper — a flex column so the inner .af-results
+   still scrolls inside the fixed-height sidebar instead of overflowing it. */
+.af-popular{
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.af-popular-head{
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-11);
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--ember);
+  padding-bottom: var(--s-2);
+}
 .af-result{
   display: grid;
   grid-template-columns: 40px 1fr auto;
