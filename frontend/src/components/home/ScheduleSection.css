@@ -24,9 +24,30 @@
 .sched-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
 .sched-hint { color: var(--bone-mute); font-size: 13px; margin-top: 14px; }
 .sched-hint b { color: var(--bone-dim); }
-.sched-compose { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
-.sched-compose-when { font-size: 13px; color: var(--bone-dim); }
-.sched-compose-when b { color: var(--bone); }
+.sched-compose { display: flex; align-items: center; justify-content: space-between; gap: var(--s-5); flex-wrap: wrap; }
+.sched-compose-lead { display: flex; align-items: center; gap: var(--s-3); min-width: 0; }
+.sched-datechip {
+  flex-shrink: 0;
+  width: 62px; height: 66px; border-radius: var(--r-2);
+  background: var(--ember-soft); border: 1px solid var(--ember-dim);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  color: var(--ember);
+}
+.sched-datechip .d { font-family: var(--font-display); font-style: italic; font-weight: 600; font-size: 27px; line-height: 1; }
+.sched-datechip .mo { font-family: var(--font-mono); font-size: 10px; letter-spacing: .18em; text-transform: uppercase; margin-top: 4px; }
+.sched-compose-info { min-width: 0; }
+.sched-compose-info .dow { font-family: var(--font-mono); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--bone-mute); }
+.sched-compose-info .ttl {
+  font-family: var(--font-display); font-style: italic; font-weight: 600; font-size: 19px;
+  color: var(--bone); margin-top: 3px; max-width: 40ch;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sched-compose-info .at { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ember); margin-top: 5px; }
+.sched-compose-controls { display: flex; align-items: flex-end; gap: var(--s-3); flex-shrink: 0; }
+
+@media (max-width: 640px) {
+  .sched-compose-controls { width: 100%; justify-content: space-between; }
+}
 .sched-done { text-align: center; padding: 48px 0; }
 .sched-done-check {
   width: 56px; height: 56px; border-radius: var(--r-full);

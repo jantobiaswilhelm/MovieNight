@@ -83,20 +83,35 @@ export default function ScheduleSection({ movie, occupancy = [], onScheduled, on
             occupancy={occupancy}
             value={selectedDay}
             onChange={setSelectedDay}
-            renderCompose={(day) => (
-              <div className="sched-compose">
-                <div className="sched-compose-when">
-                  Scheduling for <b>{day.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}</b>
+            renderCompose={(day) => {
+              const [hh, mm] = time.split(':').map(Number);
+              const when = new Date(day.getFullYear(), day.getMonth(), day.getDate(), hh || 0, mm || 0);
+              const timeLabel = when.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+              return (
+                <div className="sched-compose">
+                  <div className="sched-compose-lead">
+                    <div className="sched-datechip">
+                      <span className="d">{day.getDate()}</span>
+                      <span className="mo">{day.toLocaleDateString(undefined, { month: 'short' })}</span>
+                    </div>
+                    <div className="sched-compose-info">
+                      <div className="dow">{day.toLocaleDateString(undefined, { weekday: 'long' })}</div>
+                      <div className="ttl">{movie.title}</div>
+                      <div className="at"><Icon name="clock" size={13} /> {timeLabel}</div>
+                    </div>
+                  </div>
+                  <div className="sched-compose-controls">
+                    <label className="af-field">
+                      <span>Time</span>
+                      <TimePicker value={time} onChange={setTime} />
+                    </label>
+                    <button type="button" className="btn lg" onClick={schedule} disabled={announcing}>
+                      {announcing ? 'Scheduling…' : <><Icon name="calendar" size={15} /> Schedule it</>}
+                    </button>
+                  </div>
                 </div>
-                <label className="af-field">
-                  <span>Time</span>
-                  <TimePicker value={time} onChange={setTime} />
-                </label>
-                <button type="button" className="btn" onClick={schedule} disabled={announcing}>
-                  {announcing ? 'Scheduling…' : <><Icon name="calendar" size={15} /> Schedule it</>}
-                </button>
-              </div>
-            )}
+              );
+            }}
           />
           {error && <div className="af-error" style={{ marginTop: 12 }}>{error}</div>}
           {!selectedDay && (
