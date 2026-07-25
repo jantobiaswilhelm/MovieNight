@@ -877,6 +877,9 @@
   list-style: none;
   padding: 0;
   margin: 0;
+  /* Explicit x:hidden — with only overflow-y set, CSS computes overflow-x to
+     auto too, surfacing a stray horizontal scrollbar from sub-pixel overflow. */
+  overflow-x: hidden;
   overflow-y: auto;
   flex: 1;
   min-height: 0;
