@@ -635,9 +635,12 @@ export const getActiveMarathons = async () => {
 
 // Next film still waiting to be queued, in order.
 export const getNextPendingMarathonItem = async (marathonId) => {
+  // Only dated films are eligible to roll out. TBD (null-date) items are skipped
+  // so they never block a later, dated film in a mixed marathon — they simply
+  // wait until the host gives them a date.
   const result = await pool.query(
     `SELECT * FROM marathon_items
-     WHERE marathon_id = $1 AND status = 'pending'
+     WHERE marathon_id = $1 AND status = 'pending' AND scheduled_at IS NOT NULL
      ORDER BY position ASC LIMIT 1`,
     [marathonId]
   );

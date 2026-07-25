@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { announceFromWishlist } from '../../api/client';
-import { Modal } from '../ui';
+import { Modal, TimePicker } from '../ui';
 import './AnnounceModal.css';
 
 /** Format a Date as YYYY-MM-DD in the browser's local timezone (never UTC). */
@@ -75,13 +75,7 @@ const AnnounceModal = ({ item, isOpen, onClose, onAnnounced }) => {
 
         <div className="form-group">
           <label htmlFor="time">Time</label>
-          <input
-            type="time"
-            id="time"
-            value={time}
-            onChange={(e) => setTime(e.target.value)}
-            required
-          />
+          <TimePicker id="time" value={time} onChange={setTime} />
         </div>
 
         {error && <div className="form-error">{error}</div>}

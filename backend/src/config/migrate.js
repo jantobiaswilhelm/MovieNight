@@ -81,6 +81,11 @@ const migrate = async () => {
       await client.query(`ALTER TABLE movie_nights ADD COLUMN started_at TIMESTAMP`);
     }
 
+    // Allow "unscheduled" / TBD movie nights: scheduled_at may be null so a host
+    // can clear a movie's date (back to undefined) without deleting the night.
+    // Idempotent — a no-op once the column is already nullable.
+    await client.query(`ALTER TABLE movie_nights ALTER COLUMN scheduled_at DROP NOT NULL`);
+
     // Add rating_prompt_sent_at column if it doesn't exist
     const ratingPromptCheck = await client.query(`
       SELECT column_name FROM information_schema.columns

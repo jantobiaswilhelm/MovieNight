@@ -249,18 +249,22 @@ export default function MarathonWizardPage() {
 
   const goReview = () => {
     if (items.length === 0) return showError('Add at least one film');
-    if (items.some((it) => !it.scheduled_at)) autofill();
+    // Dates are optional now — undated films launch as "TBD" and roll out once
+    // you give them a date. Auto-fill stays a one-click convenience on the left.
     setPhase('review');
   };
 
+  const clearItemDate = (idx) => setItemDate(idx, '');
+  const datedCount = items.filter((it) => it.scheduled_at).length;
+
   // ── Launch ─────────────────────────────────────────────────────────────
   const launch = async () => {
-    if (items.some((it) => !it.scheduled_at)) return showError('Every film needs a date');
+    if (items.length === 0) return showError('Add at least one film');
     setBusy(true);
     try {
       await api.reorderMarathonItems(marathonId, items.map((i) => i.id));
       await api.launchMarathon(marathonId, cadenceMode,
-        items.map((i) => ({ id: i.id, scheduled_at: new Date(i.scheduled_at).toISOString() })));
+        items.map((i) => ({ id: i.id, scheduled_at: i.scheduled_at ? new Date(i.scheduled_at).toISOString() : null })));
       navigate(`/marathons/${marathonId}`);
     } catch (err) { showError(err.message); } finally { setBusy(false); }
   };
@@ -423,7 +427,7 @@ export default function MarathonWizardPage() {
                 </div>
               )}
 
-              <div className="mara-hintline"><Icon name="info" size={14} /> Dates come from the cadence — override any one on the right.</div>
+              <div className="mara-hintline"><Icon name="info" size={14} /> Dates are optional — auto-fill from the cadence, set one by hand, or leave a film <b>TBD</b> to date later.</div>
 
               {items.map((it, idx) => (
                 <div key={it.id}
@@ -441,8 +445,13 @@ export default function MarathonWizardPage() {
                     <h4>{it.title}</h4>
                     <div className="sub">{it.release_year || '—'}{it.runtime ? ` · ${it.runtime}m` : ''}</div>
                   </div>
-                  <input className="li-date" type="datetime-local" value={it.scheduled_at || ''}
-                         onChange={(e) => setItemDate(idx, e.target.value)} />
+                  <div className="li-datewrap">
+                    <input className="li-date" type="datetime-local" value={it.scheduled_at || ''}
+                           onChange={(e) => setItemDate(idx, e.target.value)} />
+                    {it.scheduled_at
+                      ? <button type="button" className="li-tbd" title="Clear date (TBD)" onClick={() => clearItemDate(idx)}>Clear</button>
+                      : <span className="li-tbd is-tbd">TBD</span>}
+                  </div>
                   <button className="mara-iconbtn danger" onClick={() => removeMovie(it)}><Icon name="close" size={15} /></button>
                 </div>
               ))}
@@ -534,15 +543,24 @@ export default function MarathonWizardPage() {
 
           <div className="mara-review-sum">
             <div className="row"><span className="k">Marathon</span><span className="v">{name}</span></div>
-            <div className="row"><span className="k">Films</span><span className="v">{items.length}</span></div>
+            <div className="row"><span className="k">Films</span><span className="v">{items.length}{datedCount < items.length ? ` · ${items.length - datedCount} TBD` : ''}</span></div>
             <div className="row"><span className="k">Cadence</span><span className="v">{cadenceLabel}</span></div>
-            <div className="row"><span className="k">First film</span><span className="v">{fmtShort(items[0]?.scheduled_at)}</span></div>
-            <div className="row"><span className="k">Last film</span><span className="v">{fmtShort(items[items.length - 1]?.scheduled_at)}</span></div>
+            {(() => {
+              const dated = items.filter((it) => it.scheduled_at);
+              return (
+                <>
+                  <div className="row"><span className="k">First film</span><span className="v">{fmtShort(dated[0]?.scheduled_at)}</span></div>
+                  <div className="row"><span className="k">Last film</span><span className="v">{fmtShort(dated[dated.length - 1]?.scheduled_at)}</span></div>
+                </>
+              );
+            })()}
           </div>
 
           <div className="mara-rollnote" style={{ marginTop: 18 }}>
             <Icon name="info" size={16} />
-            <p><b>{items[0]?.title}</b> posts first. Everything after it stays editable until it becomes next-up.</p>
+            {datedCount === 0
+              ? <p><b>All films are TBD.</b> Nothing posts to Discord until you give a film a date — set dates any time from the marathon page.</p>
+              : <p><b>{(items.find((it) => it.scheduled_at) || items[0])?.title}</b> posts first. Undated (TBD) films wait until you date them; everything stays editable until it becomes next-up.</p>}
           </div>
 
           <div className="mara-wiz-footer">

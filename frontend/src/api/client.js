@@ -98,6 +98,10 @@ export const rescheduleMovie = (id, scheduledAt) =>
     body: JSON.stringify({ scheduled_at: scheduledAt, guild_id: GUILD_ID })
   });
 
+// Clear a movie night's date → "TBD" (host or admin), without deleting it.
+export const unscheduleMovie = (id) =>
+  fetchAPI(`/api/movies/${id}/unschedule?guild_id=${GUILD_ID}`, { method: 'PATCH' });
+
 // Cancel an upcoming movie night (host or admin). Bot posts a Discord note.
 export const cancelMovie = (id) =>
   fetchAPI(`/api/movies/${id}?guild_id=${GUILD_ID}`, { method: 'DELETE' });

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { announceMovie } from '../../api/client';
-import { Icon, Chip } from '../ui';
+import { Icon, Chip, TimePicker } from '../ui';
 import InlineScheduler from './InlineScheduler';
 import './ScheduleSection.css';
 
@@ -90,7 +90,7 @@ export default function ScheduleSection({ movie, occupancy = [], onScheduled, on
                 </div>
                 <label className="af-field">
                   <span>Time</span>
-                  <input type="time" value={time} onChange={(e) => setTime(e.target.value)} required />
+                  <TimePicker value={time} onChange={setTime} />
                 </label>
                 <button type="button" className="btn" onClick={schedule} disabled={announcing}>
                   {announcing ? 'Scheduling…' : <><Icon name="calendar" size={15} /> Schedule it</>}

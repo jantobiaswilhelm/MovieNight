@@ -190,6 +190,12 @@
 .mara-li .li-date { background: var(--ink); border: 1px solid var(--rule-strong); border-radius: var(--r-2);
   color: var(--bone); font-family: var(--font-ui); font-size: 12px; padding: 6px 8px; }
 .mara-li .li-date:focus { outline: none; border-color: var(--ember); }
+.mara-li .li-datewrap { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+.mara-li .li-tbd { background: transparent; border: 0; padding: 0; cursor: pointer;
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--bone-mute); transition: color var(--dur-1) var(--ease-out); }
+.mara-li .li-tbd:hover { color: var(--ember); }
+.mara-li .li-tbd.is-tbd { cursor: default; color: var(--ember); }
 
 .mara-additem { width: 100%; margin-top: 6px; }
 

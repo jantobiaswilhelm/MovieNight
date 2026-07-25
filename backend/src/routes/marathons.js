@@ -182,13 +182,16 @@ router.put('/:id/reorder', validateGuildId, validateIntParams('id'), authenticat
 // PUT /api/marathons/:id/items/:itemId — body: { scheduled_at }
 router.put('/:id/items/:itemId', validateGuildId, validateIntParams('id', 'itemId'), authenticateToken, async (req, res) => {
   const { scheduled_at } = req.body;
-  if (!scheduled_at || isNaN(new Date(scheduled_at).getTime())) {
-    return res.status(400).json({ error: 'Valid scheduled_at is required' });
+  // null / '' clears the date → the film becomes "TBD" (unscheduled). Any value
+  // that is present must still be a valid date.
+  const hasDate = scheduled_at !== null && scheduled_at !== undefined && scheduled_at !== '';
+  if (hasDate && isNaN(new Date(scheduled_at).getTime())) {
+    return res.status(400).json({ error: 'scheduled_at must be a valid date or null' });
   }
   try {
     const marathon = await loadManageable(req, res);
     if (!marathon) return;
-    const item = await db.updateMarathonItemDate(marathon.id, parseInt(req.params.itemId), new Date(scheduled_at));
+    const item = await db.updateMarathonItemDate(marathon.id, parseInt(req.params.itemId), hasDate ? new Date(scheduled_at) : null);
     res.json(item);
   } catch (err) {
     console.error('Error updating item date:', err);
@@ -206,14 +209,19 @@ router.post('/:id/launch', validateGuildId, validateIntParams('id'), authenticat
     return res.status(400).json({ error: 'items array is required' });
   }
   for (const it of items) {
-    if (!it.id || !it.scheduled_at || isNaN(new Date(it.scheduled_at).getTime())) {
-      return res.status(400).json({ error: 'Each item needs an id and a valid scheduled_at' });
+    // A film may launch with no date (TBD) — only require an id, and validate any
+    // date that IS provided. Undated films just won't roll out until dated.
+    if (!it.id) {
+      return res.status(400).json({ error: 'Each item needs an id' });
+    }
+    if (it.scheduled_at && isNaN(new Date(it.scheduled_at).getTime())) {
+      return res.status(400).json({ error: 'scheduled_at must be a valid date or null' });
     }
   }
   try {
     const marathon = await loadManageable(req, res);
     if (!marathon) return;
-    const normalized = items.map((it) => ({ id: it.id, scheduled_at: new Date(it.scheduled_at) }));
+    const normalized = items.map((it) => ({ id: it.id, scheduled_at: it.scheduled_at ? new Date(it.scheduled_at) : null }));
     const updated = await db.launchMarathon(marathon.id, cadence_type, normalized);
     res.json(updated);
   } catch (err) {

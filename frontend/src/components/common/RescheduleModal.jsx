@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { rescheduleMovie } from '../../api/client';
+import { rescheduleMovie, unscheduleMovie } from '../../api/client';
 import { formatDate } from '../../utils/helpers';
-import { Modal } from '../ui';
+import { Modal, TimePicker } from '../ui';
 import './RescheduleModal.css';
 
 /** Format a Date as YYYY-MM-DD in the browser's local timezone (never UTC). */
@@ -18,7 +18,7 @@ const localTimeStr = (d) =>
  * host-or-admin + not-started), then hands the updated row back via onRescheduled.
  */
 const RescheduleModal = ({ movie, isOpen, onClose, onRescheduled }) => {
-  const initial = movie ? new Date(movie.scheduled_at) : new Date();
+  const initial = movie?.scheduled_at ? new Date(movie.scheduled_at) : new Date();
   const [date, setDate] = useState(() => localDateStr(initial));
   const [time, setTime] = useState(() => localTimeStr(initial));
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -56,10 +56,27 @@ const RescheduleModal = ({ movie, isOpen, onClose, onRescheduled }) => {
     }
   };
 
+  const handleUnschedule = async () => {
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      const updated = await unscheduleMovie(movie.id);
+      if (onRescheduled) onRescheduled(updated);
+      onClose();
+    } catch (err) {
+      setError(err.message || 'Failed to clear the date');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Reschedule" size="sm">
       <p className="reschedule-current">
-        <strong>{movie.title}</strong> is currently set for {formatDate(movie.scheduled_at, 'long')}.
+        <strong>{movie.title}</strong>{' '}
+        {movie.scheduled_at
+          ? <>is currently set for {formatDate(movie.scheduled_at, 'long')}.</>
+          : <>has no date yet — it&rsquo;s currently <b>TBD</b>.</>}
       </p>
 
       <form onSubmit={handleSubmit} className="announce-form">
@@ -77,13 +94,7 @@ const RescheduleModal = ({ movie, isOpen, onClose, onRescheduled }) => {
 
         <div className="form-group">
           <label htmlFor="rs-time">New time</label>
-          <input
-            type="time"
-            id="rs-time"
-            value={time}
-            onChange={(e) => setTime(e.target.value)}
-            required
-          />
+          <TimePicker id="rs-time" value={time} onChange={setTime} />
         </div>
 
         {error && <div className="form-error">{error}</div>}
@@ -92,9 +103,16 @@ const RescheduleModal = ({ movie, isOpen, onClose, onRescheduled }) => {
           Updates the time everywhere and posts a note in the Discord channel.
         </p>
 
-        <button type="submit" className="btn-primary submit-btn" disabled={isSubmitting}>
-          {isSubmitting ? 'Rescheduling…' : 'Reschedule'}
-        </button>
+        <div className="reschedule-actions">
+          <button type="submit" className="btn-primary submit-btn" disabled={isSubmitting}>
+            {isSubmitting ? 'Rescheduling…' : 'Reschedule'}
+          </button>
+          {movie.scheduled_at && (
+            <button type="button" className="btn ghost" disabled={isSubmitting} onClick={handleUnschedule}>
+              Make TBD
+            </button>
+          )}
+        </div>
       </form>
     </Modal>
   );

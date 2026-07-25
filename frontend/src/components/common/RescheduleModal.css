@@ -8,3 +8,10 @@
   line-height: 1.5;
   margin: 0 0 1.25rem 0;
 }
+
+.reschedule-actions {
+  display: flex;
+  gap: var(--s-2);
+  align-items: center;
+}
+.reschedule-actions .submit-btn { flex: 1; }

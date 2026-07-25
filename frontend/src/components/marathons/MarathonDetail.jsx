@@ -49,13 +49,16 @@ export default function MarathonDetail({ id, onBack }) {
   };
 
   const changeDate = async (item, value) => {
-    if (!value) return;
     setEditingDate(null);
     try {
-      await api.updateMarathonItemDate(m.id, item.id, new Date(value).toISOString());
-      showSuccess('Date updated'); load();
+      // Empty value clears the date → the film becomes "TBD" (won't roll out
+      // until dated again). A value sets/updates the date as before.
+      await api.updateMarathonItemDate(m.id, item.id, value ? new Date(value).toISOString() : null);
+      showSuccess(value ? 'Date updated' : 'Film set to TBD'); load();
     } catch (err) { showError(err.message); }
   };
+
+  const makeItemTbd = (item) => changeDate(item, '');
 
   const onDrop = async (items, idx) => {
     if (dragIndex === null || dragIndex === idx) { setDragIndex(null); setDragOver(null); return; }
@@ -131,7 +134,12 @@ export default function MarathonDetail({ id, onBack }) {
                   onBlur={(e) => changeDate(nextItem, e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') changeDate(nextItem, e.target.value); }} />
               ) : (
-                m.is_owner && <button className="btn" onClick={() => setEditingDate(nextItem.id)}><Icon name="calendar" size={15} /> Change date</button>
+                m.is_owner && (
+                  <>
+                    <button className="btn" onClick={() => setEditingDate(nextItem.id)}><Icon name="calendar" size={15} /> {nextItem.scheduled_at ? 'Change date' : 'Set date'}</button>
+                    {nextItem.scheduled_at && <button className="btn ghost" onClick={() => makeItemTbd(nextItem)}>Make TBD</button>}
+                  </>
+                )
               )}
               <button className="btn" disabled title="Available once the film posts to Discord"><Icon name="check" size={15} /> I&rsquo;m attending</button>
               <button className="btn" disabled title="Manual posting coming in a later update"><Icon name="send" size={15} /> Post now</button>

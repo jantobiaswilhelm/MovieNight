@@ -248,18 +248,26 @@
 
 /* ── HOME SIDEBAR (tabbed: Announce / Vote) ─────────────────────────────── */
 .home-sidebar{
+  position: relative;
   background: var(--ink-2);
   border: 1px solid var(--rule);
   border-radius: var(--r-2);
+  overflow: hidden;
+  /* Floor height only. The grid row is driven by the hero next to it: the inner
+     .hs-fill is absolutely positioned so the sidebar's own content never inflates
+     the row. The card then stretches to match the hero's height (align-items:
+     stretch) while search results scroll INSIDE .hs-panel. */
+  min-height: clamp(520px, 34vw, 720px);
+}
+.hs-fill{
+  position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
-  /* Fixed height (not min-height) so search results scroll INSIDE the panel
-     instead of expanding the whole sidebar and stretching the hero next to it. */
-  height: clamp(520px, 34vw, 720px);
-  overflow: hidden;
 }
 @media (max-width: 1060px){
-  .home-sidebar{ height: auto; min-height: 0; }
+  .home-sidebar{ min-height: 0; }
+  .hs-fill{ position: static; }
 }
 
 /* Tab row */

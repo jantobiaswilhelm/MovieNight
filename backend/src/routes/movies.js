@@ -154,6 +154,33 @@ router.patch('/:id/reschedule', validateIntParams('id'), authenticateToken, vali
   }
 });
 
+// Unschedule a movie night — clears its date back to "TBD" without deleting it
+// (the host or an admin). The bot ignores dateless nights until a date is set.
+router.patch('/:id/unschedule', validateIntParams('id'), authenticateToken, validateGuildId, async (req, res) => {
+  const movieId = req.params.id;
+  try {
+    const movie = await db.getMovieNightById(movieId);
+    if (!movie || movie.guild_id !== req.guildId) {
+      return res.status(404).json({ error: 'Movie not found' });
+    }
+
+    const isHost = movie.announced_by === req.user.id;
+    if (!isHost && !isAdmin(req.user.discord_id)) {
+      return res.status(403).json({ error: 'Only the host or an admin can unschedule this movie' });
+    }
+
+    if (movie.started_at) {
+      return res.status(400).json({ error: 'Cannot unschedule a movie that has already started' });
+    }
+
+    const updated = await db.rescheduleMovieNight(movieId, null);
+    res.json(updated);
+  } catch (err) {
+    console.error('Error unscheduling movie:', err);
+    res.status(500).json({ error: 'Failed to unschedule movie' });
+  }
+});
+
 // Cancel an upcoming movie night (the original host or an admin). Deletes the
 // night and asks the bot to post a cancellation note in Discord.
 router.delete('/:id', validateIntParams('id'), authenticateToken, validateGuildId, async (req, res) => {

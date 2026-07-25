@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { announceFromWishlist } from '../../api/client';
 import { sanitizeUrl, sanitizeImdbId, sanitizeImageUrl } from '../../utils/sanitizeUrl';
 import { formatRuntime, getLanguageName, getAvatarUrl } from '../../utils/helpers';
+import { TimePicker } from '../ui';
 import './WishlistDetailModal.css';
 
 const WishlistDetailModal = ({ item, isOpen, onClose, onAnnounce, canAnnounce }) => {
@@ -165,12 +166,7 @@ const WishlistDetailModal = ({ item, isOpen, onClose, onAnnounce, canAnnounce })
                       </div>
                       <div className="schedule-form-field">
                         <label>Time</label>
-                        <input
-                          type="time"
-                          value={scheduleTime}
-                          onChange={(e) => setScheduleTime(e.target.value)}
-                          required
-                        />
+                        <TimePicker value={scheduleTime} onChange={setScheduleTime} />
                       </div>
                     </div>
                     {error && <div className="schedule-form-error">{error}</div>}

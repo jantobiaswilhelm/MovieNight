@@ -8,7 +8,7 @@ import {
   getBoard, addSuggestion, setSuggestionVote, clearSuggestionVote,
   announceSuggestion, deleteSuggestion, searchTMDB, getTMDBMovie
 } from '../../api/client';
-import { Icon } from '../ui';
+import { Icon, TimePicker } from '../ui';
 
 /** Format a Date as YYYY-MM-DD in the browser's local timezone (never UTC). */
 const localDateStr = (d) =>
@@ -379,8 +379,7 @@ const SuggestionBoard = ({ onAnnounced }) => {
                 </label>
                 <label className="sb-field">
                   <span>Time</span>
-                  <input type="time" value={time}
-                    onChange={(e) => setTime(e.target.value)} required />
+                  <TimePicker value={time} onChange={setTime} />
                 </label>
               </div>
               <button type="submit" className="btn lg" disabled={announcing}>

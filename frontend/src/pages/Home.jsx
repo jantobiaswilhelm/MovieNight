@@ -441,6 +441,7 @@ function HomeSidebar({ isAuthenticated, loading, onAnnounced, onPick, pickedMovi
 
   return (
     <aside className="home-sidebar">
+      <div className="hs-fill">
       <nav className="hs-tabs" role="tablist" aria-label="Home sidebar">
         <button
           role="tab"
@@ -476,6 +477,7 @@ function HomeSidebar({ isAuthenticated, loading, onAnnounced, onPick, pickedMovi
         ) : (
           <SuggestionBoard onAnnounced={onAnnounced} />
         )}
+      </div>
       </div>
     </aside>
   );
