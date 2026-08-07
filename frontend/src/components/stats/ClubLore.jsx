@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { formatMonth } from '../../utils/helpers';
 import RatingHistogram from './RatingHistogram';
+import Backdrop from './Backdrop';
 import './ClubLore.css';
 
 const f1 = (v) => parseFloat(v).toFixed(1);
@@ -27,7 +28,8 @@ export default function ClubLore({ stats }) {
 
       <div className="lore-grid">
         {sig?.top_genre && (
-          <div className="lore-card">
+          <div className="lore-card st-has-bg">
+            <Backdrop image={sig.top_genre.backdrop_url || sig.top_genre.image_url} />
             <span className="lore-k">Signature</span>
             <span className="lore-big">{sig.top_genre.genre}</span>
             <p className="lore-csub">most-watched genre · {sig.top_genre.count} nights</p>
@@ -36,7 +38,8 @@ export default function ClubLore({ stats }) {
         )}
 
         {div && (
-          <div className="lore-card">
+          <div className="lore-card st-has-bg">
+            <Backdrop image={div.backdrop_url || div.image_url} />
             <span className="lore-k">Most divisive</span>
             <Link to={`/movie/${div.id}`} className="lore-big lore-link">{div.title}</Link>
             <div className="lore-chips">
@@ -48,7 +51,8 @@ export default function ClubLore({ stats }) {
         )}
 
         {cad?.busiest_month && (
-          <div className="lore-card">
+          <div className="lore-card st-has-bg">
+            <Backdrop image={cad.busiest_backdrop_url || cad.busiest_image_url} />
             <span className="lore-k">Cadence</span>
             <span className="lore-big">{f1(cad.avg_per_month)}<span className="lore-unit"> /mo</span></span>
             <p className="lore-csub">average movies per month</p>
@@ -57,7 +61,8 @@ export default function ClubLore({ stats }) {
         )}
 
         {att?.best && (
-          <div className="lore-card">
+          <div className="lore-card st-has-bg">
+            <Backdrop image={att.best.backdrop_url || att.best.image_url} />
             <span className="lore-k">Attendance</span>
             <span className="lore-big">{Math.round(att.avg_attendance)}<span className="lore-unit"> avg</span></span>
             <p className="lore-csub">people per screening</p>
@@ -66,7 +71,8 @@ export default function ClubLore({ stats }) {
         )}
 
         {ext && (ext.longest || ext.shortest) && (
-          <div className="lore-card lore-span2">
+          <div className="lore-card lore-span2 st-has-bg">
+            <Backdrop image={(ext.longest || ext.shortest)?.backdrop_url || (ext.longest || ext.shortest)?.image_url} />
             <span className="lore-k">Runtime extremes</span>
             <div className="lore-two">
               {ext.longest && <div><span className="lore-two-k">Longest</span><div className="lore-two-v">{ext.longest.title}</div><div className="lore-two-s">{ext.longest.runtime} min</div></div>}
@@ -76,7 +82,8 @@ export default function ClubLore({ stats }) {
         )}
 
         {ext && (ext.oldest || ext.newest) && (
-          <div className="lore-card lore-span2">
+          <div className="lore-card lore-span2 st-has-bg">
+            <Backdrop image={(ext.oldest || ext.newest)?.backdrop_url || (ext.oldest || ext.newest)?.image_url} />
             <span className="lore-k">Era range</span>
             <div className="lore-two">
               {ext.oldest && <div><span className="lore-two-k">Oldest</span><div className="lore-two-v">{ext.oldest.title}</div><div className="lore-two-s">{ext.oldest.release_year}</div></div>}
