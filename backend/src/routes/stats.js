@@ -27,7 +27,14 @@ router.get('/', validateGuildId, async (req, res) => {
       worstAllTime,
       availableMonths,
       totalRuntime,
-      streakLeaderboard
+      streakLeaderboard,
+      topHosts,
+      bestTasteHosts,
+      raterExtremes,
+      mostLoyal,
+      mostDivisive,
+      signature,
+      cadence
     ] = await Promise.all([
       db.getGuildStats(req.guildId),
       db.getTopRatedMovies(req.guildId, 5),
@@ -40,7 +47,14 @@ router.get('/', validateGuildId, async (req, res) => {
       db.getWorstRatedMoviesByPeriod(req.guildId, 'all', 5, 3),
       db.getAvailableMonths(req.guildId),
       db.getGuildTotalRuntime(req.guildId),
-      db.getStreakLeaderboard(req.guildId, 5)
+      db.getStreakLeaderboard(req.guildId, 5),
+      db.getTopHosts(req.guildId, 5),
+      db.getBestTasteHosts(req.guildId, 5, 3),
+      db.getRaterExtremes(req.guildId, 5),
+      db.getMostLoyalAttendees(req.guildId, 5),
+      db.getMostDivisiveFilm(req.guildId, 3),
+      db.getSignatureGenreAndDecade(req.guildId),
+      db.getCadence(req.guildId)
     ]);
 
     res.json({
@@ -56,7 +70,14 @@ router.get('/', validateGuildId, async (req, res) => {
       available_months: availableMonths,
       selected_month: month || null,
       total_runtime: totalRuntime.total_minutes,
-      streak_leaderboard: streakLeaderboard
+      streak_leaderboard: streakLeaderboard,
+      top_hosts: topHosts,
+      best_taste_hosts: bestTasteHosts,
+      rater_extremes: raterExtremes,
+      most_loyal: mostLoyal,
+      most_divisive: mostDivisive,
+      signature,
+      cadence
     });
   } catch (err) {
     console.error('Error fetching stats:', err);
