@@ -12,6 +12,7 @@ const ATTENDED_SQL = `(
   ), 0) >= COALESCE(mn.runtime, 120) * 60 * 0.5
 )`;
 
+// SHARED: keep identical with bot/src/models/index.js (upsertRating)
 export const upsertRating = async (movieNightId, userId, score, comment = null) => {
   const result = await pool.query(
     `INSERT INTO ratings (movie_night_id, user_id, score, comment)
@@ -24,6 +25,7 @@ export const upsertRating = async (movieNightId, userId, score, comment = null) 
   return result.rows[0];
 };
 
+// PARALLEL to bot/src/models/index.js (getRatingsForMovie) — intentionally differs: backend adds avatar + attended column for the web UI
 export const getRatingsForMovie = async (movieNightId) => {
   const result = await pool.query(
     `SELECT r.*, u.username, u.discord_id, u.avatar,
@@ -73,6 +75,7 @@ export const getCombinedRatingsForMovie = async (movieNightId) => {
   return result.rows;
 };
 
+// PARALLEL to bot/src/models/index.js (getUserRatings) — intentionally differs: bot keys on discord_id (single guild); web is guild-scoped + test-filtered
 export const getUserRatings = async (userId, guildId, limit = 20) => {
   const result = await pool.query(
     `SELECT r.id, r.movie_night_id, r.user_id, r.score, r.comment, r.created_at, r.updated_at,
@@ -91,6 +94,7 @@ export const getUserRatings = async (userId, guildId, limit = 20) => {
   return result.rows;
 };
 
+// PARALLEL to bot/src/models/index.js (getUserRating) — intentionally differs: bot keys on discord_id; backend keys on user_id
 export const getUserRating = async (movieNightId, userId) => {
   const result = await pool.query(
     'SELECT * FROM ratings WHERE movie_night_id = $1 AND user_id = $2',
@@ -99,6 +103,7 @@ export const getUserRating = async (movieNightId, userId) => {
   return result.rows[0];
 };
 
+// PARALLEL to bot/src/models/index.js (getUserTopRatedMovies) — intentionally differs: bot keys on discord_id + JOINs users; backend keys on user_id
 export const getUserTopRatedMovies = async (userId, limit = 10) => {
   const result = await pool.query(
     `SELECT r.id, r.movie_night_id, r.score, r.comment,
@@ -118,6 +123,7 @@ export const getUserTopRatedMovies = async (userId, limit = 10) => {
   return result.rows;
 };
 
+// PARALLEL to bot/src/models/index.js (getTopRatedMovies) — intentionally differs: backend adds image_url + is_test filter; bot ROUNDs for embeds
 export const getTopRatedMovies = async (guildId, limit = 5) => {
   const result = await pool.query(
     `SELECT mn.id, mn.title, mn.scheduled_at, mn.image_url,
