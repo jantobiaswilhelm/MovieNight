@@ -7,6 +7,7 @@ export { default as NextMovieHero } from './NextMovieHero';
 export { default as SuggestionBoard } from './SuggestionBoard';
 export { default as ExploreSection } from './ExploreSection';
 export { default as HomeStatsBand } from './HomeStatsBand';
+export { default as HomeHallOfFame } from './HomeHallOfFame';
 export { default as OnThisDay } from './OnThisDay';
 export { default as SeasonalDecoration } from './SeasonalDecoration';
 export { default as ReviewsFeature } from './ReviewsFeature';

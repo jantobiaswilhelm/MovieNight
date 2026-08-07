@@ -15,7 +15,7 @@ import {
 } from '../api/client';
 import { getSeasonalTheme } from '../utils/seasonalTheme';
 import { StarRating, MovieCard, MovieCardSkeleton } from '../components/common';
-import { AdminSettingsPanel, UsersSection, AnnounceFlow, SuggestionBoard, HomeStatsBand, OnThisDay, SeasonalDecoration, ReviewsFeature, OnTheCalendar, ScheduleSection } from '../components/home';
+import { AdminSettingsPanel, UsersSection, AnnounceFlow, SuggestionBoard, HomeStatsBand, HomeHallOfFame, OnThisDay, SeasonalDecoration, ReviewsFeature, OnTheCalendar, ScheduleSection } from '../components/home';
 import { Icon, SectionHead, Skeleton, EmptyState, Badge } from '../components/ui';
 import './Home.css';
 
@@ -348,6 +348,7 @@ const Home = () => {
 
       {onThisDay && <OnThisDay movie={onThisDay} />}
       {stats && <HomeStatsBand stats={stats} seasonalKey={seasonal?.key || null} />}
+      {stats && <HomeHallOfFame stats={stats} />}
 
       {/* ═══ Reviews — featured pull-quote ═══ */}
       {reviews.length > 0 && (
