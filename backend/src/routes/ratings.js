@@ -1,16 +1,16 @@
 import { Router } from 'express';
 import { authenticateToken } from '../middleware/auth.js';
-import { validateIntParams, parsePagination } from '../middleware/validate.js';
+import { validateIntParams, parsePagination, validateGuildId } from '../middleware/validate.js';
 import * as db from '../models/index.js';
 
 const router = Router();
 
 // Get user's rating history
-router.get('/user/:userId', validateIntParams('userId'), parsePagination, async (req, res) => {
+router.get('/user/:userId', validateIntParams('userId'), validateGuildId, parsePagination, async (req, res) => {
   const { userId } = req.params;
 
   try {
-    const ratings = await db.getUserRatings(parseInt(userId), req.pagination.limit);
+    const ratings = await db.getUserRatings(parseInt(userId), req.guildId, req.pagination.limit);
     res.json(ratings);
   } catch (err) {
     console.error('Error fetching user ratings:', err);
@@ -19,9 +19,9 @@ router.get('/user/:userId', validateIntParams('userId'), parsePagination, async 
 });
 
 // Get current user's ratings
-router.get('/me', authenticateToken, parsePagination, async (req, res) => {
+router.get('/me', authenticateToken, validateGuildId, parsePagination, async (req, res) => {
   try {
-    const ratings = await db.getUserRatings(req.user.id, req.pagination.limit);
+    const ratings = await db.getUserRatings(req.user.id, req.guildId, req.pagination.limit);
     res.json(ratings);
   } catch (err) {
     console.error('Error fetching ratings:', err);
@@ -30,7 +30,7 @@ router.get('/me', authenticateToken, parsePagination, async (req, res) => {
 });
 
 // Add reaction to a rating
-router.post('/:ratingId/reactions', validateIntParams('ratingId'), authenticateToken, async (req, res) => {
+router.post('/:ratingId/reactions', validateIntParams('ratingId'), authenticateToken, validateGuildId, async (req, res) => {
   const { ratingId } = req.params;
   const { emoji } = req.body;
 
@@ -39,7 +39,7 @@ router.post('/:ratingId/reactions', validateIntParams('ratingId'), authenticateT
   }
 
   try {
-    const reaction = await db.addReaction(parseInt(ratingId), req.user.id, emoji);
+    const reaction = await db.addReaction(parseInt(ratingId), req.user.id, emoji, req.guildId);
     if (!reaction) {
       return res.json({ message: 'Reaction already exists' });
     }
@@ -54,11 +54,11 @@ router.post('/:ratingId/reactions', validateIntParams('ratingId'), authenticateT
 });
 
 // Remove reaction from a rating
-router.delete('/:ratingId/reactions/:emoji', validateIntParams('ratingId'), authenticateToken, async (req, res) => {
+router.delete('/:ratingId/reactions/:emoji', validateIntParams('ratingId'), authenticateToken, validateGuildId, async (req, res) => {
   const { ratingId, emoji } = req.params;
 
   try {
-    const removed = await db.removeReaction(parseInt(ratingId), req.user.id, emoji);
+    const removed = await db.removeReaction(parseInt(ratingId), req.user.id, emoji, req.guildId);
     if (!removed) {
       return res.status(404).json({ error: 'Reaction not found' });
     }
@@ -70,11 +70,11 @@ router.delete('/:ratingId/reactions/:emoji', validateIntParams('ratingId'), auth
 });
 
 // Get reactions for a rating
-router.get('/:ratingId/reactions', validateIntParams('ratingId'), async (req, res) => {
+router.get('/:ratingId/reactions', validateIntParams('ratingId'), validateGuildId, async (req, res) => {
   const { ratingId } = req.params;
 
   try {
-    const reactions = await db.getReactionsForRating(parseInt(ratingId));
+    const reactions = await db.getReactionsForRating(parseInt(ratingId), req.guildId);
     res.json(reactions);
   } catch (err) {
     console.error('Error fetching reactions:', err);

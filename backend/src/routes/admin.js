@@ -20,12 +20,12 @@ router.get('/check', authenticateToken, (req, res) => {
 });
 
 // Delete a movie
-router.delete('/movies/:id', validateIntParams('id'), authenticateToken, requireAdmin, async (req, res) => {
+router.delete('/movies/:id', validateIntParams('id'), authenticateToken, requireAdmin, validateGuildId, async (req, res) => {
   const { id } = req.params;
 
   try {
     const movie = await db.getMovieNightById(parseInt(id));
-    if (!movie) {
+    if (!movie || movie.guild_id !== req.guildId) {
       return res.status(404).json({ error: 'Movie not found' });
     }
 

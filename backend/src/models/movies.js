@@ -114,9 +114,11 @@ export const getRecentMovieNightsForRating = async (guildId, limit = 10) => {
 };
 
 export const deleteMovieNight = async (movieId) => {
-  // First delete all ratings for this movie
-  await pool.query('DELETE FROM ratings WHERE movie_night_id = $1', [movieId]);
-  // Then delete the movie
+  // Deleting the movie_nights row cascades to all child rows: ratings,
+  // movie_attendance, movie_credits and movie_night_voice_presence are all
+  // declared ON DELETE CASCADE, while voting_sessions / wishlists / marathon
+  // items are ON DELETE SET NULL. A single delete is therefore atomic on its
+  // own — no explicit transaction or manual child cleanup is needed.
   const result = await pool.query(
     'DELETE FROM movie_nights WHERE id = $1 RETURNING *',
     [movieId]
@@ -188,17 +190,31 @@ export const createPendingAnnouncement = async (data) => {
 };
 
 export const saveMovieCredits = async (movieNightId, credits) => {
-  // Delete existing credits for this movie
-  await pool.query('DELETE FROM movie_credits WHERE movie_night_id = $1', [movieNightId]);
+  // Replace the credit set atomically: a mid-loop failure must not leave the
+  // movie with the old credits deleted but only some new ones inserted.
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
 
-  // Insert new credits
-  for (const credit of credits) {
-    await pool.query(
-      `INSERT INTO movie_credits (movie_night_id, person_name, person_tmdb_id, role, character_name, credit_order, profile_path)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       ON CONFLICT (movie_night_id, person_tmdb_id, role) DO NOTHING`,
-      [movieNightId, credit.name, credit.tmdbId, credit.role, credit.character, credit.order, credit.profilePath]
-    );
+    // Delete existing credits for this movie
+    await client.query('DELETE FROM movie_credits WHERE movie_night_id = $1', [movieNightId]);
+
+    // Insert new credits
+    for (const credit of credits) {
+      await client.query(
+        `INSERT INTO movie_credits (movie_night_id, person_name, person_tmdb_id, role, character_name, credit_order, profile_path)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         ON CONFLICT (movie_night_id, person_tmdb_id, role) DO NOTHING`,
+        [movieNightId, credit.name, credit.tmdbId, credit.role, credit.character, credit.order, credit.profilePath]
+      );
+    }
+
+    await client.query('COMMIT');
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
   }
 };
 

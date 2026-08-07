@@ -1,10 +1,8 @@
 import cron from 'node-cron';
 import {
   getActiveMarathons, getNextPendingMarathonItem, countMarathonItems,
-  createMarathonPendingAnnouncement, markMarathonItemScheduled,
-  advanceMarathonPosition, completeMarathonIfDone,
-  getMarathonItemsByMarathon, markAllMarathonItemsScheduled,
-  createBingeKickoffPendingAnnouncement
+  enqueueMarathonItemAtomic, completeMarathonIfDone,
+  getMarathonItemsByMarathon, enqueueBingeMarathonAtomic
 } from '../models/index.js';
 import { createLogger } from '../utils/logger.js';
 
@@ -35,9 +33,9 @@ export const processMarathons = async () => {
           const due = new Date(doors).getTime() - Date.now() <= ANNOUNCE_LEAD_MS;
           if (!due) continue;
 
-          await createBingeKickoffPendingAnnouncement(pending[0], marathon, items.length);
-          await markAllMarathonItemsScheduled(marathon.id);
-          await advanceMarathonPosition(marathon.id, items.length);
+          // Enqueue + mark-all-scheduled + advance in one transaction, so a crash
+          // mid-pass can't re-queue a duplicate kickoff for the same evening.
+          await enqueueBingeMarathonAtomic(pending[0], marathon, items.length);
           logger.info(`Queued BINGE kickoff for marathon ${marathon.id} (${items.length} films)`);
           continue;
         }
@@ -50,9 +48,9 @@ export const processMarathons = async () => {
         if (!due) continue;
 
         const total = await countMarathonItems(marathon.id);
-        await createMarathonPendingAnnouncement(item, marathon, total);
-        await markMarathonItemScheduled(item.id);
-        await advanceMarathonPosition(marathon.id, item.position + 1);
+        // Enqueue + mark-scheduled + advance in one transaction, so a crash between
+        // enqueue and mark can't re-queue the same film (duplicate announcement).
+        await enqueueMarathonItemAtomic(item, marathon, total);
         logger.info(`Queued marathon ${marathon.id} · item ${item.id} (${item.title})`);
       } catch (err) {
         logger.error(`Error advancing marathon ${marathon.id}`, err);

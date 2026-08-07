@@ -117,10 +117,10 @@ export const getMyRating = (movieId) =>
 
 // Ratings
 export const getMyRatings = (limit = 20) =>
-  fetchAPI(`/api/ratings/me?limit=${limit}`);
+  fetchAPI(`/api/ratings/me?guild_id=${GUILD_ID}&limit=${limit}`);
 
 export const getUserRatings = (userId, limit = 20) =>
-  fetchAPI(`/api/ratings/user/${userId}?limit=${limit}`);
+  fetchAPI(`/api/ratings/user/${userId}?guild_id=${GUILD_ID}&limit=${limit}`);
 
 // Stats
 export const getStats = (month = null) => {
@@ -172,7 +172,7 @@ export const deleteSuggestion = (suggestionId) =>
 export const checkAdmin = () => fetchAPI('/api/admin/check');
 
 export const deleteMovie = (movieId) =>
-  fetchAPI(`/api/admin/movies/${movieId}`, {
+  fetchAPI(`/api/admin/movies/${movieId}?guild_id=${GUILD_ID}`, {
     method: 'DELETE'
   });
 
@@ -359,18 +359,18 @@ export const importLetterboxd = async (files) => {
 // ============================================
 
 export const addReaction = (ratingId, emoji) =>
-  fetchAPI(`/api/ratings/${ratingId}/reactions`, {
+  fetchAPI(`/api/ratings/${ratingId}/reactions?guild_id=${GUILD_ID}`, {
     method: 'POST',
-    body: JSON.stringify({ emoji })
+    body: JSON.stringify({ emoji, guild_id: GUILD_ID })
   });
 
 export const removeReaction = (ratingId, emoji) =>
-  fetchAPI(`/api/ratings/${ratingId}/reactions/${encodeURIComponent(emoji)}`, {
+  fetchAPI(`/api/ratings/${ratingId}/reactions/${encodeURIComponent(emoji)}?guild_id=${GUILD_ID}`, {
     method: 'DELETE'
   });
 
 export const getReactions = (ratingId) =>
-  fetchAPI(`/api/ratings/${ratingId}/reactions`);
+  fetchAPI(`/api/ratings/${ratingId}/reactions?guild_id=${GUILD_ID}`);
 
 // ============================================
 // COLLECTIONS

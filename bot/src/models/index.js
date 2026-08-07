@@ -492,6 +492,22 @@ export const getPendingAnnouncements = async () => {
   return result.rows;
 };
 
+// Atomically claim a pending announcement so only one processor (or bot
+// instance) ever posts it. The `status = 'pending'` guard means a second claimer
+// — or a re-run after a crash — gets no row back and skips the work, preventing
+// duplicate Discord posts and duplicate movie_night rows. Returns undefined if
+// the row was already claimed/processed.
+export const claimPendingAnnouncement = async (id) => {
+  const result = await pool.query(
+    `UPDATE pending_announcements
+     SET status = 'processing'
+     WHERE id = $1 AND status = 'pending'
+     RETURNING *`,
+    [id]
+  );
+  return result.rows[0];
+};
+
 export const markAnnouncementProcessed = async (id, status = 'processed') => {
   const result = await pool.query(
     `UPDATE pending_announcements
@@ -656,10 +672,13 @@ export const countMarathonItems = async (marathonId) => {
 };
 
 // Queue one film onto the shared announcement pipeline, carrying marathon context.
-// Fires NOTIFY so the existing announcement processor posts it immediately.
-export const createMarathonPendingAnnouncement = async (item, marathon, total) => {
+// The `db` parameter accepts either the shared pool or a transaction client, so
+// the marathon processor can run enqueue+mark+advance atomically (see the *Tx
+// helpers below). NOTIFY is intentionally NOT fired here — inside a transaction a
+// NOTIFY only delivers on COMMIT anyway, so the caller fires it after commit.
+const insertMarathonPendingAnnouncement = async (db, item, marathon, total) => {
   const title = item.release_year ? `${item.title} (${item.release_year})` : item.title;
-  const result = await pool.query(
+  const result = await db.query(
     `INSERT INTO pending_announcements
        (guild_id, channel_id, user_id, title, image_url, backdrop_url, description,
         tmdb_id, imdb_id, tmdb_rating, genres, runtime, release_year, trailer_url,
@@ -673,21 +692,64 @@ export const createMarathonPendingAnnouncement = async (item, marathon, total) =
       marathon.id, item.id, marathon.name, item.position + 1, total
     ]
   );
-  try { await pool.query('NOTIFY movie_announcement'); } catch (err) {
-    console.error('Failed to NOTIFY movie_announcement:', err.message);
-  }
   return result.rows[0];
 };
 
-export const markMarathonItemScheduled = async (itemId) => {
-  await pool.query(`UPDATE marathon_items SET status = 'scheduled' WHERE id = $1`, [itemId]);
+// Non-transactional convenience wrapper (fires NOTIFY immediately). Kept for any
+// standalone callers; the marathon processor uses the atomic path instead.
+export const createMarathonPendingAnnouncement = async (item, marathon, total) => {
+  const row = await insertMarathonPendingAnnouncement(pool, item, marathon, total);
+  await notifyMovieAnnouncement();
+  return row;
 };
 
-export const advanceMarathonPosition = async (marathonId, position) => {
-  await pool.query(
+const markMarathonItemScheduledOn = async (db, itemId) => {
+  await db.query(`UPDATE marathon_items SET status = 'scheduled' WHERE id = $1`, [itemId]);
+};
+
+export const markMarathonItemScheduled = async (itemId) => {
+  await markMarathonItemScheduledOn(pool, itemId);
+};
+
+const advanceMarathonPositionOn = async (db, marathonId, position) => {
+  await db.query(
     `UPDATE marathons SET current_position = $2, updated_at = NOW() WHERE id = $1`,
     [marathonId, position]
   );
+};
+
+export const advanceMarathonPosition = async (marathonId, position) => {
+  await advanceMarathonPositionOn(pool, marathonId, position);
+};
+
+// Fire the LISTEN/NOTIFY trigger so the announcement processor drains the queue
+// immediately. Best-effort — a missed NOTIFY is caught by the 5-minute cron backstop.
+const notifyMovieAnnouncement = async () => {
+  try { await pool.query('NOTIFY movie_announcement'); } catch (err) {
+    console.error('Failed to NOTIFY movie_announcement:', err.message);
+  }
+};
+
+// Atomically enqueue one interval-marathon film: INSERT the announcement, mark the
+// item 'scheduled', and advance the marathon position in a single transaction. A
+// crash between any two of these no longer re-queues the same film next tick
+// (which caused duplicate announcements). NOTIFY fires only after COMMIT.
+export const enqueueMarathonItemAtomic = async (item, marathon, total) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const row = await insertMarathonPendingAnnouncement(client, item, marathon, total);
+    await markMarathonItemScheduledOn(client, item.id);
+    await advanceMarathonPositionOn(client, marathon.id, item.position + 1);
+    await client.query('COMMIT');
+    await notifyMovieAnnouncement();
+    return row;
+  } catch (err) {
+    try { await client.query('ROLLBACK'); } catch { /* connection may be dead */ }
+    throw err;
+  } finally {
+    client.release();
+  }
 };
 
 // Back-link the created movie night to its marathon item (called at post time).
@@ -719,18 +781,23 @@ export const getMarathonItemsByMarathon = async (marathonId) => {
 };
 
 // Mark every still-pending item scheduled in one shot (binge queues the whole night at once).
-export const markAllMarathonItemsScheduled = async (marathonId) => {
-  await pool.query(
+const markAllMarathonItemsScheduledOn = async (db, marathonId) => {
+  await db.query(
     `UPDATE marathon_items SET status = 'scheduled' WHERE marathon_id = $1 AND status = 'pending'`,
     [marathonId]
   );
 };
 
+export const markAllMarathonItemsScheduled = async (marathonId) => {
+  await markAllMarathonItemsScheduledOn(pool, marathonId);
+};
+
 // Queue ONE kickoff announcement for a binge marathon. Carries marathon_binge=true
 // so the announcement processor knows to expand it into the whole evening.
 // firstItem seeds the thumbnail/title; the processor reads all items for the lineup.
-export const createBingeKickoffPendingAnnouncement = async (firstItem, marathon, total) => {
-  const result = await pool.query(
+// `db` accepts the pool or a transaction client (used by the atomic binge path).
+const insertBingeKickoffPendingAnnouncement = async (db, firstItem, marathon, total) => {
+  const result = await db.query(
     `INSERT INTO pending_announcements
        (guild_id, channel_id, user_id, title, image_url, backdrop_url, description,
         tmdb_id, imdb_id, tmdb_rating, genres, runtime, release_year, trailer_url,
@@ -744,8 +811,33 @@ export const createBingeKickoffPendingAnnouncement = async (firstItem, marathon,
       firstItem.trailer_url, firstItem.scheduled_at, marathon.id, marathon.name, total, true
     ]
   );
-  try { await pool.query('NOTIFY movie_announcement'); } catch (err) {
-    console.error('Failed to NOTIFY movie_announcement:', err.message);
-  }
   return result.rows[0];
+};
+
+export const createBingeKickoffPendingAnnouncement = async (firstItem, marathon, total) => {
+  const row = await insertBingeKickoffPendingAnnouncement(pool, firstItem, marathon, total);
+  await notifyMovieAnnouncement();
+  return row;
+};
+
+// Atomically queue a binge marathon: INSERT the single kickoff announcement, mark
+// ALL pending items 'scheduled', and advance the position past the last film — all
+// in one transaction. A crash mid-pass no longer re-queues a second kickoff for the
+// same evening. NOTIFY fires only after COMMIT.
+export const enqueueBingeMarathonAtomic = async (firstItem, marathon, itemCount) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const row = await insertBingeKickoffPendingAnnouncement(client, firstItem, marathon, itemCount);
+    await markAllMarathonItemsScheduledOn(client, marathon.id);
+    await advanceMarathonPositionOn(client, marathon.id, itemCount);
+    await client.query('COMMIT');
+    await notifyMovieAnnouncement();
+    return row;
+  } catch (err) {
+    try { await client.query('ROLLBACK'); } catch { /* connection may be dead */ }
+    throw err;
+  } finally {
+    client.release();
+  }
 };

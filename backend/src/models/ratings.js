@@ -73,7 +73,7 @@ export const getCombinedRatingsForMovie = async (movieNightId) => {
   return result.rows;
 };
 
-export const getUserRatings = async (userId, limit = 20) => {
+export const getUserRatings = async (userId, guildId, limit = 20) => {
   const result = await pool.query(
     `SELECT r.id, r.movie_night_id, r.user_id, r.score, r.comment, r.created_at, r.updated_at,
             mn.title, mn.scheduled_at, mn.image_url,
@@ -82,9 +82,11 @@ export const getUserRatings = async (userId, limit = 20) => {
      JOIN users u ON r.user_id = u.id
      JOIN movie_nights mn ON r.movie_night_id = mn.id
      WHERE r.user_id = $1
+       AND mn.guild_id = $2
+       AND (mn.is_test = false OR mn.is_test IS NULL)
      ORDER BY mn.scheduled_at DESC
-     LIMIT $2`,
-    [userId, limit]
+     LIMIT $3`,
+    [userId, guildId, limit]
   );
   return result.rows;
 };
@@ -191,38 +193,49 @@ export const getWorstRatedMoviesByPeriod = async (guildId, period, limit = 5, mi
   return result.rows;
 };
 
-export const addReaction = async (ratingId, userId, emoji) => {
+export const addReaction = async (ratingId, userId, emoji, guildId) => {
   const allowedEmojis = ['thumbsup', 'thumbsdown', 'heart', 'fire', 'laugh', 'thinking'];
   if (!allowedEmojis.includes(emoji)) {
     throw new Error('Invalid emoji');
   }
 
+  // Only insert if the target rating belongs to the caller's guild.
   const result = await pool.query(
     `INSERT INTO rating_reactions (rating_id, user_id, emoji)
-     VALUES ($1, $2, $3)
+     SELECT $1, $2, $3
+     FROM ratings r
+     JOIN movie_nights mn ON r.movie_night_id = mn.id
+     WHERE r.id = $1 AND mn.guild_id = $4
      ON CONFLICT (rating_id, user_id, emoji) DO NOTHING
      RETURNING *`,
-    [ratingId, userId, emoji]
+    [ratingId, userId, emoji, guildId]
   );
   return result.rows[0];
 };
 
-export const removeReaction = async (ratingId, userId, emoji) => {
+export const removeReaction = async (ratingId, userId, emoji, guildId) => {
   const result = await pool.query(
-    `DELETE FROM rating_reactions WHERE rating_id = $1 AND user_id = $2 AND emoji = $3 RETURNING *`,
-    [ratingId, userId, emoji]
+    `DELETE FROM rating_reactions rr
+     USING ratings r
+     JOIN movie_nights mn ON r.movie_night_id = mn.id
+     WHERE rr.rating_id = $1 AND rr.user_id = $2 AND rr.emoji = $3
+       AND rr.rating_id = r.id AND mn.guild_id = $4
+     RETURNING rr.*`,
+    [ratingId, userId, emoji, guildId]
   );
   return result.rows[0];
 };
 
-export const getReactionsForRating = async (ratingId) => {
+export const getReactionsForRating = async (ratingId, guildId) => {
   const result = await pool.query(
-    `SELECT emoji, COUNT(*)::integer as count,
-            json_agg(json_build_object('user_id', user_id)) as users
-     FROM rating_reactions
-     WHERE rating_id = $1
-     GROUP BY emoji`,
-    [ratingId]
+    `SELECT rr.emoji, COUNT(*)::integer as count,
+            json_agg(json_build_object('user_id', rr.user_id)) as users
+     FROM rating_reactions rr
+     JOIN ratings r ON rr.rating_id = r.id
+     JOIN movie_nights mn ON r.movie_night_id = mn.id
+     WHERE rr.rating_id = $1 AND mn.guild_id = $2
+     GROUP BY rr.emoji`,
+    [ratingId, guildId]
   );
   return result.rows;
 };
