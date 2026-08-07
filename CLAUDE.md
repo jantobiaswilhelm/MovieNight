@@ -51,6 +51,23 @@ This pending_announcements table acts as a simple message queue.
 
 **Ratings flow both ways:** Users can rate via the web UI (POST to backend) or via Discord `/rate` command (bot writes directly to DB). Both write to the same `ratings` table.
 
+### Shared model functions (bot ↔ backend)
+
+The bot (`bot/src/models/index.js`) and backend (`backend/src/models/*.js`) each have their own
+data-access layer. **18 functions exist in both** — when you change one, check its twin (each is
+marked with a `// SHARED` or `// PARALLEL` comment citing the other file).
+
+- **Keep identical:** `getUserByDiscordId`, `upsertRating`, `getMoviesToStart`,
+  `rescheduleMovieNight`, `deleteMovieNight`, `startMovieNight`.
+- **Intentionally different** (do not "fix" the difference): `getMovieNightById`, `getGuildStats`,
+  `getTopRatedMovies`, `getMostActiveRaters`, `getUserTopRatedMovies`, `findOrCreateUser`,
+  `createMovieNight`, `getMovieNights`, `getRecentMovieNightsForRating`, `getUserRatings`,
+  `getUserRating`, `getRatingsForMovie` — the web keys on internal `user_id`, is guild-scoped, and
+  filters test data; the bot keys on `discord_id` (single guild) and ROUNDs aggregates for Discord
+  embeds. The `// PARALLEL` comment on each states the specific reason.
+
+The other ~175 model functions are single-consumer (bot-only or backend-only) and are not duplicated.
+
 ### Auth Flow
 
 Discord OAuth2 with a two-step code exchange:
