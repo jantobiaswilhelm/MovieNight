@@ -222,3 +222,75 @@ export const getOnThisDay = async (guildId) => {
   );
   return result.rows[0] || null;
 };
+
+export const getTopHosts = async (guildId, limit = 5) => {
+  const result = await pool.query(
+    `SELECT u.id, u.username, u.discord_id, u.avatar,
+            COUNT(DISTINCT mn.id)::integer AS night_count,
+            COALESCE(AVG(r.score), 0) AS avg_pick_rating
+     FROM users u
+     JOIN movie_nights mn ON mn.announced_by = u.id
+     LEFT JOIN ratings r ON r.movie_night_id = mn.id
+     WHERE mn.guild_id = $1 AND (mn.is_test = false OR mn.is_test IS NULL)
+     GROUP BY u.id
+     ORDER BY night_count DESC, u.id
+     LIMIT $2`,
+    [guildId, limit]
+  );
+  return result.rows;
+};
+
+export const getBestTasteHosts = async (guildId, limit = 5, minHosted = 3) => {
+  const result = await pool.query(
+    `SELECT u.id, u.username, u.discord_id, u.avatar,
+            AVG(r.score) AS avg_rating,
+            COUNT(DISTINCT mn.id)::integer AS nights_hosted
+     FROM users u
+     JOIN movie_nights mn ON mn.announced_by = u.id
+     JOIN ratings r ON r.movie_night_id = mn.id
+     WHERE mn.guild_id = $1 AND (mn.is_test = false OR mn.is_test IS NULL)
+     GROUP BY u.id
+     HAVING COUNT(DISTINCT mn.id) >= $3
+     ORDER BY avg_rating DESC, nights_hosted DESC, u.id
+     LIMIT $2`,
+    [guildId, limit, minHosted]
+  );
+  return result.rows;
+};
+
+export const getRaterExtremes = async (guildId, minRatings = 5) => {
+  const result = await pool.query(
+    `SELECT u.id, u.username, u.discord_id, u.avatar,
+            AVG(r.score) AS avg_given,
+            COUNT(*)::integer AS rating_count
+     FROM users u
+     JOIN ratings r ON r.user_id = u.id
+     JOIN movie_nights mn ON mn.id = r.movie_night_id
+     WHERE mn.guild_id = $1 AND (mn.is_test = false OR mn.is_test IS NULL)
+     GROUP BY u.id
+     HAVING COUNT(*) >= $2
+     ORDER BY avg_given DESC, rating_count DESC, u.id`,
+    [guildId, minRatings]
+  );
+  const rows = result.rows;
+  return {
+    most_generous: rows.length > 0 ? rows[0] : null,
+    harshest: rows.length > 1 ? rows[rows.length - 1] : null
+  };
+};
+
+export const getMostLoyalAttendees = async (guildId, limit = 5) => {
+  const result = await pool.query(
+    `SELECT u.id, u.username, u.discord_id, u.avatar,
+            COUNT(DISTINCT ma.movie_night_id)::integer AS attended_count
+     FROM users u
+     JOIN movie_attendance ma ON ma.user_id = u.id
+     JOIN movie_nights mn ON mn.id = ma.movie_night_id
+     WHERE mn.guild_id = $1 AND (mn.is_test = false OR mn.is_test IS NULL)
+     GROUP BY u.id
+     ORDER BY attended_count DESC, u.id
+     LIMIT $2`,
+    [guildId, limit]
+  );
+  return result.rows;
+};
