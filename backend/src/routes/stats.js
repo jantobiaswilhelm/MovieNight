@@ -5,6 +5,17 @@ import * as db from '../models/index.js';
 
 const router = Router();
 
+// ── In-memory TTL cache for the guild stats aggregate ──────────────────────
+// The GET / handler fans out ~20 aggregate queries on every request (and on
+// every month toggle). Those results change slowly, so cache the composed JSON
+// response for a short window keyed by guildId + month. Transparent: same
+// response shape, same queries — just skipped on a warm hit.
+const STATS_CACHE_TTL_MS = 120 * 1000;
+const STATS_CACHE_MAX_ENTRIES = 500;
+const statsCache = new Map(); // key -> { data, expires }
+
+const buildStatsCacheKey = (guildId, month) => `${guildId}:${month || 'current'}`;
+
 // Get server-wide stats
 router.get('/', validateGuildId, async (req, res) => {
   const { month } = req.query;
@@ -12,6 +23,16 @@ router.get('/', validateGuildId, async (req, res) => {
   // Validate month format to prevent SQL injection
   if (month && !/^\d{4}-\d{2}$/.test(month)) {
     return res.status(400).json({ error: 'Invalid month format. Use YYYY-MM.' });
+  }
+
+  const cacheKey = buildStatsCacheKey(req.guildId, month);
+  const cached = statsCache.get(cacheKey);
+  if (cached) {
+    if (cached.expires > Date.now()) {
+      return res.json(cached.data);
+    }
+    // Expired — drop it so the map doesn't accumulate stale entries.
+    statsCache.delete(cacheKey);
   }
 
   try {
@@ -65,7 +86,7 @@ router.get('/', validateGuildId, async (req, res) => {
       db.getAttendanceStats(req.guildId)
     ]);
 
-    res.json({
+    const payload = {
       ...stats,
       top_movies: topMovies,
       top_raters: topRaters,
@@ -90,7 +111,17 @@ router.get('/', validateGuildId, async (req, res) => {
       rating_distribution: ratingDistribution,
       film_extremes: filmExtremes,
       attendance
-    });
+    };
+
+    // Store in the TTL cache. Guard total size: if we're at the cap, evict the
+    // oldest entry (Map preserves insertion order) before inserting.
+    if (statsCache.size >= STATS_CACHE_MAX_ENTRIES) {
+      const oldestKey = statsCache.keys().next().value;
+      if (oldestKey !== undefined) statsCache.delete(oldestKey);
+    }
+    statsCache.set(cacheKey, { data: payload, expires: Date.now() + STATS_CACHE_TTL_MS });
+
+    res.json(payload);
   } catch (err) {
     console.error('Error fetching stats:', err);
     res.status(500).json({ error: 'Failed to fetch stats' });
