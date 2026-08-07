@@ -1,5 +1,6 @@
 import pool from '../config/database.js';
 
+// PARALLEL to bot/src/models/index.js (getGuildStats) — intentionally differs: backend adds is_test filter; bot ROUNDs aggregates for Discord embeds
 export const getGuildStats = async (guildId) => {
   const result = await pool.query(
     `SELECT
@@ -40,6 +41,7 @@ export const getAvailableMonths = async (guildId) => {
   return result.rows.map(r => r.month);
 };
 
+// PARALLEL to bot/src/models/index.js (getMostActiveRaters) — intentionally differs: backend adds id/avatar + is_test filter; bot ROUNDs for embeds
 export const getMostActiveRaters = async (guildId, limit = 5) => {
   const result = await pool.query(
     `SELECT u.id, u.username, u.discord_id, u.avatar,

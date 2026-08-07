@@ -1,5 +1,6 @@
 import pool from '../config/database.js';
 
+// PARALLEL to bot/src/models/index.js (findOrCreateUser) — intentionally differs: backend has a 4th discordAccessToken param for web OAuth
 export const findOrCreateUser = async (discordId, username, avatar, discordAccessToken = null) => {
   const query = discordAccessToken
     ? `INSERT INTO users (discord_id, username, avatar, discord_access_token)
@@ -19,6 +20,7 @@ export const findOrCreateUser = async (discordId, username, avatar, discordAcces
   return result.rows[0];
 };
 
+// SHARED: keep identical with bot/src/models/index.js (getUserByDiscordId)
 export const getUserByDiscordId = async (discordId) => {
   const result = await pool.query(
     'SELECT * FROM users WHERE discord_id = $1',

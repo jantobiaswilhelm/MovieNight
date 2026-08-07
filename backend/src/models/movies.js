@@ -1,5 +1,6 @@
 import pool from '../config/database.js';
 
+// PARALLEL to bot/src/models/index.js (createMovieNight) — intentionally differs: bot signature carries imageUrl/tmdbData/isTest; backend inserts base columns only
 export const createMovieNight = async (title, scheduledAt, announcedBy, guildId, channelId, messageId, imageUrl) => {
   const result = await pool.query(
     `INSERT INTO movie_nights (title, scheduled_at, announced_by, guild_id, channel_id, message_id, image_url)
@@ -15,6 +16,7 @@ export const createMovieNight = async (title, scheduledAt, announcedBy, guildId,
 // (latest rating per user wins, so a re-rating on the rewatch replaces the old
 // score), and screening_count / screenings expose the repeats. Movies without a
 // tmdb_id fall back to their own id as the key, so they never merge with anything.
+// PARALLEL to bot/src/models/index.js (getMovieNights) — intentionally differs: web collapses re-screenings by tmdb_id + paginates; bot returns flat rows
 export const getMovieNights = async (guildId, limit = 20, offset = 0, includeTest = false) => {
   const testFilter = includeTest ? '' : 'AND (mn.is_test = false OR mn.is_test IS NULL)';
   const result = await pool.query(
@@ -82,6 +84,7 @@ export const getMovieScreenings = async (movieNightId) => {
   return result.rows;
 };
 
+// PARALLEL to bot/src/models/index.js (getMovieNightById) — intentionally differs: backend selects extra display columns for the web UI
 export const getMovieNightById = async (id) => {
   const result = await pool.query(
     `SELECT mn.*, u.username as announced_by_name, u.discord_id as announced_by_discord_id
@@ -101,6 +104,7 @@ export const getMovieNightByMessageId = async (messageId) => {
   return result.rows[0];
 };
 
+// PARALLEL to bot/src/models/index.js (getRecentMovieNightsForRating) — intentionally differs: bot targets started movies; web targets scheduled movies
 export const getRecentMovieNightsForRating = async (guildId, limit = 10) => {
   const result = await pool.query(
     `SELECT mn.id, mn.title, mn.scheduled_at
@@ -113,6 +117,7 @@ export const getRecentMovieNightsForRating = async (guildId, limit = 10) => {
   return result.rows;
 };
 
+// SHARED: keep identical with bot/src/models/index.js (deleteMovieNight)
 export const deleteMovieNight = async (movieId) => {
   // Deleting the movie_nights row cascades to all child rows: ratings,
   // movie_attendance, movie_credits and movie_night_voice_presence are all
@@ -126,6 +131,7 @@ export const deleteMovieNight = async (movieId) => {
   return result.rows[0];
 };
 
+// SHARED: keep identical with bot/src/models/index.js (getMoviesToStart)
 export const getMoviesToStart = async () => {
   const result = await pool.query(
     `SELECT * FROM movie_nights
@@ -136,6 +142,7 @@ export const getMoviesToStart = async () => {
   return result.rows;
 };
 
+// SHARED: keep identical with bot/src/models/index.js (startMovieNight)
 export const startMovieNight = async (movieId) => {
   const result = await pool.query(
     `UPDATE movie_nights
@@ -147,6 +154,7 @@ export const startMovieNight = async (movieId) => {
   return result.rows[0];
 };
 
+// SHARED: keep identical with bot/src/models/index.js (rescheduleMovieNight)
 export const rescheduleMovieNight = async (movieId, newScheduledAt) => {
   const result = await pool.query(
     `UPDATE movie_nights

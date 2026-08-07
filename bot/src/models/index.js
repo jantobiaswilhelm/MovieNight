@@ -1,6 +1,7 @@
 import pool from '../config/database.js';
 
 // User operations
+// PARALLEL to backend/src/models/users.js (findOrCreateUser) — intentionally differs: backend has a 4th discordAccessToken param for web OAuth
 export const findOrCreateUser = async (discordId, username, avatar) => {
   const result = await pool.query(
     `INSERT INTO users (discord_id, username, avatar)
@@ -13,6 +14,7 @@ export const findOrCreateUser = async (discordId, username, avatar) => {
   return result.rows[0];
 };
 
+// SHARED: keep identical with backend/src/models/users.js (getUserByDiscordId)
 export const getUserByDiscordId = async (discordId) => {
   const result = await pool.query(
     'SELECT * FROM users WHERE discord_id = $1',
@@ -22,6 +24,7 @@ export const getUserByDiscordId = async (discordId) => {
 };
 
 // Movie night operations
+// PARALLEL to backend/src/models/movies.js (createMovieNight) — intentionally differs: bot signature carries imageUrl/tmdbData/isTest; backend inserts base columns only
 export const createMovieNight = async (title, scheduledAt, announcedBy, guildId, channelId, messageId, imageUrl, tmdbData = {}, isTest = false) => {
   const { description, tmdbId, tmdbRating, genres, runtime, releaseYear, backdropUrl, tagline, imdbId, originalLanguage, collectionName, trailerUrl } = tmdbData;
   const result = await pool.query(
@@ -33,6 +36,7 @@ export const createMovieNight = async (title, scheduledAt, announcedBy, guildId,
   return result.rows[0];
 };
 
+// PARALLEL to backend/src/models/movies.js (getMovieNights) — intentionally differs: web collapses re-screenings by tmdb_id + paginates; bot returns flat rows
 export const getMovieNights = async (guildId, limit = 10) => {
   const result = await pool.query(
     `SELECT mn.*, u.username as announced_by_name,
@@ -50,6 +54,7 @@ export const getMovieNights = async (guildId, limit = 10) => {
   return result.rows;
 };
 
+// PARALLEL to backend/src/models/movies.js (getMovieNightById) — intentionally differs: backend selects extra display columns for the web UI
 export const getMovieNightById = async (id) => {
   const result = await pool.query(
     `SELECT mn.*, u.username as announced_by_name
@@ -61,6 +66,7 @@ export const getMovieNightById = async (id) => {
   return result.rows[0];
 };
 
+// PARALLEL to backend/src/models/movies.js (getRecentMovieNightsForRating) — intentionally differs: bot targets started movies; web targets scheduled movies
 export const getRecentMovieNightsForRating = async (guildId, limit = 10) => {
   const result = await pool.query(
     `SELECT mn.id, mn.title, mn.scheduled_at
@@ -74,6 +80,7 @@ export const getRecentMovieNightsForRating = async (guildId, limit = 10) => {
 };
 
 // Rating operations
+// SHARED: keep identical with backend/src/models/ratings.js (upsertRating)
 export const upsertRating = async (movieNightId, userId, score, comment = null) => {
   const result = await pool.query(
     `INSERT INTO ratings (movie_night_id, user_id, score, comment)
@@ -86,6 +93,7 @@ export const upsertRating = async (movieNightId, userId, score, comment = null) 
   return result.rows[0];
 };
 
+// PARALLEL to backend/src/models/ratings.js (getRatingsForMovie) — intentionally differs: backend adds avatar + attended column for the web UI
 export const getRatingsForMovie = async (movieNightId) => {
   const result = await pool.query(
     `SELECT r.*, u.username, u.discord_id
@@ -98,6 +106,7 @@ export const getRatingsForMovie = async (movieNightId) => {
   return result.rows;
 };
 
+// PARALLEL to backend/src/models/ratings.js (getUserRatings) — intentionally differs: bot keys on discord_id (single guild); web is guild-scoped + test-filtered
 export const getUserRatings = async (discordId, limit = 10) => {
   const result = await pool.query(
     `SELECT r.id, r.movie_night_id, r.user_id, r.score, r.comment, r.created_at, r.updated_at,
@@ -113,6 +122,7 @@ export const getUserRatings = async (discordId, limit = 10) => {
   return result.rows;
 };
 
+// PARALLEL to backend/src/models/ratings.js (getUserTopRatedMovies) — intentionally differs: bot keys on discord_id + JOINs users; backend keys on user_id
 export const getUserTopRatedMovies = async (discordId, limit = 10) => {
   const result = await pool.query(
     `SELECT r.id, r.movie_night_id, r.score, r.comment,
@@ -133,6 +143,7 @@ export const getUserTopRatedMovies = async (discordId, limit = 10) => {
   return result.rows;
 };
 
+// PARALLEL to backend/src/models/ratings.js (getUserRating) — intentionally differs: bot keys on discord_id; backend keys on user_id
 export const getUserRating = async (movieNightId, discordId) => {
   const result = await pool.query(
     `SELECT r.* FROM ratings r
@@ -144,6 +155,7 @@ export const getUserRating = async (movieNightId, discordId) => {
 };
 
 // Stats operations
+// PARALLEL to backend/src/models/stats.js (getGuildStats) — intentionally differs: backend adds is_test filter; bot ROUNDs aggregates for Discord embeds
 export const getGuildStats = async (guildId) => {
   const result = await pool.query(
     `SELECT
@@ -159,6 +171,7 @@ export const getGuildStats = async (guildId) => {
   return result.rows[0];
 };
 
+// PARALLEL to backend/src/models/ratings.js (getTopRatedMovies) — intentionally differs: backend adds image_url + is_test filter; bot ROUNDs for embeds
 export const getTopRatedMovies = async (guildId, limit = 5) => {
   const result = await pool.query(
     `SELECT mn.id, mn.title, mn.scheduled_at,
@@ -176,6 +189,7 @@ export const getTopRatedMovies = async (guildId, limit = 5) => {
   return result.rows;
 };
 
+// PARALLEL to backend/src/models/stats.js (getMostActiveRaters) — intentionally differs: backend adds id/avatar + is_test filter; bot ROUNDs for embeds
 export const getMostActiveRaters = async (guildId, limit = 5) => {
   const result = await pool.query(
     `SELECT u.discord_id, u.username,
@@ -383,6 +397,7 @@ export const deleteSuggestion = async (suggestionId) => {
   return result.rows[0];
 };
 
+// SHARED: keep identical with backend/src/models/movies.js (deleteMovieNight)
 export const deleteMovieNight = async (movieId) => {
   // Child rows (ratings, movie_attendance, movie_credits, movie_night_voice_presence)
   // are removed by ON DELETE CASCADE. SET NULL refs (voting_sessions, user_favorite_movies,
@@ -434,6 +449,7 @@ export const deleteVotingSession = async (sessionId) => {
 };
 
 // Movie start operations
+// SHARED: keep identical with backend/src/models/movies.js (getMoviesToStart)
 export const getMoviesToStart = async () => {
   const result = await pool.query(
     `SELECT * FROM movie_nights
@@ -447,6 +463,7 @@ export const getMoviesToStart = async () => {
 // Atomically claim-and-start: the `started_at IS NULL` guard means two
 // overlapping cron ticks can't both start the same movie. Returns undefined
 // if it was already started, so the caller knows to skip re-posting.
+// SHARED: keep identical with backend/src/models/movies.js (startMovieNight)
 export const startMovieNight = async (movieId) => {
   const result = await pool.query(
     `UPDATE movie_nights
@@ -459,6 +476,7 @@ export const startMovieNight = async (movieId) => {
   return result.rows[0];
 };
 
+// SHARED: keep identical with backend/src/models/movies.js (rescheduleMovieNight)
 export const rescheduleMovieNight = async (movieId, newScheduledAt) => {
   const result = await pool.query(
     `UPDATE movie_nights
