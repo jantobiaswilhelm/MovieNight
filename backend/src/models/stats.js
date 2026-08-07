@@ -294,3 +294,75 @@ export const getMostLoyalAttendees = async (guildId, limit = 5) => {
   );
   return result.rows;
 };
+
+export const getMostDivisiveFilm = async (guildId, minVotes = 3) => {
+  const result = await pool.query(
+    `SELECT mn.id, mn.title, mn.image_url,
+            AVG(r.score) AS avg,
+            MAX(r.score) AS high,
+            MIN(r.score) AS low,
+            STDDEV_POP(r.score) AS spread,
+            COUNT(*)::integer AS rating_count
+     FROM movie_nights mn
+     JOIN ratings r ON r.movie_night_id = mn.id
+     WHERE mn.guild_id = $1 AND (mn.is_test = false OR mn.is_test IS NULL)
+     GROUP BY mn.id
+     HAVING COUNT(*) >= $2
+     ORDER BY spread DESC, rating_count DESC, mn.id`,
+    [guildId, minVotes]
+  );
+  const rows = result.rows;
+  return {
+    most_divisive: rows.length > 0 ? rows[0] : null,
+    most_agreed: rows.length > 1 ? rows[rows.length - 1] : null
+  };
+};
+
+export const getSignatureGenreAndDecade = async (guildId) => {
+  const genreResult = await pool.query(
+    `SELECT genre, COUNT(*)::integer AS count
+     FROM movie_nights mn
+     CROSS JOIN LATERAL unnest(string_to_array(mn.genres, ', ')) AS genre
+     WHERE mn.guild_id = $1 AND (mn.is_test = false OR mn.is_test IS NULL)
+       AND mn.genres IS NOT NULL AND mn.genres != ''
+     GROUP BY genre
+     ORDER BY count DESC, genre
+     LIMIT 1`,
+    [guildId]
+  );
+  const decadeResult = await pool.query(
+    `SELECT (FLOOR(mn.release_year / 10.0) * 10)::integer AS decade,
+            COUNT(*)::integer AS count
+     FROM movie_nights mn
+     WHERE mn.guild_id = $1 AND (mn.is_test = false OR mn.is_test IS NULL)
+       AND mn.release_year IS NOT NULL
+     GROUP BY decade
+     ORDER BY count DESC, decade DESC
+     LIMIT 1`,
+    [guildId]
+  );
+  return {
+    top_genre: genreResult.rows[0] || null,
+    top_decade: decadeResult.rows[0] || null
+  };
+};
+
+export const getCadence = async (guildId) => {
+  const result = await pool.query(
+    `SELECT TO_CHAR(scheduled_at, 'YYYY-MM') AS month, COUNT(*)::integer AS count
+     FROM movie_nights
+     WHERE guild_id = $1 AND scheduled_at IS NOT NULL
+       AND (is_test = false OR is_test IS NULL)
+     GROUP BY month
+     ORDER BY count DESC, month DESC`,
+    [guildId]
+  );
+  const rows = result.rows;
+  const totalNights = rows.reduce((sum, r) => sum + r.count, 0);
+  const monthCount = rows.length;
+  return {
+    avg_per_month: monthCount > 0 ? totalNights / monthCount : 0,
+    busiest_month: rows.length > 0 ? rows[0].month : null,
+    busiest_count: rows.length > 0 ? rows[0].count : 0
+  };
+};
