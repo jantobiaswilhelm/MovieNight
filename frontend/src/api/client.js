@@ -172,7 +172,7 @@ export const deleteSuggestion = (suggestionId) =>
 export const checkAdmin = () => fetchAPI('/api/admin/check');
 
 export const deleteMovie = (movieId) =>
-  fetchAPI(`/api/admin/movies/${movieId}`, {
+  fetchAPI(`/api/admin/movies/${movieId}?guild_id=${GUILD_ID}`, {
     method: 'DELETE'
   });
 
