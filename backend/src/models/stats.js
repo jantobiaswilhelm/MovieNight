@@ -341,8 +341,26 @@ export const getSignatureGenreAndDecade = async (guildId) => {
      LIMIT 1`,
     [guildId]
   );
+  const topGenre = genreResult.rows[0] || null;
+  if (topGenre) {
+    const imgResult = await pool.query(
+      `SELECT mn.image_url, mn.backdrop_url
+       FROM movie_nights mn
+       LEFT JOIN ratings r ON r.movie_night_id = mn.id
+       WHERE mn.guild_id = $1 AND (mn.is_test = false OR mn.is_test IS NULL)
+         AND mn.genres ILIKE '%' || $2 || '%'
+       GROUP BY mn.id
+       ORDER BY AVG(r.score) DESC NULLS LAST, mn.id
+       LIMIT 1`,
+      [guildId, topGenre.genre]
+    );
+    if (imgResult.rows[0]) {
+      topGenre.image_url = imgResult.rows[0].image_url;
+      topGenre.backdrop_url = imgResult.rows[0].backdrop_url;
+    }
+  }
   return {
-    top_genre: genreResult.rows[0] || null,
+    top_genre: topGenre,
     top_decade: decadeResult.rows[0] || null
   };
 };
@@ -360,10 +378,28 @@ export const getCadence = async (guildId) => {
   const rows = result.rows;
   const totalNights = rows.reduce((sum, r) => sum + r.count, 0);
   const monthCount = rows.length;
+  const busiestMonth = rows.length > 0 ? rows[0].month : null;
+  let busiestImage = null;
+  if (busiestMonth) {
+    const imgResult = await pool.query(
+      `SELECT mn.image_url, mn.backdrop_url
+       FROM movie_nights mn
+       LEFT JOIN ratings r ON r.movie_night_id = mn.id
+       WHERE mn.guild_id = $1 AND (mn.is_test = false OR mn.is_test IS NULL)
+         AND TO_CHAR(mn.scheduled_at, 'YYYY-MM') = $2
+       GROUP BY mn.id
+       ORDER BY AVG(r.score) DESC NULLS LAST, mn.scheduled_at DESC, mn.id
+       LIMIT 1`,
+      [guildId, busiestMonth]
+    );
+    busiestImage = imgResult.rows[0] || null;
+  }
   return {
     avg_per_month: monthCount > 0 ? totalNights / monthCount : 0,
-    busiest_month: rows.length > 0 ? rows[0].month : null,
-    busiest_count: rows.length > 0 ? rows[0].count : 0
+    busiest_month: busiestMonth,
+    busiest_count: rows.length > 0 ? rows[0].count : 0,
+    busiest_image_url: busiestImage ? busiestImage.image_url : null,
+    busiest_backdrop_url: busiestImage ? busiestImage.backdrop_url : null
   };
 };
 
