@@ -349,6 +349,18 @@ const migrate = async () => {
       CREATE INDEX IF NOT EXISTS idx_user_favorite_movies_user ON user_favorite_movies(user_id)
     `);
 
+    // Performance indexes: ratings dedup/upsert lookups, pending (unstarted)
+    // movie-night scans, and guild-scoped board listing by status.
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_ratings_movie_user_updated ON ratings(movie_night_id, user_id, updated_at DESC)
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_movie_nights_pending_start ON movie_nights(scheduled_at) WHERE started_at IS NULL
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_board_suggestions_guild_status ON board_suggestions(guild_id, status)
+    `);
+
     // Add streak columns to users table
     const streakColumns = [
       { name: 'current_streak', type: 'INTEGER DEFAULT 0' },
