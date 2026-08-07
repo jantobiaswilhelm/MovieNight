@@ -32,6 +32,34 @@ const RankList = ({ movies, emptyMessage }) => {
   );
 };
 
+const PeopleList = ({ people, metric, emptyMessage }) => {
+  if (!people || people.length === 0) {
+    return <p className="sp-empty">{emptyMessage}</p>;
+  }
+  return (
+    <ol className="sp-raters">
+      {people.map((p, index) => (
+        <li key={p.id}>
+          <Link to={`/user/${p.id}`} className="sp-rater">
+            <span className="sp-rater-rank">{String(index + 1).padStart(2, '0')}</span>
+            <img
+              src={getAvatarUrl(p.discord_id, p.avatar)}
+              alt={p.username}
+              className="sp-rater-avatar"
+              loading="lazy"
+            />
+            <div className="sp-rater-body">
+              <span className="sp-rater-name">{p.username}</span>
+              {metric(p).sub && <span className="sp-rater-sub">{metric(p).sub}</span>}
+            </div>
+            <span className="sp-rater-badge">{metric(p).badge}</span>
+          </Link>
+        </li>
+      ))}
+    </ol>
+  );
+};
+
 const StatsPage = () => {
   const [selectedMonth, setSelectedMonth] = useState('');
 
@@ -188,6 +216,92 @@ const StatsPage = () => {
               </li>
             ))}
           </ol>
+        </section>
+      )}
+
+      {(stats.top_hosts?.length > 0 || stats.best_taste_hosts?.length > 0) && (
+        <section>
+          <SectionHead num="06" title="The people" meta="Hosts & critics" />
+          <div className="sp-tri sp-people-cols">
+            <div>
+              <div className="sp-tri-head"><h3>Top hosts</h3></div>
+              <PeopleList
+                people={stats.top_hosts}
+                emptyMessage="No hosts yet."
+                metric={(p) => ({
+                  sub: `avg pick ${parseFloat(p.avg_pick_rating).toFixed(1)}`,
+                  badge: p.night_count
+                })}
+              />
+            </div>
+            <div>
+              <div className="sp-tri-head"><h3>Best taste</h3></div>
+              <PeopleList
+                people={stats.best_taste_hosts}
+                emptyMessage="Nobody has hosted 3+ nights yet."
+                metric={(p) => ({
+                  sub: `${p.nights_hosted} hosted`,
+                  badge: parseFloat(p.avg_rating).toFixed(1)
+                })}
+              />
+            </div>
+          </div>
+
+          {(stats.rater_extremes?.most_generous || stats.rater_extremes?.harshest) && (
+            <div className="sp-verdicts">
+              {stats.rater_extremes?.most_generous && (
+                <div className="sp-verdict sp-verdict-gen">
+                  <span className="sp-verdict-tag">Most generous</span>
+                  <Link to={`/user/${stats.rater_extremes.most_generous.id}`} className="sp-verdict-body">
+                    <img
+                      src={getAvatarUrl(stats.rater_extremes.most_generous.discord_id, stats.rater_extremes.most_generous.avatar)}
+                      alt={stats.rater_extremes.most_generous.username}
+                      className="sp-rater-avatar"
+                      loading="lazy"
+                    />
+                    <div className="sp-rater-body">
+                      <span className="sp-rater-name">{stats.rater_extremes.most_generous.username}</span>
+                      <span className="sp-rater-sub">{stats.rater_extremes.most_generous.rating_count} ratings</span>
+                    </div>
+                    <span className="sp-verdict-num sp-num-gold">
+                      {parseFloat(stats.rater_extremes.most_generous.avg_given).toFixed(1)}
+                    </span>
+                  </Link>
+                </div>
+              )}
+              {stats.rater_extremes?.harshest && (
+                <div className="sp-verdict sp-verdict-harsh">
+                  <span className="sp-verdict-tag">Harshest</span>
+                  <Link to={`/user/${stats.rater_extremes.harshest.id}`} className="sp-verdict-body">
+                    <img
+                      src={getAvatarUrl(stats.rater_extremes.harshest.discord_id, stats.rater_extremes.harshest.avatar)}
+                      alt={stats.rater_extremes.harshest.username}
+                      className="sp-rater-avatar"
+                      loading="lazy"
+                    />
+                    <div className="sp-rater-body">
+                      <span className="sp-rater-name">{stats.rater_extremes.harshest.username}</span>
+                      <span className="sp-rater-sub">{stats.rater_extremes.harshest.rating_count} ratings</span>
+                    </div>
+                    <span className="sp-verdict-num sp-num-ember">
+                      {parseFloat(stats.rater_extremes.harshest.avg_given).toFixed(1)}
+                    </span>
+                  </Link>
+                </div>
+              )}
+            </div>
+          )}
+
+          {stats.most_loyal?.length > 0 && (
+            <div className="sp-loyal">
+              <div className="sp-tri-head"><h3>Most loyal</h3></div>
+              <PeopleList
+                people={stats.most_loyal}
+                emptyMessage="No attendance recorded yet."
+                metric={(p) => ({ sub: 'nights attended', badge: p.attended_count })}
+              />
+            </div>
+          )}
         </section>
       )}
     </div>

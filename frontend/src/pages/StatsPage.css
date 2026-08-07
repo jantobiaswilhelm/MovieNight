@@ -244,3 +244,52 @@
   letter-spacing: -.02em;
   line-height: 1;
 }
+
+/* ── 06 · The people ── */
+.sp-people-cols { margin-bottom: var(--s-6); }
+
+.sp-verdicts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s-3);
+  margin-bottom: var(--s-6);
+}
+
+.sp-verdict {
+  padding: var(--s-4);
+  background: var(--ink-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-3);
+}
+
+.sp-verdict-tag {
+  font-family: var(--font-mono);
+  font-size: var(--fs-11);
+  letter-spacing: .28em;
+  text-transform: uppercase;
+}
+.sp-verdict-gen .sp-verdict-tag { color: var(--gold); }
+.sp-verdict-harsh .sp-verdict-tag { color: var(--ember); }
+
+.sp-verdict-body {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  margin-top: var(--s-3);
+  color: var(--bone);
+}
+
+.sp-verdict-num {
+  font-family: var(--font-display);
+  font-size: var(--fs-32, 2rem);
+  margin-left: auto;
+  line-height: 1;
+}
+.sp-num-gold { color: var(--gold); }
+.sp-num-ember { color: var(--ember); }
+
+.sp-loyal { max-width: 560px; }
+
+@media (max-width: 720px) {
+  .sp-verdicts { grid-template-columns: 1fr; }
+}
