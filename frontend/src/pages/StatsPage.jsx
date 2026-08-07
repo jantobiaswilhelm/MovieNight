@@ -304,6 +304,55 @@ const StatsPage = () => {
           )}
         </section>
       )}
+
+      {(stats.most_divisive?.most_divisive || stats.signature?.top_genre || stats.cadence?.busiest_month) && (
+        <section>
+          <SectionHead num="07" title="Club lore" meta="Fun facts" />
+          <div className="sp-facts">
+            {stats.most_divisive?.most_divisive && (
+              <div className="sp-fact">
+                <span className="sp-fact-kicker">Most divisive</span>
+                <Link to={`/movie/${stats.most_divisive.most_divisive.id}`} className="sp-fact-big">
+                  {stats.most_divisive.most_divisive.title}
+                </Link>
+                <div className="sp-fact-chips">
+                  <span className="sp-chip sp-chip-love">loved {parseFloat(stats.most_divisive.most_divisive.high).toFixed(1)}</span>
+                  <span className="sp-chip sp-chip-hate">hated {parseFloat(stats.most_divisive.most_divisive.low).toFixed(1)}</span>
+                </div>
+                <p className="sp-fact-note">
+                  {stats.most_divisive.most_divisive.rating_count} votes · widest spread
+                </p>
+              </div>
+            )}
+
+            {stats.signature?.top_genre && (
+              <div className="sp-fact">
+                <span className="sp-fact-kicker">Signature</span>
+                <span className="sp-fact-big">{stats.signature.top_genre.genre}</span>
+                <p className="sp-fact-sub">most-watched genre · {stats.signature.top_genre.count} nights</p>
+                {stats.signature.top_decade && (
+                  <p className="sp-fact-note">
+                    Favourite decade: <strong>{stats.signature.top_decade.decade}s</strong>
+                  </p>
+                )}
+              </div>
+            )}
+
+            {stats.cadence?.busiest_month && (
+              <div className="sp-fact">
+                <span className="sp-fact-kicker">Cadence</span>
+                <span className="sp-fact-big">
+                  {parseFloat(stats.cadence.avg_per_month).toFixed(1)}<span className="sp-fact-unit"> /mo</span>
+                </span>
+                <p className="sp-fact-sub">average movies per month</p>
+                <p className="sp-fact-note">
+                  Busiest: <strong>{formatMonth(stats.cadence.busiest_month)}</strong>, {stats.cadence.busiest_count} nights
+                </p>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
     </div>
   );
 };
