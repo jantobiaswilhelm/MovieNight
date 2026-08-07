@@ -384,9 +384,9 @@ export const deleteSuggestion = async (suggestionId) => {
 };
 
 export const deleteMovieNight = async (movieId) => {
-  // First delete all ratings for this movie
-  await pool.query('DELETE FROM ratings WHERE movie_night_id = $1', [movieId]);
-  // Then delete the movie
+  // Child rows (ratings, movie_attendance, movie_credits, movie_night_voice_presence)
+  // are removed by ON DELETE CASCADE. SET NULL refs (voting_sessions, user_favorite_movies,
+  // marathon_items) are preserved. Single statement = atomic.
   const result = await pool.query(
     'DELETE FROM movie_nights WHERE id = $1 RETURNING *',
     [movieId]

@@ -140,7 +140,7 @@ export const startMovieNight = async (movieId) => {
   const result = await pool.query(
     `UPDATE movie_nights
      SET started_at = CURRENT_TIMESTAMP
-     WHERE id = $1
+     WHERE id = $1 AND started_at IS NULL
      RETURNING *`,
     [movieId]
   );
