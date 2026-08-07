@@ -5,12 +5,15 @@ import './HomeHallOfFame.css';
 const num = (v) => (Number(v) || 0).toFixed(1);
 
 // One podium card: #1 featured, #2/#3 as small runner rows.
-const PodiumCard = ({ kicker, leader, runners, renderMetric, renderRunnerMetric, accent }) => (
+const PodiumCard = ({ kicker, leader, runners, renderMetric, renderRunnerMetric, accent, sub }) => (
   <div className="hof-card">
     <span className="hof-kicker">{kicker}</span>
     <Link to={`/user/${leader.id}`} className="hof-lead">
       <img className="hof-avatar" src={getAvatarUrl(leader.discord_id, leader.avatar)} alt="" loading="lazy" />
-      <span className="hof-name">{leader.username}</span>
+      <div className="hof-lead-text">
+        <span className="hof-name">{leader.username}</span>
+        {sub && <span className="hof-sub">{sub}</span>}
+      </div>
     </Link>
     <span className={`hof-metric${accent ? ` ${accent}` : ''}`}>{renderMetric(leader)}</span>
     {runners.length > 0 && (
@@ -52,7 +55,8 @@ export default function HomeHallOfFame({ stats }) {
             leader={topHost}
             runners={hosts.slice(1, 3)}
             accent="ember"
-            renderMetric={(u) => <>{u.night_count} nights</>}
+            sub="announced the most nights"
+            renderMetric={(u) => <>{u.night_count} <small>nights</small></>}
             renderRunnerMetric={(u) => u.night_count}
           />
         )}
@@ -61,6 +65,7 @@ export default function HomeHallOfFame({ stats }) {
             kicker="Top critic"
             leader={topCritic}
             runners={critics.slice(1, 3)}
+            sub="most ratings cast"
             renderMetric={(u) => <>{u.rating_count} <small>ratings</small></>}
             renderRunnerMetric={(u) => u.rating_count}
           />
@@ -71,6 +76,7 @@ export default function HomeHallOfFame({ stats }) {
             leader={bestTaste}
             runners={taste.slice(1, 3)}
             accent="gold"
+            sub={`highest-rated picks · ${bestTaste.nights_hosted} hosted`}
             renderMetric={(u) => <>{num(u.avg_rating)}<small>/10</small></>}
             renderRunnerMetric={(u) => num(u.avg_rating)}
           />

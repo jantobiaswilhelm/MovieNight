@@ -48,10 +48,24 @@
   flex: none;
 }
 
+.hof-lead-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
 .hof-name {
   font-family: var(--font-display);
   font-size: var(--fs-24);
   line-height: 1.05;
+}
+
+.hof-sub {
+  font-family: var(--font-mono);
+  font-size: var(--fs-11);
+  letter-spacing: .04em;
+  color: var(--bone-dim);
+  margin-top: var(--s-1);
 }
 
 .hof-metric {
