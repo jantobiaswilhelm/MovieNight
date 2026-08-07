@@ -366,3 +366,89 @@ export const getCadence = async (guildId) => {
     busiest_count: rows.length > 0 ? rows[0].count : 0
   };
 };
+
+export const getReigningChampion = async (guildId, minVotes = 3) => {
+  const result = await pool.query(
+    `SELECT mn.id, mn.title, mn.image_url, mn.release_year, mn.genres,
+            AVG(r.score) AS avg_rating,
+            COUNT(r.id)::integer AS rating_count,
+            u.username AS host_name
+     FROM movie_nights mn
+     JOIN ratings r ON r.movie_night_id = mn.id
+     LEFT JOIN users u ON mn.announced_by = u.id
+     WHERE mn.guild_id = $1 AND (mn.is_test = false OR mn.is_test IS NULL)
+     GROUP BY mn.id, u.username
+     HAVING COUNT(r.id) >= $2
+     ORDER BY avg_rating DESC, rating_count DESC, mn.id
+     LIMIT 1`,
+    [guildId, minVotes]
+  );
+  return result.rows[0] || null;
+};
+
+export const getClubRatingDistribution = async (guildId) => {
+  const result = await pool.query(
+    `SELECT gs.score::integer AS score, COALESCE(counts.count, 0)::integer AS count
+     FROM generate_series(1, 10, 1) AS gs(score)
+     LEFT JOIN (
+       SELECT ROUND(r.score)::integer AS bucket, COUNT(*)::integer AS count
+       FROM ratings r
+       JOIN movie_nights mn ON mn.id = r.movie_night_id
+       WHERE mn.guild_id = $1 AND (mn.is_test = false OR mn.is_test IS NULL)
+       GROUP BY bucket
+     ) counts ON gs.score = counts.bucket
+     ORDER BY gs.score`,
+    [guildId]
+  );
+  return result.rows;
+};
+
+export const getFilmExtremes = async (guildId) => {
+  const one = async (orderCol, dir, notNullCol) => {
+    const res = await pool.query(
+      `SELECT id, title, runtime, release_year
+       FROM movie_nights
+       WHERE guild_id = $1 AND (is_test = false OR is_test IS NULL)
+         AND ${notNullCol} IS NOT NULL
+       ORDER BY ${orderCol} ${dir}, id
+       LIMIT 1`,
+      [guildId]
+    );
+    return res.rows[0] || null;
+  };
+  const [longest, shortest, oldest, newest] = await Promise.all([
+    one('runtime', 'DESC', 'runtime'),
+    one('runtime', 'ASC', 'runtime'),
+    one('release_year', 'ASC', 'release_year'),
+    one('release_year', 'DESC', 'release_year')
+  ]);
+  return { longest, shortest, oldest, newest };
+};
+
+export const getAttendanceStats = async (guildId) => {
+  const bestResult = await pool.query(
+    `SELECT mn.id, mn.title, mn.image_url, COUNT(ma.id)::integer AS attendee_count
+     FROM movie_nights mn
+     JOIN movie_attendance ma ON ma.movie_night_id = mn.id
+     WHERE mn.guild_id = $1 AND (mn.is_test = false OR mn.is_test IS NULL)
+     GROUP BY mn.id
+     ORDER BY attendee_count DESC, mn.id
+     LIMIT 1`,
+    [guildId]
+  );
+  const avgResult = await pool.query(
+    `SELECT COALESCE(AVG(cnt), 0) AS avg_attendance
+     FROM (
+       SELECT COUNT(ma.id)::integer AS cnt
+       FROM movie_nights mn
+       JOIN movie_attendance ma ON ma.movie_night_id = mn.id
+       WHERE mn.guild_id = $1 AND (mn.is_test = false OR mn.is_test IS NULL)
+       GROUP BY mn.id
+     ) t`,
+    [guildId]
+  );
+  return {
+    avg_attendance: Number(avgResult.rows[0].avg_attendance) || 0,
+    best: bestResult.rows[0] || null
+  };
+};
