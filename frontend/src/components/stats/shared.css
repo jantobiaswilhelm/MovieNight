@@ -42,3 +42,8 @@
 .st-hc.harsh .st-hc-num { color: var(--ember); }
 
 @media (max-width: 720px) { .st-hotcold { grid-template-columns: 1fr; } }
+
+/* Host for a <Backdrop>: clip the faint image to the container's radius and
+   keep real content above it. */
+.st-has-bg { position: relative; overflow: hidden; }
+.st-has-bg > *:not(.st-bg) { position: relative; z-index: 1; }
