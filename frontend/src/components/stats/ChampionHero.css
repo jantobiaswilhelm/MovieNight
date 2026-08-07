@@ -1,0 +1,16 @@
+.champ {
+  display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: var(--s-5);
+  padding: var(--s-5); border: 1px solid var(--rule-strong); border-radius: var(--r-3);
+  background: var(--ink-2); color: var(--bone); margin-bottom: var(--s-3);
+}
+.champ:hover { border-color: var(--ember); }
+.champ-poster { width: 104px; height: 156px; border-radius: 6px; object-fit: cover; border: 1px solid var(--rule-strong); flex: none; background: var(--ink-3); }
+.champ-poster-empty { display: block; }
+.champ-info { min-width: 0; }
+.champ-kicker { font-family: var(--font-mono); font-size: var(--fs-11); letter-spacing: .28em; text-transform: uppercase; color: var(--gold); display: block; margin-bottom: var(--s-2); }
+.champ-title { font-family: var(--font-display); font-style: italic; font-weight: 300; font-size: clamp(30px, 4.5vw, 48px); line-height: 1; }
+.champ-sub { color: var(--bone-dim); font-family: var(--font-mono); font-size: var(--fs-12); letter-spacing: .05em; margin-top: var(--s-3); }
+.champ-score { text-align: right; flex: none; }
+.champ-score-num { font-family: var(--font-display); font-weight: 300; font-size: clamp(52px, 9vw, 88px); line-height: .9; color: var(--gold); }
+.champ-score-unit { font-family: var(--font-mono); font-size: var(--fs-12); color: var(--bone-mute); letter-spacing: .2em; }
+@media (max-width: 720px) { .champ { grid-template-columns: 1fr; } .champ-score { text-align: left; } }

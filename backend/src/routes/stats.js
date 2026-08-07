@@ -34,7 +34,11 @@ router.get('/', validateGuildId, async (req, res) => {
       mostLoyal,
       mostDivisive,
       signature,
-      cadence
+      cadence,
+      reigningChampion,
+      ratingDistribution,
+      filmExtremes,
+      attendance
     ] = await Promise.all([
       db.getGuildStats(req.guildId),
       db.getTopRatedMovies(req.guildId, 5),
@@ -54,7 +58,11 @@ router.get('/', validateGuildId, async (req, res) => {
       db.getMostLoyalAttendees(req.guildId, 5),
       db.getMostDivisiveFilm(req.guildId, 3),
       db.getSignatureGenreAndDecade(req.guildId),
-      db.getCadence(req.guildId)
+      db.getCadence(req.guildId),
+      db.getReigningChampion(req.guildId, 3),
+      db.getClubRatingDistribution(req.guildId),
+      db.getFilmExtremes(req.guildId),
+      db.getAttendanceStats(req.guildId)
     ]);
 
     res.json({
@@ -77,7 +85,11 @@ router.get('/', validateGuildId, async (req, res) => {
       most_loyal: mostLoyal,
       most_divisive: mostDivisive,
       signature,
-      cadence
+      cadence,
+      reigning_champion: reigningChampion,
+      rating_distribution: ratingDistribution,
+      film_extremes: filmExtremes,
+      attendance
     });
   } catch (err) {
     console.error('Error fetching stats:', err);

@@ -1,0 +1,26 @@
+.lore-card { border: 1px solid var(--rule); border-radius: var(--r-3); background: var(--ink-2); padding: var(--s-4); display: flex; flex-direction: column; gap: 6px; min-height: 132px; }
+.lore-span { margin-bottom: var(--s-3); }
+.lore-k { font-family: var(--font-mono); font-size: var(--fs-11); letter-spacing: .26em; text-transform: uppercase; color: var(--ember); }
+.lore-big { font-family: var(--font-display); font-weight: 300; font-size: var(--fs-32); line-height: 1.02; letter-spacing: -.01em; color: var(--bone); }
+.lore-link:hover { color: var(--ember); }
+.lore-unit { font-size: var(--fs-16); color: var(--bone-dim); }
+.lore-csub { font-family: var(--font-mono); font-size: var(--fs-11); letter-spacing: .05em; color: var(--bone-dim); }
+.lore-note { font-size: var(--fs-14); color: var(--bone-dim); margin-top: auto; }
+.lore-note strong { color: var(--bone); }
+.lore-chips { display: flex; gap: var(--s-2); }
+.lore-chip { font-family: var(--font-mono); font-size: var(--fs-11); letter-spacing: .08em; padding: 3px 8px; border-radius: var(--r-full); border: 1px solid var(--rule-strong); color: var(--bone-dim); }
+.lore-chip.love { color: var(--gold); }
+.lore-chip.hate { color: var(--ember); }
+
+.lore-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s-3); }
+.lore-span2 { grid-column: span 2; }
+.lore-two { display: flex; gap: var(--s-4); margin-top: var(--s-2); }
+.lore-two > div { flex: 1; }
+.lore-two-k { font-family: var(--font-mono); font-size: var(--fs-11); letter-spacing: .2em; text-transform: uppercase; color: var(--bone-mute); display: block; margin-bottom: 4px; }
+.lore-two-v { font-family: var(--font-display); font-size: var(--fs-19); }
+.lore-two-s { font-size: var(--fs-12); color: var(--bone-dim); }
+
+@media (max-width: 820px) {
+  .lore-grid { grid-template-columns: 1fr 1fr; }
+  .lore-span2 { grid-column: span 2; }
+}

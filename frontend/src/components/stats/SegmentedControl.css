@@ -1,0 +1,10 @@
+.seg { display: inline-flex; border: 1px solid var(--rule-strong); border-radius: var(--r-full); overflow: hidden; }
+.seg button {
+  background: transparent; border: 0; color: var(--bone-mute);
+  font-family: var(--font-mono); font-size: var(--fs-11); letter-spacing: .18em; text-transform: uppercase;
+  padding: 7px 13px; cursor: pointer; transition: color .12s, background .12s;
+}
+.seg button + button { border-left: 1px solid var(--rule); }
+.seg button:hover { color: var(--bone-dim); }
+.seg button.on { background: var(--ember); color: var(--ink); }
+.seg.seg-gold button.on { background: var(--gold); }

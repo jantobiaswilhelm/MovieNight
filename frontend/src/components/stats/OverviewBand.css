@@ -1,0 +1,7 @@
+.ob-band { display: grid; grid-template-columns: repeat(5, 1fr); border: 1px solid var(--rule); border-radius: var(--r-3); overflow: hidden; }
+.ob-cell { padding: var(--s-3) var(--s-4); }
+.ob-cell + .ob-cell { border-left: 1px solid var(--rule); }
+.ob-lbl { font-family: var(--font-mono); font-size: var(--fs-11); letter-spacing: .24em; text-transform: uppercase; color: var(--bone-mute); display: block; margin-bottom: var(--s-2); }
+.ob-val { font-family: var(--font-display); font-weight: 300; font-size: var(--fs-32); line-height: 1; letter-spacing: -.02em; }
+.ob-unit { font-size: var(--fs-14); color: var(--bone-dim); margin-left: 2px; }
+@media (max-width: 720px) { .ob-band { grid-template-columns: 1fr 1fr; } }
