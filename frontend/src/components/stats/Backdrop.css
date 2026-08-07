@@ -1,0 +1,12 @@
+/* Alpha stencil (#000/transparent in mask-image) is not a UI color — it mirrors .rf-bg. */
+.st-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-size: cover;
+  background-position: center;
+  opacity: .14;
+  pointer-events: none;
+  -webkit-mask-image: radial-gradient(ellipse 78% 78% at center, #000 20%, transparent 82%);
+          mask-image: radial-gradient(ellipse 78% 78% at center, #000 20%, transparent 82%);
+}

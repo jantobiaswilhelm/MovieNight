@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import SegmentedControl from './SegmentedControl';
+import Backdrop from './Backdrop';
 import './shared.css';
 
 const PERIOD_LABEL = { month: 'this month', year: 'this year', all: 'all time' };
@@ -15,7 +16,8 @@ export default function FilmsLeaderboard({ stats }) {
   const gold = mode === 'top';
 
   return (
-    <div className="st-module">
+    <div className="st-module st-has-bg">
+      {movies[0] && <Backdrop image={movies[0].backdrop_url || movies[0].image_url} />}
       <div className="st-module-head">
         <span className="st-mh-title">{mode === 'top' ? 'Top rated' : 'Worst rated'} · {PERIOD_LABEL[period]}</span>
         <div className="st-controls">

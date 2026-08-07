@@ -297,7 +297,7 @@ export const getMostLoyalAttendees = async (guildId, limit = 5) => {
 
 export const getMostDivisiveFilm = async (guildId, minVotes = 3) => {
   const result = await pool.query(
-    `SELECT mn.id, mn.title, mn.image_url,
+    `SELECT mn.id, mn.title, mn.image_url, mn.backdrop_url,
             AVG(r.score) AS avg,
             MAX(r.score) AS high,
             MIN(r.score) AS low,
@@ -341,8 +341,26 @@ export const getSignatureGenreAndDecade = async (guildId) => {
      LIMIT 1`,
     [guildId]
   );
+  const topGenre = genreResult.rows[0] || null;
+  if (topGenre) {
+    const imgResult = await pool.query(
+      `SELECT mn.image_url, mn.backdrop_url
+       FROM movie_nights mn
+       LEFT JOIN ratings r ON r.movie_night_id = mn.id
+       WHERE mn.guild_id = $1 AND (mn.is_test = false OR mn.is_test IS NULL)
+         AND mn.genres ILIKE '%' || $2 || '%'
+       GROUP BY mn.id
+       ORDER BY AVG(r.score) DESC NULLS LAST, mn.id
+       LIMIT 1`,
+      [guildId, topGenre.genre]
+    );
+    if (imgResult.rows[0]) {
+      topGenre.image_url = imgResult.rows[0].image_url;
+      topGenre.backdrop_url = imgResult.rows[0].backdrop_url;
+    }
+  }
   return {
-    top_genre: genreResult.rows[0] || null,
+    top_genre: topGenre,
     top_decade: decadeResult.rows[0] || null
   };
 };
@@ -360,16 +378,34 @@ export const getCadence = async (guildId) => {
   const rows = result.rows;
   const totalNights = rows.reduce((sum, r) => sum + r.count, 0);
   const monthCount = rows.length;
+  const busiestMonth = rows.length > 0 ? rows[0].month : null;
+  let busiestImage = null;
+  if (busiestMonth) {
+    const imgResult = await pool.query(
+      `SELECT mn.image_url, mn.backdrop_url
+       FROM movie_nights mn
+       LEFT JOIN ratings r ON r.movie_night_id = mn.id
+       WHERE mn.guild_id = $1 AND (mn.is_test = false OR mn.is_test IS NULL)
+         AND TO_CHAR(mn.scheduled_at, 'YYYY-MM') = $2
+       GROUP BY mn.id
+       ORDER BY AVG(r.score) DESC NULLS LAST, mn.scheduled_at DESC, mn.id
+       LIMIT 1`,
+      [guildId, busiestMonth]
+    );
+    busiestImage = imgResult.rows[0] || null;
+  }
   return {
     avg_per_month: monthCount > 0 ? totalNights / monthCount : 0,
-    busiest_month: rows.length > 0 ? rows[0].month : null,
-    busiest_count: rows.length > 0 ? rows[0].count : 0
+    busiest_month: busiestMonth,
+    busiest_count: rows.length > 0 ? rows[0].count : 0,
+    busiest_image_url: busiestImage ? busiestImage.image_url : null,
+    busiest_backdrop_url: busiestImage ? busiestImage.backdrop_url : null
   };
 };
 
 export const getReigningChampion = async (guildId, minVotes = 3) => {
   const result = await pool.query(
-    `SELECT mn.id, mn.title, mn.image_url, mn.release_year, mn.genres,
+    `SELECT mn.id, mn.title, mn.image_url, mn.backdrop_url, mn.release_year, mn.genres,
             AVG(r.score) AS avg_rating,
             COUNT(r.id)::integer AS rating_count,
             u.username AS host_name
@@ -406,7 +442,7 @@ export const getClubRatingDistribution = async (guildId) => {
 export const getFilmExtremes = async (guildId) => {
   const one = async (orderCol, dir, notNullCol) => {
     const res = await pool.query(
-      `SELECT id, title, runtime, release_year
+      `SELECT id, title, image_url, backdrop_url, runtime, release_year
        FROM movie_nights
        WHERE guild_id = $1 AND (is_test = false OR is_test IS NULL)
          AND ${notNullCol} IS NOT NULL
@@ -427,7 +463,7 @@ export const getFilmExtremes = async (guildId) => {
 
 export const getAttendanceStats = async (guildId) => {
   const bestResult = await pool.query(
-    `SELECT mn.id, mn.title, mn.image_url, COUNT(ma.id)::integer AS attendee_count
+    `SELECT mn.id, mn.title, mn.image_url, mn.backdrop_url, COUNT(ma.id)::integer AS attendee_count
      FROM movie_nights mn
      JOIN movie_attendance ma ON ma.movie_night_id = mn.id
      WHERE mn.guild_id = $1 AND (mn.is_test = false OR mn.is_test IS NULL)

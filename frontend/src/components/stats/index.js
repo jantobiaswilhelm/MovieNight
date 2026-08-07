@@ -5,3 +5,4 @@ export { default as FilmsLeaderboard } from './FilmsLeaderboard';
 export { default as PeopleLeaderboard } from './PeopleLeaderboard';
 export { default as RatingHistogram } from './RatingHistogram';
 export { default as ClubLore } from './ClubLore';
+export { default as Backdrop } from './Backdrop';

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import Backdrop from './Backdrop';
 import './ChampionHero.css';
 
 export default function ChampionHero({ champion }) {
@@ -12,7 +13,8 @@ export default function ChampionHero({ champion }) {
   ].filter(Boolean).join(' · ');
 
   return (
-    <Link to={`/movie/${champion.id}`} className="champ">
+    <Link to={`/movie/${champion.id}`} className="champ st-has-bg">
+      <Backdrop image={champion.backdrop_url || champion.image_url} />
       {champion.image_url
         ? <img className="champ-poster" src={champion.image_url} alt="" loading="lazy" />
         : <span className="champ-poster champ-poster-empty" aria-hidden="true" />}
