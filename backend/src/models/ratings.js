@@ -147,7 +147,7 @@ export const getTopRatedMoviesByPeriod = async (guildId, period, limit = 5, minV
   // 'all' = no date filter
 
   const result = await pool.query(
-    `SELECT mn.id, mn.title, mn.scheduled_at, mn.image_url,
+    `SELECT mn.id, mn.title, mn.scheduled_at, mn.image_url, mn.backdrop_url,
             AVG(r.score) as avg_rating,
             COUNT(r.id) as rating_count
      FROM movie_nights mn
@@ -176,7 +176,7 @@ export const getWorstRatedMoviesByPeriod = async (guildId, period, limit = 5, mi
   // 'all' = no date filter
 
   const result = await pool.query(
-    `SELECT mn.id, mn.title, mn.scheduled_at, mn.image_url,
+    `SELECT mn.id, mn.title, mn.scheduled_at, mn.image_url, mn.backdrop_url,
             AVG(r.score) as avg_rating,
             COUNT(r.id) as rating_count
      FROM movie_nights mn

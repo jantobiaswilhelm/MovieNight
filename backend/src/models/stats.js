@@ -297,7 +297,7 @@ export const getMostLoyalAttendees = async (guildId, limit = 5) => {
 
 export const getMostDivisiveFilm = async (guildId, minVotes = 3) => {
   const result = await pool.query(
-    `SELECT mn.id, mn.title, mn.image_url,
+    `SELECT mn.id, mn.title, mn.image_url, mn.backdrop_url,
             AVG(r.score) AS avg,
             MAX(r.score) AS high,
             MIN(r.score) AS low,
@@ -369,7 +369,7 @@ export const getCadence = async (guildId) => {
 
 export const getReigningChampion = async (guildId, minVotes = 3) => {
   const result = await pool.query(
-    `SELECT mn.id, mn.title, mn.image_url, mn.release_year, mn.genres,
+    `SELECT mn.id, mn.title, mn.image_url, mn.backdrop_url, mn.release_year, mn.genres,
             AVG(r.score) AS avg_rating,
             COUNT(r.id)::integer AS rating_count,
             u.username AS host_name
@@ -406,7 +406,7 @@ export const getClubRatingDistribution = async (guildId) => {
 export const getFilmExtremes = async (guildId) => {
   const one = async (orderCol, dir, notNullCol) => {
     const res = await pool.query(
-      `SELECT id, title, runtime, release_year
+      `SELECT id, title, image_url, backdrop_url, runtime, release_year
        FROM movie_nights
        WHERE guild_id = $1 AND (is_test = false OR is_test IS NULL)
          AND ${notNullCol} IS NOT NULL
@@ -427,7 +427,7 @@ export const getFilmExtremes = async (guildId) => {
 
 export const getAttendanceStats = async (guildId) => {
   const bestResult = await pool.query(
-    `SELECT mn.id, mn.title, mn.image_url, COUNT(ma.id)::integer AS attendee_count
+    `SELECT mn.id, mn.title, mn.image_url, mn.backdrop_url, COUNT(ma.id)::integer AS attendee_count
      FROM movie_nights mn
      JOIN movie_attendance ma ON ma.movie_night_id = mn.id
      WHERE mn.guild_id = $1 AND (mn.is_test = false OR mn.is_test IS NULL)
