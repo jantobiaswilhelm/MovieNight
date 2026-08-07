@@ -1,6 +1,7 @@
 import cron from 'node-cron';
 import {
-  getPendingAnnouncements, markAnnouncementProcessed, createMovieNight, findOrCreateUser,
+  getPendingAnnouncements, claimPendingAnnouncement, markAnnouncementProcessed,
+  createMovieNight, findOrCreateUser,
   linkMarathonItemMovieNight, completeMarathonIfDone, getMarathonItemsByMarathon
 } from '../models/index.js';
 import { createAnnouncementEmbed, createBingeAnnouncementEmbed } from '../utils/embeds.js';
@@ -48,7 +49,16 @@ export const processPendingAnnouncements = async (client) => {
 async function drainPendingAnnouncements(client) {
   const pendingAnnouncements = await getPendingAnnouncements();
 
-  for (const announcement of pendingAnnouncements) {
+  for (const listed of pendingAnnouncements) {
+    // Atomically claim the row before doing any external work. Only the claimer
+    // (this process, this pass) gets a row back — a crash mid-post, a re-run, or
+    // a second bot instance can't double-post or create duplicate movie_nights.
+    // claimPendingAnnouncement's UPDATE ... RETURNING * omits the joined username/
+    // discord_id, so carry those over from the listing row.
+    const claimed = await claimPendingAnnouncement(listed.id);
+    if (!claimed) continue;
+    const announcement = { ...claimed, username: listed.username, discord_id: listed.discord_id };
+
     try {
       // Determine which channel to use
       const channelId = announcement.channel_id || DEFAULT_CHANNEL_ID;

@@ -492,6 +492,22 @@ export const getPendingAnnouncements = async () => {
   return result.rows;
 };
 
+// Atomically claim a pending announcement so only one processor (or bot
+// instance) ever posts it. The `status = 'pending'` guard means a second claimer
+// — or a re-run after a crash — gets no row back and skips the work, preventing
+// duplicate Discord posts and duplicate movie_night rows. Returns undefined if
+// the row was already claimed/processed.
+export const claimPendingAnnouncement = async (id) => {
+  const result = await pool.query(
+    `UPDATE pending_announcements
+     SET status = 'processing'
+     WHERE id = $1 AND status = 'pending'
+     RETURNING *`,
+    [id]
+  );
+  return result.rows[0];
+};
+
 export const markAnnouncementProcessed = async (id, status = 'processed') => {
   const result = await pool.query(
     `UPDATE pending_announcements
