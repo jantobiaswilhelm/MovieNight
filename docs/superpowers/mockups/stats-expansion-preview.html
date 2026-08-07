@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Stats Expansion — Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --ink:#14110D; --ink-2:#1C1915; --ink-3:#252119; --ink-4:#2F2A21;
+    --bone:#E8DFC9; --bone-dim:#A89E88; --bone-mute:#6B6556;
+    --ember:#D4663A; --ember-hi:#E27A4C; --ember-soft:rgba(212,102,58,.14);
+    --gold:#E0A23A;
+    --rule:rgba(232,223,201,.08); --rule-strong:rgba(232,223,201,.16);
+    --fd:"Fraunces",Georgia,serif; --fu:"Figtree",system-ui,sans-serif; --fm:"JetBrains Mono",monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--ink);color:var(--bone);font-family:var(--fu);line-height:1.5;
+    -webkit-font-smoothing:antialiased;padding:48px 24px 96px}
+  .wrap{max-width:1080px;margin:0 auto}
+
+  .eyebrow{font-family:var(--fm);font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--ember)}
+  .mono{font-family:var(--fm);font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--bone-mute)}
+  h1{font-family:var(--fd);font-weight:300;letter-spacing:-.02em;line-height:.92;font-size:clamp(40px,7vw,72px);margin:8px 0 4px}
+  h1 em{font-style:italic;color:var(--bone)}
+  .rule{height:1px;background:var(--rule);border:0;margin:16px 0}
+
+  /* frame labels so you know which screen you're looking at */
+  .frame{border:1px solid var(--rule-strong);border-radius:10px;padding:0;margin:32px 0;overflow:hidden;background:var(--ink)}
+  .frame-tab{font-family:var(--fm);font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--ink);
+    background:var(--ember);display:inline-block;padding:6px 14px;border-radius:0 0 8px 0}
+  .frame-body{padding:32px}
+
+  /* section head */
+  .sec-head{display:flex;align-items:baseline;gap:16px;margin:0 0 20px}
+  .sec-num{font-family:var(--fm);font-size:11px;letter-spacing:.28em;color:var(--ember)}
+  .sec-title{font-family:var(--fd);font-weight:300;font-size:28px;letter-spacing:-.01em}
+  .sec-meta{font-family:var(--fm);font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--bone-mute);margin-left:auto}
+  section{margin:0 0 44px}
+
+  /* existing stat band */
+  .band{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--rule);border-radius:10px;overflow:hidden}
+  .band .cell{padding:24px 28px}
+  .band .cell + .cell{border-left:1px solid var(--rule)}
+  .stat-label{font-family:var(--fm);font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--bone-mute);display:block;margin-bottom:10px}
+  .stat-value{font-family:var(--fd);font-weight:300;font-size:46px;line-height:1;letter-spacing:-.02em}
+  .stat-unit{font-size:18px;color:var(--bone-dim);margin-left:4px}
+
+  /* hall of fame trio */
+  .trio{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .hof{border:1px solid var(--rule);border-radius:10px;padding:20px;display:flex;flex-direction:column;gap:14px;
+    background:var(--ink-2);position:relative}
+  .hof-kicker{font-family:var(--fm);font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--ember)}
+  .hof-body{display:flex;align-items:center;gap:14px}
+  .avatar{width:52px;height:52px;border-radius:999px;object-fit:cover;flex:none;border:1px solid var(--rule-strong)}
+  .poster{width:44px;height:66px;border-radius:4px;object-fit:cover;flex:none;border:1px solid var(--rule-strong)}
+  .hof-name{font-family:var(--fd);font-size:22px;font-weight:400;line-height:1.05}
+  .hof-sub{font-family:var(--fm);font-size:11px;letter-spacing:.06em;color:var(--bone-dim);margin-top:4px}
+  .hof-metric{font-family:var(--fd);font-size:20px;color:var(--gold)}
+  .hof-metric.ember{color:var(--ember)}
+  .hof-runners{margin-top:auto;border-top:1px solid var(--rule);padding-top:10px;display:flex;flex-direction:column;gap:7px}
+  .hof-run{display:flex;align-items:center;gap:9px}
+  .hof-run .rk{font-family:var(--fm);font-size:10px;color:var(--bone-mute);width:14px;flex:none}
+  .hof-run .av{width:20px;height:20px;border-radius:999px;object-fit:cover;flex:none;border:1px solid var(--rule)}
+  .hof-run .nm{font-size:12.5px;color:var(--bone-dim);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .hof-run .mt{font-family:var(--fm);font-size:11px;color:var(--bone-mute);flex:none}
+
+  /* leaderboards (two-up) */
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:32px}
+  ol.board{list-style:none}
+  .row{display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid var(--rule)}
+  .row:last-child{border-bottom:0}
+  .rank{font-family:var(--fm);font-size:12px;color:var(--bone-mute);width:22px;flex:none}
+  .row .avatar{width:38px;height:38px}
+  .row-body{display:flex;flex-direction:column;min-width:0;flex:1}
+  .row-name{font-size:15px;font-weight:500}
+  .row-sub{font-family:var(--fm);font-size:11px;letter-spacing:.04em;color:var(--bone-dim);margin-top:2px}
+  .row-metric{font-family:var(--fd);font-size:20px;color:var(--bone);flex:none}
+  .row-metric small{font-size:11px;color:var(--bone-mute);font-family:var(--fm)}
+  .row-metric.gold{color:var(--gold)}
+
+  /* generous vs harsh pair */
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .verdict{border:1px solid var(--rule);border-radius:10px;padding:20px;background:var(--ink-2)}
+  .verdict .tag{font-family:var(--fm);font-size:11px;letter-spacing:.28em;text-transform:uppercase}
+  .verdict.gen .tag{color:var(--gold)}
+  .verdict.harsh .tag{color:var(--ember)}
+  .verdict-body{display:flex;align-items:center;gap:12px;margin-top:14px}
+  .verdict .row-name{font-size:17px}
+  .verdict-num{font-family:var(--fd);font-size:34px;margin-left:auto;line-height:1}
+
+  /* fun facts */
+  .facts{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .fact{border:1px solid var(--rule);border-radius:10px;padding:22px;background:var(--ink-2);display:flex;flex-direction:column;gap:8px;min-height:150px}
+  .fact-kicker{font-family:var(--fm);font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--ember)}
+  .fact-big{font-family:var(--fd);font-weight:300;font-size:34px;line-height:1.02;letter-spacing:-.01em}
+  .fact-sub{font-family:var(--fm);font-size:11px;letter-spacing:.05em;color:var(--bone-dim)}
+  .fact-note{font-size:13px;color:var(--bone-dim);margin-top:auto}
+  .spread{display:flex;align-items:center;gap:10px;margin-top:4px}
+  .chip{font-family:var(--fm);font-size:11px;letter-spacing:.1em;padding:3px 8px;border-radius:999px;border:1px solid var(--rule-strong);color:var(--bone-dim)}
+  .love{color:var(--gold)} .hate{color:var(--ember)}
+
+  .note{font-size:13px;color:var(--bone-mute);margin-top:10px;font-style:italic}
+  .caption{color:var(--bone-mute);font-size:13px;margin-top:6px}
+  @media(max-width:820px){.trio,.facts,.band{grid-template-columns:1fr}.cols,.pair{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <span class="eyebrow">Preview · not final</span>
+  <h1>Stats <em>expansion.</em></h1>
+  <p class="caption">Sample data. Two screens: the homepage teaser, and the new sections on the full stats page.</p>
+
+  <!-- ============ HOMEPAGE ============ -->
+  <div class="frame">
+    <span class="frame-tab">Home · the teaser</span>
+    <div class="frame-body">
+
+      <!-- existing band, kept -->
+      <div class="band">
+        <div class="cell"><span class="stat-label">Movies watched</span><div class="stat-value">128</div></div>
+        <div class="cell"><span class="stat-label">Hours watched</span><div class="stat-value">241</div></div>
+        <div class="cell"><span class="stat-label">Average rating</span><div class="stat-value">7.2<span class="stat-unit">/10</span></div></div>
+      </div>
+
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin:28px 0 14px">
+        <span class="eyebrow">Hall of fame</span>
+        <span class="mono" style="color:var(--ember)">Full stats →</span>
+      </div>
+
+      <!-- new: hall of fame trio -->
+      <div class="trio">
+        <div class="hof">
+          <span class="hof-kicker">Top host</span>
+          <div class="hof-body">
+            <img class="avatar" src="https://i.pravatar.cc/104?img=12" alt="" />
+            <div>
+              <div class="hof-name">marcus</div>
+              <div class="hof-sub">announced the most nights</div>
+            </div>
+          </div>
+          <div class="hof-metric ember">23 nights</div>
+          <div class="hof-runners">
+            <div class="hof-run"><span class="rk">2</span><img class="av" src="https://i.pravatar.cc/40?img=5"><span class="nm">priya</span><span class="mt">18</span></div>
+            <div class="hof-run"><span class="rk">3</span><img class="av" src="https://i.pravatar.cc/40?img=8"><span class="nm">theo</span><span class="mt">15</span></div>
+          </div>
+        </div>
+
+        <div class="hof">
+          <span class="hof-kicker">Top critic</span>
+          <div class="hof-body">
+            <img class="avatar" src="https://i.pravatar.cc/104?img=32" alt="" />
+            <div>
+              <div class="hof-name">lena</div>
+              <div class="hof-sub">most ratings cast</div>
+            </div>
+          </div>
+          <div class="hof-metric">312 <small style="font-family:var(--fm);font-size:11px;color:var(--bone-mute)">ratings</small></div>
+          <div class="hof-runners">
+            <div class="hof-run"><span class="rk">2</span><img class="av" src="https://i.pravatar.cc/40?img=60"><span class="nm">victor</span><span class="mt">291</span></div>
+            <div class="hof-run"><span class="rk">3</span><img class="av" src="https://i.pravatar.cc/40?img=12"><span class="nm">marcus</span><span class="mt">240</span></div>
+          </div>
+        </div>
+
+        <div class="hof">
+          <span class="hof-kicker">Best taste</span>
+          <div class="hof-body">
+            <img class="avatar" src="https://i.pravatar.cc/104?img=8" alt="" />
+            <div>
+              <div class="hof-name">theo</div>
+              <div class="hof-sub">highest-rated picks · 15 hosted</div>
+            </div>
+          </div>
+          <div class="hof-metric">8.3<small>/10</small></div>
+          <div class="hof-runners">
+            <div class="hof-run"><span class="rk">2</span><img class="av" src="https://i.pravatar.cc/40?img=12"><span class="nm">marcus</span><span class="mt">7.4</span></div>
+            <div class="hof-run"><span class="rk">3</span><img class="av" src="https://i.pravatar.cc/40?img=5"><span class="nm">priya</span><span class="mt">6.9</span></div>
+          </div>
+        </div>
+      </div>
+      <p class="note">Reuses the same <code style="font-family:var(--fm);color:var(--ember)">getStats()</code> call — no extra request. Each card links to the person / film.</p>
+
+    </div>
+  </div>
+
+  <!-- ============ STATS PAGE ============ -->
+  <div class="frame">
+    <span class="frame-tab">Stats page · new sections</span>
+    <div class="frame-body">
+
+      <!-- The People -->
+      <section>
+        <div class="sec-head">
+          <span class="sec-num">06</span>
+          <span class="sec-title">The people</span>
+          <span class="sec-meta">Hosts &amp; critics</span>
+        </div>
+
+        <div class="cols">
+          <div>
+            <p class="mono" style="margin-bottom:8px">Top hosts · nights announced</p>
+            <ol class="board">
+              <li class="row"><span class="rank">01</span><img class="avatar" src="https://i.pravatar.cc/76?img=12"><div class="row-body"><span class="row-name">marcus</span><span class="row-sub">avg pick 7.4</span></div><span class="row-metric">23<small> nights</small></span></li>
+              <li class="row"><span class="rank">02</span><img class="avatar" src="https://i.pravatar.cc/76?img=5"><div class="row-body"><span class="row-name">priya</span><span class="row-sub">avg pick 6.9</span></div><span class="row-metric">18<small> nights</small></span></li>
+              <li class="row"><span class="rank">03</span><img class="avatar" src="https://i.pravatar.cc/76?img=8"><div class="row-body"><span class="row-name">theo</span><span class="row-sub">avg pick 7.1</span></div><span class="row-metric">15<small> nights</small></span></li>
+              <li class="row"><span class="rank">04</span><img class="avatar" src="https://i.pravatar.cc/76?img=15"><div class="row-body"><span class="row-name">sam</span><span class="row-sub">avg pick 6.2</span></div><span class="row-metric">11<small> nights</small></span></li>
+            </ol>
+          </div>
+
+          <div>
+            <p class="mono" style="margin-bottom:8px">Best taste · avg rating of their picks</p>
+            <ol class="board">
+              <li class="row"><span class="rank">01</span><img class="avatar" src="https://i.pravatar.cc/76?img=8"><div class="row-body"><span class="row-name">theo</span><span class="row-sub">15 nights hosted</span></div><span class="row-metric gold">8.3<small>/10</small></span></li>
+              <li class="row"><span class="rank">02</span><img class="avatar" src="https://i.pravatar.cc/76?img=12"><div class="row-body"><span class="row-name">marcus</span><span class="row-sub">23 nights hosted</span></div><span class="row-metric gold">7.4<small>/10</small></span></li>
+              <li class="row"><span class="rank">03</span><img class="avatar" src="https://i.pravatar.cc/76?img=5"><div class="row-body"><span class="row-name">priya</span><span class="row-sub">18 nights hosted</span></div><span class="row-metric gold">6.9<small>/10</small></span></li>
+              <li class="row"><span class="rank">04</span><img class="avatar" src="https://i.pravatar.cc/76?img=15"><div class="row-body"><span class="row-name">sam</span><span class="row-sub">11 nights hosted</span></div><span class="row-metric gold">6.2<small>/10</small></span></li>
+            </ol>
+            <p class="note">Minimum 3 hosted nights to qualify.</p>
+          </div>
+        </div>
+
+        <hr class="rule" style="margin:28px 0" />
+
+        <!-- generous vs harsh -->
+        <p class="mono" style="margin-bottom:12px">The generous &amp; the harsh · avg score given</p>
+        <div class="pair">
+          <div class="verdict gen">
+            <span class="tag">Most generous</span>
+            <div class="verdict-body">
+              <img class="avatar" src="https://i.pravatar.cc/76?img=45"><div class="row-body"><span class="row-name">nadia</span><span class="row-sub">64 ratings</span></div>
+              <span class="verdict-num" style="color:var(--gold)">8.6</span>
+            </div>
+          </div>
+          <div class="verdict harsh">
+            <span class="tag">Harshest</span>
+            <div class="verdict-body">
+              <img class="avatar" src="https://i.pravatar.cc/76?img=60"><div class="row-body"><span class="row-name">victor</span><span class="row-sub">91 ratings</span></div>
+              <span class="verdict-num" style="color:var(--ember)">4.9</span>
+            </div>
+          </div>
+        </div>
+
+        <hr class="rule" style="margin:28px 0" />
+
+        <!-- most loyal -->
+        <p class="mono" style="margin-bottom:8px">Most loyal · nights attended</p>
+        <ol class="board" style="max-width:520px">
+          <li class="row"><span class="rank">01</span><img class="avatar" src="https://i.pravatar.cc/76?img=32"><div class="row-body"><span class="row-name">lena</span><span class="row-sub">never misses a Friday</span></div><span class="row-metric">96<small> nights</small></span></li>
+          <li class="row"><span class="rank">02</span><img class="avatar" src="https://i.pravatar.cc/76?img=12"><div class="row-body"><span class="row-name">marcus</span></div><span class="row-metric">88<small> nights</small></span></li>
+          <li class="row"><span class="rank">03</span><img class="avatar" src="https://i.pravatar.cc/76?img=60"><div class="row-body"><span class="row-name">victor</span></div><span class="row-metric">81<small> nights</small></span></li>
+        </ol>
+      </section>
+
+      <hr class="rule" style="margin:8px 0 40px" />
+
+      <!-- Fun facts -->
+      <section>
+        <div class="sec-head">
+          <span class="sec-num">07</span>
+          <span class="sec-title">Club lore</span>
+          <span class="sec-meta">Fun facts</span>
+        </div>
+
+        <div class="facts">
+          <div class="fact">
+            <span class="fact-kicker">Most divisive</span>
+            <div class="fact-big">mother!</div>
+            <div class="spread"><span class="chip love">loved 9.5</span><span class="chip hate">hated 2.0</span></div>
+            <p class="fact-note">Biggest rating spread — 7.5 points apart.</p>
+          </div>
+
+          <div class="fact">
+            <span class="fact-kicker">Signature</span>
+            <div class="fact-big">Thriller</div>
+            <p class="fact-sub">most-watched genre · 34 nights</p>
+            <p class="fact-note">Favourite decade: the <strong style="color:var(--bone)">1990s</strong>.</p>
+          </div>
+
+          <div class="fact">
+            <span class="fact-kicker">Cadence</span>
+            <div class="fact-big">4.2<span style="font-size:16px;color:var(--bone-dim)"> /mo</span></div>
+            <p class="fact-sub">average movies per month</p>
+            <p class="fact-note">Busiest ever: <strong style="color:var(--bone)">October 2025</strong>, 9 nights.</p>
+          </div>
+        </div>
+        <p class="note">Also easy to fold in: “most agreed-on” film (tightest spread), longest runtime ever screened.</p>
+      </section>
+
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

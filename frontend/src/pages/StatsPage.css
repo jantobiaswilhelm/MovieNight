@@ -244,3 +244,121 @@
   letter-spacing: -.02em;
   line-height: 1;
 }
+
+/* ── 06 · The people ── */
+.sp-people-cols { margin-bottom: var(--s-6); }
+
+.sp-verdicts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s-3);
+  margin-bottom: var(--s-6);
+}
+
+.sp-verdict {
+  padding: var(--s-4);
+  background: var(--ink-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-3);
+}
+
+.sp-verdict-tag {
+  font-family: var(--font-mono);
+  font-size: var(--fs-11);
+  letter-spacing: .28em;
+  text-transform: uppercase;
+}
+.sp-verdict-gen .sp-verdict-tag { color: var(--gold); }
+.sp-verdict-harsh .sp-verdict-tag { color: var(--ember); }
+
+.sp-verdict-body {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  margin-top: var(--s-3);
+  color: var(--bone);
+}
+
+.sp-verdict-num {
+  font-family: var(--font-display);
+  font-size: var(--fs-32, 2rem);
+  margin-left: auto;
+  line-height: 1;
+}
+.sp-num-gold { color: var(--gold); }
+.sp-num-ember { color: var(--ember); }
+
+.sp-loyal { max-width: 560px; }
+
+@media (max-width: 720px) {
+  .sp-verdicts { grid-template-columns: 1fr; }
+}
+
+/* ── 07 · Club lore ── */
+.sp-facts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--s-3);
+}
+
+.sp-fact {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding: var(--s-5);
+  background: var(--ink-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-3);
+  min-height: 150px;
+}
+
+.sp-fact-kicker {
+  font-family: var(--font-mono);
+  font-size: var(--fs-11);
+  letter-spacing: .28em;
+  text-transform: uppercase;
+  color: var(--ember);
+}
+
+.sp-fact-big {
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: var(--fs-32, 2rem);
+  line-height: 1.02;
+  color: var(--bone);
+}
+a.sp-fact-big:hover { color: var(--ember); }
+
+.sp-fact-unit { font-size: var(--fs-16); color: var(--bone-dim); }
+
+.sp-fact-sub {
+  font-family: var(--font-mono);
+  font-size: var(--fs-11);
+  letter-spacing: .05em;
+  color: var(--bone-dim);
+}
+
+.sp-fact-note {
+  font-size: var(--fs-14);
+  color: var(--bone-dim);
+  margin-top: auto;
+}
+.sp-fact-note strong { color: var(--bone); }
+
+.sp-fact-chips { display: flex; gap: var(--s-2); }
+
+.sp-chip {
+  font-family: var(--font-mono);
+  font-size: var(--fs-11);
+  letter-spacing: .1em;
+  padding: 3px 8px;
+  border-radius: var(--r-full);
+  border: 1px solid var(--rule-strong);
+  color: var(--bone-dim);
+}
+.sp-chip-love { color: var(--gold); }
+.sp-chip-hate { color: var(--ember); }
+
+@media (max-width: 720px) {
+  .sp-facts { grid-template-columns: 1fr; }
+}

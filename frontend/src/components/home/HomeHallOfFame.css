@@ -1,0 +1,132 @@
+.home-hof { margin-top: var(--s-6); }
+
+.home-hof-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: var(--s-3);
+}
+
+.home-hof-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--s-3);
+}
+
+.hof-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding: var(--s-4);
+  background: var(--ink-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-3);
+}
+
+.hof-kicker {
+  font-family: var(--font-mono);
+  font-size: var(--fs-11);
+  letter-spacing: .28em;
+  text-transform: uppercase;
+  color: var(--ember);
+}
+
+.hof-lead {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  color: var(--bone);
+}
+.hof-lead:hover { color: var(--ember); }
+
+.hof-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--r-full);
+  object-fit: cover;
+  border: 1px solid var(--rule-strong);
+  flex: none;
+}
+
+.hof-lead-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.hof-name {
+  font-family: var(--font-display);
+  font-size: var(--fs-24);
+  line-height: 1.05;
+}
+
+.hof-sub {
+  font-family: var(--font-mono);
+  font-size: var(--fs-11);
+  letter-spacing: .04em;
+  color: var(--bone-dim);
+  margin-top: var(--s-1);
+}
+
+.hof-metric {
+  font-family: var(--font-display);
+  font-size: var(--fs-19);
+  color: var(--bone);
+}
+.hof-metric small { font-family: var(--font-mono); font-size: var(--fs-11); color: var(--bone-mute); }
+.hof-metric.ember { color: var(--ember); }
+.hof-metric.gold { color: var(--gold); }
+
+.hof-runners {
+  margin-top: auto;
+  border-top: 1px solid var(--rule);
+  padding-top: var(--s-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+.hof-run {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  color: var(--bone-dim);
+}
+.hof-run:hover { color: var(--bone); }
+
+.hof-run-rank {
+  font-family: var(--font-mono);
+  font-size: var(--fs-11);
+  color: var(--bone-mute);
+  width: 14px;
+  flex: none;
+}
+
+.hof-run-av {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--r-full);
+  object-fit: cover;
+  border: 1px solid var(--rule);
+  flex: none;
+}
+
+.hof-run-name {
+  font-size: var(--fs-14);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hof-run-metric {
+  font-family: var(--font-mono);
+  font-size: var(--fs-11);
+  color: var(--bone-mute);
+  flex: none;
+}
+
+@media (max-width: 720px) {
+  .home-hof-grid { grid-template-columns: 1fr; }
+}
