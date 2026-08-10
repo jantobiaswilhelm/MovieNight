@@ -546,6 +546,56 @@ export const getAttendees = async (movieNightId) => {
   return result.rows;
 };
 
+// Attach the screening card's message to the movie night, so later state
+// transitions can find and edit it.
+export const updateStartingMessageId = async (movieNightId, messageId) => {
+  const result = await pool.query(
+    `UPDATE movie_nights SET starting_message_id = $2 WHERE id = $1 RETURNING *`,
+    [movieNightId, messageId]
+  );
+  return result.rows[0];
+};
+
+// Everything the screening card needs about the movie itself, plus how many
+// people RSVP'd (the denominator in "4 of 6 rated").
+export const getScreeningRow = async (movieNightId) => {
+  const result = await pool.query(
+    `SELECT mn.*,
+            (SELECT COUNT(*) FROM movie_attendance WHERE movie_night_id = mn.id) AS attendee_count
+     FROM movie_nights mn
+     WHERE mn.id = $1`,
+    [movieNightId]
+  );
+  return result.rows[0];
+};
+
+// Cards whose rating window has aged out and that haven't been settled yet.
+// card_settled_at is the claim marker — without it this would re-edit every
+// settled card on every tick.
+export const getMoviesToSettle = async () => {
+  const result = await pool.query(
+    `SELECT * FROM movie_nights
+     WHERE rating_prompt_sent_at IS NOT NULL
+       AND card_settled_at IS NULL
+       AND starting_message_id IS NOT NULL
+       AND CURRENT_TIMESTAMP >= rating_prompt_sent_at + INTERVAL '24 hours'
+     ORDER BY rating_prompt_sent_at ASC`
+  );
+  return result.rows;
+};
+
+// Atomically claim a card for settling, mirroring markRatingPromptSent.
+export const markCardSettled = async (movieNightId) => {
+  const result = await pool.query(
+    `UPDATE movie_nights
+     SET card_settled_at = CURRENT_TIMESTAMP
+     WHERE id = $1 AND card_settled_at IS NULL
+     RETURNING *`,
+    [movieNightId]
+  );
+  return result.rows[0];
+};
+
 // Everything the announcement embed needs in one round trip: the movie night,
 // its announcer, and marathon context when the film belongs to one.
 // marathon_items links back via scheduled_movie_night_id.
@@ -684,15 +734,15 @@ export const markAnnouncementProcessed = async (id, status = 'processed') => {
 
 // Rating notification operations
 export const getMoviesReadyForRatingNotification = async () => {
-  // Get movies that:
-  // 1. Have started (started_at IS NOT NULL)
-  // 2. Haven't had rating notification sent yet (rating_prompt_sent_at IS NULL)
-  // 3. Enough time has passed: current_time >= started_at + (runtime - 10) minutes
+  // Movies that have started, haven't been prompted yet, and have now run their
+  // full length. Rating opens when the credits roll — the audience is still in
+  // voice, so editing the card in place reaches them.
+  // Must stay in step with backend/src/routes/movies.js RATING_BUFFER_MINUTES.
   const result = await pool.query(
     `SELECT * FROM movie_nights
      WHERE started_at IS NOT NULL
        AND rating_prompt_sent_at IS NULL
-       AND CURRENT_TIMESTAMP >= started_at + INTERVAL '1 minute' * GREATEST(COALESCE(runtime, 90) - 10, 0)
+       AND CURRENT_TIMESTAMP >= started_at + INTERVAL '1 minute' * COALESCE(runtime, 90)
      ORDER BY started_at ASC`
   );
   return result.rows;
