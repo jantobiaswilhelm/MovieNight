@@ -5,7 +5,8 @@ import {
   formatRuntime,
   truncateOverview,
   formatAttendees,
-  buildAnnouncementEmbed
+  buildAnnouncementEmbed,
+  buildAnnouncementComponents
 } from './announcementEmbed.js';
 
 test('splitTitleYear pulls the year out of a title that embeds it', () => {
@@ -200,4 +201,81 @@ test('buildAnnouncementEmbed carries marathon context in the author line', () =>
 test('buildAnnouncementEmbed defaults the author line to Movie Night', () => {
   const data = buildAnnouncementEmbed(FULL_VIEW).data;
   assert.equal(data.author.name, 'Movie Night');
+});
+
+// --- buildAnnouncementComponents ---
+
+const withFrontendUrl = (url, fn) => {
+  const previous = process.env.FRONTEND_URL;
+  if (url === null) delete process.env.FRONTEND_URL;
+  else process.env.FRONTEND_URL = url;
+  try {
+    return fn();
+  } finally {
+    if (previous === undefined) delete process.env.FRONTEND_URL;
+    else process.env.FRONTEND_URL = previous;
+  }
+};
+
+const labelsOf = (rows) =>
+  rows.length === 0 ? [] : rows[0].components.map((c) => c.data.label);
+
+test('buildAnnouncementComponents renders all five buttons in one row', () => {
+  const rows = withFrontendUrl('https://movienight.test', () =>
+    buildAnnouncementComponents(FULL_VIEW)
+  );
+  assert.equal(rows.length, 1);
+  assert.deepEqual(labelsOf(rows), ["I'm in", 'Trailer', 'TMDB', 'IMDb', 'Website']);
+});
+
+test('buildAnnouncementComponents never exceeds the 5-button row limit', () => {
+  const rows = withFrontendUrl('https://movienight.test', () =>
+    buildAnnouncementComponents(FULL_VIEW)
+  );
+  assert.ok(rows[0].components.length <= 5);
+});
+
+test('buildAnnouncementComponents binds the RSVP button to the movie night id', () => {
+  const rows = withFrontendUrl(null, () => buildAnnouncementComponents(FULL_VIEW));
+  assert.equal(rows[0].components[0].data.custom_id, 'rsvp_42');
+});
+
+test('buildAnnouncementComponents builds the IMDb URL from the id', () => {
+  const rows = withFrontendUrl(null, () => buildAnnouncementComponents(FULL_VIEW));
+  const imdb = rows[0].components.find((c) => c.data.label === 'IMDb');
+  assert.equal(imdb.data.url, 'https://www.imdb.com/title/tt1454029/');
+});
+
+test('buildAnnouncementComponents omits buttons whose data is missing', () => {
+  const rows = withFrontendUrl(null, () =>
+    buildAnnouncementComponents({ ...FULL_VIEW, trailerUrl: null, imdbId: null })
+  );
+  assert.deepEqual(labelsOf(rows), ["I'm in", 'TMDB']);
+});
+
+test('buildAnnouncementComponents drops the RSVP button once started', () => {
+  const rows = withFrontendUrl(null, () =>
+    buildAnnouncementComponents({ ...FULL_VIEW, startedAt: new Date() })
+  );
+  assert.deepEqual(labelsOf(rows), ['Trailer', 'TMDB', 'IMDb']);
+});
+
+test('buildAnnouncementComponents returns no rows at all when cancelled', () => {
+  const rows = withFrontendUrl('https://movienight.test', () =>
+    buildAnnouncementComponents({ ...FULL_VIEW, cancelled: true })
+  );
+  assert.deepEqual(rows, []);
+});
+
+test('buildAnnouncementComponents returns no rows when nothing is left to show', () => {
+  const rows = withFrontendUrl(null, () =>
+    buildAnnouncementComponents({
+      id: 7,
+      startedAt: new Date(),
+      tmdbId: null,
+      imdbId: null,
+      trailerUrl: null
+    })
+  );
+  assert.deepEqual(rows, []);
 });

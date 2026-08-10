@@ -149,3 +149,70 @@ export const buildAnnouncementEmbed = (view) => {
 
   return embed;
 };
+
+/**
+ * Build the button row for an announcement. Exactly five buttons at most, which
+ * is Discord's per-row limit, so this never needs a second row. Buttons whose
+ * underlying data is missing are omitted rather than rendered dead.
+ *
+ * Returns [] when there is nothing to show, so callers can spread it into
+ * `components` unconditionally.
+ */
+export const buildAnnouncementComponents = (view) => {
+  const { id, tmdbId, imdbId, trailerUrl, startedAt, cancelled = false } = view;
+  if (cancelled) return [];
+
+  const buttons = [];
+
+  // RSVP disappears once the movie is under way — you can't opt into a
+  // screening that already started.
+  if (!startedAt) {
+    buttons.push(
+      new ButtonBuilder()
+        .setCustomId(`rsvp_${id}`)
+        .setLabel("I'm in")
+        .setEmoji('✅')
+        .setStyle(ButtonStyle.Success)
+    );
+  }
+
+  if (trailerUrl) {
+    buttons.push(
+      new ButtonBuilder()
+        .setLabel('Trailer')
+        .setEmoji('▶️')
+        .setURL(trailerUrl)
+        .setStyle(ButtonStyle.Link)
+    );
+  }
+
+  if (tmdbId) {
+    buttons.push(
+      new ButtonBuilder()
+        .setLabel('TMDB')
+        .setURL(`https://www.themoviedb.org/movie/${tmdbId}`)
+        .setStyle(ButtonStyle.Link)
+    );
+  }
+
+  if (imdbId) {
+    buttons.push(
+      new ButtonBuilder()
+        .setLabel('IMDb')
+        .setURL(`https://www.imdb.com/title/${imdbId}/`)
+        .setStyle(ButtonStyle.Link)
+    );
+  }
+
+  if (process.env.FRONTEND_URL) {
+    buttons.push(
+      new ButtonBuilder()
+        .setLabel('Website')
+        .setURL(process.env.FRONTEND_URL)
+        .setStyle(ButtonStyle.Link)
+    );
+  }
+
+  if (buttons.length === 0) return [];
+  return [new ActionRowBuilder().addComponents(...buttons)];
+};
