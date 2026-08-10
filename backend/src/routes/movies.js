@@ -206,7 +206,7 @@ router.delete('/:id', validateIntParams('id'), authenticateToken, validateGuildI
     // Tell the bot to post a cancellation note. Non-fatal.
     if (movie.channel_id) {
       try {
-        await db.notifyCancel(movie.channel_id, movie.title);
+        await db.notifyCancel(movie.channel_id, movie.title, movie.message_id);
       } catch (err) {
         console.error('Failed to send movie_cancel NOTIFY:', err.message);
       }
