@@ -92,9 +92,15 @@ In `bot/package.json`, add one line to `scripts`:
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
     "deploy": "node src/deploy-commands.js",
-    "test": "node --test src/"
+    "test": "node --test \"src/**/*.test.js\""
   },
 ```
+
+The glob must be explicit and quoted. `node --test src/` treats every `.js`
+under `src/` as a test file, which means it *executes* `src/index.js` and the
+bot dies with `FATAL: DISCORD_TOKEN environment variable is not set`. Quoting
+leaves the globbing to Node rather than the shell, so it behaves the same in
+PowerShell and bash.
 
 - [ ] **Step 2: Write the failing test**
 
