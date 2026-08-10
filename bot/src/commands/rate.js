@@ -1,5 +1,6 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { findOrCreateUser, getRecentMovieNightsForRating, getMovieNightById, upsertRating, getUserRating } from '../models/index.js';
+import { refreshScreeningCard } from '../utils/screeningMessage.js';
 import { createLogger } from '../utils/logger.js';
 
 const logger = createLogger('rate');
@@ -97,6 +98,12 @@ export const execute = async (interaction) => {
 
     // Save rating with optional comment
     await upsertRating(movieId, user.id, score, comment);
+
+    // Tick the live tally on the screening card. Not awaited — see the same
+    // call in handleRatingCommentModal.
+    refreshScreeningCard(interaction.client, movieId).catch((err) =>
+      logger.error(`Failed to refresh card for movie ${movieId}`, err)
+    );
 
     const action = existingRating ? 'updated' : 'submitted';
     let replyContent = `Rating ${action}! You gave **${movie.title}** a **${score}/10**`;

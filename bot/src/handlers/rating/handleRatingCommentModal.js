@@ -4,6 +4,7 @@ import {
   upsertRating,
   getUserRating
 } from '../../models/index.js';
+import { refreshScreeningCard } from '../../utils/screeningMessage.js';
 import { createLogger } from '../../utils/logger.js';
 
 const logger = createLogger('handleRatingCommentModal');
@@ -45,6 +46,13 @@ export async function handleRatingCommentModal(interaction) {
 
     // Save rating with optional comment
     await upsertRating(movieId, user.id, score, comment);
+
+    // Tick the live tally on the screening card. Deliberately not awaited: the
+    // rating is already saved, so the user gets their confirmation immediately
+    // and a Discord hiccup must not fail the interaction.
+    refreshScreeningCard(interaction.client, movieId).catch((err) =>
+      logger.error(`Failed to refresh card for movie ${movieId}`, err)
+    );
 
     const action = existingRating ? 'updated' : 'submitted';
     let replyContent = `Rating ${action}! You gave **${movie.title}** a **${score}/10**`;
