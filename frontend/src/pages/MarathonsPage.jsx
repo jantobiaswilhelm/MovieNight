@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -117,6 +117,35 @@ export default function MarathonsPage() {
   }, [showError]);
 
   useEffect(() => { if (!id) load(); }, [id, load]);
+
+  // Background refresh: no skeleton, no toast on failure — the cards just stay
+  // as they were until the next attempt.
+  const reload = useCallback(async () => {
+    try { setMarathons(await api.getMarathons()); } catch { /* keep what we have */ }
+  }, []);
+
+  // The earliest moment any card changes state: an airing film finishing, or
+  // the next one starting. One timer for the whole list, same approach as the
+  // home hero — no polling while nothing is due.
+  const nextTransitionAt = useMemo(() => {
+    const times = marathons.flatMap((m) => {
+      if (m.airing_item?.scheduled_at) {
+        return [new Date(m.airing_item.scheduled_at).getTime() + (m.airing_item.runtime || 90) * 60000];
+      }
+      return m.next_item?.scheduled_at ? [new Date(m.next_item.scheduled_at).getTime()] : [];
+    });
+    return times.length ? Math.min(...times) : null;
+  }, [marathons]);
+
+  useEffect(() => {
+    if (id || !nextTransitionAt) return;
+    // Capped: setTimeout overflows int32 (~24.8 days) and fires immediately,
+    // and a weekly marathon's next film is easily further out than that.
+    const MAX_DELAY_MS = 6 * 60 * 60 * 1000;
+    const delay = nextTransitionAt + 15_000 - Date.now();
+    const timer = setTimeout(reload, delay > 0 ? Math.min(delay, MAX_DELAY_MS) : 30_000);
+    return () => clearTimeout(timer);
+  }, [id, nextTransitionAt, reload]);
 
   if (id) {
     return <MarathonDetail id={id} onBack={() => navigate('/marathons')} />;
