@@ -4,7 +4,8 @@ import {
   splitTitleYear,
   formatRuntime,
   truncateOverview,
-  formatAttendees
+  formatAttendees,
+  buildAnnouncementEmbed
 } from './announcementEmbed.js';
 
 test('splitTitleYear pulls the year out of a title that embeds it', () => {
@@ -77,4 +78,126 @@ test('formatAttendees caps the list at 15 and counts the rest', () => {
   assert.ok(result.includes('user14'));
   assert.ok(!result.includes('user15'));
   assert.ok(result.includes('+7 more'));
+});
+
+// --- buildAnnouncementEmbed ---
+
+const FULL_VIEW = {
+  id: 42,
+  title: 'The Help (2011)',
+  releaseYear: 2011,
+  scheduledAt: new Date('2025-08-03T19:00:00Z'),
+  startedAt: null,
+  imageUrl: 'https://image.tmdb.org/t/p/w500/poster.jpg',
+  backdropUrl: 'https://image.tmdb.org/t/p/w1280/backdrop.jpg',
+  description: 'An aspiring author during the civil rights era decides to write a book.',
+  tagline: 'Change begins with a whisper.',
+  tmdbId: 300,
+  tmdbRating: '7.8',
+  genres: 'Drama, History',
+  runtime: 146,
+  imdbId: 'tt1454029',
+  trailerUrl: 'https://www.youtube.com/watch?v=abc',
+  announcerName: 'emy',
+  attendees: [{ username: 'emy' }, { username: 'jani' }]
+};
+
+test('buildAnnouncementEmbed renders the title once, with the year', () => {
+  const data = buildAnnouncementEmbed(FULL_VIEW).data;
+  assert.equal(data.title, 'The Help (2011)');
+});
+
+test('buildAnnouncementEmbed links the title to TMDB', () => {
+  const data = buildAnnouncementEmbed(FULL_VIEW).data;
+  assert.equal(data.url, 'https://www.themoviedb.org/movie/300');
+});
+
+test('buildAnnouncementEmbed puts tagline, overview and time in the description', () => {
+  const data = buildAnnouncementEmbed(FULL_VIEW).data;
+  assert.ok(data.description.includes('Change begins with a whisper.'));
+  assert.ok(data.description.includes('An aspiring author'));
+  assert.ok(data.description.includes('<t:1754247600:F>'));
+  assert.ok(data.description.includes('<t:1754247600:R>'));
+});
+
+test('buildAnnouncementEmbed computes the end time from runtime', () => {
+  const data = buildAnnouncementEmbed(FULL_VIEW).data;
+  const runtimeField = data.fields.find((f) => f.name.includes('Runtime'));
+  assert.ok(runtimeField.value.includes('2h 26m'));
+  // 19:00 UTC + 146 min = 21:26 UTC = epoch 1754256360
+  assert.ok(runtimeField.value.includes('<t:1754256360:t>'));
+});
+
+test('buildAnnouncementEmbed formats a DECIMAL rating that arrives as a string', () => {
+  const data = buildAnnouncementEmbed(FULL_VIEW).data;
+  const rating = data.fields.find((f) => f.name.includes('TMDB'));
+  assert.equal(rating.value, '7.8/10');
+});
+
+test('buildAnnouncementEmbed shows the attendee list with a count', () => {
+  const data = buildAnnouncementEmbed(FULL_VIEW).data;
+  const going = data.fields.find((f) => f.name.includes('Going'));
+  assert.equal(going.name, '🎟 Going (2)');
+  assert.equal(going.value, 'emy · jani');
+});
+
+test('buildAnnouncementEmbed uses backdrop as image and poster as thumbnail', () => {
+  const data = buildAnnouncementEmbed(FULL_VIEW).data;
+  assert.equal(data.image.url, FULL_VIEW.backdropUrl);
+  assert.equal(data.thumbnail.url, FULL_VIEW.imageUrl);
+});
+
+test('buildAnnouncementEmbed promotes the poster to image when there is no backdrop', () => {
+  const data = buildAnnouncementEmbed({ ...FULL_VIEW, backdropUrl: null }).data;
+  assert.equal(data.image.url, FULL_VIEW.imageUrl);
+  assert.equal(data.thumbnail, undefined);
+});
+
+test('buildAnnouncementEmbed degrades to bare essentials for a manual title', () => {
+  const data = buildAnnouncementEmbed({
+    id: 7,
+    title: 'Some Home Video',
+    scheduledAt: new Date('2025-08-03T19:00:00Z'),
+    announcerName: 'jani',
+    attendees: []
+  }).data;
+
+  assert.equal(data.title, 'Some Home Video');
+  assert.equal(data.url, undefined);
+  assert.equal(data.image, undefined);
+  // Only the Going field survives — no empty Runtime/TMDB/Genres shells.
+  assert.equal(data.fields.length, 1);
+  assert.ok(data.fields[0].name.includes('Going'));
+});
+
+test('buildAnnouncementEmbed turns green once the movie has started', () => {
+  const data = buildAnnouncementEmbed({ ...FULL_VIEW, startedAt: new Date() }).data;
+  assert.equal(data.color, 0x57F287);
+  assert.ok(data.description.includes('STARTED'));
+});
+
+test('buildAnnouncementEmbed strikes the title and greys out when cancelled', () => {
+  const data = buildAnnouncementEmbed({ ...FULL_VIEW, cancelled: true }).data;
+  assert.equal(data.color, 0x99AAB5);
+  assert.equal(data.title, '~~The Help (2011)~~');
+  assert.ok(data.description.includes('cancelled'));
+  // No point offering a Going list for a night that isn't happening.
+  assert.equal(data.fields.find((f) => f.name.includes('Going')), undefined);
+});
+
+test('buildAnnouncementEmbed carries marathon context in the author line', () => {
+  const data = buildAnnouncementEmbed({
+    ...FULL_VIEW,
+    marathonName: "Emy's Chastain Marathon",
+    marathonPosition: 2,
+    marathonTotal: 6
+  }).data;
+  assert.equal(data.author.name, "Emy's Chastain Marathon");
+  const field = data.fields.find((f) => f.name === 'Marathon');
+  assert.equal(field.value, 'Film 2 of 6');
+});
+
+test('buildAnnouncementEmbed defaults the author line to Movie Night', () => {
+  const data = buildAnnouncementEmbed(FULL_VIEW).data;
+  assert.equal(data.author.name, 'Movie Night');
 });

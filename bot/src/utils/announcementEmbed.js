@@ -47,3 +47,105 @@ export const formatAttendees = (attendees = []) => {
   const shown = names.slice(0, ATTENDEE_MAX).join(' · ');
   return `${shown} **+${names.length - ATTENDEE_MAX} more**`;
 };
+
+/**
+ * Build the announcement embed from a view object. Pure — no database, no
+ * Discord client, no environment reads. Every block is conditional so a movie
+ * with no TMDB match degrades to title + time + RSVP rather than a shell of
+ * empty fields.
+ *
+ * @param {object} view - see toAnnouncementView for the shape
+ */
+export const buildAnnouncementEmbed = (view) => {
+  const {
+    title, releaseYear, scheduledAt, startedAt, cancelled = false,
+    imageUrl, backdropUrl, description, tagline,
+    tmdbId, tmdbRating, genres, runtime,
+    announcerName, marathonName, marathonPosition, marathonTotal,
+    attendees = []
+  } = view;
+
+  const { name, year } = splitTitleYear(title, releaseYear);
+  const heading = year ? `${name} (${year})` : name;
+  const when = new Date(scheduledAt);
+  const startTs = Math.floor(when.getTime() / 1000);
+
+  const embed = new EmbedBuilder()
+    .setAuthor({ name: marathonName || 'Movie Night' })
+    .setTitle(cancelled ? `~~${heading}~~` : heading)
+    .setColor(cancelled ? COLOR_CANCELLED : startedAt ? COLOR_STARTED : COLOR_SCHEDULED)
+    .setFooter({ text: `Announced by ${announcerName || 'Website'}` })
+    .setTimestamp();
+
+  if (tmdbId && !cancelled) {
+    embed.setURL(`https://www.themoviedb.org/movie/${tmdbId}`);
+  }
+
+  const parts = [];
+  if (tagline) parts.push(`*"${tagline}"*`);
+  const overview = truncateOverview(description);
+  if (overview) parts.push(overview);
+
+  if (cancelled) {
+    parts.push('**This movie night has been cancelled.**');
+  } else if (startedAt) {
+    parts.push(`🔴 **STARTED** · <t:${startTs}:F>`);
+  } else {
+    parts.push(`🗓 <t:${startTs}:F> · <t:${startTs}:R>`);
+  }
+  embed.setDescription(parts.join('\n\n'));
+
+  const runtimeText = formatRuntime(runtime);
+  if (runtimeText) {
+    const endTs = Math.floor((when.getTime() + runtime * 60_000) / 1000);
+    embed.addFields({
+      name: '⏱ Runtime',
+      value: `${runtimeText}\nends ~<t:${endTs}:t>`,
+      inline: true
+    });
+  }
+
+  // pg returns DECIMAL as a string — Number() before toFixed or this throws.
+  if (tmdbRating) {
+    embed.addFields({
+      name: '⭐ TMDB',
+      value: `${Number(tmdbRating).toFixed(1)}/10`,
+      inline: true
+    });
+  }
+
+  if (genres) {
+    embed.addFields({
+      name: '🎭 Genres',
+      value: genres.split(',').map((g) => g.trim()).filter(Boolean).join(' · '),
+      inline: true
+    });
+  }
+
+  if (marathonName && marathonPosition && marathonTotal) {
+    embed.addFields({
+      name: 'Marathon',
+      value: `Film ${marathonPosition} of ${marathonTotal}`,
+      inline: true
+    });
+  }
+
+  if (!cancelled) {
+    embed.addFields({
+      name: `🎟 Going (${attendees.length})`,
+      value: formatAttendees(attendees),
+      inline: false
+    });
+  }
+
+  // The backdrop is the wide cinematic slot; the poster sits beside the text.
+  // With no backdrop the poster takes the big slot, as it did before this change.
+  if (backdropUrl) {
+    embed.setImage(backdropUrl);
+    if (imageUrl) embed.setThumbnail(imageUrl);
+  } else if (imageUrl) {
+    embed.setImage(imageUrl);
+  }
+
+  return embed;
+};
