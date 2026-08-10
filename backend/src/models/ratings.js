@@ -272,3 +272,10 @@ export const getReactionsForRatings = async (ratingIds) => {
   }
   return grouped;
 };
+
+// Signal the bot to re-render the Discord screening card after a web rating.
+// Without this, a rating submitted on the website leaves the card stale.
+// Payload is the movie id.
+export const notifyRating = async (movieId) => {
+  await pool.query("SELECT pg_notify('movie_rating', $1)", [String(movieId)]);
+};
