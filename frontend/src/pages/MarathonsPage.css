@@ -51,6 +51,15 @@
 .mara-chip.paused { color: var(--gold); border-color: rgba(224,162,58,.35); }
 .mara-chip.draft { color: var(--bone-mute); }
 .mara-chip.completed { color: var(--bone-dim); }
+.mara-chip.airing { color: var(--ember); border-color: var(--ember-dim); background: var(--ember-soft); }
+.mara-livedot { width: 6px; height: 6px; border-radius: var(--r-full); background: var(--ember);
+  animation: mara-pulse 2s ease-in-out infinite; }
+
+@keyframes mara-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .mara-livedot { animation: none; }
+}
 
 .mara-progress { margin-top: 2px; }
 .mara-bar { height: 5px; background: var(--ink-4); border-radius: var(--r-full); overflow: hidden;

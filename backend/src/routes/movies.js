@@ -47,6 +47,24 @@ router.get('/calendar', validateGuildId, optionalAuth, async (req, res) => {
   }
 });
 
+// Get the movie currently on screen, or null (for the homepage hero).
+// Must be before /:id.
+router.get('/now-playing', validateGuildId, optionalAuth, async (req, res) => {
+  try {
+    const movie = await db.getNowPlayingWithAttendees(req.guildId);
+
+    let isAttending = false;
+    if (req.user && movie) {
+      isAttending = await db.isUserAttending(movie.id, req.user.id);
+    }
+
+    res.json(movie ? { ...movie, is_attending: isAttending } : null);
+  } catch (err) {
+    console.error('Error fetching now-playing movie:', err);
+    res.status(500).json({ error: 'Failed to fetch now-playing movie' });
+  }
+});
+
 // Get next movie with attendees (for homepage hero) (must be before /:id)
 router.get('/next/with-attendees', validateGuildId, optionalAuth, async (req, res) => {
   try {

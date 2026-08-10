@@ -1,11 +1,15 @@
 /**
  * Format a date string for display.
  * @param {string} dateStr
- * @param {'long'|'short'} variant - 'long' includes weekday + time, 'short' is compact
+ * @param {'long'|'short'|'time'} variant - 'long' includes weekday + time,
+ *   'short' is compact, 'time' is the clock time alone
  */
 export function formatDate(dateStr, variant = 'short') {
   if (!dateStr) return null;
   const date = new Date(dateStr);
+  if (variant === 'time') {
+    return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  }
   if (variant === 'long') {
     return date.toLocaleDateString('en-US', {
       weekday: 'long',

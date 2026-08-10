@@ -32,7 +32,10 @@ function MarathonCard({ m, onChanged, showError }) {
   const extra = (m.item_count || 0) - shown.length;
   const total = m.item_count || 0;
   const watched = m.watched_count || 0;
-  const pct = total ? Math.round((watched / total) * 100) : 0;
+  const airing = m.airing_item || null;
+  // A film on screen counts as neither watched nor pending — show it as the
+  // partial segment so the bar doesn't stall while it plays.
+  const pct = total ? Math.round(((watched + (airing ? 0.5 : 0)) / total) * 100) : 0;
   const st = STATUS[m.status] || { label: m.status, sym: '' };
 
   const act = async (e, fn, msg) => {
@@ -56,6 +59,8 @@ function MarathonCard({ m, onChanged, showError }) {
         <h3>{m.name}</h3>
         <div className="mara-cardmeta">
           <span className={`mara-chip ${m.status}`}>{st.sym} {st.label}</span>
+          {airing && <><span className="mara-dot" />
+            <span className="mara-chip airing"><span className="mara-livedot" />Airing now</span></>}
           {m.cadence_type && <><span className="mara-dot" />
             <span className="mara-cadence"><Icon name={m.cadence_type === 'binge' ? 'film' : 'calendar-clock'} size={14} />
               {m.cadence_type === 'binge' ? 'Back-to-back' : 'Weekly'}</span></>}
@@ -64,8 +69,9 @@ function MarathonCard({ m, onChanged, showError }) {
           <div className={`mara-bar ${m.status === 'paused' ? 'paused' : ''}`}><i style={{ width: `${pct}%` }} /></div>
           <div className="mara-progress-meta">
             <span className="next">
-              {m.next_item ? <>Next: <b>{m.next_item.title}</b>{m.next_item.scheduled_at ? ` · ${fmtDate(m.next_item.scheduled_at)}` : ''}</>
-                : (total ? 'All watched' : 'No films yet')}
+              {airing ? <>Now playing: <b>{airing.title}</b></>
+                : (m.next_item ? <>Next: <b>{m.next_item.title}</b>{m.next_item.scheduled_at ? ` · ${fmtDate(m.next_item.scheduled_at)}` : ''}</>
+                : (total ? 'All watched' : 'No films yet'))}
             </span>
             <span className="count">{watched} / {total}{total ? ' watched' : ''}</span>
           </div>

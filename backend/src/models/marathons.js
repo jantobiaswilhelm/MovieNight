@@ -20,8 +20,19 @@ export const getMarathons = async (guildId) => {
             u.discord_id AS created_by_discord_id,
             u.avatar AS created_by_avatar,
             (SELECT COUNT(*) FROM marathon_items mi WHERE mi.marathon_id = m.id)::int AS item_count,
+            -- Watched means finished, not merely started: count only items whose
+            -- runtime has fully elapsed. Counting from scheduled_at alone marked a
+            -- film as watched the moment it began.
             (SELECT COUNT(*) FROM marathon_items mi
-               WHERE mi.marathon_id = m.id AND mi.scheduled_at IS NOT NULL AND mi.scheduled_at < NOW())::int AS watched_count,
+               WHERE mi.marathon_id = m.id AND mi.scheduled_at IS NOT NULL
+                 AND mi.scheduled_at + INTERVAL '1 minute' * COALESCE(mi.runtime, 90) < NOW())::int AS watched_count,
+            -- The film on screen right now, if any: started but not yet finished.
+            (SELECT json_build_object('title', mi.title, 'scheduled_at', mi.scheduled_at, 'runtime', mi.runtime)
+               FROM marathon_items mi
+               WHERE mi.marathon_id = m.id AND mi.scheduled_at IS NOT NULL
+                 AND mi.scheduled_at <= NOW()
+                 AND mi.scheduled_at + INTERVAL '1 minute' * COALESCE(mi.runtime, 90) > NOW()
+               ORDER BY mi.position ASC LIMIT 1) AS airing_item,
             (SELECT json_build_object('title', mi.title, 'scheduled_at', mi.scheduled_at)
                FROM marathon_items mi
                WHERE mi.marathon_id = m.id AND (mi.scheduled_at IS NULL OR mi.scheduled_at >= NOW())
