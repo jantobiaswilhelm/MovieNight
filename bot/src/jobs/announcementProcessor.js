@@ -1,10 +1,13 @@
 import cron from 'node-cron';
 import {
   getPendingAnnouncements, claimPendingAnnouncement, markAnnouncementProcessed,
-  createMovieNight, findOrCreateUser,
+  createMovieNight, findOrCreateUser, updateMovieNightMessage, deleteMovieNight,
   linkMarathonItemMovieNight, completeMarathonIfDone, getMarathonItemsByMarathon
 } from '../models/index.js';
-import { createAnnouncementEmbed, createBingeAnnouncementEmbed } from '../utils/embeds.js';
+import { createBingeAnnouncementEmbed } from '../utils/embeds.js';
+import {
+  buildAnnouncementEmbed, buildAnnouncementComponents, toAnnouncementView
+} from '../utils/announcementEmbed.js';
 import { createLogger } from '../utils/logger.js';
 
 const logger = createLogger('announcementProcessor');
@@ -129,39 +132,15 @@ async function processAnnouncement(client, announcement, channel) {
     return processBingeAnnouncement(client, announcement, channel, announcerName);
   }
 
-  // Create the announcement embed
-  const embed = createAnnouncementEmbed(
-    announcement.title,
-    scheduledAt,
-    announcement.image_url,
-    announcerName
-  );
-
-  // Marathon context: ribbon + progress, when this announcement is part of a marathon.
-  if (announcement.marathon_name) {
-    embed.setAuthor({ name: announcement.marathon_name });
-    embed.addFields({
-      name: 'Marathon',
-      value: `Film ${announcement.marathon_position} of ${announcement.marathon_total}`,
-      inline: true
-    });
-  }
-
-  // Send the announcement with role ping
-  const content = MOVIE_NIGHT_ROLE_ID ? `<@&${MOVIE_NIGHT_ROLE_ID}>` : undefined;
-  const reply = await channel.send({ content, embeds: [embed] });
-
-  // Get or create the user (if we have their discord_id)
-  const userId = announcement.user_id;
-
-  // Create the movie night in the database
+  // Create the row BEFORE sending — the RSVP button needs its id in the
+  // customId. message_id is patched on immediately after the send.
   const movieNight = await createMovieNight(
     announcement.title,
     scheduledAt,
-    userId,
+    announcement.user_id,
     announcement.guild_id,
     channel.id,
-    reply.id,
+    null,
     announcement.image_url,
     {
       description: announcement.description,
@@ -176,6 +155,33 @@ async function processAnnouncement(client, announcement, channel) {
     },
     announcement.is_test || false
   );
+
+  const view = toAnnouncementView(movieNight, {
+    announcerName,
+    attendees: [],
+    marathonName: announcement.marathon_name ?? null,
+    marathonPosition: announcement.marathon_position ?? null,
+    marathonTotal: announcement.marathon_total ?? null
+  });
+
+  let reply;
+  try {
+    const content = MOVIE_NIGHT_ROLE_ID ? `<@&${MOVIE_NIGHT_ROLE_ID}>` : undefined;
+    reply = await channel.send({
+      content,
+      embeds: [buildAnnouncementEmbed(view)],
+      components: buildAnnouncementComponents(view)
+    });
+  } catch (err) {
+    // The row exists but no message does. Delete it so /history doesn't show a
+    // night nobody was told about, then let the caller mark this failed.
+    await deleteMovieNight(movieNight.id).catch((cleanupErr) =>
+      logger.error(`Failed to clean up orphan movie night ${movieNight.id}`, cleanupErr)
+    );
+    throw err;
+  }
+
+  await updateMovieNightMessage(movieNight.id, reply.id, channel.id);
 
   // Back-link the marathon item and complete the marathon if this was the last film.
   if (announcement.marathon_item_id) {
