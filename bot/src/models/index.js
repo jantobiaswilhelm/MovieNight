@@ -421,6 +421,151 @@ export const getAttendeeDiscordIds = async (movieId) => {
   return result.rows.map((r) => r.discord_id);
 };
 
+// Attach the posted message to the movie night. The announcement flow creates
+// the row before sending, because the RSVP button needs the row id in its
+// customId — so message_id is filled in a beat later.
+export const updateMovieNightMessage = async (movieNightId, messageId, channelId) => {
+  const result = await pool.query(
+    `UPDATE movie_nights
+     SET message_id = $2, channel_id = COALESCE($3, channel_id)
+     WHERE id = $1
+     RETURNING *`,
+    [movieNightId, messageId, channelId ?? null]
+  );
+  return result.rows[0];
+};
+
+// PARALLEL to backend/src/models/attendance.js (toggleAttendance) — intentionally
+// differs: the bot resolves the Discord user to an internal id via
+// findOrCreateUser first, while the web already holds req.user.id.
+// Returns true if the user is now attending, false if they just withdrew.
+export const toggleAttendance = async (movieNightId, userId) => {
+  const existing = await pool.query(
+    'SELECT id FROM movie_attendance WHERE movie_night_id = $1 AND user_id = $2',
+    [movieNightId, userId]
+  );
+
+  if (existing.rows.length > 0) {
+    await pool.query(
+      'DELETE FROM movie_attendance WHERE movie_night_id = $1 AND user_id = $2',
+      [movieNightId, userId]
+    );
+    return false;
+  }
+
+  // ON CONFLICT guards the race where two clicks land at once — the UNIQUE
+  // constraint on (movie_night_id, user_id) makes the second a no-op.
+  await pool.query(
+    `INSERT INTO movie_attendance (movie_night_id, user_id)
+     VALUES ($1, $2)
+     ON CONFLICT (movie_night_id, user_id) DO NOTHING`,
+    [movieNightId, userId]
+  );
+  return true;
+};
+
+// "I'm in" on a binge kickoff means the whole evening, so attendance toggles
+// across every film in the marathon at once. The user's state on the first film
+// decides the direction, so a half-toggled marathon converges to all-or-nothing.
+export const toggleMarathonAttendance = async (marathonId, userId) => {
+  const items = await pool.query(
+    `SELECT scheduled_movie_night_id AS id
+     FROM marathon_items
+     WHERE marathon_id = $1 AND scheduled_movie_night_id IS NOT NULL
+     ORDER BY position ASC`,
+    [marathonId]
+  );
+  const movieNightIds = items.rows.map((r) => r.id);
+  if (movieNightIds.length === 0) return { attending: false, count: 0 };
+
+  const existing = await pool.query(
+    'SELECT id FROM movie_attendance WHERE movie_night_id = $1 AND user_id = $2',
+    [movieNightIds[0], userId]
+  );
+  const attending = existing.rows.length === 0;
+
+  if (attending) {
+    await pool.query(
+      `INSERT INTO movie_attendance (movie_night_id, user_id)
+       SELECT unnest($1::int[]), $2
+       ON CONFLICT (movie_night_id, user_id) DO NOTHING`,
+      [movieNightIds, userId]
+    );
+  } else {
+    await pool.query(
+      'DELETE FROM movie_attendance WHERE movie_night_id = ANY($1::int[]) AND user_id = $2',
+      [movieNightIds, userId]
+    );
+  }
+
+  return { attending, count: movieNightIds.length };
+};
+
+// Attendees of a binge = attendees across its films, which the marathon-wide
+// toggle keeps in sync with one another.
+export const getMarathonAttendees = async (marathonId) => {
+  const result = await pool.query(
+    `SELECT u.username, MIN(ma.created_at) AS joined_at
+     FROM marathon_items mi
+     JOIN movie_attendance ma ON ma.movie_night_id = mi.scheduled_movie_night_id
+     JOIN users u ON ma.user_id = u.id
+     WHERE mi.marathon_id = $1
+     GROUP BY u.username
+     ORDER BY joined_at ASC`,
+    [marathonId]
+  );
+  return result.rows;
+};
+
+// The guild that owns a marathon, for validating a binge RSVP click. Joins the
+// creator so the kickoff embed can be rebuilt with its original footer —
+// `marathons` stores created_by (a user id), not a name.
+export const getMarathonById = async (marathonId) => {
+  const result = await pool.query(
+    `SELECT m.*, u.username AS created_by_name
+     FROM marathons m
+     LEFT JOIN users u ON m.created_by = u.id
+     WHERE m.id = $1`,
+    [marathonId]
+  );
+  return result.rows[0];
+};
+
+// PARALLEL to backend/src/models/attendance.js (getAttendees) — intentionally
+// differs: the bot needs only usernames in RSVP order for the embed field,
+// while the web returns full user objects with avatars.
+export const getAttendees = async (movieNightId) => {
+  const result = await pool.query(
+    `SELECT u.username
+     FROM movie_attendance ma
+     JOIN users u ON ma.user_id = u.id
+     WHERE ma.movie_night_id = $1
+     ORDER BY ma.created_at ASC`,
+    [movieNightId]
+  );
+  return result.rows;
+};
+
+// Everything the announcement embed needs in one round trip: the movie night,
+// its announcer, and marathon context when the film belongs to one.
+// marathon_items links back via scheduled_movie_night_id.
+export const getMovieNightForAnnouncement = async (movieNightId) => {
+  const result = await pool.query(
+    `SELECT mn.*,
+            u.username AS announced_by_name,
+            m.name AS marathon_name,
+            mi.position AS marathon_position,
+            (SELECT COUNT(*) FROM marathon_items WHERE marathon_id = m.id) AS marathon_total
+     FROM movie_nights mn
+     LEFT JOIN users u ON mn.announced_by = u.id
+     LEFT JOIN marathon_items mi ON mi.scheduled_movie_night_id = mn.id
+     LEFT JOIN marathons m ON mi.marathon_id = m.id
+     WHERE mn.id = $1`,
+    [movieNightId]
+  );
+  return result.rows[0];
+};
+
 export const deleteVotingSession = async (sessionId) => {
   const client = await pool.connect();
   try {

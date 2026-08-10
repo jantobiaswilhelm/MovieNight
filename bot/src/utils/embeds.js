@@ -1,26 +1,10 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
-
-export const createAnnouncementEmbed = (title, scheduledAt, imageUrl, announcerName) => {
-  const timestamp = Math.floor(scheduledAt.getTime() / 1000);
-
-  const embed = new EmbedBuilder()
-    .setTitle(`Movie Night: ${title}`)
-    .setDescription(`Get ready for movie night!\n\n**When:** <t:${timestamp}:F> (<t:${timestamp}:R>)${process.env.FRONTEND_URL ? `\n\n[View on Website](${process.env.FRONTEND_URL})` : ''}`)
-    .setColor(0x5865F2)
-    .setFooter({ text: `Announced by ${announcerName}` })
-    .setTimestamp();
-
-  if (imageUrl) {
-    embed.setImage(imageUrl);
-  }
-
-  return embed;
-};
+import { formatAttendees } from './announcementEmbed.js';
 
 // Binge kickoff: one embed for the whole evening. items = ordered marathon_items
 // (each with scheduled_at + runtime). Mirrors mockup 05 (ribbon + "N films · one
 // sitting" + doors line + a time-stamped lineup).
-export const createBingeAnnouncementEmbed = (marathonName, items, announcerName) => {
+export const createBingeAnnouncementEmbed = (marathonName, items, announcerName, attendees = []) => {
   const doors = items[0]?.scheduled_at ? new Date(items[0].scheduled_at) : new Date();
   const doorsTs = Math.floor(doors.getTime() / 1000);
 
@@ -45,8 +29,57 @@ export const createBingeAnnouncementEmbed = (marathonName, items, announcerName)
     .setFooter({ text: `Marathon started by ${announcerName}` })
     .setTimestamp();
 
+  embed.addFields({
+    name: `🎟 Going (${attendees.length})`,
+    value: formatAttendees(attendees),
+    inline: false
+  });
+
   if (items[0]?.image_url) embed.setThumbnail(items[0].image_url);
   return embed;
+};
+
+// Binge kickoff buttons. RSVP is keyed to the marathon, not a single film —
+// "I'm in" for a binge means the whole evening. Link buttons point at the
+// first film, which is the one people are deciding about.
+export const createBingeComponents = (marathonId, firstItem) => {
+  const buttons = [
+    new ButtonBuilder()
+      .setCustomId(`rsvp_binge_${marathonId}`)
+      .setLabel("I'm in")
+      .setEmoji('✅')
+      .setStyle(ButtonStyle.Success)
+  ];
+
+  if (firstItem?.trailer_url) {
+    buttons.push(
+      new ButtonBuilder()
+        .setLabel('Trailer')
+        .setEmoji('▶️')
+        .setURL(firstItem.trailer_url)
+        .setStyle(ButtonStyle.Link)
+    );
+  }
+
+  if (firstItem?.tmdb_id) {
+    buttons.push(
+      new ButtonBuilder()
+        .setLabel('TMDB')
+        .setURL(`https://www.themoviedb.org/movie/${firstItem.tmdb_id}`)
+        .setStyle(ButtonStyle.Link)
+    );
+  }
+
+  if (process.env.FRONTEND_URL) {
+    buttons.push(
+      new ButtonBuilder()
+        .setLabel('Website')
+        .setURL(process.env.FRONTEND_URL)
+        .setStyle(ButtonStyle.Link)
+    );
+  }
+
+  return [new ActionRowBuilder().addComponents(...buttons)];
 };
 
 export const createRatingButtons = (movieId) => {

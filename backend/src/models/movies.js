@@ -172,10 +172,14 @@ export const notifyReschedule = async (movieId) => {
   await pool.query("SELECT pg_notify('movie_reschedule', $1)", [String(movieId)]);
 };
 
-// Signal the bot to post a "cancelled" note. The movie row is already gone by
-// the time the bot handles this, so the channel + title travel in the payload.
-export const notifyCancel = async (channelId, title) => {
-  await pool.query("SELECT pg_notify('movie_cancel', $1)", [JSON.stringify({ channelId, title })]);
+// Signal the bot to post a "cancelled" note and grey out the original
+// announcement. The movie row is already gone by the time the bot handles this,
+// so the channel, title and message id all travel in the payload.
+export const notifyCancel = async (channelId, title, messageId = null) => {
+  await pool.query(
+    "SELECT pg_notify('movie_cancel', $1)",
+    [JSON.stringify({ channelId, title, messageId })]
+  );
 };
 
 export const createPendingAnnouncement = async (data) => {

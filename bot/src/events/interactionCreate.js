@@ -1,7 +1,8 @@
 import { Events } from 'discord.js';
 import {
   handleRatingButton,
-  handleRatingCommentModal
+  handleRatingCommentModal,
+  handleRsvpButton
 } from '../handlers/index.js';
 import { createLogger } from '../utils/logger.js';
 
@@ -57,6 +58,8 @@ export const execute = async (interaction) => {
 
     if (customId.startsWith('rate_')) {
       await handleRatingButton(interaction);
+    } else if (customId.startsWith('rsvp_')) {
+      await handleRsvpButton(interaction);
     }
     return;
   }
