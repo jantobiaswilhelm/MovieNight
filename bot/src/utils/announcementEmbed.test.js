@@ -6,7 +6,8 @@ import {
   truncateOverview,
   formatAttendees,
   buildAnnouncementEmbed,
-  buildAnnouncementComponents
+  buildAnnouncementComponents,
+  toAnnouncementView
 } from './announcementEmbed.js';
 
 test('splitTitleYear pulls the year out of a title that embeds it', () => {
@@ -278,4 +279,62 @@ test('buildAnnouncementComponents returns no rows when nothing is left to show',
     })
   );
   assert.deepEqual(rows, []);
+});
+
+// --- toAnnouncementView ---
+
+const DB_ROW = {
+  id: 42,
+  title: 'The Help (2011)',
+  release_year: 2011,
+  scheduled_at: '2025-08-03T19:00:00.000Z',
+  started_at: null,
+  image_url: 'https://image.tmdb.org/t/p/w500/poster.jpg',
+  backdrop_url: 'https://image.tmdb.org/t/p/w1280/backdrop.jpg',
+  description: 'An aspiring author.',
+  tagline: 'Change begins with a whisper.',
+  tmdb_id: 300,
+  tmdb_rating: '7.8',
+  genres: 'Drama, History',
+  runtime: 146,
+  imdb_id: 'tt1454029',
+  trailer_url: 'https://youtu.be/abc',
+  announced_by_name: 'emy'
+};
+
+test('toAnnouncementView maps snake_case columns to the view', () => {
+  const view = toAnnouncementView(DB_ROW);
+  assert.equal(view.id, 42);
+  assert.equal(view.releaseYear, 2011);
+  assert.equal(view.backdropUrl, 'https://image.tmdb.org/t/p/w1280/backdrop.jpg');
+  assert.equal(view.trailerUrl, 'https://youtu.be/abc');
+  assert.equal(view.announcerName, 'emy');
+});
+
+test('toAnnouncementView defaults attendees to an empty list', () => {
+  assert.deepEqual(toAnnouncementView(DB_ROW).attendees, []);
+});
+
+test('toAnnouncementView lets extras override the row', () => {
+  const view = toAnnouncementView(DB_ROW, {
+    attendees: [{ username: 'jani' }],
+    marathonName: 'Chastain',
+    marathonPosition: 2,
+    marathonTotal: 6,
+    cancelled: true
+  });
+  assert.deepEqual(view.attendees, [{ username: 'jani' }]);
+  assert.equal(view.marathonName, 'Chastain');
+  assert.equal(view.cancelled, true);
+});
+
+test('toAnnouncementView falls back to Website for an announcer-less row', () => {
+  const { announced_by_name, ...anonymous } = DB_ROW;
+  assert.equal(toAnnouncementView(anonymous).announcerName, 'Website');
+});
+
+test('toAnnouncementView produces a view the embed builder accepts', () => {
+  const data = buildAnnouncementEmbed(toAnnouncementView(DB_ROW)).data;
+  assert.equal(data.title, 'The Help (2011)');
+  assert.equal(data.fields.find((f) => f.name.includes('TMDB')).value, '7.8/10');
 });

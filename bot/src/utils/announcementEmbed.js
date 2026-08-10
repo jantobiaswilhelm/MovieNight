@@ -216,3 +216,38 @@ export const buildAnnouncementComponents = (view) => {
   if (buttons.length === 0) return [];
   return [new ActionRowBuilder().addComponents(...buttons)];
 };
+
+/**
+ * Map a database row to an announcement view. Works for both `movie_nights`
+ * rows and `pending_announcements` rows — they share column names for
+ * everything the embed reads.
+ *
+ * Note: `pending_announcements` has no `tagline` column, so web-triggered
+ * announcements simply render without one. The block is conditional.
+ *
+ * @param {object} row
+ * @param {object} [extras] - attendees, marathon context, cancelled flag
+ */
+export const toAnnouncementView = (row, extras = {}) => ({
+  id: extras.id ?? row.id,
+  title: row.title,
+  releaseYear: row.release_year ?? null,
+  scheduledAt: row.scheduled_at,
+  startedAt: row.started_at ?? null,
+  cancelled: extras.cancelled ?? false,
+  imageUrl: row.image_url ?? null,
+  backdropUrl: row.backdrop_url ?? null,
+  description: row.description ?? null,
+  tagline: row.tagline ?? null,
+  tmdbId: row.tmdb_id ?? null,
+  tmdbRating: row.tmdb_rating ?? null,
+  genres: row.genres ?? null,
+  runtime: row.runtime ?? null,
+  imdbId: row.imdb_id ?? null,
+  trailerUrl: row.trailer_url ?? null,
+  announcerName: extras.announcerName ?? row.announced_by_name ?? 'Website',
+  marathonName: extras.marathonName ?? row.marathon_name ?? null,
+  marathonPosition: extras.marathonPosition ?? row.marathon_position ?? null,
+  marathonTotal: extras.marathonTotal ?? row.marathon_total ?? null,
+  attendees: extras.attendees ?? []
+});
