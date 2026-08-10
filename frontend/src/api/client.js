@@ -263,6 +263,9 @@ export const toggleAttendance = (movieId) =>
     method: 'POST'
   });
 
+export const getNowPlayingMovie = () =>
+  fetchAPI(`/api/movies/now-playing?guild_id=${GUILD_ID}`);
+
 export const getNextMovieWithAttendees = () =>
   fetchAPI(`/api/movies/next/with-attendees?guild_id=${GUILD_ID}`);
 

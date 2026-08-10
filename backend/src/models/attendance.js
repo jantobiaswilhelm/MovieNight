@@ -67,6 +67,36 @@ export const getUpcomingMoviesWithAttendees = async (guildId, limit = 10) => {
   return result.rows;
 };
 
+// The movie currently on screen: started, and not yet past its runtime. The
+// window closes exactly when rating opens (see the bot's
+// getMoviesReadyForRatingNotification), so the site and Discord agree on when a
+// film is over. Without this, a movie that has started drops out of
+// getNextMovieWithAttendees and the hero labels it "Watched" mid-screening.
+export const getNowPlayingWithAttendees = async (guildId) => {
+  const result = await pool.query(
+    `SELECT mn.*, u.username as announced_by_name, u.discord_id as announced_by_discord_id, u.avatar as announced_by_avatar,
+            COALESCE(
+              json_agg(
+                json_build_object('id', att_u.id, 'discord_id', att_u.discord_id, 'username', att_u.username, 'avatar', att_u.avatar)
+              ) FILTER (WHERE att_u.id IS NOT NULL),
+              '[]'
+            ) as attendees
+     FROM movie_nights mn
+     LEFT JOIN users u ON mn.announced_by = u.id
+     LEFT JOIN movie_attendance ma ON mn.id = ma.movie_night_id
+     LEFT JOIN users att_u ON ma.user_id = att_u.id
+     WHERE mn.guild_id = $1
+       AND mn.started_at IS NOT NULL
+       AND CURRENT_TIMESTAMP < mn.started_at + INTERVAL '1 minute' * COALESCE(mn.runtime, 90)
+       AND (mn.is_test = false OR mn.is_test IS NULL)
+     GROUP BY mn.id, u.username, u.discord_id, u.avatar
+     ORDER BY mn.started_at DESC
+     LIMIT 1`,
+    [guildId]
+  );
+  return result.rows[0];
+};
+
 export const getNextMovieWithAttendees = async (guildId) => {
   const result = await pool.query(
     `SELECT mn.*, u.username as announced_by_name, u.discord_id as announced_by_discord_id, u.avatar as announced_by_avatar,

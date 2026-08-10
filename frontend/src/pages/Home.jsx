@@ -5,6 +5,7 @@ import { sanitizeUrl, sanitizeImdbId, sanitizeImageUrl } from '../utils/sanitize
 import { formatDate, formatRuntime, getAvatarUrl } from '../utils/helpers';
 import {
   getMovies,
+  getNowPlayingMovie,
   getNextMovieWithAttendees,
   getUpcomingMoviesWithAttendees,
   getRandomComments,
@@ -24,6 +25,7 @@ const Home = () => {
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [nowPlaying, setNowPlaying] = useState(null);
   const [nextMovieWithAttendees, setNextMovieWithAttendees] = useState(null);
   const [upcomingWithAttendees, setUpcomingWithAttendees] = useState([]);
   const [reviews, setReviews] = useState([]);
@@ -36,8 +38,9 @@ const Home = () => {
 
   const fetchData = useCallback(async () => {
     try {
-      const [moviesData, nextMovieData, upcomingData, reviewsData, statsData, onThisDayData, calendarData] = await Promise.all([
+      const [moviesData, nowPlayingData, nextMovieData, upcomingData, reviewsData, statsData, onThisDayData, calendarData] = await Promise.all([
         getMovies(100, 0),
+        getNowPlayingMovie().catch(() => null),
         getNextMovieWithAttendees().catch(() => null),
         getUpcomingMoviesWithAttendees(5).catch(() => []),
         getRandomComments(12).catch(() => []),
@@ -46,6 +49,7 @@ const Home = () => {
         getCalendar().catch(() => [])
       ]);
       setMovies(moviesData);
+      setNowPlaying(nowPlayingData);
       setNextMovieWithAttendees(nextMovieData);
       setUpcomingWithAttendees(upcomingData);
       setReviews(reviewsData);
@@ -65,12 +69,14 @@ const Home = () => {
 
   const handleDataRefresh = useCallback(async () => {
     try {
-      const [moviesData, nextMovieData, upcomingData] = await Promise.all([
+      const [moviesData, nowPlayingData, nextMovieData, upcomingData] = await Promise.all([
         getMovies(100, 0),
+        getNowPlayingMovie().catch(() => null),
         getNextMovieWithAttendees().catch(() => null),
         getUpcomingMoviesWithAttendees(5).catch(() => [])
       ]);
       setMovies(moviesData);
+      setNowPlaying(nowPlayingData);
       setNextMovieWithAttendees(nextMovieData);
       setUpcomingWithAttendees(upcomingData);
     } catch (err) {
@@ -127,14 +133,30 @@ const Home = () => {
 
   const nextMovie = nextMovieWithAttendees || upcomingMovies[0];
 
-  const lastMovie = !nextMovie
+  const lastMovie = !nowPlaying && !nextMovie
     ? movies
         .filter(movie => new Date(movie.scheduled_at) <= now)
         .sort((a, b) => new Date(b.scheduled_at) - new Date(a.scheduled_at))[0]
     : null;
 
-  const heroMovie = nextMovie || lastMovie;
-  const isHeroPast = !nextMovie && !!lastMovie;
+  // Three states, in priority order: a film on screen right now beats an
+  // upcoming one, which beats falling back to the last screening. Without the
+  // first, a movie that had started dropped out of "next" and the hero called
+  // it "Watched" while it was still playing.
+  const heroMovie = nowPlaying || nextMovie || lastMovie;
+  const heroState = nowPlaying ? 'playing' : (nextMovie ? 'upcoming' : (lastMovie ? 'past' : 'empty'));
+  const isHeroPast = heroState === 'past';
+  const isHeroPlaying = heroState === 'playing';
+
+  // When it's playing we know exactly when it ends; runtime defaults to 90 the
+  // same way the bot's rating window does.
+  const heroEndsAt = isHeroPlaying && nowPlaying.started_at
+    ? new Date(new Date(nowPlaying.started_at).getTime() + (nowPlaying.runtime || 90) * 60000)
+    : null;
+
+  // The RSVP list belongs to whichever movie the hero is showing — the people
+  // who said they'd come are the people watching once it starts.
+  const heroAttendees = (isHeroPlaying ? nowPlaying?.attendees : nextMovie?.attendees) || [];
 
   // The "On the calendar" slot shows upcoming nights beyond the hero when there
   // are any; otherwise it backfills with recent past screenings so it isn't empty
@@ -143,7 +165,9 @@ const Home = () => {
 
   const lastScreenings = movies
     .filter((movie) => new Date(movie.scheduled_at) <= now)
-    .filter((movie) => !(isHeroPast && heroMovie && movie.id === heroMovie.id))
+    // Don't list the hero film again below itself — it qualifies as "past" by
+    // scheduled_at while it's still on screen.
+    .filter((movie) => !((isHeroPast || isHeroPlaying) && heroMovie && movie.id === heroMovie.id))
     .sort((a, b) => new Date(b.scheduled_at) - new Date(a.scheduled_at))
     .slice(0, 4);
 
@@ -185,15 +209,19 @@ const Home = () => {
 
           <div className="hero-top">
             <span className="eyebrow">
-              {seasonal && !isHeroPast
-                ? seasonal.eyebrow
-                : (isHeroPast ? 'Last screening' : 'Tonight\u2019s feature')}
+              {isHeroPlaying
+                ? 'Now playing'
+                : (seasonal && !isHeroPast
+                    ? seasonal.eyebrow
+                    : (isHeroPast ? 'Last screening' : 'Tonight\u2019s feature'))}
             </span>
-            {!isHeroPast && nextMovie?.attendees?.length > 0 && (
+            {isHeroPlaying ? (
+              <Badge live accent>Airing</Badge>
+            ) : (!isHeroPast && nextMovie?.attendees?.length > 0 && (
               <Badge live>
                 {nextMovie.attendees.length} attending
               </Badge>
-            )}
+            ))}
           </div>
 
           <div className="hero-body">
@@ -231,9 +259,11 @@ const Home = () => {
                 )}
 
                 <div className="hero-showing">
-                  <Icon name="calendar" size={14} stroke={1.5} />
+                  <Icon name={isHeroPlaying ? 'play' : 'calendar'} size={14} stroke={1.5} />
                   <span>
-                    {isHeroPast ? 'Watched' : 'Next'} · {formatDate(heroMovie.scheduled_at, 'long')}
+                    {isHeroPlaying
+                      ? `Started ${formatDate(nowPlaying.started_at, 'time')}${heroEndsAt ? ` · ends ~${formatDate(heroEndsAt.toISOString(), 'time')}` : ''}`
+                      : `${isHeroPast ? 'Watched' : 'Next'} · ${formatDate(heroMovie.scheduled_at, 'long')}`}
                   </span>
                   {heroMovie.announced_by_name && (
                     <>
@@ -253,7 +283,9 @@ const Home = () => {
                 </div>
 
                 <div className="hero-actions">
-                  {!isHeroPast && isAuthenticated && (
+                  {/* RSVP only makes sense before the film starts — the Discord
+                      card drops its button at start time for the same reason. */}
+                  {heroState === 'upcoming' && isAuthenticated && (
                     <button
                       className={`btn ${nextMovie?.is_attending ? 'ghost' : ''}`}
                       onClick={handleAttendanceToggle}
@@ -287,10 +319,10 @@ const Home = () => {
                   )}
                 </div>
 
-                {!isHeroPast && nextMovie?.attendees?.length > 0 && (
+                {!isHeroPast && heroAttendees.length > 0 && (
                   <div className="hero-attendees">
                     <div className="attendee-stack">
-                      {nextMovie.attendees.slice(0, 6).map((a) => (
+                      {heroAttendees.slice(0, 6).map((a) => (
                         <img
                           key={a.discord_id}
                           src={getAvatarUrl(a.discord_id, a.avatar)}
@@ -300,12 +332,12 @@ const Home = () => {
                           loading="lazy"
                         />
                       ))}
-                      {nextMovie.attendees.length > 6 && (
-                        <span className="attendee-more">+{nextMovie.attendees.length - 6}</span>
+                      {heroAttendees.length > 6 && (
+                        <span className="attendee-more">+{heroAttendees.length - 6}</span>
                       )}
                     </div>
                     <span className="attendee-label">
-                      {nextMovie.attendees.length} confirmed
+                      {heroAttendees.length} {isHeroPlaying ? 'watching' : 'confirmed'}
                     </span>
                   </div>
                 )}
