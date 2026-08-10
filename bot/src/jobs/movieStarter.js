@@ -1,12 +1,10 @@
 import cron from 'node-cron';
 import { getMoviesToStart, startMovieNight, openVoicePresence } from '../models/index.js';
-import { createStartingNowEmbed } from '../utils/embeds.js';
+import { postScreeningCard } from '../utils/screeningMessage.js';
 import { refreshAnnouncementMessage } from '../utils/announcementMessage.js';
 import { createLogger } from '../utils/logger.js';
 
 const logger = createLogger('movieStarter');
-
-const MOVIE_NIGHT_ROLE_ID = process.env.MOVIE_NIGHT_ROLE_ID;
 
 const CRON_EVERY_MINUTE = '* * * * *';
 
@@ -57,19 +55,13 @@ export const startMovieStarterJob = (client) => {
           // STARTED. The separate "Starting NOW" message below is unchanged.
           await refreshAnnouncementMessage(client, movie.id);
 
-          // Get the channel to send the announcement
-          const channel = await client.channels.fetch(movie.channel_id);
+          // Post the screening card. It carries the whole night from here:
+          // NOW PLAYING, then the rating card when the credits roll, then the
+          // verdict — all by editing this one message.
+          const channel = await client.channels.fetch(movie.channel_id).catch(() => null);
 
           if (channel) {
-            // Send "Starting Now" announcement with role ping (rating buttons sent later based on runtime)
-            const embed = createStartingNowEmbed(movie.title, movie.image_url, movie.runtime);
-            const content = MOVIE_NIGHT_ROLE_ID ? `<@&${MOVIE_NIGHT_ROLE_ID}>` : undefined;
-
-            await channel.send({
-              content,
-              embeds: [embed]
-            });
-
+            await postScreeningCard(movie.id, channel);
             logger.info(`Started movie night: ${movie.title} (ID: ${movie.id})`);
           } else {
             logger.error(`Could not find channel ${movie.channel_id} for movie ${movie.id}`);
