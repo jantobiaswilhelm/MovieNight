@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from 'discord.js';
-import { findOrCreateUser, createMovieNight } from '../models/index.js';
-import { createAnnouncementEmbed } from '../utils/embeds.js';
+import { findOrCreateUser, createMovieNight, updateMovieNightMessage, deleteMovieNight } from '../models/index.js';
+import { buildAnnouncementEmbed, buildAnnouncementComponents, toAnnouncementView } from '../utils/announcementEmbed.js';
 import { searchMovies, getMovieDetails } from '../utils/tmdb.js';
 import { shouldThrottle } from '../utils/throttle.js';
 import { parseDateTime } from '../utils/dateTime.js';
@@ -94,54 +94,60 @@ export const execute = async (interaction) => {
     imageUrl = null;
   }
 
+  // Defer first: creating the movie night before replying takes us past
+  // Discord's 3-second interaction window on a slow database.
+  await interaction.deferReply();
+
+  let movieNight;
   try {
-    // Create or get user
     const user = await findOrCreateUser(
       interaction.user.id,
       interaction.user.username,
       interaction.user.avatar
     );
 
-    // Send announcement first to get message ID
-    const announcementEmbed = createAnnouncementEmbed(
-      title,
-      scheduledAt,
-      imageUrl,
-      interaction.user.username
-    );
-
-    const reply = await interaction.reply({
-      embeds: [announcementEmbed],
-      fetchReply: true
-    });
-
-    // Create movie night in database with TMDB data
-    await createMovieNight(
+    // Create the row BEFORE sending, because the RSVP button needs its id.
+    // message_id is null for a beat and patched in below.
+    movieNight = await createMovieNight(
       title,
       scheduledAt,
       user.id,
       interaction.guildId,
       interaction.channelId,
-      reply.id,
+      null,
       imageUrl,
       tmdbData
     );
 
-    // Rating buttons will be sent automatically when the movie starts
+    const view = toAnnouncementView(movieNight, {
+      announcerName: interaction.user.username,
+      attendees: []
+    });
 
+    const reply = await interaction.editReply({
+      embeds: [buildAnnouncementEmbed(view)],
+      components: buildAnnouncementComponents(view)
+    });
+
+    await updateMovieNightMessage(movieNight.id, reply.id, interaction.channelId);
+
+    // Rating buttons are sent automatically when the movie starts.
   } catch (err) {
     logger.error('Error creating movie night', err);
-    if (interaction.replied) {
-      await interaction.followUp({
-        content: 'There was an error creating the movie night.',
-        ephemeral: true
-      });
-    } else {
-      await interaction.reply({
-        content: 'There was an error creating the movie night.',
-        ephemeral: true
-      });
+
+    // If the row was created but the reply failed, it's an orphan with no
+    // message — drop it rather than leaving a phantom night in /history.
+    if (movieNight) {
+      await deleteMovieNight(movieNight.id).catch((cleanupErr) =>
+        logger.error(`Failed to clean up orphan movie night ${movieNight.id}`, cleanupErr)
+      );
     }
+
+    await interaction.editReply({
+      content: 'There was an error creating the movie night.',
+      embeds: [],
+      components: []
+    }).catch(() => {});
   }
 };
 
