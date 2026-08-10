@@ -149,3 +149,31 @@ export const buildScreeningCard = (view) => {
 
   return embed;
 };
+
+/**
+ * Rating buttons, or [] while the movie is still playing. They stay live in the
+ * settled state on purpose — someone who missed the night can still rate.
+ */
+export const buildScreeningComponents = (view) => {
+  if (view.state === 'playing') return [];
+  return createRatingButtons(view.id);
+};
+
+/**
+ * Map a movie_nights row (plus its ratings and attendees) to a card view.
+ * `attendee_count` arrives from pg's COUNT as a string.
+ */
+export const toScreeningView = (row, extras = {}) => ({
+  id: row.id,
+  title: row.title,
+  releaseYear: row.release_year ?? null,
+  imageUrl: row.image_url ?? null,
+  backdropUrl: row.backdrop_url ?? null,
+  runtime: row.runtime ?? null,
+  startedAt: row.started_at ?? null,
+  tmdbRating: row.tmdb_rating ?? null,
+  state: extras.state ?? screeningState(row),
+  ratings: extras.ratings ?? [],
+  attendees: extras.attendees ?? [],
+  attendeeCount: Number(extras.attendeeCount ?? row.attendee_count ?? 0)
+});

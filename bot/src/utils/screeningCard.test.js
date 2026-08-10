@@ -7,7 +7,9 @@ import {
   tmdbComparison,
   formatRaters,
   averageScore,
-  buildScreeningCard
+  buildScreeningCard,
+  buildScreeningComponents,
+  toScreeningView
 } from './screeningCard.js';
 
 test('ratingMeter fills blocks proportional to the score', () => {
@@ -236,4 +238,52 @@ test('a movie with no runtime still renders', () => {
   const data = buildScreeningCard({ ...BASE, state: 'playing', runtime: null }).data;
   assert.equal(data.title, 'The Help (2011)');
   assert.ok(!data.description.includes('ends ~'));
+});
+
+// --- components + view ---
+
+test('no rating buttons while the movie is still playing', () => {
+  assert.deepEqual(buildScreeningComponents({ id: 42, state: 'playing' }), []);
+});
+
+test('rating buttons appear once rating is open', () => {
+  const rows = buildScreeningComponents({ id: 42, state: 'rating' });
+  assert.equal(rows.length, 2);
+  assert.equal(rows[0].components[0].data.custom_id, 'rate_42_1');
+  assert.equal(rows[1].components[4].data.custom_id, 'rate_42_10');
+});
+
+test('rating buttons stay live after settling so latecomers can rate', () => {
+  const rows = buildScreeningComponents({ id: 42, state: 'settled' });
+  assert.equal(rows.length, 2);
+});
+
+test('toScreeningView maps a row and derives its state', () => {
+  const view = toScreeningView(
+    {
+      id: 42,
+      title: 'The Help (2011)',
+      release_year: 2011,
+      image_url: 'https://image.tmdb.org/t/p/w500/p.jpg',
+      backdrop_url: 'https://image.tmdb.org/t/p/w1280/b.jpg',
+      runtime: 146,
+      started_at: '2025-08-03T19:00:00Z',
+      tmdb_rating: '7.8',
+      rating_prompt_sent_at: null,
+      attendee_count: '6'
+    },
+    { attendees: [{ username: 'emy' }], ratings: [] }
+  );
+  assert.equal(view.state, 'playing');
+  assert.equal(view.attendeeCount, 6);
+  assert.equal(view.tmdbRating, '7.8');
+  assert.deepEqual(view.attendees, [{ username: 'emy' }]);
+});
+
+test('toScreeningView lets an explicit state override the derived one', () => {
+  const view = toScreeningView(
+    { id: 1, title: 'X', rating_prompt_sent_at: null },
+    { state: 'settled' }
+  );
+  assert.equal(view.state, 'settled');
 });
