@@ -132,44 +132,6 @@ export const createRatingButtons = (movieId) => {
   return [row1, row2];
 };
 
-export const createRatingPromptEmbed = (title) => {
-  return new EmbedBuilder()
-    .setTitle(`Rate: ${title}`)
-    .setDescription('How would you rate this movie? Click a button below or use `/rate` for half-point ratings (e.g., 7.5)')
-    .setColor(0xFEE75C);
-};
-
-export const createStartingNowEmbed = (title, imageUrl, runtime) => {
-  const ratingDelayMinutes = Math.max((runtime || 90) - 10, 0);
-  const ratingsAvailableAt = new Date(Date.now() + ratingDelayMinutes * 60 * 1000);
-  const timestamp = Math.floor(ratingsAvailableAt.getTime() / 1000);
-
-  const embed = new EmbedBuilder()
-    .setTitle(`Movie Night is Starting NOW!`)
-    .setDescription(`**${title}**\n\nEnjoy the movie! Ratings will be available <t:${timestamp}:R>.`)
-    .setColor(0x57F287)
-    .setTimestamp();
-
-  if (imageUrl) {
-    embed.setThumbnail(imageUrl);
-  }
-
-  return embed;
-};
-
-export const createRatingAvailableEmbed = (title, imageUrl) => {
-  const embed = new EmbedBuilder()
-    .setTitle(`Time to Rate!`)
-    .setDescription(`**${title}**\n\nThe movie is almost over! Rate it using the buttons below or \`/rate\` for half-point ratings.`)
-    .setColor(0xFEE75C)
-    .setTimestamp();
-
-  if (imageUrl) {
-    embed.setThumbnail(imageUrl);
-  }
-
-  return embed;
-};
 
 export const createHistoryEmbed = (movies) => {
   const embed = new EmbedBuilder()
