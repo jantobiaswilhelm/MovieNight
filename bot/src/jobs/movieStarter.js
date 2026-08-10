@@ -1,6 +1,7 @@
 import cron from 'node-cron';
 import { getMoviesToStart, startMovieNight, openVoicePresence } from '../models/index.js';
 import { createStartingNowEmbed } from '../utils/embeds.js';
+import { refreshAnnouncementMessage } from '../utils/announcementMessage.js';
 import { createLogger } from '../utils/logger.js';
 
 const logger = createLogger('movieStarter');
@@ -51,6 +52,10 @@ export const startMovieStarterJob = (client) => {
           // get counted (the live voiceStateUpdate handler only fires on join/leave,
           // so it misses people already seated before the movie began).
           scheduleVoicePresenceSnapshot(client, movie.id, movie.guild_id);
+
+          // Grey the RSVP button out of the original announcement and mark it
+          // STARTED. The separate "Starting NOW" message below is unchanged.
+          await refreshAnnouncementMessage(client, movie.id);
 
           // Get the channel to send the announcement
           const channel = await client.channels.fetch(movie.channel_id);

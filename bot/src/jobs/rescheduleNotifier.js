@@ -1,5 +1,6 @@
 import { getMovieNightById, getAttendeeDiscordIds } from '../models/index.js';
 import { createLogger } from '../utils/logger.js';
+import { refreshAnnouncementMessage } from '../utils/announcementMessage.js';
 
 const logger = createLogger('rescheduleNotifier');
 
@@ -34,5 +35,9 @@ export const postRescheduleNote = async (client, payload) => {
     content: mentions ? `${base}\n${mentions}` : base,
     allowedMentions: { users: attendeeIds }
   });
+  // Put the new time into the original announcement too, so someone scrolling
+  // back doesn't read a stale date.
+  await refreshAnnouncementMessage(client, movieId);
+
   logger.info(`Posted reschedule note for movie ${movieId} (pinged ${attendeeIds.length} attendees)`);
 };
