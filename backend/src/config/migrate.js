@@ -108,7 +108,13 @@ const migrate = async () => {
       { name: 'imdb_id', type: 'VARCHAR(20)' },
       { name: 'original_language', type: 'VARCHAR(10)' },
       { name: 'collection_name', type: 'VARCHAR(255)' },
-      { name: 'trailer_url', type: 'VARCHAR(500)' }
+      { name: 'trailer_url', type: 'VARCHAR(500)' },
+      // message_id holds the announcement; starting_message_id holds the
+      // screening card, so the two can be edited independently.
+      { name: 'starting_message_id', type: 'VARCHAR(20)' },
+      // Claim marker for the settle sweep — without it the sweep would
+      // re-edit every settled card on every cron tick, forever.
+      { name: 'card_settled_at', type: 'TIMESTAMP' }
     ];
     for (const col of tmdbColumns) {
       const check = await client.query(`

@@ -1,6 +1,6 @@
 import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
 import { getUpcomingMovies, getMovieNightById, startMovieNight } from '../models/index.js';
-import { createStartingNowEmbed, createRatingButtons } from '../utils/embeds.js';
+import { postScreeningCard } from '../utils/screeningMessage.js';
 import { isAdmin } from '../utils/admin.js';
 import { createLogger } from '../utils/logger.js';
 
@@ -63,13 +63,25 @@ export const execute = async (interaction) => {
     // Start the movie
     await startMovieNight(movieId);
 
-    // Send the starting now announcement
-    const embed = createStartingNowEmbed(movie.title, movie.image_url);
-    const buttons = createRatingButtons(movieId);
+    // Post the screening card in the movie's own channel via the shared helper,
+    // so a manual start looks identical to an automatic one. /start no longer
+    // attaches rating buttons — rating opens when the credits roll.
+    const channel = await interaction.client.channels
+      .fetch(movie.channel_id || interaction.channelId)
+      .catch(() => null);
+
+    if (!channel?.isTextBased?.()) {
+      return interaction.reply({
+        content: 'Started, but I could not find the channel to post in.',
+        ephemeral: true
+      });
+    }
+
+    await postScreeningCard(movieId, channel);
 
     await interaction.reply({
-      embeds: [embed],
-      components: buttons
+      content: `Started **${movie.title}**.`,
+      ephemeral: true
     });
 
   } catch (err) {

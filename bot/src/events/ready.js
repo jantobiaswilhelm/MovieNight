@@ -7,6 +7,7 @@ import { postCancelNote } from '../jobs/cancelNotifier.js';
 import { startRatingNotifierJob } from '../jobs/ratingNotifier.js';
 import { startChannelSyncJob } from '../jobs/channelSync.js';
 import { startNotifyListener } from '../config/pgNotify.js';
+import { refreshScreeningCard } from '../utils/screeningMessage.js';
 import {
   findActiveMovieNight,
   openVoicePresence,
@@ -89,7 +90,8 @@ export const execute = async (client) => {
   startNotifyListener({
     movie_announcement: () => processPendingAnnouncements(client),
     movie_reschedule: (payload) => postRescheduleNote(client, payload),
-    movie_cancel: (payload) => postCancelNote(client, payload)
+    movie_cancel: (payload) => postCancelNote(client, payload),
+    movie_rating: (payload) => refreshScreeningCard(client, parseInt(payload, 10))
   });
 
   // Drain anything queued while the bot was offline (the listener only fires on

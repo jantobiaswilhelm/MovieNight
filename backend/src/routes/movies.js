@@ -294,8 +294,9 @@ router.post('/:id/ratings', validateIntParams('id'), authenticateToken, async (r
       return res.status(400).json({ error: 'Movie has not started yet. Ratings will be available once the movie night begins.' });
     }
 
-    // Check if enough time has passed (runtime minus buffer before movie ends)
-    const RATING_BUFFER_MINUTES = 10;
+    // Rating opens when the credits roll. Must stay in step with the bot's
+    // getMoviesReadyForRatingNotification, or the web opens before the card does.
+    const RATING_BUFFER_MINUTES = 0;
     const DEFAULT_RUNTIME_MINUTES = 90;
     const startTime = new Date(movie.started_at).getTime();
     const runtime = movie.runtime || DEFAULT_RUNTIME_MINUTES;
@@ -308,6 +309,13 @@ router.post('/:id/ratings', validateIntParams('id'), authenticateToken, async (r
     }
 
     const rating = await db.upsertRating(parseInt(id), req.user.id, score, comment || null);
+
+    // Tell the bot to update the Discord screening card. Non-fatal.
+    try {
+      await db.notifyRating(parseInt(id));
+    } catch (err) {
+      console.error('Failed to send movie_rating NOTIFY:', err.message);
+    }
 
     // Update user's streak
     const streakResult = await db.updateUserStreak(req.user.id, parseInt(id), movie.guild_id);

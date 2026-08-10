@@ -2,7 +2,7 @@ import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'disc
 
 // Announcement embed colors, keyed to lifecycle state.
 const COLOR_SCHEDULED = 0x5865F2; // blurple — matches the rest of the bot
-const COLOR_STARTED = 0x57F287;   // green — matches createStartingNowEmbed
+const COLOR_STARTED = 0x57F287;   // green — matches the screening card's playing state
 const COLOR_CANCELLED = 0x99AAB5; // grey
 
 const OVERVIEW_MAX = 300;
