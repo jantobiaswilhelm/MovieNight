@@ -1,23 +1,6 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { formatAttendees } from './announcementEmbed.js';
 
-export const createAnnouncementEmbed = (title, scheduledAt, imageUrl, announcerName) => {
-  const timestamp = Math.floor(scheduledAt.getTime() / 1000);
-
-  const embed = new EmbedBuilder()
-    .setTitle(`Movie Night: ${title}`)
-    .setDescription(`Get ready for movie night!\n\n**When:** <t:${timestamp}:F> (<t:${timestamp}:R>)${process.env.FRONTEND_URL ? `\n\n[View on Website](${process.env.FRONTEND_URL})` : ''}`)
-    .setColor(0x5865F2)
-    .setFooter({ text: `Announced by ${announcerName}` })
-    .setTimestamp();
-
-  if (imageUrl) {
-    embed.setImage(imageUrl);
-  }
-
-  return embed;
-};
-
 // Binge kickoff: one embed for the whole evening. items = ordered marathon_items
 // (each with scheduled_at + runtime). Mirrors mockup 05 (ribbon + "N films · one
 // sitting" + doors line + a time-stamped lineup).
