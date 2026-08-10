@@ -61,3 +61,91 @@ export const formatRaters = (ratings = []) => {
   const shown = parts.slice(0, RATER_MAX).join(' · ');
   return `${shown} **+${parts.length - RATER_MAX} more**`;
 };
+
+/**
+ * Render the screening card for one of three states. Pure — no database, no
+ * Discord client. One message carries all three over the course of a night.
+ *
+ * @param {object} view - see toScreeningView for the shape
+ */
+export const buildScreeningCard = (view) => {
+  const {
+    title, releaseYear, imageUrl, backdropUrl, runtime, startedAt,
+    tmdbRating, state, ratings = [], attendees = [], attendeeCount = 0
+  } = view;
+
+  const { name, year } = splitTitleYear(title, releaseYear);
+  const heading = year ? `${name} (${year})` : name;
+
+  const author = state === 'playing'
+    ? '🔴 NOW PLAYING'
+    : state === 'rating' ? '⭐ RATE IT' : '🏆 THE VERDICT';
+
+  const color = state === 'playing'
+    ? COLOR_PLAYING
+    : state === 'rating' ? COLOR_RATING : COLOR_SETTLED;
+
+  const embed = new EmbedBuilder()
+    .setAuthor({ name: author })
+    .setTitle(heading)
+    .setColor(color)
+    .setTimestamp();
+
+  const parts = [];
+
+  if (state === 'playing') {
+    const runtimeText = formatRuntime(runtime);
+    if (runtimeText) {
+      const endTs = Math.floor((new Date(startedAt).getTime() + runtime * 60_000) / 1000);
+      parts.push(`${runtimeText} · ends ~<t:${endTs}:t>`);
+    }
+    if (attendees.length) {
+      parts.push(`🎟 ${attendees.map((a) => a.username).join(' · ')}`);
+    }
+    parts.push('Rating opens when the credits roll');
+  } else {
+    const avg = averageScore(ratings);
+
+    if (avg === null) {
+      parts.push(`${ratingMeter(0)}  Nobody's rated yet`);
+    } else if (state === 'settled') {
+      parts.push(`${ratingMeter(avg)}  **${formatScore(avg.toFixed(1))}/10** · ${ratings.length} of us`);
+    } else {
+      const denominator = attendeeCount > 0 ? ` of ${attendeeCount}` : '';
+      parts.push(`${ratingMeter(avg)}  **${formatScore(avg.toFixed(1))}** · ${ratings.length}${denominator} rated`);
+    }
+
+    if (state === 'settled') {
+      // High and low only say something when there's a spread and enough
+      // voters for it to mean anything.
+      if (ratings.length >= 3) {
+        const sorted = [...ratings].sort((a, b) => Number(b.score) - Number(a.score));
+        const high = sorted[0];
+        const low = sorted[sorted.length - 1];
+        if (Number(high.score) !== Number(low.score)) {
+          parts.push(`▲ ${high.username} ${formatScore(high.score)}          ▼ ${low.username} ${formatScore(low.score)}`);
+        }
+      }
+      const comparison = tmdbComparison(avg, tmdbRating);
+      if (comparison) parts.push(comparison);
+    } else {
+      parts.push(formatRaters(ratings));
+    }
+
+    const commented = ratings.filter((r) => r.comment?.trim());
+    if (commented.length) {
+      const { comment, username } = commented[0];
+      const text = comment.trim();
+      const shown = text.length > COMMENT_MAX ? `${text.slice(0, COMMENT_MAX - 1)}…` : text;
+      parts.push(`"${shown}" — ${username}`);
+    }
+  }
+
+  embed.setDescription(parts.join('\n\n'));
+
+  if (imageUrl) embed.setThumbnail(imageUrl);
+  // The backdrop is the reward for a finished night — verdict state only.
+  if (state === 'settled' && backdropUrl) embed.setImage(backdropUrl);
+
+  return embed;
+};
