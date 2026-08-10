@@ -2,13 +2,18 @@ import {
   findOrCreateUser,
   toggleAttendance,
   getAttendees,
-  getMovieNightForAnnouncement
+  getMovieNightForAnnouncement,
+  toggleMarathonAttendance,
+  getMarathonAttendees,
+  getMarathonById,
+  getMarathonItemsByMarathon
 } from '../../models/index.js';
 import {
   buildAnnouncementEmbed,
   buildAnnouncementComponents,
   toAnnouncementView
 } from '../../utils/announcementEmbed.js';
+import { createBingeAnnouncementEmbed, createBingeComponents } from '../../utils/embeds.js';
 import { createLogger } from '../../utils/logger.js';
 
 const logger = createLogger('handleRsvpButton');
@@ -23,6 +28,12 @@ const logger = createLogger('handleRsvpButton');
  */
 export async function handleRsvpButton(interaction) {
   try {
+    // Must come first: 'rsvp_binge_5'.split('_')[1] is 'binge', so the parse
+    // below would reject a binge click as an invalid button.
+    if (interaction.customId.startsWith('rsvp_binge_')) {
+      return await handleBingeRsvp(interaction);
+    }
+
     const movieNightId = parseInt(interaction.customId.split('_')[1], 10);
 
     if (!movieNightId) {
@@ -75,4 +86,53 @@ export async function handleRsvpButton(interaction) {
       await interaction.reply(message).catch(() => {});
     }
   }
+}
+
+/**
+ * RSVP for a whole binge evening. Rebuilds the kickoff embed rather than the
+ * single-film one, because a binge lists the entire lineup.
+ *
+ * Deliberately has no try/catch of its own — it is called from inside
+ * handleRsvpButton's try block, which reports the error.
+ */
+async function handleBingeRsvp(interaction) {
+  const marathonId = parseInt(interaction.customId.replace('rsvp_binge_', ''), 10);
+
+  if (!marathonId) {
+    return interaction.reply({ content: 'Invalid RSVP button.', ephemeral: true });
+  }
+
+  const marathon = await getMarathonById(marathonId);
+  if (!marathon || marathon.guild_id !== interaction.guildId) {
+    return interaction.reply({
+      content: 'This marathon no longer exists.',
+      ephemeral: true
+    });
+  }
+
+  const user = await findOrCreateUser(
+    interaction.user.id,
+    interaction.user.username,
+    interaction.user.avatar
+  );
+
+  const { attending, count } = await toggleMarathonAttendance(marathonId, user.id);
+  const attendees = await getMarathonAttendees(marathonId);
+  const items = await getMarathonItemsByMarathon(marathonId);
+
+  await interaction.update({
+    embeds: [
+      createBingeAnnouncementEmbed(
+        marathon.name,
+        items,
+        marathon.created_by_name || 'Website',
+        attendees
+      )
+    ],
+    components: createBingeComponents(marathonId, items[0])
+  });
+
+  logger.info(
+    `${interaction.user.username} ${attending ? 'joined' : 'left'} marathon ${marathonId} (${count} films)`
+  );
 }

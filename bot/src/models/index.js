@@ -464,6 +464,73 @@ export const toggleAttendance = async (movieNightId, userId) => {
   return true;
 };
 
+// "I'm in" on a binge kickoff means the whole evening, so attendance toggles
+// across every film in the marathon at once. The user's state on the first film
+// decides the direction, so a half-toggled marathon converges to all-or-nothing.
+export const toggleMarathonAttendance = async (marathonId, userId) => {
+  const items = await pool.query(
+    `SELECT scheduled_movie_night_id AS id
+     FROM marathon_items
+     WHERE marathon_id = $1 AND scheduled_movie_night_id IS NOT NULL
+     ORDER BY position ASC`,
+    [marathonId]
+  );
+  const movieNightIds = items.rows.map((r) => r.id);
+  if (movieNightIds.length === 0) return { attending: false, count: 0 };
+
+  const existing = await pool.query(
+    'SELECT id FROM movie_attendance WHERE movie_night_id = $1 AND user_id = $2',
+    [movieNightIds[0], userId]
+  );
+  const attending = existing.rows.length === 0;
+
+  if (attending) {
+    await pool.query(
+      `INSERT INTO movie_attendance (movie_night_id, user_id)
+       SELECT unnest($1::int[]), $2
+       ON CONFLICT (movie_night_id, user_id) DO NOTHING`,
+      [movieNightIds, userId]
+    );
+  } else {
+    await pool.query(
+      'DELETE FROM movie_attendance WHERE movie_night_id = ANY($1::int[]) AND user_id = $2',
+      [movieNightIds, userId]
+    );
+  }
+
+  return { attending, count: movieNightIds.length };
+};
+
+// Attendees of a binge = attendees across its films, which the marathon-wide
+// toggle keeps in sync with one another.
+export const getMarathonAttendees = async (marathonId) => {
+  const result = await pool.query(
+    `SELECT u.username, MIN(ma.created_at) AS joined_at
+     FROM marathon_items mi
+     JOIN movie_attendance ma ON ma.movie_night_id = mi.scheduled_movie_night_id
+     JOIN users u ON ma.user_id = u.id
+     WHERE mi.marathon_id = $1
+     GROUP BY u.username
+     ORDER BY joined_at ASC`,
+    [marathonId]
+  );
+  return result.rows;
+};
+
+// The guild that owns a marathon, for validating a binge RSVP click. Joins the
+// creator so the kickoff embed can be rebuilt with its original footer —
+// `marathons` stores created_by (a user id), not a name.
+export const getMarathonById = async (marathonId) => {
+  const result = await pool.query(
+    `SELECT m.*, u.username AS created_by_name
+     FROM marathons m
+     LEFT JOIN users u ON m.created_by = u.id
+     WHERE m.id = $1`,
+    [marathonId]
+  );
+  return result.rows[0];
+};
+
 // PARALLEL to backend/src/models/attendance.js (getAttendees) — intentionally
 // differs: the bot needs only usernames in RSVP order for the embed field,
 // while the web returns full user objects with avatars.

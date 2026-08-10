@@ -4,7 +4,7 @@ import {
   createMovieNight, findOrCreateUser, updateMovieNightMessage, deleteMovieNight,
   linkMarathonItemMovieNight, completeMarathonIfDone, getMarathonItemsByMarathon
 } from '../models/index.js';
-import { createBingeAnnouncementEmbed } from '../utils/embeds.js';
+import { createBingeAnnouncementEmbed, createBingeComponents } from '../utils/embeds.js';
 import {
   buildAnnouncementEmbed, buildAnnouncementComponents, toAnnouncementView
 } from '../utils/announcementEmbed.js';
@@ -204,7 +204,11 @@ async function processBingeAnnouncement(client, announcement, channel, announcer
 
   const embed = createBingeAnnouncementEmbed(announcement.marathon_name, items, announcerName);
   const content = MOVIE_NIGHT_ROLE_ID ? `<@&${MOVIE_NIGHT_ROLE_ID}>` : undefined;
-  const reply = await channel.send({ content, embeds: [embed] });
+  const reply = await channel.send({
+    content,
+    embeds: [embed],
+    components: createBingeComponents(announcement.marathon_id, items[0])
+  });
 
   // One movie_night per film. The first carries the kickoff message; the rest
   // are "silent" (no message of their own) but are still real, ratable nights.
