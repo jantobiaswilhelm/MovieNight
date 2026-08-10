@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { sanitizeUrl, sanitizeImdbId, sanitizeImageUrl } from '../utils/sanitizeUrl';
@@ -83,6 +83,59 @@ const Home = () => {
       console.error('Error refreshing data:', err);
     }
   }, []);
+
+  // Just the hero's own data — cheap enough to re-run on a timer, unlike
+  // fetchData which also pulls 100 movies, stats, reviews and the calendar.
+  const refreshHero = useCallback(async () => {
+    const [nowPlayingData, nextMovieData, upcomingData] = await Promise.all([
+      getNowPlayingMovie().catch(() => null),
+      getNextMovieWithAttendees().catch(() => null),
+      getUpcomingMoviesWithAttendees(5).catch(() => [])
+    ]);
+    setNowPlaying(nowPlayingData);
+    setNextMovieWithAttendees(nextMovieData);
+    setUpcomingWithAttendees(upcomingData);
+  }, []);
+
+  // When the hero next changes state, to the millisecond: a film starts at its
+  // scheduled time and stops airing one runtime later. Both are already known,
+  // so the page schedules one refetch for that moment instead of polling.
+  const nextTransitionAt = useMemo(() => {
+    if (nowPlaying?.started_at) {
+      return new Date(nowPlaying.started_at).getTime() + (nowPlaying.runtime || 90) * 60000;
+    }
+    const upcoming = nextMovieWithAttendees || upcomingWithAttendees[0];
+    return upcoming?.scheduled_at ? new Date(upcoming.scheduled_at).getTime() : null;
+  }, [nowPlaying, nextMovieWithAttendees, upcomingWithAttendees]);
+
+  useEffect(() => {
+    if (!nextTransitionAt) return;   // nothing scheduled — stay idle, no requests
+
+    // movieStarter runs on a one-minute cron, so started_at lags scheduled_at.
+    // The buffer absorbs that; if the flip still hasn't landed (bot down, laptop
+    // asleep) fall back to a slow re-check rather than spinning.
+    const TRANSITION_BUFFER_MS = 15_000;
+    const RECHECK_MS = 30_000;
+    // setTimeout overflows int32 (~24.8 days) and fires immediately, which would
+    // spin. Anything further out just re-arms on the next pass.
+    const MAX_DELAY_MS = 6 * 60 * 60 * 1000;
+
+    const delay = nextTransitionAt + TRANSITION_BUFFER_MS - Date.now();
+    const wait = delay > 0 ? Math.min(delay, MAX_DELAY_MS) : RECHECK_MS;
+    const timer = setTimeout(refreshHero, wait);
+    return () => clearTimeout(timer);
+  }, [nextTransitionAt, refreshHero]);
+
+  // Background tabs get their timers throttled, so a laptop that slept through
+  // the transition catches up the moment it comes back.
+  useEffect(() => {
+    if (!nextTransitionAt) return;
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') refreshHero();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [nextTransitionAt, refreshHero]);
 
   const handleAttendanceToggle = async (e) => {
     e.preventDefault();
