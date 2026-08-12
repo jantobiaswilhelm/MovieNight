@@ -524,6 +524,18 @@ const Home = () => {
    ═══════════════════════════════════════════════════════════════════════ */
 function HomeSidebar({ isAuthenticated, loading, onAnnounced, onPick, pickedMovie }) {
   const [tab, setTab] = useState(isAuthenticated ? 'announce' : 'board');
+  // Auth resolves after the first render, so the initial value above sees a
+  // logged-in user as anonymous. Follow it until the user picks a tab themselves.
+  const [picked, setPicked] = useState(false);
+
+  useEffect(() => {
+    if (!picked) setTab(isAuthenticated ? 'announce' : 'board');
+  }, [isAuthenticated, picked]);
+
+  const choose = (next) => {
+    setPicked(true);
+    setTab(next);
+  };
 
   return (
     <aside className="home-sidebar">
@@ -533,7 +545,7 @@ function HomeSidebar({ isAuthenticated, loading, onAnnounced, onPick, pickedMovi
           role="tab"
           aria-selected={tab === 'announce'}
           className={`hs-tab ${tab === 'announce' ? 'active' : ''}`}
-          onClick={() => setTab('announce')}
+          onClick={() => choose('announce')}
         >
           <Icon name="megaphone" size={14} stroke={1.5} />
           <span>Announce</span>
@@ -542,7 +554,7 @@ function HomeSidebar({ isAuthenticated, loading, onAnnounced, onPick, pickedMovi
           role="tab"
           aria-selected={tab === 'board'}
           className={`hs-tab ${tab === 'board' ? 'active' : ''}`}
-          onClick={() => setTab('board')}
+          onClick={() => choose('board')}
         >
           <Icon name="star" size={14} stroke={1.5} />
           <span>Board</span>
