@@ -585,6 +585,10 @@ export const bulkAddMarathonItems = (id, tmdbIds) =>
     body: JSON.stringify({ tmdb_ids: tmdbIds })
   });
 
+// What else fits this marathon — derived server-side from the lineup itself.
+export const getMarathonSuggestions = (id) =>
+  fetchAPI(`/api/marathons/${id}/suggestions?guild_id=${GUILD_ID}`);
+
 export const getCurateStatus = () =>
   fetchAPI(`/api/marathons/curate?guild_id=${GUILD_ID}`);
 

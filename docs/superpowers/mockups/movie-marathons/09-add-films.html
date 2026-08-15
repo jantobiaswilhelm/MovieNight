@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Add films to a running marathon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400;1,9..144,600&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  :root{
+    --ink:#14110D; --ink-2:#1C1915; --ink-3:#252119; --ink-4:#2F2A21;
+    --bone:#E8DFC9; --bone-dim:#A89E88; --bone-mute:#6B6556;
+    --ember:#D4663A; --ember-hi:#E27A4C; --ember-soft:rgba(212,102,58,.14);
+    --gold:#E0A23A; --red:#C8321A;
+    --rule:rgba(232,223,201,.08); --rule-strong:rgba(232,223,201,.16);
+    --font-display:"Fraunces",ui-serif,Georgia,serif;
+    --font-ui:"Figtree",ui-sans-serif,system-ui,sans-serif;
+    --font-mono:"JetBrains Mono",ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--ink);color:var(--bone);font-family:var(--font-ui);line-height:1.5;-webkit-font-smoothing:antialiased;padding-bottom:150px}
+  .eyebrow{font-family:var(--font-mono);font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--bone-mute)}
+  .wrap{max-width:900px;margin:0 auto;padding:0 40px}
+
+  .back{display:inline-flex;align-items:center;gap:8px;color:var(--bone-dim);font-size:13px;background:none;border:none;cursor:pointer;padding:38px 0 0}
+  .back:hover{color:var(--ember)}
+  .back svg{width:15px;height:15px}
+
+  header.h{padding:20px 0 6px}
+  header.h .k{font-family:var(--font-mono);font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--ember);display:flex;align-items:center;gap:8px;margin-bottom:12px}
+  header.h .k svg{width:13px;height:13px}
+  header.h h1{font-family:var(--font-display);font-style:italic;font-weight:400;font-size:clamp(28px,3.2vw,38px);letter-spacing:-.01em}
+  header.h p{color:var(--bone-dim);font-size:14.5px;margin-top:10px;max-width:560px}
+
+  /* ── detected theme banner ─────────────────────────────────────────── */
+  .theme{margin-top:28px;background:var(--ink-2);border:1px solid var(--rule-strong);border-left:2px solid var(--ember);
+    border-radius:10px;padding:20px 22px;display:flex;justify-content:space-between;align-items:center;gap:24px}
+  .theme .k{font-family:var(--font-mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--bone-mute);margin-bottom:7px}
+  .theme h2{font-family:var(--font-display);font-style:italic;font-weight:600;font-size:23px;line-height:1.25}
+  .theme .ev{font-size:12.5px;color:var(--bone-dim);margin-top:8px;display:flex;align-items:center;gap:7px}
+  .theme .ev svg{width:13px;height:13px;color:var(--bone-mute)}
+  .btn-ghost{background:transparent;border:1px solid var(--rule-strong);color:var(--bone-dim);font-weight:500;font-size:13px;
+    padding:10px 16px;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;white-space:nowrap;font-family:var(--font-ui)}
+  .btn-ghost:hover{color:var(--bone);border-color:var(--bone-dim)}
+  .btn-ghost svg{width:14px;height:14px}
+
+  /* ── suggestion rows ───────────────────────────────────────────────── */
+  .rowhead{display:flex;align-items:baseline;justify-content:space-between;margin:32px 0 14px}
+  .rowhead .l{display:flex;align-items:baseline;gap:12px}
+  .rowhead .n{font-family:var(--font-mono);font-size:11px;color:var(--bone-mute)}
+  .rowhead .all{font-size:12px;color:var(--ember);background:none;border:none;cursor:pointer;font-family:var(--font-ui)}
+  .rowhead .all:hover{text-decoration:underline}
+  .strip{display:flex;gap:14px;flex-wrap:wrap}
+
+  .tile{width:100px;cursor:pointer}
+  .tile .p{aspect-ratio:2/3;background:var(--ink-3);border:1px solid var(--rule);border-radius:6px;position:relative;
+    display:grid;place-items:center;overflow:hidden;transition:border-color .15s}
+  .tile:hover .p{border-color:var(--rule-strong)}
+  .tile.sel .p{border-color:var(--ember)}
+  .tile .p .ph{color:var(--bone-mute);opacity:.35}
+  .tile .p .ph svg{width:22px;height:22px}
+  .tile .cb{position:absolute;top:6px;left:6px;width:19px;height:19px;border-radius:4px;border:1px solid var(--rule-strong);
+    background:var(--ink);display:grid;place-items:center;color:transparent}
+  .tile.sel .cb{background:var(--ember);border-color:var(--ember);color:var(--ink)}
+  .tile .cb svg{width:12px;height:12px}
+  .tile h5{font-size:12.5px;font-weight:600;margin-top:9px;line-height:1.3}
+  .tile .yr{font-size:11px;color:var(--bone-mute);margin-top:2px}
+  .tile .why{font-size:11px;color:var(--bone-dim);margin-top:4px;font-style:italic}
+  .tile.inlist{cursor:default;opacity:.4}
+  .tile.inlist .p{border-style:dashed}
+  .tile.inlist .cb{display:none}
+
+  /* ── divider + source picker ───────────────────────────────────────── */
+  .div{display:flex;align-items:center;gap:16px;margin:44px 0 26px}
+  .div .ln{flex:1;height:1px;background:var(--rule)}
+  .div span{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--bone-mute)}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .src{background:var(--ink-2);border:1px solid var(--rule);border-radius:10px;padding:18px 20px;cursor:pointer;
+    transition:border-color .15s,background .15s;position:relative;display:flex;gap:14px;align-items:flex-start}
+  .src:hover{border-color:var(--rule-strong);background:var(--ink-3)}
+  .src .ic{width:34px;height:34px;border-radius:8px;background:var(--ink-3);display:grid;place-items:center;color:var(--ember);flex-shrink:0}
+  .src .ic svg{width:17px;height:17px}
+  .src h3{font-family:var(--font-display);font-style:italic;font-weight:600;font-size:16.5px;margin-bottom:4px}
+  .src p{font-size:12.5px;color:var(--bone-dim);line-height:1.45}
+
+  /* ── sticky action bar ─────────────────────────────────────────────── */
+  .bar{position:fixed;bottom:0;left:0;right:0;background:var(--ink-2);border-top:1px solid var(--rule-strong);padding:16px 0}
+  .bar .in{max-width:900px;margin:0 auto;padding:0 40px;display:flex;justify-content:space-between;align-items:center;gap:20px}
+  .bar .cnt{font-size:13.5px;color:var(--bone-dim)}
+  .bar .cnt b{color:var(--bone);font-weight:600}
+  .bar .cnt .sub{display:block;font-size:12px;color:var(--bone-mute);margin-top:3px}
+  .btn-next{background:var(--ember);color:var(--ink);border:none;font-weight:600;font-size:14px;padding:13px 22px;border-radius:6px;
+    cursor:pointer;display:inline-flex;align-items:center;gap:8px;font-family:var(--font-ui)}
+  .btn-next:hover{background:var(--ember-hi)}
+  .btn-next svg{width:16px;height:16px}
+
+  /* ── alternate states ──────────────────────────────────────────────── */
+  .states{margin-top:64px;padding-top:30px;border-top:1px solid var(--rule)}
+  .states > .eyebrow{margin-bottom:6px}
+  .states > p.lead{font-size:13px;color:var(--bone-mute);margin-bottom:22px}
+  .state{margin-bottom:22px}
+  .state .cap{font-size:12px;color:var(--bone-dim);margin-bottom:9px}
+  .state .cap b{color:var(--bone)}
+  .notice{background:var(--ink-2);border:1px solid var(--rule-strong);border-left:2px solid var(--gold);border-radius:8px;
+    padding:15px 18px;display:flex;gap:12px;font-size:13px;color:var(--bone-dim);align-items:flex-start}
+  .notice svg{width:16px;height:16px;color:var(--gold);flex-shrink:0;margin-top:1px}
+  .notice b{color:var(--bone)}
+  .notice.plain{border-left-color:var(--ember)}
+  .notice.plain svg{color:var(--ember)}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <button class="back"><i data-lucide="arrow-left"></i> Tarantino Marathon</button>
+
+    <header class="h">
+      <div class="k"><i data-lucide="plus"></i> Adding films · 3 already in the lineup</div>
+      <h1>What else should we watch?</h1>
+      <p>We looked at what’s already in this marathon and worked out the through-line. Tick what you want — you’ll set dates on the next step.</p>
+    </header>
+
+    <!-- detected theme -->
+    <div class="theme">
+      <div>
+        <div class="k">This looks like</div>
+        <h2>Films directed by Quentin Tarantino</h2>
+        <div class="ev"><i data-lucide="badge-check"></i> All 3 films in the lineup share this director · from TMDB credits</div>
+      </div>
+      <button class="btn-ghost"><i data-lucide="x"></i> That’s not it</button>
+    </div>
+
+    <!-- row 1 · rest of the collection -->
+    <div class="rowhead">
+      <div class="l"><span class="eyebrow">Rest of the collection</span><span class="n">Kill Bill · 1 missing</span></div>
+      <button class="all">Select all</button>
+    </div>
+    <div class="strip">
+      <div class="tile inlist">
+        <div class="p"><span class="ph"><i data-lucide="film"></i></span></div>
+        <h5>Kill Bill: Vol. 1</h5><div class="yr">2003</div><div class="why">already in</div>
+      </div>
+      <div class="tile sel">
+        <div class="p"><span class="cb"><i data-lucide="check"></i></span><span class="ph"><i data-lucide="film"></i></span></div>
+        <h5>Kill Bill: Vol. 2</h5><div class="yr">2004</div>
+      </div>
+    </div>
+
+    <!-- row 2 · more by the director -->
+    <div class="rowhead">
+      <div class="l"><span class="eyebrow">More by Quentin Tarantino</span><span class="n">6 not in the lineup</span></div>
+      <button class="all">Select all</button>
+    </div>
+    <div class="strip">
+      <div class="tile sel">
+        <div class="p"><span class="cb"><i data-lucide="check"></i></span><span class="ph"><i data-lucide="film"></i></span></div>
+        <h5>Jackie Brown</h5><div class="yr">1997</div>
+      </div>
+      <div class="tile sel">
+        <div class="p"><span class="cb"><i data-lucide="check"></i></span><span class="ph"><i data-lucide="film"></i></span></div>
+        <h5>Inglourious Basterds</h5><div class="yr">2009</div>
+      </div>
+      <div class="tile">
+        <div class="p"><span class="cb"><i data-lucide="check"></i></span><span class="ph"><i data-lucide="film"></i></span></div>
+        <h5>Django Unchained</h5><div class="yr">2012</div>
+      </div>
+      <div class="tile">
+        <div class="p"><span class="cb"><i data-lucide="check"></i></span><span class="ph"><i data-lucide="film"></i></span></div>
+        <h5>The Hateful Eight</h5><div class="yr">2015</div>
+      </div>
+      <div class="tile">
+        <div class="p"><span class="cb"><i data-lucide="check"></i></span><span class="ph"><i data-lucide="film"></i></span></div>
+        <h5>Once Upon a Time… in Hollywood</h5><div class="yr">2019</div>
+      </div>
+      <div class="tile">
+        <div class="p"><span class="cb"><i data-lucide="check"></i></span><span class="ph"><i data-lucide="film"></i></span></div>
+        <h5>Death Proof</h5><div class="yr">2007</div>
+      </div>
+    </div>
+
+    <!-- row 3 · similar -->
+    <div class="rowhead">
+      <div class="l"><span class="eyebrow">Similar to this lineup</span><span class="n">recurring across 2+ films</span></div>
+      <button class="all">Select all</button>
+    </div>
+    <div class="strip">
+      <div class="tile">
+        <div class="p"><span class="cb"><i data-lucide="check"></i></span><span class="ph"><i data-lucide="film"></i></span></div>
+        <h5>True Romance</h5><div class="yr">1993</div><div class="why">he wrote it</div>
+      </div>
+      <div class="tile">
+        <div class="p"><span class="cb"><i data-lucide="check"></i></span><span class="ph"><i data-lucide="film"></i></span></div>
+        <h5>Sin City</h5><div class="yr">2005</div>
+      </div>
+      <div class="tile">
+        <div class="p"><span class="cb"><i data-lucide="check"></i></span><span class="ph"><i data-lucide="film"></i></span></div>
+        <h5>Snatch</h5><div class="yr">2000</div>
+      </div>
+      <div class="tile">
+        <div class="p"><span class="cb"><i data-lucide="check"></i></span><span class="ph"><i data-lucide="film"></i></span></div>
+        <h5>Lock, Stock and Two Smoking Barrels</h5><div class="yr">1998</div>
+      </div>
+    </div>
+
+    <!-- fallback: the full picker -->
+    <div class="div"><span class="ln"></span><span>or build from a source</span><span class="ln"></span></div>
+
+    <div class="grid">
+      <div class="src">
+        <div class="ic"><i data-lucide="search"></i></div>
+        <div><h3>Pick movies yourself</h3><p>Search TMDB and add films one by one.</p></div>
+      </div>
+      <div class="src">
+        <div class="ic"><i data-lucide="user-round"></i></div>
+        <div><h3>By actor, actress, or director</h3><p>Search a person → pull their films from TMDB.</p></div>
+      </div>
+      <div class="src">
+        <div class="ic"><i data-lucide="layers"></i></div>
+        <div><h3>From a franchise</h3><p>Grab a whole collection in order.</p></div>
+      </div>
+      <div class="src">
+        <div class="ic"><i data-lucide="sparkles"></i></div>
+        <div><h3>Describe a vibe</h3><p>Describe a mood or theme and review the lineup.</p></div>
+      </div>
+    </div>
+
+    <!-- ── alternate states ─────────────────────────────────────────── -->
+    <div class="states">
+      <div class="eyebrow">Alternate states</div>
+      <p class="lead">Same screen, different lineups. These are part of the contract, not decoration.</p>
+
+      <div class="state">
+        <div class="cap"><b>No confident through-line</b> — mixed lineup, nothing shared. The banner is replaced and the source picker is already open below it.</div>
+        <div class="notice plain">
+          <i data-lucide="compass"></i>
+          <div><b>These films don’t have an obvious through-line.</b> No shared director, cast, or franchise turned up — pick a source below and we’ll pull from TMDB.</div>
+        </div>
+      </div>
+
+      <div class="state">
+        <div class="cap"><b>Back-to-back marathon, already announced</b> — the whole evening posted to Discord as one embed, so adding to it would re-announce everything. Adding is refused.</div>
+        <div class="notice">
+          <i data-lucide="alert-triangle"></i>
+          <div><b>This back-to-back night has already been announced.</b> Its whole lineup went out to Discord in one post, so films can’t be bolted on now. Start a second marathon for the extra films, or pause this one and rebuild it.</div>
+        </div>
+      </div>
+
+      <div class="state">
+        <div class="cap"><b>Completed marathon</b> — adding films brings it back to life.</div>
+        <div class="notice plain">
+          <i data-lucide="rotate-ccw"></i>
+          <div><b>This marathon is finished.</b> Adding films will set it back to active so the new ones roll out to Discord.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bar">
+    <div class="in">
+      <div class="cnt">
+        <b>3 films selected</b>
+        <span class="sub">They’ll be added to the end of the lineup, in the order shown</span>
+      </div>
+      <button class="btn-next">Continue to dates <i data-lucide="arrow-right"></i></button>
+    </div>
+  </div>
+
+  <script>lucide.createIcons();</script>
+</body>
+</html>

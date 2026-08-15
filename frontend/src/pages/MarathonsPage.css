@@ -206,7 +206,72 @@
 .mara-li .li-tbd:hover { color: var(--ember); }
 .mara-li .li-tbd.is-tbd { cursor: default; color: var(--ember); }
 
+.mara-li.pick.already { opacity: .45; cursor: default; }
+.mara-li.pick.already .mara-check { border-style: dashed; }
+
 .mara-additem { width: 100%; margin-top: 6px; }
+
+/* ── Add films to a running marathon (/marathons/:id/add) ──────────────── */
+.mara-addfilms { padding-bottom: 120px; }
+
+/* Detected through-line */
+.mara-theme { margin-top: 24px; background: var(--ink-2); border: 1px solid var(--rule-strong);
+  border-left: 2px solid var(--ember); border-radius: var(--r-3); padding: 20px 22px;
+  display: flex; justify-content: space-between; align-items: center; gap: 24px; }
+.mara-theme .k { font-family: var(--font-mono); font-size: 10px; letter-spacing: .2em;
+  text-transform: uppercase; color: var(--bone-mute); margin-bottom: 8px; }
+.mara-theme h2 { font-family: var(--font-display); font-style: italic; font-weight: 600; font-size: 23px; line-height: 1.25; }
+.mara-theme .ev { font-size: 12.5px; color: var(--bone-dim); margin-top: 8px; display: flex; align-items: center; gap: 7px; }
+.mara-theme .ev svg { width: 13px; height: 13px; color: var(--bone-mute); flex-shrink: 0; }
+
+/* Inline notices (no through-line, no rhythm, queue jumper, blocked) */
+.mara-notice { margin-top: 24px; background: var(--ink-2); border: 1px solid var(--rule-strong);
+  border-left: 2px solid var(--ember); border-radius: var(--r-2); padding: 15px 18px;
+  display: flex; gap: 12px; font-size: 13px; color: var(--bone-dim); align-items: flex-start; }
+.mara-notice svg { width: 16px; height: 16px; color: var(--ember); flex-shrink: 0; margin-top: 1px; }
+.mara-notice b { color: var(--bone); }
+.mara-notice.warn { border-left-color: var(--gold); }
+.mara-notice.warn svg { color: var(--gold); }
+
+/* Suggestion rows */
+.mara-rowhead { display: flex; align-items: baseline; justify-content: space-between; margin: 32px 0 14px; gap: 16px; }
+.mara-rowhead .l { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; min-width: 0; }
+.mara-rowhead .n { font-family: var(--font-mono); font-size: 11px; color: var(--bone-mute); }
+.mara-strip { display: flex; gap: 14px; flex-wrap: wrap; }
+
+.mara-tile { width: 100px; cursor: pointer; background: none; border: 0; padding: 0; text-align: left; color: var(--bone); }
+.mara-tile .p { display: block; aspect-ratio: 2 / 3; background: var(--ink-3) center/cover no-repeat;
+  border: 1px solid var(--rule); border-radius: var(--r-2); position: relative;
+  transition: border-color var(--dur-1) var(--ease-out); }
+.mara-tile:hover .p { border-color: var(--rule-strong); }
+.mara-tile.sel .p { border-color: var(--ember); }
+.mara-tile .cb { position: absolute; top: 6px; left: 6px; width: 19px; height: 19px; border-radius: 4px;
+  border: 1px solid var(--rule-strong); background: var(--ink); display: grid; place-items: center; color: transparent; }
+.mara-tile.sel .cb { background: var(--ember); border-color: var(--ember); color: var(--ink); }
+.mara-tile h5 { font-size: 12.5px; font-weight: 600; margin-top: 9px; line-height: 1.3; }
+.mara-tile .yr { font-size: 11px; color: var(--bone-mute); margin-top: 2px; }
+.mara-tile.inlist { cursor: default; opacity: .4; }
+.mara-tile.inlist .p { border-style: dashed; }
+
+/* "or build from a source" divider */
+.mara-or { display: flex; align-items: center; gap: 16px; margin: 44px 0 24px; }
+.mara-or .ln { flex: 1; height: 1px; background: var(--rule); }
+.mara-or > span:not(.ln) { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .2em;
+  text-transform: uppercase; color: var(--bone-mute); }
+
+/* Sticky confirm bar */
+.mara-stickybar { position: sticky; bottom: 0; margin-top: 40px; background: var(--ink-2);
+  border-top: 1px solid var(--rule-strong); padding: 16px 0;
+  display: flex; justify-content: space-between; align-items: center; gap: 20px; }
+.mara-stickybar .cnt { font-size: 13.5px; color: var(--bone-dim); }
+.mara-stickybar .cnt b { color: var(--bone); font-weight: 600; }
+.mara-stickybar .cnt .sub { display: block; font-size: 12px; color: var(--bone-mute); margin-top: 3px; }
+
+@media (max-width: 760px) {
+  .mara-theme { flex-direction: column; align-items: flex-start; gap: 14px; }
+  .mara-stickybar { flex-direction: column; align-items: stretch; }
+  .mara-tile { width: calc(33.333% - 10px); }
+}
 
 /* Schedule panel */
 .mara-panel { background: var(--ink-2); border: 1px solid var(--rule); border-radius: var(--r-3); padding: 22px; }

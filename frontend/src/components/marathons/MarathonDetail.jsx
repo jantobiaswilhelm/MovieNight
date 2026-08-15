@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useToast } from '../../context/ToastContext';
 import * as api from '../../api/client';
 import { Icon } from '../ui';
@@ -28,6 +29,7 @@ const runtimeStr = (mins) => {
 };
 
 export default function MarathonDetail({ id, onBack }) {
+  const navigate = useNavigate();
   const { showError, showSuccess } = useToast();
   const [m, setM] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -125,6 +127,7 @@ export default function MarathonDetail({ id, onBack }) {
         </div>
         {m.is_owner && (
           <div className="mara-actions">
+            <button className="btn ghost" onClick={() => navigate(`/marathons/${m.id}/add`)}><Icon name="plus" size={15} /> Add films</button>
             {m.status === 'active' && <button className="btn" onClick={() => doAction(() => api.pauseMarathon(m.id), 'Paused')}><Icon name="pause" size={15} /> Pause</button>}
             {m.status === 'paused' && <button className="btn" onClick={() => doAction(() => api.resumeMarathon(m.id), 'Resumed')}><Icon name="play" size={15} /> Resume</button>}
             <button className="btn danger" title="Delete marathon" onClick={() => {

@@ -22,6 +22,7 @@ const AchievementsPage = lazy(() => import('./pages/AchievementsPage'));
 const ActivityFeed = lazy(() => import('./pages/ActivityFeed'));
 const MarathonsPage = lazy(() => import('./pages/MarathonsPage'));
 const MarathonWizardPage = lazy(() => import('./pages/MarathonWizardPage'));
+const MarathonAddFilmsPage = lazy(() => import('./pages/MarathonAddFilmsPage'));
 
 function App() {
   return (
@@ -51,6 +52,7 @@ function App() {
             <Route path="/feed" element={<ActivityFeed />} />
             <Route path="/marathons" element={<MarathonsPage />} />
             <Route path="/marathons/new" element={<MarathonWizardPage />} />
+            <Route path="/marathons/:id/add" element={<MarathonAddFilmsPage />} />
             <Route path="/marathons/:id" element={<MarathonsPage />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
           </Routes>

@@ -5,6 +5,7 @@ import { isAdmin } from '../utils/admin.js';
 import * as db from '../models/index.js';
 import * as tmdb from '../services/tmdb.js';
 import * as curator from '../services/curator.js';
+import * as suggestions from '../services/marathonSuggestions.js';
 
 const router = Router();
 
@@ -108,6 +109,48 @@ const loadManageable = async (req, res) => {
   return marathon;
 };
 
+// A back-to-back marathon announces its WHOLE evening in one Discord post, and
+// marks every item 'scheduled' as it does (bot enqueueBingeMarathonAtomic). A
+// film added afterwards lands as 'pending', which makes the processor fire a
+// second kickoff and re-announce the entire lineup. So: no adding after the
+// evening has gone out.
+const bingeAlreadyAnnounced = (marathon, items) =>
+  marathon.cadence_type === 'binge' && items.some((it) => it.status === 'scheduled');
+
+// Shared by both add routes. Returns an error string, or null when adding is OK.
+const blockedFromAdding = async (marathon) => {
+  const items = await db.getMarathonItems(marathon.id);
+  if (bingeAlreadyAnnounced(marathon, items)) {
+    return 'This back-to-back night has already been announced to Discord — its whole lineup went out in one post, so films can’t be added now.';
+  }
+  return null;
+};
+
+// Called after a successful add. A completed marathon has to go back to active
+// or the bot never picks the new films up (getActiveMarathons filters on it).
+const reviveIfCompleted = async (marathon) => {
+  suggestions.invalidateSuggestions(marathon.id);
+  if (marathon.status === 'completed') await db.setMarathonStatus(marathon.id, 'active');
+};
+
+// GET /api/marathons/:id/suggestions — what else fits this marathon?
+// Derived from the lineup itself (shared franchise / director / cast, pooled
+// TMDB recommendations). Aggregated server-side because doing it in the browser
+// would be three TMDB round-trips per film in the lineup.
+router.get('/:id/suggestions', validateGuildId, validateIntParams('id'), authenticateToken, async (req, res) => {
+  try {
+    const marathon = await loadManageable(req, res);
+    if (!marathon) return;
+    const items = await db.getMarathonItems(marathon.id);
+    const blocked = await blockedFromAdding(marathon);
+    if (blocked) return res.status(409).json({ error: blocked });
+    res.json(await suggestions.buildSuggestions(marathon, items));
+  } catch (err) {
+    console.error('Error building marathon suggestions:', err);
+    res.status(502).json({ error: 'Could not reach TMDB for suggestions' });
+  }
+});
+
 // POST /api/marathons/:id/items — append a film (tmdb_data carries metadata).
 router.post('/:id/items', validateGuildId, validateIntParams('id'), authenticateToken, async (req, res) => {
   const { tmdb_data } = req.body;
@@ -117,7 +160,10 @@ router.post('/:id/items', validateGuildId, validateIntParams('id'), authenticate
   try {
     const marathon = await loadManageable(req, res);
     if (!marathon) return;
+    const blocked = await blockedFromAdding(marathon);
+    if (blocked) return res.status(409).json({ error: blocked });
     const item = await db.addMarathonItem(marathon.id, tmdb_data);
+    await reviveIfCompleted(marathon);
     res.json(item);
   } catch (err) {
     console.error('Error adding marathon item:', err);
@@ -138,10 +184,13 @@ router.post('/:id/items/bulk', validateGuildId, validateIntParams('id'), authent
   try {
     const marathon = await loadManageable(req, res);
     if (!marathon) return;
+    const blocked = await blockedFromAdding(marathon);
+    if (blocked) return res.status(409).json({ error: blocked });
     const details = await Promise.all(ids.map((tid) => tmdb.getMovieDetail(tid).catch(() => null)));
     const movies = details.filter(Boolean).map(detailToItem);
     if (movies.length === 0) return res.status(502).json({ error: 'Could not resolve any films from TMDB' });
     const items = await db.addMarathonItemsBulk(marathon.id, movies);
+    await reviveIfCompleted(marathon);
     res.json(items);
   } catch (err) {
     console.error('Error bulk-adding marathon items:', err);

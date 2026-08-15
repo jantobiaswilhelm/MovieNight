@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Add films — dates</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400;1,9..144,600&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  :root{
+    --ink:#14110D; --ink-2:#1C1915; --ink-3:#252119; --ink-4:#2F2A21;
+    --bone:#E8DFC9; --bone-dim:#A89E88; --bone-mute:#6B6556;
+    --ember:#D4663A; --ember-hi:#E27A4C; --ember-soft:rgba(212,102,58,.14);
+    --gold:#E0A23A; --red:#C8321A;
+    --rule:rgba(232,223,201,.08); --rule-strong:rgba(232,223,201,.16);
+    --font-display:"Fraunces",ui-serif,Georgia,serif;
+    --font-ui:"Figtree",ui-sans-serif,system-ui,sans-serif;
+    --font-mono:"JetBrains Mono",ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--ink);color:var(--bone);font-family:var(--font-ui);line-height:1.5;-webkit-font-smoothing:antialiased;padding-bottom:150px}
+  .eyebrow{font-family:var(--font-mono);font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--bone-mute)}
+  .wrap{max-width:820px;margin:0 auto;padding:0 40px}
+
+  .back{display:inline-flex;align-items:center;gap:8px;color:var(--bone-dim);font-size:13px;background:none;border:none;cursor:pointer;padding:38px 0 0;font-family:var(--font-ui)}
+  .back:hover{color:var(--ember)}
+  .back svg{width:15px;height:15px}
+
+  header.h{padding:20px 0 6px}
+  header.h .k{font-family:var(--font-mono);font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--ember);display:flex;align-items:center;gap:8px;margin-bottom:12px}
+  header.h .k svg{width:13px;height:13px}
+  header.h h1{font-family:var(--font-display);font-style:italic;font-weight:400;font-size:clamp(28px,3.2vw,38px);letter-spacing:-.01em}
+
+  /* inferred rhythm */
+  .rhythm{margin-top:26px;background:var(--ink-2);border:1px solid var(--rule-strong);border-left:2px solid var(--ember);
+    border-radius:10px;padding:18px 20px;display:flex;gap:13px;align-items:flex-start;font-size:13.5px;color:var(--bone-dim)}
+  .rhythm svg{width:17px;height:17px;color:var(--ember);flex-shrink:0;margin-top:1px}
+  .rhythm b{color:var(--bone)}
+
+  .sectitle{font-family:var(--font-mono);font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--bone-mute);margin:34px 0 14px}
+
+  /* rows */
+  .li{display:flex;align-items:center;gap:14px;padding:13px 14px;border:1px solid var(--rule);border-radius:6px;
+    margin-bottom:8px;background:var(--ink-2)}
+  .li.ctx{background:transparent;border-color:transparent;opacity:.55}
+  .li .num{font-family:var(--font-mono);font-size:12px;color:var(--bone-mute);width:20px;text-align:center}
+  .li .poster{width:32px;height:48px;border-radius:4px;background:var(--ink-3);flex-shrink:0;display:grid;place-items:center}
+  .li .poster svg{width:15px;height:15px;color:var(--bone-mute);opacity:.4}
+  .li .t{flex:1;min-width:0}
+  .li .t h4{font-size:14.5px;font-weight:600}
+  .li .t .m{font-size:12px;color:var(--bone-mute);margin-top:2px}
+  .li .t .m.new{color:var(--ember)}
+  input.date{background:var(--ink);border:1px solid var(--rule-strong);border-radius:6px;color:var(--bone);
+    font-family:var(--font-ui);font-size:13px;padding:9px 11px;width:190px}
+  input.date:focus{outline:none;border-color:var(--ember)}
+  .li .tbd{background:transparent;border:1px solid var(--rule-strong);color:var(--bone-mute);font-size:12px;
+    padding:9px 12px;border-radius:6px;cursor:pointer;font-family:var(--font-ui);white-space:nowrap}
+  .li .tbd:hover{color:var(--bone);border-color:var(--bone-dim)}
+  .li .isTbd{width:190px;text-align:center;font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--bone-mute);border:1px dashed var(--rule-strong);border-radius:6px;padding:10px 0}
+
+  /* sticky bar */
+  .bar{position:fixed;bottom:0;left:0;right:0;background:var(--ink-2);border-top:1px solid var(--rule-strong);padding:16px 0}
+  .bar .in{max-width:820px;margin:0 auto;padding:0 40px;display:flex;justify-content:space-between;align-items:center;gap:20px}
+  .bar .cnt{font-size:13.5px;color:var(--bone-dim)}
+  .bar .cnt b{color:var(--bone);font-weight:600}
+  .bar .cnt .sub{display:block;font-size:12px;color:var(--bone-mute);margin-top:3px}
+  .btn-next{background:var(--ember);color:var(--ink);border:none;font-weight:600;font-size:14px;padding:13px 22px;border-radius:6px;
+    cursor:pointer;display:inline-flex;align-items:center;gap:8px;font-family:var(--font-ui)}
+  .btn-next:hover{background:var(--ember-hi)}
+  .btn-next svg{width:16px;height:16px}
+  .btn-ghost{background:transparent;border:1px solid var(--rule-strong);color:var(--bone-dim);font-weight:500;font-size:13px;
+    padding:10px 16px;border-radius:6px;cursor:pointer;font-family:var(--font-ui)}
+
+  /* alternate states */
+  .states{margin-top:60px;padding-top:30px;border-top:1px solid var(--rule)}
+  .states > .eyebrow{margin-bottom:6px}
+  .states > p.lead{font-size:13px;color:var(--bone-mute);margin-bottom:22px}
+  .state{margin-bottom:22px}
+  .state .cap{font-size:12px;color:var(--bone-dim);margin-bottom:9px}
+  .state .cap b{color:var(--bone)}
+  .notice{background:var(--ink-2);border:1px solid var(--rule-strong);border-left:2px solid var(--gold);border-radius:8px;
+    padding:15px 18px;display:flex;gap:12px;font-size:13px;color:var(--bone-dim);align-items:flex-start}
+  .notice svg{width:16px;height:16px;color:var(--gold);flex-shrink:0;margin-top:1px}
+  .notice b{color:var(--bone)}
+  .notice.plain{border-left-color:var(--ember)}
+  .notice.plain svg{color:var(--ember)}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <button class="back"><i data-lucide="arrow-left"></i> Back to picking films</button>
+
+    <header class="h">
+      <div class="k"><i data-lucide="calendar-clock"></i> Step 2 of 2 · Tarantino Marathon</div>
+      <h1>When do these play?</h1>
+    </header>
+
+    <div class="rhythm">
+      <i data-lucide="repeat"></i>
+      <div>This marathon runs <b>every 7 days, Saturdays at 8:00 PM</b> — measured from the dates already in it. We’ve carried that on for the new films. Change any of them, or leave one as TBD to date it later.</div>
+    </div>
+
+    <div class="sectitle">Already in the lineup</div>
+
+    <div class="li ctx">
+      <span class="num">2</span>
+      <div class="poster"><i data-lucide="film"></i></div>
+      <div class="t"><h4>Pulp Fiction</h4><div class="m">Next up</div></div>
+      <div class="isTbd" style="border-style:solid;text-transform:none;letter-spacing:0;font-family:var(--font-ui);font-size:13px">Sat, Mar 14 · 8:00 PM</div>
+    </div>
+    <div class="li ctx">
+      <span class="num">3</span>
+      <div class="poster"><i data-lucide="film"></i></div>
+      <div class="t"><h4>Kill Bill: Vol. 1</h4><div class="m">Queued</div></div>
+      <div class="isTbd" style="border-style:solid;text-transform:none;letter-spacing:0;font-family:var(--font-ui);font-size:13px">Sat, Mar 21 · 8:00 PM</div>
+    </div>
+
+    <div class="sectitle" style="color:var(--ember)">Adding 3 films</div>
+
+    <div class="li">
+      <span class="num">4</span>
+      <div class="poster"><i data-lucide="film"></i></div>
+      <div class="t"><h4>Kill Bill: Vol. 2</h4><div class="m new">+7 days · continues the rhythm</div></div>
+      <input class="date" type="text" value="Sat 28 Mar 2026, 20:00" />
+      <button class="tbd">Make TBD</button>
+    </div>
+    <div class="li">
+      <span class="num">5</span>
+      <div class="poster"><i data-lucide="film"></i></div>
+      <div class="t"><h4>Jackie Brown</h4><div class="m new">+14 days · continues the rhythm</div></div>
+      <input class="date" type="text" value="Sat 4 Apr 2026, 20:00" />
+      <button class="tbd">Make TBD</button>
+    </div>
+    <div class="li">
+      <span class="num">6</span>
+      <div class="poster"><i data-lucide="film"></i></div>
+      <div class="t"><h4>Inglourious Basterds</h4><div class="m">Set to TBD — date it from the lineup later</div></div>
+      <div class="isTbd">TBD</div>
+      <button class="tbd">Set a date</button>
+    </div>
+
+    <!-- ── alternate states ─────────────────────────────────────────── -->
+    <div class="states">
+      <div class="eyebrow">Alternate states</div>
+      <p class="lead">What this step does when the rhythm can’t be read, or a date would jump the queue.</p>
+
+      <div class="state">
+        <div class="cap"><b>Fewer than two dated films</b> — there’s no gap to measure, so nothing is guessed.</div>
+        <div class="notice plain">
+          <i data-lucide="help-circle"></i>
+          <div><b>We can’t work out this marathon’s rhythm yet.</b> It needs at least two dated films to measure the gap between. The new films are added as TBD — give them dates from the lineup whenever you like.</div>
+        </div>
+      </div>
+
+      <div class="state">
+        <div class="cap"><b>A date jumps the queue</b> — films roll out in lineup order, not date order, so an early date is flagged rather than silently reordered.</div>
+        <div class="notice">
+          <i data-lucide="alert-triangle"></i>
+          <div><b>“Jackie Brown” is dated before “Kill Bill: Vol. 1”, which is still ahead of it in the lineup.</b> Films post to Discord in lineup order, so it will still go out second. Drag it up the lineup afterwards if you want it first.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bar">
+    <div class="in">
+      <div class="cnt">
+        <b>Adding 3 films</b>
+        <span class="sub">2 dated · 1 TBD · nothing posts to Discord until 3 days before its date</span>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn-ghost">Cancel</button>
+        <button class="btn-next">Add to marathon <i data-lucide="check"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <script>lucide.createIcons();</script>
+</body>
+</html>
