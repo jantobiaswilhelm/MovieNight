@@ -318,6 +318,9 @@
 .mara-li2 .date b { display: block; color: var(--bone); font-weight: 600; }
 .mara-li2 .grip { color: var(--bone-mute); cursor: grab; display: inline-flex; }
 .mara-li2 .grip svg { width: 15px; height: 15px; }
+.mara-li2 .mara-iconbtn { flex-shrink: 0; }
+/* Inline "Remove? / Cancel" pair that replaces the row's × while confirming */
+.mara-li2 .li-confirm { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .mara-badge-next { font-family: var(--font-mono); font-size: 9px; letter-spacing: .12em; text-transform: uppercase;
   color: var(--ember); border: 1px solid var(--ember-dim); border-radius: var(--r-full); padding: 2px 7px; }
 
@@ -335,4 +338,6 @@
   .mara-build { grid-template-columns: 1fr; }
   .mara-srcgrid { grid-template-columns: 1fr; }
   .mara-srow { grid-template-columns: 1fr; }
+  /* Remove/Cancel needs the room the date column was using */
+  .mara-li2.confirming .date { display: none; }
 }
