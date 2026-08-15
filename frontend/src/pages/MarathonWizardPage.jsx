@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useToast } from '../context/ToastContext';
 import * as api from '../api/client';
 import { Icon } from '../components/ui';
+import MarathonSourcePicker from '../components/marathons/MarathonSourcePicker';
 import './MarathonsPage.css';
 
 // Map GET /api/tmdb/:id detail shape → the tmdb_data our item endpoint expects.
@@ -19,16 +20,8 @@ const toLocalInput = (date) =>
 const fmtShort = (v) =>
   v ? new Date(v).toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—';
 
-// The four build methods. All converge on the same Lineup+Schedule step.
-// The "vibe" (Gemini) card only appears when curation is configured.
-const SOURCES = [
-  { key: 'manual',    icon: 'search',   title: 'Pick movies yourself',          desc: 'Search TMDB and add films one by one. Full control over order.', tag: 'Manual' },
-  { key: 'person',    icon: 'user',     title: 'By actor, actress, or director', desc: 'Search a person → pull their films straight from TMDB. Zero guesswork.', tag: 'TMDB credits' },
-  { key: 'franchise', icon: 'layers',   title: 'From a franchise',              desc: 'Grab a whole collection in order — trilogies, sagas.', tag: 'Collections' },
-  { key: 'vibe',      icon: 'sparkles', title: 'Describe a vibe',               desc: 'Describe a mood or theme and get a lineup you review before it schedules.', tag: 'AI · Gemini' },
-];
-
-const EX_CHIPS = ['Feel-good heist movies', '90s cult classics', 'Movies set in space', 'A24 horror'];
+// The source cards, their panels, and the reviewable preview list all live in
+// <MarathonSourcePicker> — shared with the add-films page.
 
 const STEPS = ['Source', 'Lineup', 'Schedule', 'Review'];
 
@@ -65,7 +58,8 @@ export default function MarathonWizardPage() {
   const [phase, setPhase] = useState('source');       // source | build | review
   const [marathonId, setMarathonId] = useState(null);
   const [name, setName] = useState('');
-  const [source, setSource] = useState('manual');
+  // What the shared source picker currently has selected.
+  const [picked, setPicked] = useState({ source: 'manual', preview: [], selectedIds: new Set() });
   const [items, setItems] = useState([]);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
@@ -83,83 +77,15 @@ export default function MarathonWizardPage() {
   const [dragIndex, setDragIndex] = useState(null);
   const [dragOver, setDragOver] = useState(null);
 
-  // sources
-  const [curateAvailable, setCurateAvailable] = useState(false);
-  const [personQuery, setPersonQuery] = useState('');
-  const [people, setPeople] = useState([]);
-  const [personRole, setPersonRole] = useState('acting');
-  const [franchiseQuery, setFranchiseQuery] = useState('');
-  const [franchiseHits, setFranchiseHits] = useState([]);
-  const [vibe, setVibe] = useState('');
-  const [preview, setPreview] = useState([]);        // [{tmdbId,title,year,posterPath}]
-  const [selectedIds, setSelectedIds] = useState(() => new Set());  // which preview films to add
-  const [sourceBusy, setSourceBusy] = useState(false);
-
-  // Set the preview and default every film to selected.
-  const applyPreview = (list) => {
-    setPreview(list);
-    setSelectedIds(new Set(list.map((p) => p.tmdbId)));
-  };
-  const toggleSelected = (tmdbId) => setSelectedIds((prev) => {
-    const next = new Set(prev);
-    if (next.has(tmdbId)) next.delete(tmdbId); else next.add(tmdbId);
-    return next;
-  });
-  const allSelected = preview.length > 0 && selectedIds.size === preview.length;
-  const toggleAll = () => setSelectedIds(allSelected ? new Set() : new Set(preview.map((p) => p.tmdbId)));
-  const chooseSource = (key) => { setSource(key); setPreview([]); setSelectedIds(new Set()); };
-
-  // Pre-select a source when arriving from a "Start from a set" card (?source=…),
-  // and learn whether AI curation is available.
-  useEffect(() => {
+  // A "Start from a set" card links in with ?source=… — the picker opens there.
+  const initialSource = (() => {
     const qs = searchParams.get('source');
-    if (qs && ['person', 'franchise', 'vibe'].includes(qs)) setSource(qs);
-    api.getCurateStatus()
-      .then((r) => { setCurateAvailable(!!r.available); if (!r.available && qs === 'vibe') setSource('manual'); })
-      .catch(() => { setCurateAvailable(false); if (qs === 'vibe') setSource('manual'); });
-  }, [searchParams]);
+    return qs && ['person', 'franchise', 'vibe'].includes(qs) ? qs : 'manual';
+  })();
 
-  const searchPerson = async (e) => {
-    e.preventDefault();
-    if (!personQuery.trim()) return;
-    setSourceBusy(true);
-    try { setPeople(await api.searchTMDBPerson(personQuery.trim())); }
-    catch (err) { showError(err.message); } finally { setSourceBusy(false); }
-  };
-
-  const pickPerson = async (person) => {
-    setSourceBusy(true);
-    try {
-      const movies = await api.getPersonMovies(person.id, personRole);
-      applyPreview(movies); setPeople([]); setPersonQuery(person.name);
-      if (!name.trim()) setName(`${person.name} Marathon`);
-    } catch (err) { showError(err.message); } finally { setSourceBusy(false); }
-  };
-
-  const searchFranchise = async (e) => {
-    e.preventDefault();
-    if (!franchiseQuery.trim()) return;
-    setSourceBusy(true);
-    try { setFranchiseHits(await api.searchTMDB(franchiseQuery.trim())); }
-    catch (err) { showError(err.message); } finally { setSourceBusy(false); }
-  };
-
-  const pickFranchise = async (movie) => {
-    setSourceBusy(true);
-    try {
-      const { name: cName, parts } = await api.getMovieCollection(movie.id);
-      if (!parts.length) { showError('That film isn’t part of a franchise on TMDB — try another.'); return; }
-      applyPreview(parts); setFranchiseHits([]); setFranchiseQuery(cName || movie.title);
-      if (!name.trim() && cName) setName(cName);
-    } catch (err) { showError(err.message); } finally { setSourceBusy(false); }
-  };
-
-  const generateVibe = async () => {
-    if (!vibe.trim()) return showError('Describe the vibe first');
-    setSourceBusy(true);
-    try { applyPreview(await api.curateMarathon(vibe.trim())); }
-    catch (err) { showError(err.message); } finally { setSourceBusy(false); }
-  };
+  // Stable, because the picker holds it in a ref and fires it on every change.
+  const handlePicked = useCallback((next) => setPicked(next), []);
+  const suggestName = useCallback((suggested) => setName((n) => (n.trim() ? n : suggested)), []);
 
   const stepDays = () => {
     if (repeat === 'daily') return 1;
@@ -172,6 +98,7 @@ export default function MarathonWizardPage() {
   // the resolved preview after creating the draft. All land on the Build step.
   const startBuild = async () => {
     if (!name.trim()) return showError('Give the marathon a name');
+    const { source, preview, selectedIds } = picked;
     let chosen = [];
     if (source !== 'manual') {
       if (preview.length === 0) return showError('Build a lineup from your chosen source first');
@@ -292,101 +219,11 @@ export default function MarathonWizardPage() {
                    placeholder="e.g. The Nolan Batman Trilogy" autoFocus />
           </div>
 
-          <div className="mara-srcgrid">
-            {SOURCES.filter((s) => s.key !== 'vibe' || curateAvailable).map((s) => (
-              <button key={s.key} type="button"
-                className={`mara-src ${source === s.key ? 'sel' : ''}`}
-                onClick={() => chooseSource(s.key)}>
-                {source === s.key && <span className="check"><Icon name="check-circle" size={18} /></span>}
-                <div className="ic"><Icon name={s.icon} size={20} /></div>
-                <h3>{s.title}</h3>
-                <p>{s.desc}</p>
-                <span className="tag">{s.tag}</span>
-              </button>
-            ))}
-          </div>
-
-          {source === 'person' && (
-            <div className="mara-srcpanel">
-              <div className="mara-seg" style={{ maxWidth: 280, marginBottom: 14 }}>
-                {['acting', 'directing'].map((r) => (
-                  <button key={r} type="button" className={personRole === r ? 'on' : ''}
-                    onClick={() => setPersonRole(r)}>{r === 'acting' ? 'As actor/actress' : 'As director'}</button>
-                ))}
-              </div>
-              <form className="mara-searchrow" onSubmit={searchPerson}>
-                <input value={personQuery} onChange={(e) => setPersonQuery(e.target.value)} placeholder="Search an actor, actress, or director…" />
-                <button className="btn ghost" type="submit" disabled={sourceBusy}><Icon name="search" size={16} /></button>
-              </form>
-              {people.length > 0 && (
-                <div className="mara-results">
-                  {people.map((p) => (
-                    <div key={p.id} className="mara-li result">
-                      <div className="thumb" style={{ backgroundImage: p.profilePath ? `url(${p.profilePath})` : 'none' }} />
-                      <div className="grow"><h4>{p.name}</h4><div className="sub">{p.department}{p.knownFor ? ` · ${p.knownFor}` : ''}</div></div>
-                      <button className="btn ghost" onClick={() => pickPerson(p)} disabled={sourceBusy}>Use</button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {source === 'franchise' && (
-            <div className="mara-srcpanel">
-              <form className="mara-searchrow" onSubmit={searchFranchise}>
-                <input value={franchiseQuery} onChange={(e) => setFranchiseQuery(e.target.value)} placeholder="Search any film in the franchise…" />
-                <button className="btn ghost" type="submit" disabled={sourceBusy}><Icon name="search" size={16} /></button>
-              </form>
-              {franchiseHits.length > 0 && (
-                <div className="mara-results">
-                  {franchiseHits.map((mv) => (
-                    <div key={mv.id} className="mara-li result">
-                      <div className="thumb" style={{ backgroundImage: mv.posterPath ? `url(${mv.posterPath})` : 'none' }} />
-                      <div className="grow"><h4>{mv.title}</h4><div className="sub">{mv.year || '—'}</div></div>
-                      <button className="btn ghost" onClick={() => pickFranchise(mv)} disabled={sourceBusy}>Use collection</button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {source === 'vibe' && curateAvailable && (
-            <div className="mara-srcpanel vibe">
-              <div className="mara-searchrow">
-                <textarea className="mara-vibe" value={vibe} onChange={(e) => setVibe(e.target.value)}
-                  placeholder="e.g. cozy rainy-day sci-fi that isn’t too heavy" rows={2} />
-                <button className="btn btn-primary" onClick={generateVibe} disabled={sourceBusy}>
-                  <Icon name="sparkles" size={15} /> Generate
-                </button>
-              </div>
-              <div className="mara-chips">
-                {EX_CHIPS.map((c) => <button key={c} type="button" onClick={() => setVibe(c)}>{c}</button>)}
-              </div>
-              <div className="mara-guardrail"><Icon name="info" size={13} /> Every suggestion is matched to a real TMDB film and shown for your review — hallucinated titles are dropped before anything schedules.</div>
-            </div>
-          )}
-
-          {source !== 'manual' && preview.length > 0 && (
-            <div className="mara-srcpanel">
-              <div className="mara-preview-head">
-                <label className="mara-label" style={{ margin: 0 }}>Pick films · {selectedIds.size} of {preview.length} selected</label>
-                <button type="button" className="btn text" onClick={toggleAll}>{allSelected ? 'Clear all' : 'Select all'}</button>
-              </div>
-              {preview.map((p) => {
-                const on = selectedIds.has(p.tmdbId);
-                return (
-                  <button type="button" key={p.tmdbId} className={`mara-li pick ${on ? 'on' : ''}`}
-                    onClick={() => toggleSelected(p.tmdbId)}>
-                    <span className="mara-check">{on && <Icon name="check" size={13} />}</span>
-                    <div className="thumb" style={{ backgroundImage: p.posterPath ? `url(${p.posterPath})` : 'none' }} />
-                    <div className="grow"><h4>{p.title}</h4><div className="sub">{p.year || '—'}</div></div>
-                  </button>
-                );
-              })}
-            </div>
-          )}
+          <MarathonSourcePicker
+            manualMode="defer"
+            initialSource={initialSource}
+            onChange={handlePicked}
+            onSuggestName={suggestName} />
 
           <div className="mara-wiz-footer">
             <button className="btn ghost" onClick={() => navigate('/marathons')}>Cancel</button>

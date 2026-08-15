@@ -79,7 +79,70 @@ export const getPersonMovies = async (personId, role = 'acting') => {
     .filter((m) => m.release_date)                          // drop unreleased/dateless
     .sort((a, b) => (b.release_date || '').localeCompare(a.release_date || ''))
     .slice(0, 24)
-    .map((m) => ({ tmdbId: m.id, title: m.title, year: yearOf(m.release_date), posterPath: poster(m.poster_path) }));
+    .map((m) => ({
+      tmdbId: m.id, title: m.title, year: yearOf(m.release_date),
+      posterPath: poster(m.poster_path), releaseDate: m.release_date
+    }));
+};
+
+// ── Lean fan-out helpers ────────────────────────────────────────────────────
+// The routes' /:id/similar and /:id/credits handlers enrich every result with a
+// full detail + videos fetch. That is fine for one movie on a detail page, but
+// the marathon suggestion builder calls these across a whole lineup, so these
+// variants return only what detection needs, one request each.
+
+// Just the collection a movie belongs to (getMovieDetail also fetches videos).
+export const getMovieBasics = async (movieId) => {
+  const res = await fetch(`${TMDB_BASE_URL}/movie/${movieId}?api_key=${TMDB_API_KEY}`);
+  if (!res.ok) { const e = new Error('TMDB movie fetch failed'); e.status = res.status; throw e; }
+  const m = await res.json();
+  return {
+    tmdbId: m.id,
+    collectionId: m.belongs_to_collection?.id || null,
+    collectionName: m.belongs_to_collection?.name || null
+  };
+};
+
+// Directors + top-billed cast, for working out who a lineup keeps coming back to.
+export const getMovieCredits = async (movieId) => {
+  const res = await fetch(`${TMDB_BASE_URL}/movie/${movieId}/credits?api_key=${TMDB_API_KEY}`);
+  if (!res.ok) { const e = new Error('TMDB credits failed'); e.status = res.status; throw e; }
+  const data = await res.json();
+  return {
+    directors: (data.crew || []).filter((c) => c.job === 'Director').map((c) => ({ id: c.id, name: c.name })),
+    cast: (data.cast || []).slice(0, 5).map((c) => ({ id: c.id, name: c.name }))
+  };
+};
+
+// TMDB "recommendations" as preview items — no per-result detail fetch.
+export const getRecommendations = async (movieId) => {
+  const res = await fetch(`${TMDB_BASE_URL}/movie/${movieId}/recommendations?api_key=${TMDB_API_KEY}&page=1`);
+  if (!res.ok) { const e = new Error('TMDB recommendations failed'); e.status = res.status; throw e; }
+  const data = await res.json();
+  return (data.results || [])
+    .filter((m) => m.id && m.release_date)
+    .slice(0, 12)
+    .map((m) => ({
+      tmdbId: m.id, title: m.title, year: yearOf(m.release_date),
+      posterPath: poster(m.poster_path), popularity: m.popularity || 0,
+      releaseDate: m.release_date
+    }));
+};
+
+// A collection by id, in release order. Saves the extra movie fetch
+// getMovieCollection does when the caller already knows the collection id.
+export const getCollectionById = async (collectionId) => {
+  const res = await fetch(`${TMDB_BASE_URL}/collection/${collectionId}?api_key=${TMDB_API_KEY}`);
+  if (!res.ok) { const e = new Error('TMDB collection failed'); e.status = res.status; throw e; }
+  const data = await res.json();
+  const parts = (data.parts || [])
+    .filter((m) => m.release_date)
+    .sort((a, b) => (a.release_date || '').localeCompare(b.release_date || ''))
+    .map((m) => ({
+      tmdbId: m.id, title: m.title, year: yearOf(m.release_date),
+      posterPath: poster(m.poster_path), releaseDate: m.release_date
+    }));
+  return { name: data.name || null, parts };
 };
 
 // The franchise/collection a movie belongs to, in release order.
