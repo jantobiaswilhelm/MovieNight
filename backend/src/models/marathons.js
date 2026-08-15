@@ -95,12 +95,34 @@ export const addMarathonItem = async (marathonId, movie) => {
   return result.rows[0];
 };
 
+// Delete + close the gap. Positions must stay contiguous: the bot announces a
+// film as "position + 1 of COUNT(*)", so a hole would post "Film 4 of 5" and
+// then "Film 6 of 5".
 export const removeMarathonItem = async (marathonId, itemId) => {
-  const result = await pool.query(
-    `DELETE FROM marathon_items WHERE id = $1 AND marathon_id = $2 RETURNING *`,
-    [itemId, marathonId]
-  );
-  return result.rows[0];
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const result = await client.query(
+      `DELETE FROM marathon_items WHERE id = $1 AND marathon_id = $2 RETURNING *`,
+      [itemId, marathonId]
+    );
+    if (result.rows[0]) {
+      await client.query(
+        `UPDATE marathon_items AS mi SET position = ranked.pos
+           FROM (SELECT id, ROW_NUMBER() OVER (ORDER BY position ASC) - 1 AS pos
+                   FROM marathon_items WHERE marathon_id = $1) AS ranked
+          WHERE mi.id = ranked.id AND mi.position <> ranked.pos`,
+        [marathonId]
+      );
+    }
+    await client.query('COMMIT');
+    return result.rows[0];
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
 };
 
 // Reorder: orderedItemIds is the full list of item ids in the new order.

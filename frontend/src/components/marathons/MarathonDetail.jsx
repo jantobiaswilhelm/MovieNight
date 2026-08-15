@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useToast } from '../../context/ToastContext';
 import * as api from '../../api/client';
 import { Icon } from '../ui';
@@ -32,8 +32,10 @@ export default function MarathonDetail({ id, onBack }) {
   const [m, setM] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editingDate, setEditingDate] = useState(null);   // item id being date-edited
+  const [confirmRemove, setConfirmRemove] = useState(null); // item id awaiting remove confirmation
   const [dragIndex, setDragIndex] = useState(null);
   const [dragOver, setDragOver] = useState(null);
+  const confirmRef = useRef(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -42,6 +44,19 @@ export default function MarathonDetail({ id, onBack }) {
   }, [id, showError]);
 
   useEffect(() => { load(); }, [load]);
+
+  // While a row is asking "Remove?", a click anywhere else — or Escape — backs out.
+  useEffect(() => {
+    if (confirmRemove === null) return undefined;
+    const onDown = (e) => { if (!confirmRef.current?.contains(e.target)) setConfirmRemove(null); };
+    const onKey = (e) => { if (e.key === 'Escape') setConfirmRemove(null); };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [confirmRemove]);
 
   const doAction = async (fn, msg, after) => {
     try { await fn(); showSuccess(msg); if (after) after(); else load(); }
@@ -59,6 +74,15 @@ export default function MarathonDetail({ id, onBack }) {
   };
 
   const makeItemTbd = (item) => changeDate(item, '');
+
+  const removeItem = async (item) => {
+    setConfirmRemove(null);
+    try {
+      await api.removeMarathonItem(m.id, item.id);
+      showSuccess(`“${item.title}” removed`);
+      load();
+    } catch (err) { showError(err.message); }
+  };
 
   const onDrop = async (items, idx) => {
     if (dragIndex === null || dragIndex === idx) { setDragIndex(null); setDragOver(null); return; }
@@ -155,13 +179,16 @@ export default function MarathonDetail({ id, onBack }) {
         const isNext = it.id === nextItem?.id;
         const stateCls = st === 'watched' ? 'done' : isNext ? 'next' : 'wait';
         const stateIcon = st === 'watched' ? 'check-circle' : isNext ? 'play-circle' : 'clock';
-        const reorderable = m.is_owner && st !== 'watched' && !isNext;
+        // Queued films only: watched ones are history and next-up may already be
+        // posted to Discord. Gates the drag handle and the remove button alike.
+        const editable = m.is_owner && st !== 'watched' && !isNext;
+        const confirming = confirmRemove === it.id;
         const prev = items[idx - 1];
         return (
           <div key={it.id}
-            className={`mara-li2 ${st === 'watched' ? 'past' : ''} ${dragIndex === idx ? 'dragging' : ''} ${dragOver === idx ? 'dragover' : ''}`}
-            draggable={reorderable}
-            onDragStart={() => reorderable && setDragIndex(idx)}
+            className={`mara-li2 ${st === 'watched' ? 'past' : ''} ${dragIndex === idx ? 'dragging' : ''} ${dragOver === idx ? 'dragover' : ''} ${confirming ? 'confirming' : ''}`}
+            draggable={editable && !confirming}
+            onDragStart={() => editable && !confirming && setDragIndex(idx)}
             onDragOver={(e) => { if (dragIndex !== null) { e.preventDefault(); setDragOver(idx); } }}
             onDragLeave={() => setDragOver((o) => (o === idx ? null : o))}
             onDrop={() => onDrop(items, idx)}
@@ -178,7 +205,20 @@ export default function MarathonDetail({ id, onBack }) {
               </div>
             </div>
             <div className="date"><b>{fmtDay(it.scheduled_at)}</b>{fmtTime(it.scheduled_at) || 'unscheduled'}</div>
-            {reorderable && <span className="grip"><Icon name="grip" size={15} /></span>}
+            {editable && (
+              confirming ? (
+                <span className="li-confirm" ref={confirmRef}>
+                  <button className="btn destructive sm" onClick={() => removeItem(it)}>Remove</button>
+                  <button className="btn ghost sm" onClick={() => setConfirmRemove(null)}>Cancel</button>
+                </span>
+              ) : (
+                <>
+                  <span className="grip"><Icon name="grip" size={15} /></span>
+                  <button className="mara-iconbtn danger" title={`Remove ${it.title}`}
+                    onClick={() => setConfirmRemove(it.id)}><Icon name="close" size={15} /></button>
+                </>
+              )
+            )}
           </div>
         );
       })}
