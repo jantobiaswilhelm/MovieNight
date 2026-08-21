@@ -216,8 +216,12 @@ export default function MarathonDetail({ id, onBack }) {
       {items.map((it, idx) => {
         const st = itemState(it);
         const isNext = it.id === nextItem?.id;
-        const stateCls = st === 'watched' ? 'done' : isNext ? 'next' : 'wait';
-        const stateIcon = st === 'watched' ? 'check-circle' : isNext ? 'play-circle' : 'clock';
+        // Past its date but never announced — a lapsed film, not a watched one.
+        // Only 'pending' qualifies: a 'scheduled' film really did air, and a
+        // 'watched' one was logged by hand.
+        const missed = st === 'watched' && it.status === 'pending';
+        const stateCls = missed ? 'wait' : st === 'watched' ? 'done' : isNext ? 'next' : 'wait';
+        const stateIcon = missed ? 'clock' : st === 'watched' ? 'check-circle' : isNext ? 'play-circle' : 'clock';
         // Queued films only: watched ones are history and next-up may already be
         // posted to Discord. Gates the drag handle and the remove button alike.
         const editable = m.is_owner && st !== 'watched' && !isNext;
@@ -226,7 +230,7 @@ export default function MarathonDetail({ id, onBack }) {
         return (
           <div key={it.id}>
             <div
-              className={`mara-li2 ${st === 'watched' ? 'past' : ''} ${dragIndex === idx ? 'dragging' : ''} ${dragOver === idx ? 'dragover' : ''} ${confirming ? 'confirming' : ''}`}
+              className={`mara-li2 ${st === 'watched' && !missed ? 'past' : ''} ${dragIndex === idx ? 'dragging' : ''} ${dragOver === idx ? 'dragover' : ''} ${confirming ? 'confirming' : ''}`}
               draggable={editable && !confirming}
               onDragStart={() => editable && !confirming && setDragIndex(idx)}
               onDragOver={(e) => { if (dragIndex !== null) { e.preventDefault(); setDragOver(idx); } }}
@@ -239,7 +243,8 @@ export default function MarathonDetail({ id, onBack }) {
             <div className="t">
               <h4>{it.title}</h4>
               <div className="m">
-                {st === 'watched' ? `Watched ${fmtDay(it.scheduled_at)}`
+                {missed ? `Was due ${fmtDay(it.scheduled_at)}`
+                  : st === 'watched' ? `Watched ${fmtDay(it.scheduled_at)}`
                   : isNext ? <span className="mara-badge-next">Next up</span>
                   : prev ? `Queues after ${prev.title}` : 'Queued'}
               </div>
