@@ -281,7 +281,11 @@ router.post('/:id/items/:itemId/watched', validateGuildId, validateIntParams('id
   if (!watched_at || isNaN(when.getTime())) {
     return res.status(400).json({ error: 'watched_at must be a valid date' });
   }
-  if (when > new Date()) {
+  // A few minutes of grace: the client sends its own "now" for a film watched just
+  // now, and an ordinary fast clock would otherwise 400 on a date the user is
+  // right about. Anything beyond that is a real future date and gets refused.
+  const CLOCK_SKEW_GRACE_MS = 5 * 60 * 1000;
+  if (when.getTime() > Date.now() + CLOCK_SKEW_GRACE_MS) {
     return res.status(400).json({ error: 'That date is in the future — a film can only be marked watched after it played.' });
   }
   try {
