@@ -941,7 +941,36 @@ git commit -m "style(web): already-watched panel"
 
 ---
 
-## Task 11: Verification on Railway
+## Task 11: Post-review fixes
+
+These came out of the per-task and whole-branch reviews. **Anyone re-running this plan from
+scratch must apply them too** — without them the branch ships four real defects. The full
+reasoning is in the spec's "The invariant this feature broke" section.
+
+- [ ] **`getMarathonItemsByMarathon` filters watched, in the query** (`bot/src/models/index.js`).
+      It has three callers and the third — `handlers/attendance/handleRsvpButton.js`, which
+      rebuilds the binge embed on every RSVP click — was missed when the filter lived at the
+      call sites. Filtering in the model closes all three and any fourth.
+- [ ] **`toggleMarathonAttendance` and `getMarathonAttendees` exclude watched items.** Without
+      it, a binge RSVP can toggle against a *historical* night: whoever attended the original
+      screening gets their RSVP deleted across tonight's evening.
+- [ ] **The undo route refuses once a binge kickoff has posted**, via the same helper the add
+      routes use — otherwise a returned film makes the processor queue a second kickoff. The
+      helper takes its closing clause as a parameter so each caller names what it refused.
+- [ ] **`launchMarathon` won't un-watch a film** — `AND status IS DISTINCT FROM 'watched'`.
+- [ ] **`inferRhythm` clamps its first proposed slot to the future** (`frontend/src/components/marathons/rhythm.js`),
+      or the new past-date guard breaks adding films to a finished marathon — and breaks it
+      *after* the films have been appended. Step by whole cadence steps so the weekday and
+      time of day survive. `MarathonAddFilmsPage`'s date input gets `min` too.
+- [ ] **A lapsed film is told apart from a watched one** (`MarathonDetail.jsx`): `itemState`
+      calls anything past its date `'watched'`, which is wrong for a `'pending'` film whose
+      date merely slipped. `canMarkWatched`, the row-control branch, `editable`, the state
+      icon, the `past` class and the caption all key on the stored `status`; only the
+      aggregate counts still use the derived value, deliberately.
+
+---
+
+## Task 12: Verification on Railway
 
 Local Postgres is normally not running here, and this feature is mostly database behaviour and a bot cron that has to *not* fire. Both need the deployed environment.
 
