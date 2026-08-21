@@ -248,3 +248,42 @@ export const addMarathonItemsBulk = async (marathonId, movies) => {
     client.release();
   }
 };
+
+// One item by id, scoped to its marathon. Used by the routes to check a film's
+// current state before changing it.
+export const getMarathonItemById = async (marathonId, itemId) => {
+  const result = await pool.query(
+    `SELECT * FROM marathon_items WHERE id = $1 AND marathon_id = $2`,
+    [itemId, marathonId]
+  );
+  return result.rows[0];
+};
+
+// A film the group watched outside the roll-out. status 'watched' is what keeps
+// the bot's hands off it — marathonProcessor only ever picks up 'pending' items.
+// scheduled_at becomes the date it actually played, which is what every derived
+// read already keys on (progress, next-up, the row's "Watched <day>" label).
+export const markMarathonItemWatched = async (marathonId, itemId, watchedAt, movieNightId = null) => {
+  const result = await pool.query(
+    `UPDATE marathon_items
+     SET status = 'watched', scheduled_at = $3, scheduled_movie_night_id = $4
+     WHERE id = $1 AND marathon_id = $2
+     RETURNING *`,
+    [itemId, marathonId, watchedAt, movieNightId]
+  );
+  return result.rows[0];
+};
+
+// Undo. The watched date overwrote whatever was planned, so there is nothing to
+// restore — the film goes back to TBD, a state the detail page already renders.
+// Guarded on status = 'watched' so it can only ever undo this feature's own work.
+export const unmarkMarathonItemWatched = async (marathonId, itemId) => {
+  const result = await pool.query(
+    `UPDATE marathon_items
+     SET status = 'pending', scheduled_at = NULL, scheduled_movie_night_id = NULL
+     WHERE id = $1 AND marathon_id = $2 AND status = 'watched'
+     RETURNING *`,
+    [itemId, marathonId]
+  );
+  return result.rows[0];
+};
