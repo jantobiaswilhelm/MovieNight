@@ -196,7 +196,11 @@ async function processAnnouncement(client, announcement, channel) {
 }
 
 async function processBingeAnnouncement(client, announcement, channel, announcerName) {
-  const items = await getMarathonItemsByMarathon(announcement.marathon_id);
+  // A film logged as already watched is history: it must not join the evening's
+  // lineup, or it would be announced a second time and its link to the real
+  // screening overwritten by linkMarathonItemMovieNight below.
+  const items = (await getMarathonItemsByMarathon(announcement.marathon_id))
+    .filter((it) => it.status !== 'watched');
   if (items.length === 0) {
     await markAnnouncementProcessed(announcement.id, 'failed');
     return;
