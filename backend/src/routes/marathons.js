@@ -280,20 +280,26 @@ router.post('/:id/items/:itemId/watched', validateGuildId, validateIntParams('id
     if (!marathon) return;
     const item = await db.getMarathonItemById(marathon.id, parseInt(req.params.itemId));
     if (!item) return res.status(404).json({ error: 'Film not found in this marathon' });
-    // A film the bot has already taken is off limits. 'scheduled' is the reliable
-    // test, not the link: enqueueMarathonItemAtomic marks the item 'scheduled' when
-    // it queues the announcement, but linkMarathonItemMovieNight only runs later,
-    // when the processor actually posts. Checking the link alone would wave the film
-    // through in that window, and the bot would post it anyway.
-    if (item.status === 'scheduled' || item.scheduled_movie_night_id) {
+    // A film the bot has already taken is off limits, and 'scheduled' is the whole
+    // test. enqueueMarathonItemAtomic marks the item 'scheduled' when it queues the
+    // announcement and linkMarathonItemMovieNight only back-links later, so the
+    // status covers the entire period the bot owns the film. Don't also refuse on
+    // scheduled_movie_night_id: this feature sets that field too, so it would tell
+    // someone re-logging their own film that Discord had posted it.
+    if (item.status === 'scheduled') {
       return res.status(409).json({ error: 'The bot has already posted this film to Discord — the marathon is tracking it.' });
     }
     let nightId = null;
-    if (movie_night_id) {
-      // Validated against the same candidate list the panel offered, which pins
-      // down guild, film and pastness in one query.
+    if (movie_night_id !== undefined && movie_night_id !== null && movie_night_id !== '') {
+      const wanted = Number(movie_night_id);
+      if (!Number.isInteger(wanted)) {
+        return res.status(400).json({ error: 'movie_night_id must be a whole number' });
+      }
+      // Validated by membership in the same candidate list the panel offered, which
+      // pins down guild, film and pastness in one query — and we store the row's own
+      // id, never the client's value.
       const candidates = await db.findPastNightsForFilm(marathon.guild_id, item.tmdb_id, item.title);
-      const match = candidates.find((n) => n.id === parseInt(movie_night_id));
+      const match = candidates.find((n) => n.id === wanted);
       if (!match) {
         return res.status(400).json({ error: 'That movie night is not a past screening of this film.' });
       }
@@ -301,10 +307,12 @@ router.post('/:id/items/:itemId/watched', validateGuildId, validateIntParams('id
     }
     const updated = await db.markMarathonItemWatched(marathon.id, item.id, when, nightId);
     if (!updated) {
-      // The statement carries the same invariant this route just checked, so an
-      // empty result means the bot claimed the film between our read and our
-      // write. Same answer as the check above.
-      return res.status(409).json({ error: 'The bot has already posted this film to Discord — the marathon is tracking it.' });
+      // The statement carries the same invariant this route checked, so an empty
+      // result means the film changed underneath us. Tell "gone" apart from
+      // "claimed" — answering 409 for a deleted film would be a plain lie.
+      const still = await db.getMarathonItemById(marathon.id, item.id);
+      if (!still) return res.status(404).json({ error: 'Film not found in this marathon' });
+      return res.status(409).json({ error: 'That film changed while you were logging it — reload the marathon and try again.' });
     }
     res.json(updated);
   } catch (err) {
@@ -321,6 +329,12 @@ router.delete('/:id/items/:itemId/watched', validateGuildId, validateIntParams('
     if (!marathon) return;
     const itemId = parseInt(req.params.itemId);
     const item = await db.unmarkMarathonItemWatched(marathon.id, itemId);
+    // Marking the last film watched completes a marathon, so undoing has to revive
+    // it or the bot will never look at this film again (getActiveMarathons filters
+    // on status). Runs before the branch below so a repeat undo can still repair a
+    // marathon the bot completed in between, and it is SQL-guarded rather than
+    // reading marathon.status — that read predates the write above.
+    await db.reviveCompletedMarathon(marathon.id);
     if (!item) {
       // The model guards on status = 'watched', so an empty result means either
       // "no such film here" or "already not watched". Tell those apart: a
@@ -329,10 +343,6 @@ router.delete('/:id/items/:itemId/watched', validateGuildId, validateIntParams('
       if (!existing) return res.status(404).json({ error: 'Film not found in this marathon' });
       return res.json(existing);
     }
-    // Marking the last film watched completes a marathon; undoing has to revive it
-    // or the bot will never look at this film again (getActiveMarathons filters on
-    // status). Same reasoning as reviveIfCompleted on the add routes.
-    if (marathon.status === 'completed') await db.setMarathonStatus(marathon.id, 'active');
     res.json(item);
   } catch (err) {
     console.error('Error undoing marathon watched mark:', err);

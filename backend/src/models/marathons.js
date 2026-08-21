@@ -273,12 +273,13 @@ export const getMarathonItemById = async (marathonId, itemId) => {
 // the bot has already taken ('scheduled', whether or not it has been back-linked
 // yet) can never be logged by hand, and an existing link can never be nulled.
 // Re-marking with the same night — to correct a date — still works.
+// IS DISTINCT FROM, not <>, so a NULL status could never silently refuse.
 export const markMarathonItemWatched = async (marathonId, itemId, watchedAt, movieNightId = null) => {
   const result = await pool.query(
     `UPDATE marathon_items
      SET status = 'watched', scheduled_at = $3, scheduled_movie_night_id = $4
      WHERE id = $1 AND marathon_id = $2
-       AND status <> 'scheduled'
+       AND status IS DISTINCT FROM 'scheduled'
        AND (scheduled_movie_night_id IS NULL OR scheduled_movie_night_id = $4)
      RETURNING *`,
     [itemId, marathonId, watchedAt, movieNightId]
@@ -296,6 +297,20 @@ export const unmarkMarathonItemWatched = async (marathonId, itemId) => {
      WHERE id = $1 AND marathon_id = $2 AND status = 'watched'
      RETURNING *`,
     [itemId, marathonId]
+  );
+  return result.rows[0];
+};
+
+// Bring a completed marathon back to active. Guarded in SQL rather than by reading
+// the status first: the bot's completeMarathonIfDone runs every 5 minutes and can
+// land between a read and this write, which would leave a queued film sitting in a
+// completed marathon that getActiveMarathons never looks at again.
+export const reviveCompletedMarathon = async (marathonId) => {
+  const result = await pool.query(
+    `UPDATE marathons SET status = 'active', updated_at = NOW()
+     WHERE id = $1 AND status = 'completed'
+     RETURNING *`,
+    [marathonId]
   );
   return result.rows[0];
 };
