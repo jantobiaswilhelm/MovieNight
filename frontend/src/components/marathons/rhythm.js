@@ -60,7 +60,12 @@ export const inferRhythm = (items, cadenceType) => {
       lastDate,
       // Each added film starts after the one before it finishes.
       nextDateFor: (index, priorFilms) => {
-        let cursor = lastDate.getTime() + (lastItem.runtime || 120) * MIN_MS + breakMs;
+        // Never start in the past — the API refuses it, and a finished evening's
+        // last film is long gone. An hour's lead keeps the proposal comfortably ahead.
+        let cursor = Math.max(
+          lastDate.getTime() + (lastItem.runtime || 120) * MIN_MS + breakMs,
+          Date.now() + 60 * MIN_MS
+        );
         for (let i = 0; i < index; i++) {
           cursor += ((priorFilms[i]?.runtime || 120) * MIN_MS) + breakMs;
         }
@@ -79,18 +84,27 @@ export const inferRhythm = (items, cadenceType) => {
     : stepDays === 1 ? `daily at ${time}`
     : `every ${plural(stepDays, 'day')} at ${time}`;
 
+  // The first slot after the last dated film — but never one that has already
+  // passed. A marathon whose films have all aired would otherwise propose dates
+  // the API refuses. Stepping by whole cadence steps keeps the weekday and the
+  // time of day intact, which is what "the same slot every week" means to a
+  // viewer: adding N * 864e5 across a daylight-saving change shifts the
+  // wall-clock time by an hour, so an 8pm marathon would quietly become a 9pm
+  // one in spring, while setDate keeps the time of day put.
+  const firstSlot = () => {
+    const d = new Date(lastDate);
+    do { d.setDate(d.getDate() + stepDays); } while (d.getTime() <= Date.now());
+    return d;
+  };
+
   return {
     kind: 'interval',
     label: every,
     stepDays,
     lastDate,
-    // Step whole calendar days, not fixed milliseconds. Adding N * 864e5 across
-    // a daylight-saving change shifts the wall-clock time by an hour, so an
-    // 8pm marathon would quietly become a 9pm one in spring. setDate keeps the
-    // time of day put, which is what "same slot every week" means to a viewer.
     nextDateFor: (index) => {
-      const next = new Date(lastDate);
-      next.setDate(next.getDate() + (index + 1) * stepDays);
+      const next = firstSlot();
+      next.setDate(next.getDate() + index * stepDays);
       return next;
     }
   };

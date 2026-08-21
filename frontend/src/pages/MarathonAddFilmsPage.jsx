@@ -303,6 +303,7 @@ export default function MarathonAddFilmsPage() {
               {dates[i] ? (
                 <>
                   <input className="li-date" type="datetime-local" value={dates[i]}
+                    min={toLocalInput(new Date())}
                     onChange={(e) => setDateAt(i, e.target.value)} />
                   <button className="btn ghost sm" onClick={() => setDateAt(i, '')}>Make TBD</button>
                 </>
