@@ -277,8 +277,13 @@ router.post('/:id/items/:itemId/watched', validateGuildId, validateIntParams('id
     if (!marathon) return;
     const item = await db.getMarathonItemById(marathon.id, parseInt(req.params.itemId));
     if (!item) return res.status(404).json({ error: 'Film not found in this marathon' });
-    if (item.scheduled_movie_night_id) {
-      return res.status(409).json({ error: 'This film is already tied to a movie night — the marathon is tracking it.' });
+    // A film the bot has already taken is off limits. 'scheduled' is the reliable
+    // test, not the link: enqueueMarathonItemAtomic marks the item 'scheduled' when
+    // it queues the announcement, but linkMarathonItemMovieNight only runs later,
+    // when the processor actually posts. Checking the link alone would wave the film
+    // through in that window, and the bot would post it anyway.
+    if (item.status === 'scheduled' || item.scheduled_movie_night_id) {
+      return res.status(409).json({ error: 'The bot has already posted this film to Discord — the marathon is tracking it.' });
     }
     let nightId = null;
     if (movie_night_id) {
@@ -311,8 +316,16 @@ router.delete('/:id/items/:itemId/watched', validateGuildId, validateIntParams('
   try {
     const marathon = await loadManageable(req, res);
     if (!marathon) return;
-    const item = await db.unmarkMarathonItemWatched(marathon.id, parseInt(req.params.itemId));
-    if (!item) return res.status(404).json({ error: 'That film is not marked as watched.' });
+    const itemId = parseInt(req.params.itemId);
+    const item = await db.unmarkMarathonItemWatched(marathon.id, itemId);
+    if (!item) {
+      // The model guards on status = 'watched', so an empty result means either
+      // "no such film here" or "already not watched". Tell those apart: a
+      // double-clicked undo should not read as an error.
+      const existing = await db.getMarathonItemById(marathon.id, itemId);
+      if (!existing) return res.status(404).json({ error: 'Film not found in this marathon' });
+      return res.json(existing);
+    }
     // Marking the last film watched completes a marathon; undoing has to revive it
     // or the bot will never look at this film again (getActiveMarathons filters on
     // status). Same reasoning as reviveIfCompleted on the add routes.
@@ -629,9 +642,11 @@ Add after the `removeItem` handler (which ends at line 87):
     } catch (err) { showError(err.message); }
   };
 
-  // Logging a film needs somewhere to log it to: a film the bot already posted is
-  // tied to a real movie night and the marathon is already tracking it.
-  const canMarkWatched = (it) => m?.is_owner && itemState(it) !== 'watched' && !it.scheduled_movie_night_id;
+  // A film the bot has already taken is not ours to log — 'scheduled' means the
+  // announcement is queued or posted, and the marathon is tracking it either way.
+  // The link alone isn't enough: it isn't written until the processor posts.
+  const canMarkWatched = (it) =>
+    m?.is_owner && itemState(it) !== 'watched' && it.status !== 'scheduled' && !it.scheduled_movie_night_id;
 ```
 
 - [ ] **Step 4: Add the hero entry point**

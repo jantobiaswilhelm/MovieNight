@@ -123,7 +123,11 @@ In `backend/src/models/marathons.js`:
 
 - `markMarathonItemWatched(marathonId, itemId, watchedAt, movieNightId)` — sets
   `status = 'watched'`, `scheduled_at = watchedAt`, and `scheduled_movie_night_id` when a
-  night was picked.
+  night was picked. Its `WHERE` clause carries the invariant rather than trusting the
+  caller: `AND status <> 'scheduled' AND (scheduled_movie_night_id IS NULL OR
+  scheduled_movie_night_id = $4)`. A film the bot has taken can never be logged by hand, and
+  an existing link can never be nulled — while re-marking with the same night, to correct a
+  date, still works.
 - `unmarkMarathonItemWatched(marathonId, itemId)` — sets `status = 'pending'`,
   `scheduled_at = NULL`, and clears `scheduled_movie_night_id`. Clearing is unconditional
   and safe: the control is hidden whenever a link already exists (see Edge cases), so any
@@ -178,10 +182,17 @@ Marking a film watched *just now* misreports it unless these change:
 
 ## Edge cases
 
-**A film the bot already posted is not offered the action.** If `scheduled_movie_night_id`
-is set, the marathon already tracks that screening — nothing to repair. This also means
-binge marathons need no special case: after kickoff every item is `scheduled` and linked, so
-the control is hidden; before kickoff every item is `pending` and markable.
+**A film the bot has already taken is not offered the action.** The test is
+`status = 'scheduled' OR scheduled_movie_night_id IS NOT NULL`, and the status half is the
+load-bearing one: `enqueueMarathonItemAtomic` marks an item `scheduled` when it *queues* the
+announcement, but `linkMarathonItemMovieNight` doesn't run until the processor actually
+posts. Checking the link alone would wave a film through in that window — the bot would post
+it regardless, leaving a `watched` film pointing at a night still in the future. The
+condition is enforced twice: in the route, for a good error message, and in
+`markMarathonItemWatched`'s own `WHERE` clause, so it holds for any future caller.
+
+This also means binge marathons need no special case: after kickoff every item is
+`scheduled`, so the control is hidden; before kickoff every item is `pending` and markable.
 
 **Nothing renumbers.** Marking watched never deletes a row, so positions stay contiguous and
 the "Film 4 of 5 / Film 6 of 5" hazard from the remove-film work does not arise.
