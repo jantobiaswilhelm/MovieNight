@@ -33,13 +33,13 @@ export const getMarathons = async (guildId) => {
             -- A hand-logged film is history, never on screen.
             (SELECT json_build_object('title', mi.title, 'scheduled_at', mi.scheduled_at, 'runtime', mi.runtime)
                FROM marathon_items mi
-               WHERE mi.marathon_id = m.id AND mi.status <> 'watched' AND mi.scheduled_at IS NOT NULL
+               WHERE mi.marathon_id = m.id AND mi.status IS DISTINCT FROM 'watched' AND mi.scheduled_at IS NOT NULL
                  AND mi.scheduled_at <= NOW()
                  AND mi.scheduled_at + INTERVAL '1 minute' * COALESCE(mi.runtime, 90) > NOW()
                ORDER BY mi.position ASC LIMIT 1) AS airing_item,
             (SELECT json_build_object('title', mi.title, 'scheduled_at', mi.scheduled_at)
                FROM marathon_items mi
-               WHERE mi.marathon_id = m.id AND mi.status <> 'watched'
+               WHERE mi.marathon_id = m.id AND mi.status IS DISTINCT FROM 'watched'
                  AND (mi.scheduled_at IS NULL OR mi.scheduled_at >= NOW())
                ORDER BY mi.position ASC LIMIT 1) AS next_item,
             (SELECT json_agg(mi.image_url ORDER BY mi.position)
@@ -165,8 +165,10 @@ export const launchMarathon = async (marathonId, cadenceType, items) => {
   try {
     await client.query('BEGIN');
     for (const it of items) {
+      // Never un-watch a hand-logged film: its date is history, not a slot to fill.
       await client.query(
-        `UPDATE marathon_items SET scheduled_at = $1, status = 'pending' WHERE id = $2 AND marathon_id = $3`,
+        `UPDATE marathon_items SET scheduled_at = $1, status = 'pending'
+         WHERE id = $2 AND marathon_id = $3 AND status IS DISTINCT FROM 'watched'`,
         [it.scheduled_at, it.id, marathonId]
       );
     }
