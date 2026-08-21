@@ -265,6 +265,7 @@ export const getCalendar = async (guildId, startISO, endISO) => {
        FROM marathon_items mi
        JOIN marathons m ON mi.marathon_id = m.id
        WHERE m.guild_id = $1 AND m.status = 'active'
+         AND mi.status <> 'watched'
          AND mi.scheduled_movie_night_id IS NULL
          AND mi.scheduled_at >= $2 AND mi.scheduled_at < $3
      ) cal

@@ -22,20 +22,25 @@ export const getMarathons = async (guildId) => {
             (SELECT COUNT(*) FROM marathon_items mi WHERE mi.marathon_id = m.id)::int AS item_count,
             -- Watched means finished, not merely started: count only items whose
             -- runtime has fully elapsed. Counting from scheduled_at alone marked a
-            -- film as watched the moment it began.
+            -- film as watched the moment it began. An item logged by hand as
+            -- 'watched' counts outright — its runtime may not have elapsed yet.
             (SELECT COUNT(*) FROM marathon_items mi
-               WHERE mi.marathon_id = m.id AND mi.scheduled_at IS NOT NULL
-                 AND mi.scheduled_at + INTERVAL '1 minute' * COALESCE(mi.runtime, 90) < NOW())::int AS watched_count,
+               WHERE mi.marathon_id = m.id
+                 AND (mi.status = 'watched'
+                      OR (mi.scheduled_at IS NOT NULL
+                          AND mi.scheduled_at + INTERVAL '1 minute' * COALESCE(mi.runtime, 90) < NOW())))::int AS watched_count,
             -- The film on screen right now, if any: started but not yet finished.
+            -- A hand-logged film is history, never on screen.
             (SELECT json_build_object('title', mi.title, 'scheduled_at', mi.scheduled_at, 'runtime', mi.runtime)
                FROM marathon_items mi
-               WHERE mi.marathon_id = m.id AND mi.scheduled_at IS NOT NULL
+               WHERE mi.marathon_id = m.id AND mi.status <> 'watched' AND mi.scheduled_at IS NOT NULL
                  AND mi.scheduled_at <= NOW()
                  AND mi.scheduled_at + INTERVAL '1 minute' * COALESCE(mi.runtime, 90) > NOW()
                ORDER BY mi.position ASC LIMIT 1) AS airing_item,
             (SELECT json_build_object('title', mi.title, 'scheduled_at', mi.scheduled_at)
                FROM marathon_items mi
-               WHERE mi.marathon_id = m.id AND (mi.scheduled_at IS NULL OR mi.scheduled_at >= NOW())
+               WHERE mi.marathon_id = m.id AND mi.status <> 'watched'
+                 AND (mi.scheduled_at IS NULL OR mi.scheduled_at >= NOW())
                ORDER BY mi.position ASC LIMIT 1) AS next_item,
             (SELECT json_agg(mi.image_url ORDER BY mi.position)
                FROM marathon_items mi WHERE mi.marathon_id = m.id) AS poster_urls
