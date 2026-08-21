@@ -280,6 +280,10 @@ export const getCalendar = async (guildId, startISO, endISO) => {
 // ("The Hunger Games (2012)") and marathon_items.title does not. Test nights are
 // not history.
 export const findPastNightsForFilm = async (guildId, tmdbId, title) => {
+  // No usable key means no candidates — an empty title would otherwise become
+  // LIKE '%' and match every past night in the guild.
+  if (tmdbId == null && !title?.trim()) return [];
+
   const result = await pool.query(
     `SELECT mn.id, mn.title, mn.scheduled_at, mn.started_at,
             u.username AS announced_by_name
