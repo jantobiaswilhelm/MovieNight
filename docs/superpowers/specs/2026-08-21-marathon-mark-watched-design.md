@@ -191,8 +191,13 @@ it regardless, leaving a `watched` film pointing at a night still in the future.
 condition is enforced twice: in the route, for a good error message, and in
 `markMarathonItemWatched`'s own `WHERE` clause, so it holds for any future caller.
 
-This also means binge marathons need no special case: after kickoff every item is
-`scheduled`, so the control is hidden; before kickoff every item is `pending` and markable.
+After a binge kickoff every item is `scheduled`, so the control is hidden. **Before** kickoff
+every item is `pending` and markable, and that case does need handling: `processBingeAnnouncement`
+reads the whole lineup, so a hand-logged film would be announced a second time as part of the
+evening and its link to the real screening overwritten. Both binge lineup reads
+(`announcementProcessor.js:199`, `marathonProcessor.js:28`) filter `status !== 'watched'`.
+This is the only bot change in the feature. `markAllMarathonItemsScheduled` needs nothing —
+it already only touches `status = 'pending'`.
 
 **Nothing renumbers.** Marking watched never deletes a row, so positions stay contiguous and
 the "Film 4 of 5 / Film 6 of 5" hazard from the remove-film work does not arise.

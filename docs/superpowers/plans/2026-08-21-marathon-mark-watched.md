@@ -297,6 +297,12 @@ router.post('/:id/items/:itemId/watched', validateGuildId, validateIntParams('id
       nightId = match.id;
     }
     const updated = await db.markMarathonItemWatched(marathon.id, item.id, when, nightId);
+    if (!updated) {
+      // The statement carries the same invariant this route just checked, so an
+      // empty result means the bot claimed the film between our read and our
+      // write. Same answer as the check above.
+      return res.status(409).json({ error: 'The bot has already posted this film to Discord — the marathon is tracking it.' });
+    }
     res.json(updated);
   } catch (err) {
     console.error('Error marking marathon item watched:', err);
@@ -371,6 +377,15 @@ In `PUT /:id/items/:itemId`, after the existing validity check, add:
   }
 ```
 
+Then, inside the `try` block, after `loadManageable` and before calling `db.updateMarathonItemDate`, refuse to re-date a film that is logged as watched — moving its date without clearing its status would leave a watched film dated in the future:
+
+```js
+    const current = await db.getMarathonItemById(marathon.id, parseInt(req.params.itemId));
+    if (current?.status === 'watched') {
+      return res.status(409).json({ error: 'That film is logged as already watched — undo that first to give it a new date.' });
+    }
+```
+
 - [ ] **Step 2: Guard the launch route**
 
 The launch guard names the offending film, because a draft assembled over several days can easily have its first date fall behind. That needs the items, so the check moves inside the `try` block, after `loadManageable`. Replace the body of the handler from `for (const it of items) {` through `res.json(updated);` with:
@@ -416,6 +431,57 @@ Expected: no output.
 ```bash
 git add backend/src/routes/marathons.js
 git commit -m "fix(backend): refuse past dates on marathon item dates and launch"
+```
+
+---
+
+## Task 5b: Keep hand-logged films out of a binge kickoff
+
+The one place the bot *does* need to change. A back-to-back marathon posts its whole evening in one embed and creates one `movie_night` per film. `processBingeAnnouncement` reads the entire lineup, so a film logged as watched before the kickoff fires would be announced again **and** have its link to the real screening overwritten at `announcementProcessor.js:238`.
+
+`markAllMarathonItemsScheduled` (`bot/src/models/index.js:997`) is already safe — it only touches `status = 'pending'` — so a watched item is never flipped to `scheduled`. Only the lineup reads need the filter.
+
+**Files:**
+- Modify: `bot/src/jobs/announcementProcessor.js:199`
+- Modify: `bot/src/jobs/marathonProcessor.js:28`
+
+- [ ] **Step 1: Filter the kickoff lineup**
+
+In `processBingeAnnouncement`, replace line 199:
+
+```js
+  // A film logged as already watched is history: it must not join the evening's
+  // lineup, or it would be announced a second time and its link to the real
+  // screening overwritten by linkMarathonItemMovieNight below.
+  const items = (await getMarathonItemsByMarathon(announcement.marathon_id))
+    .filter((it) => it.status !== 'watched');
+```
+
+The existing `if (items.length === 0)` guard directly below now also covers "every film was logged by hand", which correctly marks the announcement `failed` rather than posting an empty embed.
+
+- [ ] **Step 2: Filter the trigger's view of the lineup**
+
+In `marathonProcessor.js`, the binge fork reads the same list and passes `items.length` as the marathon total. Replace line 28:
+
+```js
+          // Same reasoning as the processor: a hand-logged film is not part of
+          // the evening, so it must not be counted in the total either.
+          const items = (await getMarathonItemsByMarathon(marathon.id))
+            .filter((it) => it.status !== 'watched');
+```
+
+Everything below it (`pending`, `doors`, `enqueueBingeMarathonAtomic(pending[0], marathon, items.length)`) is unchanged.
+
+- [ ] **Step 3: Verify both parse**
+
+Run: `node --check bot/src/jobs/announcementProcessor.js && node --check bot/src/jobs/marathonProcessor.js`
+Expected: no output.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add bot/src/jobs/announcementProcessor.js bot/src/jobs/marathonProcessor.js
+git commit -m "fix(bot): keep hand-logged films out of a binge kickoff"
 ```
 
 ---
