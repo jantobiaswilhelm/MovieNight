@@ -222,9 +222,12 @@ export default function MarathonDetail({ id, onBack }) {
         const missed = st === 'watched' && it.status === 'pending';
         const stateCls = missed ? 'wait' : st === 'watched' ? 'done' : isNext ? 'next' : 'wait';
         const stateIcon = missed ? 'clock' : st === 'watched' ? 'check-circle' : isNext ? 'play-circle' : 'clock';
-        // Queued films only: watched ones are history and next-up may already be
-        // posted to Discord. Gates the drag handle and the remove button alike.
-        const editable = m.is_owner && st !== 'watched' && !isNext;
+        // Queued films only: a film the bot has taken ('scheduled') is out of our
+        // hands, a hand-logged one is history, and next-up may already be posted.
+        // Keyed on the stored status, not itemState — a pending film whose date
+        // slipped is still queued, and reordering or removing it is a large part
+        // of repairing a marathon that fell behind.
+        const editable = m.is_owner && it.status === 'pending' && !isNext;
         const confirming = confirmRemove === it.id;
         const prev = items[idx - 1];
         return (
