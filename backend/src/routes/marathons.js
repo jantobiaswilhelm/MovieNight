@@ -341,6 +341,11 @@ router.delete('/:id/items/:itemId/watched', validateGuildId, validateIntParams('
     const marathon = await loadManageable(req, res);
     if (!marathon) return;
     const itemId = parseInt(req.params.itemId);
+    // Returning a film to 'pending' after a binge kickoff has posted would make the
+    // processor queue a second kickoff for the same evening — the same hazard
+    // blockedFromAdding exists for on the add routes.
+    const blocked = await blockedFromAdding(marathon);
+    if (blocked) return res.status(409).json({ error: blocked });
     const item = await db.unmarkMarathonItemWatched(marathon.id, itemId);
     // Marking the last film watched completes a marathon, so undoing has to revive
     // it or the bot will never look at this film again (getActiveMarathons filters
