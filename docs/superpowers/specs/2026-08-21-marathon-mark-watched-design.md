@@ -213,6 +213,48 @@ the reporter reached by deleting it, except the history survives.
 
 **Test data.** The match search filters `is_test`, as user-facing queries must.
 
+## The invariant this feature broke
+
+Worth stating plainly, because it caused most of what the reviews caught:
+
+> **`marathon_items.scheduled_movie_night_id` no longer means "a night this marathon
+> created."** For a hand-logged film it points at a pre-existing, historical screening.
+
+Every reader of that column had to learn it, not only the ones on the announce path:
+
+- `getMarathonItemsByMarathon` (`bot/src/models/index.js`) — the binge evening's lineup. Now
+  filters `status IS DISTINCT FROM 'watched'` **in the query**, because it has three callers
+  and the third (`handlers/attendance/handleRsvpButton.js`, which rebuilds the same embed on
+  every RSVP click) was missed when the filter lived at the call sites.
+- `toggleMarathonAttendance` and `getMarathonAttendees` — a binge RSVP toggles attendance
+  across every film. Without the exclusion, `movieNightIds[0]` could be the *historical*
+  night: someone who attended the original screening clicks "I'm in" on tonight's kickoff and
+  has their RSVP **deleted** across the evening, while everyone else's is written onto a
+  screening from weeks ago.
+- `launchMarathon` — reset every item to `'pending'` unconditionally, silently un-watching a
+  hand-logged film. Now guarded.
+
+Two more that came out of the same review:
+
+- **Undo is refused once a binge kickoff has posted.** Returning a film to `'pending'` then
+  would make the processor queue a *second* kickoff for the same evening. Reuses the same
+  helper the add routes use, with the closing clause naming what it actually refused.
+- **The past-date guard broke "add films to a finished marathon."** `rhythm.nextDateFor`
+  proposes dates by stepping forward from the last dated film, which is in the past for a
+  marathon that has already run — so every proposal was one the API now rejects, and the add
+  failed *after* the films had been appended. `inferRhythm` now clamps its first slot to the
+  future, stepping by whole cadence steps so the weekday and time of day survive.
+
+## Lapsed films
+
+`itemState` calls anything past its date `'watched'`, which predates this feature and is what
+the progress counts key on. That is fine for a film the bot aired, and wrong for a `'pending'`
+film whose date merely slipped — every film in a paused marathon, for instance. The row now
+tells those apart: a lapsed film reads `Was due <day>` with a clock, is not dimmed as history,
+and keeps its grip and remove button, because it is still a queued film. The aggregate counts
+deliberately still treat it as watched — changing that would diverge the detail page from the
+browse cards, and it is a product decision rather than a bug.
+
 ## Verification
 
 No test framework is configured. Locally: frontend build, backend and bot syntax checks.
@@ -229,8 +271,12 @@ On Railway (local Postgres is normally not running):
 6. Try to set a queued film's date to yesterday → refused, with the message pointing at
    "Already watched".
 7. Try to launch a marathon whose first film is dated in the past → refused, naming the film.
-8. Render the detail page and check the panel visually — a passing build says nothing about
-   how it looks.
+8. Add films to a marathon that has already finished → the proposed dates land in the future
+   and the add succeeds. (This is the case the past-date guard first broke.)
+9. Open a paused marathon whose dates have slipped → its films read `Was due <day>`, are not
+   dimmed, and still offer mark-watched, reorder and remove.
+10. Render the detail page and check the panel visually — a passing build says nothing about
+    how it looks. The un-dimmed lapsed row is a look nobody has seen yet.
 
 ## References
 
