@@ -467,11 +467,15 @@ export const toggleAttendance = async (movieNightId, userId) => {
 // "I'm in" on a binge kickoff means the whole evening, so attendance toggles
 // across every film in the marathon at once. The user's state on the first film
 // decides the direction, so a half-toggled marathon converges to all-or-nothing.
+// A hand-logged film is excluded: its scheduled_movie_night_id points at a real
+// past screening, and RSVPs for tonight must not be written onto that history —
+// nor may an old RSVP there decide tonight's toggle direction.
 export const toggleMarathonAttendance = async (marathonId, userId) => {
   const items = await pool.query(
     `SELECT scheduled_movie_night_id AS id
      FROM marathon_items
      WHERE marathon_id = $1 AND scheduled_movie_night_id IS NOT NULL
+       AND status IS DISTINCT FROM 'watched'
      ORDER BY position ASC`,
     [marathonId]
   );
@@ -502,14 +506,16 @@ export const toggleMarathonAttendance = async (marathonId, userId) => {
 };
 
 // Attendees of a binge = attendees across its films, which the marathon-wide
-// toggle keeps in sync with one another.
+// toggle keeps in sync with one another. A hand-logged film is excluded for the
+// same reason the toggle skips it: it points at a real past screening, and the
+// people who were at that screening are not tonight's attendees.
 export const getMarathonAttendees = async (marathonId) => {
   const result = await pool.query(
     `SELECT u.username, MIN(ma.created_at) AS joined_at
      FROM marathon_items mi
      JOIN movie_attendance ma ON ma.movie_night_id = mi.scheduled_movie_night_id
      JOIN users u ON ma.user_id = u.id
-     WHERE mi.marathon_id = $1
+     WHERE mi.marathon_id = $1 AND mi.status IS DISTINCT FROM 'watched'
      GROUP BY u.username
      ORDER BY joined_at ASC`,
     [marathonId]
@@ -984,10 +990,15 @@ export const completeMarathonIfDone = async (marathonId) => {
   );
 };
 
-// All items of a marathon in play order (for building the binge embed + rows).
+// The evening's lineup for a binge marathon, in play order. Excludes a film logged
+// as already watched: it is history, not part of tonight, and including it would
+// announce it a second time and overwrite its link to the real screening. Filtered
+// here rather than at each call site — there are three, and one of them was missed.
 export const getMarathonItemsByMarathon = async (marathonId) => {
   const result = await pool.query(
-    `SELECT * FROM marathon_items WHERE marathon_id = $1 ORDER BY position ASC`,
+    `SELECT * FROM marathon_items
+     WHERE marathon_id = $1 AND status IS DISTINCT FROM 'watched'
+     ORDER BY position ASC`,
     [marathonId]
   );
   return result.rows;

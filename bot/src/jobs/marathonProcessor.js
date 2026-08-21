@@ -25,10 +25,9 @@ export const processMarathons = async () => {
       try {
         if (marathon.cadence_type === 'binge') {
           // Whole evening at once: queue a single kickoff when doors near.
-          // Same reasoning as the processor: a hand-logged film is not part of
-          // the evening, so it must not be counted in the total either.
-          const items = (await getMarathonItemsByMarathon(marathon.id))
-            .filter((it) => it.status !== 'watched');
+          // Hand-logged films are already excluded by the query — see
+          // getMarathonItemsByMarathon — so they aren't counted in the total either.
+          const items = await getMarathonItemsByMarathon(marathon.id);
           const pending = items.filter((it) => it.status === 'pending');
           if (pending.length === 0) { await completeMarathonIfDone(marathon.id); continue; }
           const doors = pending[0].scheduled_at;

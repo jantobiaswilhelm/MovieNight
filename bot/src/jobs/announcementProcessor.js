@@ -196,11 +196,8 @@ async function processAnnouncement(client, announcement, channel) {
 }
 
 async function processBingeAnnouncement(client, announcement, channel, announcerName) {
-  // A film logged as already watched is history: it must not join the evening's
-  // lineup, or it would be announced a second time and its link to the real
-  // screening overwritten by linkMarathonItemMovieNight below.
-  const items = (await getMarathonItemsByMarathon(announcement.marathon_id))
-    .filter((it) => it.status !== 'watched');
+  // Hand-logged films are already excluded by the query — see getMarathonItemsByMarathon.
+  const items = await getMarathonItemsByMarathon(announcement.marathon_id);
   if (items.length === 0) {
     await markAnnouncementProcessed(announcement.id, 'failed');
     return;
