@@ -345,7 +345,7 @@ router.delete('/:id/items/:itemId/watched', validateGuildId, validateIntParams('
     const itemId = parseInt(req.params.itemId);
     // Returning a film to 'pending' after a binge kickoff has posted would make the
     // processor queue a second kickoff for the same evening — the same hazard
-    // blockedFromChangingLineup exists for on the add routes.
+    // blockedFromChangingLineup guards against on the add routes.
     const blocked = await blockedFromChangingLineup(marathon, 'so a film can’t be pulled back out of it now');
     if (blocked) return res.status(409).json({ error: blocked });
     const item = await db.unmarkMarathonItemWatched(marathon.id, itemId);
