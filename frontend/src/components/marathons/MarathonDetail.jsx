@@ -244,7 +244,11 @@ export default function MarathonDetail({ id, onBack }) {
             </div>
             <div className="date"><b>{fmtDay(it.scheduled_at)}</b>{fmtTime(it.scheduled_at) || 'unscheduled'}</div>
             {st === 'watched' ? (
-              m.is_owner && (
+              // itemState says 'watched' for anything whose date has passed, which
+              // includes a film the bot announced and aired. Undo only has something
+              // to undo on a hand-logged one — offering it elsewhere would report
+              // success while changing nothing.
+              m.is_owner && it.status === 'watched' && (
                 <button className="mara-iconbtn" title={`Put “${it.title}” back in the queue`}
                   onClick={() => undoWatched(it)}><Icon name="undo" size={15} /></button>
               )
