@@ -263,11 +263,18 @@ export const getMarathonItemById = async (marathonId, itemId) => {
 // the bot's hands off it — marathonProcessor only ever picks up 'pending' items.
 // scheduled_at becomes the date it actually played, which is what every derived
 // read already keys on (progress, next-up, the row's "Watched <day>" label).
+//
+// The WHERE clause carries the invariant rather than trusting the caller: a film
+// the bot has already taken ('scheduled', whether or not it has been back-linked
+// yet) can never be logged by hand, and an existing link can never be nulled.
+// Re-marking with the same night — to correct a date — still works.
 export const markMarathonItemWatched = async (marathonId, itemId, watchedAt, movieNightId = null) => {
   const result = await pool.query(
     `UPDATE marathon_items
      SET status = 'watched', scheduled_at = $3, scheduled_movie_night_id = $4
      WHERE id = $1 AND marathon_id = $2
+       AND status <> 'scheduled'
+       AND (scheduled_movie_night_id IS NULL OR scheduled_movie_night_id = $4)
      RETURNING *`,
     [itemId, marathonId, watchedAt, movieNightId]
   );
