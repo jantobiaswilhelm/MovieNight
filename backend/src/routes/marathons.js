@@ -117,11 +117,13 @@ const loadManageable = async (req, res) => {
 const bingeAlreadyAnnounced = (marathon, items) =>
   marathon.cadence_type === 'binge' && items.some((it) => it.status === 'scheduled');
 
-// Shared by both add routes. Returns an error string, or null when adding is OK.
-const blockedFromAdding = async (marathon) => {
+// Shared by the add routes and by undo: any change to a binge lineup is blocked
+// once the evening has gone out. Returns an error string, or null when the change
+// is OK. The closing clause differs so each caller's message names what it refused.
+const blockedFromChangingLineup = async (marathon, closing = 'so films can’t be added now') => {
   const items = await db.getMarathonItems(marathon.id);
   if (bingeAlreadyAnnounced(marathon, items)) {
-    return 'This back-to-back night has already been announced to Discord — its whole lineup went out in one post, so films can’t be added now.';
+    return `This back-to-back night has already been announced to Discord — its whole lineup went out in one post, ${closing}.`;
   }
   return null;
 };
@@ -142,7 +144,7 @@ router.get('/:id/suggestions', validateGuildId, validateIntParams('id'), authent
     const marathon = await loadManageable(req, res);
     if (!marathon) return;
     const items = await db.getMarathonItems(marathon.id);
-    const blocked = await blockedFromAdding(marathon);
+    const blocked = await blockedFromChangingLineup(marathon);
     if (blocked) return res.status(409).json({ error: blocked });
     res.json(await suggestions.buildSuggestions(marathon, items));
   } catch (err) {
@@ -160,7 +162,7 @@ router.post('/:id/items', validateGuildId, validateIntParams('id'), authenticate
   try {
     const marathon = await loadManageable(req, res);
     if (!marathon) return;
-    const blocked = await blockedFromAdding(marathon);
+    const blocked = await blockedFromChangingLineup(marathon);
     if (blocked) return res.status(409).json({ error: blocked });
     const item = await db.addMarathonItem(marathon.id, tmdb_data);
     await reviveIfCompleted(marathon);
@@ -184,7 +186,7 @@ router.post('/:id/items/bulk', validateGuildId, validateIntParams('id'), authent
   try {
     const marathon = await loadManageable(req, res);
     if (!marathon) return;
-    const blocked = await blockedFromAdding(marathon);
+    const blocked = await blockedFromChangingLineup(marathon);
     if (blocked) return res.status(409).json({ error: blocked });
     const details = await Promise.all(ids.map((tid) => tmdb.getMovieDetail(tid).catch(() => null)));
     const movies = details.filter(Boolean).map(detailToItem);
@@ -343,8 +345,8 @@ router.delete('/:id/items/:itemId/watched', validateGuildId, validateIntParams('
     const itemId = parseInt(req.params.itemId);
     // Returning a film to 'pending' after a binge kickoff has posted would make the
     // processor queue a second kickoff for the same evening — the same hazard
-    // blockedFromAdding exists for on the add routes.
-    const blocked = await blockedFromAdding(marathon);
+    // blockedFromChangingLineup exists for on the add routes.
+    const blocked = await blockedFromChangingLineup(marathon, 'so a film can’t be pulled back out of it now');
     if (blocked) return res.status(409).json({ error: blocked });
     const item = await db.unmarkMarathonItemWatched(marathon.id, itemId);
     // Marking the last film watched completes a marathon, so undoing has to revive
