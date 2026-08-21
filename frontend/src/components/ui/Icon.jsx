@@ -48,6 +48,7 @@ import {
   PlayCircle,
   CheckCircle2,
   Rocket,
+  RotateCcw,
 } from 'lucide-react';
 
 const REGISTRY = {
@@ -99,6 +100,7 @@ const REGISTRY = {
   send:      Send,
   'play-circle':  PlayCircle,
   'check-circle': CheckCircle2,
+  undo:      RotateCcw,
   rocket:    Rocket,
 };
 
