@@ -102,11 +102,13 @@ export default function MarathonDetail({ id, onBack }) {
     } catch (err) { showError(err.message); }
   };
 
-  // A film the bot has already taken is not ours to log — 'scheduled' means the
-  // announcement is queued or posted, and the marathon is tracking it either way.
-  // The link alone isn't enough: it isn't written until the processor posts.
+  // Keyed on the stored status, not itemState: itemState calls anything with a past
+  // date 'watched', which would hide this action on a pending film whose date has
+  // simply slipped — the out-of-sync marathon this feature exists to repair. A film
+  // the bot has taken is still excluded ('scheduled' covers queued and posted alike,
+  // since the link isn't written until the processor posts).
   const canMarkWatched = (it) =>
-    m?.is_owner && itemState(it) !== 'watched' && it.status !== 'scheduled' && !it.scheduled_movie_night_id;
+    m?.is_owner && it.status !== 'watched' && it.status !== 'scheduled' && !it.scheduled_movie_night_id;
 
   const onDrop = async (items, idx) => {
     if (dragIndex === null || dragIndex === idx) { setDragIndex(null); setDragOver(null); return; }
@@ -243,18 +245,18 @@ export default function MarathonDetail({ id, onBack }) {
               </div>
             </div>
             <div className="date"><b>{fmtDay(it.scheduled_at)}</b>{fmtTime(it.scheduled_at) || 'unscheduled'}</div>
-            {st === 'watched' ? (
-              // itemState says 'watched' for anything whose date has passed, which
-              // includes a film the bot announced and aired. Undo only has something
-              // to undo on a hand-logged one — offering it elsewhere would report
+            {it.status === 'watched' ? (
+              // Routed on the stored status, not itemState: undo only has something
+              // to undo on a hand-logged film. A film the bot announced and aired
+              // also reads as watched by date, and offering undo there would report
               // success while changing nothing.
-              m.is_owner && it.status === 'watched' && (
+              m.is_owner && (
                 <button className="mara-iconbtn" title={`Put “${it.title}” back in the queue`}
                   onClick={() => undoWatched(it)}><Icon name="undo" size={15} /></button>
               )
             ) : (
               <>
-                {canMarkWatched(it) && (
+                {!isNext && canMarkWatched(it) && (
                   <button className="mara-iconbtn" title={`Mark “${it.title}” as already watched`}
                     onClick={() => setMarkWatched(markWatched === it.id ? null : it.id)}>
                     <Icon name="check-circle" size={15} /></button>
