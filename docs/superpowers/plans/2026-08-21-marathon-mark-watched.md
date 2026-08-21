@@ -912,8 +912,10 @@ Tokens only, no hardcoded colour. Surrounding rules in this file use raw px for 
   border-radius: var(--r-2); padding: 14px 16px; margin: 0 0 8px; display: flex;
   flex-direction: column; gap: 8px; }
 .mara-nextcard .mara-watched { margin-top: 12px; }
+/* margin: 0 — .mara-nextcard .k adds a bottom margin that would make the hero
+   mount's heading gap differ from the lineup's. The flex gap owns the spacing. */
 .mara-watched .k { font-family: var(--font-mono); font-size: 10px; letter-spacing: .28em;
-  text-transform: uppercase; color: var(--bone-mute); }
+  text-transform: uppercase; color: var(--bone-mute); margin: 0; }
 .mara-watched .wopts { display: flex; flex-direction: column; gap: 8px; }
 .mara-watched .wopt { display: flex; align-items: center; gap: 10px; font-size: 13px;
   color: var(--bone-dim); cursor: pointer; }
