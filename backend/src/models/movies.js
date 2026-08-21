@@ -273,3 +273,27 @@ export const getCalendar = async (guildId, startISO, endISO) => {
   );
   return result.rows;
 };
+
+// Past screenings of a given film in this guild — the candidates offered when
+// someone logs a marathon film as already watched. tmdb_id is the reliable key;
+// the title fallback is a prefix match because announced titles carry the year
+// ("The Hunger Games (2012)") and marathon_items.title does not. Test nights are
+// not history.
+export const findPastNightsForFilm = async (guildId, tmdbId, title) => {
+  const result = await pool.query(
+    `SELECT mn.id, mn.title, mn.scheduled_at, mn.started_at,
+            u.username AS announced_by_name
+     FROM movie_nights mn
+     LEFT JOIN users u ON mn.announced_by = u.id
+     WHERE mn.guild_id = $1
+       AND mn.scheduled_at < NOW()
+       AND (mn.is_test = false OR mn.is_test IS NULL)
+       AND CASE WHEN $2::int IS NULL
+                THEN LOWER(mn.title) LIKE LOWER($3) || '%'
+                ELSE mn.tmdb_id = $2::int END
+     ORDER BY mn.scheduled_at DESC
+     LIMIT 5`,
+    [guildId, tmdbId ?? null, title ?? '']
+  );
+  return result.rows;
+};
