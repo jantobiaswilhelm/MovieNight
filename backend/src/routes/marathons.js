@@ -248,6 +248,98 @@ router.put('/:id/items/:itemId', validateGuildId, validateIntParams('id', 'itemI
   }
 });
 
+// GET /api/marathons/:id/items/:itemId/matches — past screenings of this film,
+// offered when logging it as already watched.
+router.get('/:id/items/:itemId/matches', validateGuildId, validateIntParams('id', 'itemId'), authenticateToken, async (req, res) => {
+  try {
+    const marathon = await loadManageable(req, res);
+    if (!marathon) return;
+    const item = await db.getMarathonItemById(marathon.id, parseInt(req.params.itemId));
+    if (!item) return res.status(404).json({ error: 'Film not found in this marathon' });
+    res.json(await db.findPastNightsForFilm(marathon.guild_id, item.tmdb_id, item.title));
+  } catch (err) {
+    console.error('Error finding past screenings for marathon item:', err);
+    res.status(500).json({ error: 'Failed to look up past screenings' });
+  }
+});
+
+// POST /api/marathons/:id/items/:itemId/watched — body: { watched_at, movie_night_id? }
+// Logs a film the group watched outside the roll-out: it stops being announced,
+// counts towards progress, and points at the real screening when we found one.
+router.post('/:id/items/:itemId/watched', validateGuildId, validateIntParams('id', 'itemId'), authenticateToken, async (req, res) => {
+  const { watched_at, movie_night_id } = req.body;
+  const when = new Date(watched_at);
+  if (!watched_at || isNaN(when.getTime())) {
+    return res.status(400).json({ error: 'watched_at must be a valid date' });
+  }
+  if (when > new Date()) {
+    return res.status(400).json({ error: 'That date is in the future — a film can only be marked watched after it played.' });
+  }
+  try {
+    const marathon = await loadManageable(req, res);
+    if (!marathon) return;
+    const item = await db.getMarathonItemById(marathon.id, parseInt(req.params.itemId));
+    if (!item) return res.status(404).json({ error: 'Film not found in this marathon' });
+    // A film the bot has already taken is off limits. 'scheduled' is the reliable
+    // test, not the link: enqueueMarathonItemAtomic marks the item 'scheduled' when
+    // it queues the announcement, but linkMarathonItemMovieNight only runs later,
+    // when the processor actually posts. Checking the link alone would wave the film
+    // through in that window, and the bot would post it anyway.
+    if (item.status === 'scheduled' || item.scheduled_movie_night_id) {
+      return res.status(409).json({ error: 'The bot has already posted this film to Discord — the marathon is tracking it.' });
+    }
+    let nightId = null;
+    if (movie_night_id) {
+      // Validated against the same candidate list the panel offered, which pins
+      // down guild, film and pastness in one query.
+      const candidates = await db.findPastNightsForFilm(marathon.guild_id, item.tmdb_id, item.title);
+      const match = candidates.find((n) => n.id === parseInt(movie_night_id));
+      if (!match) {
+        return res.status(400).json({ error: 'That movie night is not a past screening of this film.' });
+      }
+      nightId = match.id;
+    }
+    const updated = await db.markMarathonItemWatched(marathon.id, item.id, when, nightId);
+    if (!updated) {
+      // The statement carries the same invariant this route just checked, so an
+      // empty result means the bot claimed the film between our read and our
+      // write. Same answer as the check above.
+      return res.status(409).json({ error: 'The bot has already posted this film to Discord — the marathon is tracking it.' });
+    }
+    res.json(updated);
+  } catch (err) {
+    console.error('Error marking marathon item watched:', err);
+    res.status(500).json({ error: 'Failed to mark the film watched' });
+  }
+});
+
+// DELETE /api/marathons/:id/items/:itemId/watched — undo, putting the film back
+// in the queue as TBD.
+router.delete('/:id/items/:itemId/watched', validateGuildId, validateIntParams('id', 'itemId'), authenticateToken, async (req, res) => {
+  try {
+    const marathon = await loadManageable(req, res);
+    if (!marathon) return;
+    const itemId = parseInt(req.params.itemId);
+    const item = await db.unmarkMarathonItemWatched(marathon.id, itemId);
+    if (!item) {
+      // The model guards on status = 'watched', so an empty result means either
+      // "no such film here" or "already not watched". Tell those apart: a
+      // double-clicked undo should not read as an error.
+      const existing = await db.getMarathonItemById(marathon.id, itemId);
+      if (!existing) return res.status(404).json({ error: 'Film not found in this marathon' });
+      return res.json(existing);
+    }
+    // Marking the last film watched completes a marathon; undoing has to revive it
+    // or the bot will never look at this film again (getActiveMarathons filters on
+    // status). Same reasoning as reviveIfCompleted on the add routes.
+    if (marathon.status === 'completed') await db.setMarathonStatus(marathon.id, 'active');
+    res.json(item);
+  } catch (err) {
+    console.error('Error undoing marathon watched mark:', err);
+    res.status(500).json({ error: 'Failed to undo' });
+  }
+});
+
 // POST /api/marathons/:id/launch — body: { cadence_type, items: [{ id, scheduled_at }] }
 router.post('/:id/launch', validateGuildId, validateIntParams('id'), authenticateToken, async (req, res) => {
   const { cadence_type, items } = req.body;
