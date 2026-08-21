@@ -196,6 +196,7 @@ async function processAnnouncement(client, announcement, channel) {
 }
 
 async function processBingeAnnouncement(client, announcement, channel, announcerName) {
+  // Hand-logged films are already excluded by the query — see getMarathonItemsByMarathon.
   const items = await getMarathonItemsByMarathon(announcement.marathon_id);
   if (items.length === 0) {
     await markAnnouncementProcessed(announcement.id, 'failed');

@@ -117,11 +117,13 @@ const loadManageable = async (req, res) => {
 const bingeAlreadyAnnounced = (marathon, items) =>
   marathon.cadence_type === 'binge' && items.some((it) => it.status === 'scheduled');
 
-// Shared by both add routes. Returns an error string, or null when adding is OK.
-const blockedFromAdding = async (marathon) => {
+// Shared by the add routes and by undo: any change to a binge lineup is blocked
+// once the evening has gone out. Returns an error string, or null when the change
+// is OK. The closing clause differs so each caller's message names what it refused.
+const blockedFromChangingLineup = async (marathon, closing = 'so films can’t be added now') => {
   const items = await db.getMarathonItems(marathon.id);
   if (bingeAlreadyAnnounced(marathon, items)) {
-    return 'This back-to-back night has already been announced to Discord — its whole lineup went out in one post, so films can’t be added now.';
+    return `This back-to-back night has already been announced to Discord — its whole lineup went out in one post, ${closing}.`;
   }
   return null;
 };
@@ -142,7 +144,7 @@ router.get('/:id/suggestions', validateGuildId, validateIntParams('id'), authent
     const marathon = await loadManageable(req, res);
     if (!marathon) return;
     const items = await db.getMarathonItems(marathon.id);
-    const blocked = await blockedFromAdding(marathon);
+    const blocked = await blockedFromChangingLineup(marathon);
     if (blocked) return res.status(409).json({ error: blocked });
     res.json(await suggestions.buildSuggestions(marathon, items));
   } catch (err) {
@@ -160,7 +162,7 @@ router.post('/:id/items', validateGuildId, validateIntParams('id'), authenticate
   try {
     const marathon = await loadManageable(req, res);
     if (!marathon) return;
-    const blocked = await blockedFromAdding(marathon);
+    const blocked = await blockedFromChangingLineup(marathon);
     if (blocked) return res.status(409).json({ error: blocked });
     const item = await db.addMarathonItem(marathon.id, tmdb_data);
     await reviveIfCompleted(marathon);
@@ -184,7 +186,7 @@ router.post('/:id/items/bulk', validateGuildId, validateIntParams('id'), authent
   try {
     const marathon = await loadManageable(req, res);
     if (!marathon) return;
-    const blocked = await blockedFromAdding(marathon);
+    const blocked = await blockedFromChangingLineup(marathon);
     if (blocked) return res.status(409).json({ error: blocked });
     const details = await Promise.all(ids.map((tid) => tmdb.getMovieDetail(tid).catch(() => null)));
     const movies = details.filter(Boolean).map(detailToItem);
@@ -237,14 +239,134 @@ router.put('/:id/items/:itemId', validateGuildId, validateIntParams('id', 'itemI
   if (hasDate && isNaN(new Date(scheduled_at).getTime())) {
     return res.status(400).json({ error: 'scheduled_at must be a valid date or null' });
   }
+  if (hasDate && new Date(scheduled_at) <= new Date()) {
+    return res.status(400).json({
+      error: 'That date has passed — use “Already watched” to log a film you’ve already seen.'
+    });
+  }
   try {
     const marathon = await loadManageable(req, res);
     if (!marathon) return;
+    const current = await db.getMarathonItemById(marathon.id, parseInt(req.params.itemId));
+    if (current?.status === 'watched') {
+      return res.status(409).json({ error: 'That film is logged as already watched — undo that first to give it a new date.' });
+    }
     const item = await db.updateMarathonItemDate(marathon.id, parseInt(req.params.itemId), hasDate ? new Date(scheduled_at) : null);
     res.json(item);
   } catch (err) {
     console.error('Error updating item date:', err);
     res.status(500).json({ error: 'Failed to update date' });
+  }
+});
+
+// GET /api/marathons/:id/items/:itemId/matches — past screenings of this film,
+// offered when logging it as already watched.
+router.get('/:id/items/:itemId/matches', validateGuildId, validateIntParams('id', 'itemId'), authenticateToken, async (req, res) => {
+  try {
+    const marathon = await loadManageable(req, res);
+    if (!marathon) return;
+    const item = await db.getMarathonItemById(marathon.id, parseInt(req.params.itemId));
+    if (!item) return res.status(404).json({ error: 'Film not found in this marathon' });
+    res.json(await db.findPastNightsForFilm(marathon.guild_id, item.tmdb_id, item.title));
+  } catch (err) {
+    console.error('Error finding past screenings for marathon item:', err);
+    res.status(500).json({ error: 'Failed to look up past screenings' });
+  }
+});
+
+// POST /api/marathons/:id/items/:itemId/watched — body: { watched_at, movie_night_id? }
+// Logs a film the group watched outside the roll-out: it stops being announced,
+// counts towards progress, and points at the real screening when we found one.
+router.post('/:id/items/:itemId/watched', validateGuildId, validateIntParams('id', 'itemId'), authenticateToken, async (req, res) => {
+  const { watched_at, movie_night_id } = req.body;
+  const when = new Date(watched_at);
+  if (!watched_at || isNaN(when.getTime())) {
+    return res.status(400).json({ error: 'watched_at must be a valid date' });
+  }
+  // A few minutes of grace: the client sends its own "now" for a film watched just
+  // now, and an ordinary fast clock would otherwise 400 on a date the user is
+  // right about. Anything beyond that is a real future date and gets refused.
+  const CLOCK_SKEW_GRACE_MS = 5 * 60 * 1000;
+  if (when.getTime() > Date.now() + CLOCK_SKEW_GRACE_MS) {
+    return res.status(400).json({ error: 'That date is in the future — a film can only be marked watched after it played.' });
+  }
+  try {
+    const marathon = await loadManageable(req, res);
+    if (!marathon) return;
+    const item = await db.getMarathonItemById(marathon.id, parseInt(req.params.itemId));
+    if (!item) return res.status(404).json({ error: 'Film not found in this marathon' });
+    // A film the bot has already taken is off limits, and 'scheduled' is the whole
+    // test. enqueueMarathonItemAtomic marks the item 'scheduled' when it queues the
+    // announcement and linkMarathonItemMovieNight only back-links later, so the
+    // status covers the entire period the bot owns the film. Don't also refuse on
+    // scheduled_movie_night_id: this feature sets that field too, so it would tell
+    // someone re-logging their own film that Discord had posted it.
+    if (item.status === 'scheduled') {
+      return res.status(409).json({ error: 'The bot has already posted this film to Discord — the marathon is tracking it.' });
+    }
+    let nightId = null;
+    if (movie_night_id !== undefined && movie_night_id !== null && movie_night_id !== '') {
+      const wanted = Number(movie_night_id);
+      if (!Number.isInteger(wanted)) {
+        return res.status(400).json({ error: 'movie_night_id must be a whole number' });
+      }
+      // Validated by membership in the same candidate list the panel offered, which
+      // pins down guild, film and pastness in one query — and we store the row's own
+      // id, never the client's value.
+      const candidates = await db.findPastNightsForFilm(marathon.guild_id, item.tmdb_id, item.title);
+      const match = candidates.find((n) => n.id === wanted);
+      if (!match) {
+        return res.status(400).json({ error: 'That movie night is not a past screening of this film.' });
+      }
+      nightId = match.id;
+    }
+    const updated = await db.markMarathonItemWatched(marathon.id, item.id, when, nightId);
+    if (!updated) {
+      // The statement carries the same invariant this route checked, so an empty
+      // result means the film changed underneath us. Tell "gone" apart from
+      // "claimed" — answering 409 for a deleted film would be a plain lie.
+      const still = await db.getMarathonItemById(marathon.id, item.id);
+      if (!still) return res.status(404).json({ error: 'Film not found in this marathon' });
+      return res.status(409).json({ error: 'That film changed while you were logging it — reload the marathon and try again.' });
+    }
+    res.json(updated);
+  } catch (err) {
+    console.error('Error marking marathon item watched:', err);
+    res.status(500).json({ error: 'Failed to mark the film watched' });
+  }
+});
+
+// DELETE /api/marathons/:id/items/:itemId/watched — undo, putting the film back
+// in the queue as TBD.
+router.delete('/:id/items/:itemId/watched', validateGuildId, validateIntParams('id', 'itemId'), authenticateToken, async (req, res) => {
+  try {
+    const marathon = await loadManageable(req, res);
+    if (!marathon) return;
+    const itemId = parseInt(req.params.itemId);
+    // Returning a film to 'pending' after a binge kickoff has posted would make the
+    // processor queue a second kickoff for the same evening — the same hazard
+    // blockedFromChangingLineup guards against on the add routes.
+    const blocked = await blockedFromChangingLineup(marathon, 'so a film can’t be pulled back out of it now');
+    if (blocked) return res.status(409).json({ error: blocked });
+    const item = await db.unmarkMarathonItemWatched(marathon.id, itemId);
+    // Marking the last film watched completes a marathon, so undoing has to revive
+    // it or the bot will never look at this film again (getActiveMarathons filters
+    // on status). Runs before the branch below so a repeat undo can still repair a
+    // marathon the bot completed in between, and it is SQL-guarded rather than
+    // reading marathon.status — that read predates the write above.
+    await db.reviveCompletedMarathon(marathon.id);
+    if (!item) {
+      // The model guards on status = 'watched', so an empty result means either
+      // "no such film here" or "already not watched". Tell those apart: a
+      // double-clicked undo should not read as an error.
+      const existing = await db.getMarathonItemById(marathon.id, itemId);
+      if (!existing) return res.status(404).json({ error: 'Film not found in this marathon' });
+      return res.json(existing);
+    }
+    res.json(item);
+  } catch (err) {
+    console.error('Error undoing marathon watched mark:', err);
+    res.status(500).json({ error: 'Failed to undo' });
   }
 });
 
@@ -271,6 +393,18 @@ router.post('/:id/launch', validateGuildId, validateIntParams('id'), authenticat
     const marathon = await loadManageable(req, res);
     if (!marathon) return;
     const normalized = items.map((it) => ({ id: it.id, scheduled_at: it.scheduled_at ? new Date(it.scheduled_at) : null }));
+    // A past date isn't a schedule — the processor would see the film as due and
+    // announce it the moment the marathon launches. Name the film, since a draft
+    // put together over several days can easily have its first date fall behind.
+    const now = new Date();
+    const stale = normalized.find((it) => it.scheduled_at && it.scheduled_at <= now);
+    if (stale) {
+      const existing = await db.getMarathonItems(marathon.id);
+      const film = existing.find((it) => it.id === stale.id);
+      return res.status(400).json({
+        error: `${film ? `“${film.title}”` : 'One film'} is dated in the past — pick a future date, or launch it as TBD.`
+      });
+    }
     const updated = await db.launchMarathon(marathon.id, cadence_type, normalized);
     res.json(updated);
   } catch (err) {

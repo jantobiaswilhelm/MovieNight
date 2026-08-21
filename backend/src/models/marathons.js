@@ -22,20 +22,25 @@ export const getMarathons = async (guildId) => {
             (SELECT COUNT(*) FROM marathon_items mi WHERE mi.marathon_id = m.id)::int AS item_count,
             -- Watched means finished, not merely started: count only items whose
             -- runtime has fully elapsed. Counting from scheduled_at alone marked a
-            -- film as watched the moment it began.
+            -- film as watched the moment it began. An item logged by hand as
+            -- 'watched' counts outright — its runtime may not have elapsed yet.
             (SELECT COUNT(*) FROM marathon_items mi
-               WHERE mi.marathon_id = m.id AND mi.scheduled_at IS NOT NULL
-                 AND mi.scheduled_at + INTERVAL '1 minute' * COALESCE(mi.runtime, 90) < NOW())::int AS watched_count,
+               WHERE mi.marathon_id = m.id
+                 AND (mi.status = 'watched'
+                      OR (mi.scheduled_at IS NOT NULL
+                          AND mi.scheduled_at + INTERVAL '1 minute' * COALESCE(mi.runtime, 90) < NOW())))::int AS watched_count,
             -- The film on screen right now, if any: started but not yet finished.
+            -- A hand-logged film is history, never on screen.
             (SELECT json_build_object('title', mi.title, 'scheduled_at', mi.scheduled_at, 'runtime', mi.runtime)
                FROM marathon_items mi
-               WHERE mi.marathon_id = m.id AND mi.scheduled_at IS NOT NULL
+               WHERE mi.marathon_id = m.id AND mi.status IS DISTINCT FROM 'watched' AND mi.scheduled_at IS NOT NULL
                  AND mi.scheduled_at <= NOW()
                  AND mi.scheduled_at + INTERVAL '1 minute' * COALESCE(mi.runtime, 90) > NOW()
                ORDER BY mi.position ASC LIMIT 1) AS airing_item,
             (SELECT json_build_object('title', mi.title, 'scheduled_at', mi.scheduled_at)
                FROM marathon_items mi
-               WHERE mi.marathon_id = m.id AND (mi.scheduled_at IS NULL OR mi.scheduled_at >= NOW())
+               WHERE mi.marathon_id = m.id AND mi.status IS DISTINCT FROM 'watched'
+                 AND (mi.scheduled_at IS NULL OR mi.scheduled_at >= NOW())
                ORDER BY mi.position ASC LIMIT 1) AS next_item,
             (SELECT json_agg(mi.image_url ORDER BY mi.position)
                FROM marathon_items mi WHERE mi.marathon_id = m.id) AS poster_urls
@@ -160,8 +165,10 @@ export const launchMarathon = async (marathonId, cadenceType, items) => {
   try {
     await client.query('BEGIN');
     for (const it of items) {
+      // Never un-watch a hand-logged film: its date is history, not a slot to fill.
       await client.query(
-        `UPDATE marathon_items SET scheduled_at = $1, status = 'pending' WHERE id = $2 AND marathon_id = $3`,
+        `UPDATE marathon_items SET scheduled_at = $1, status = 'pending'
+         WHERE id = $2 AND marathon_id = $3 AND status IS DISTINCT FROM 'watched'`,
         [it.scheduled_at, it.id, marathonId]
       );
     }
@@ -247,4 +254,65 @@ export const addMarathonItemsBulk = async (marathonId, movies) => {
   } finally {
     client.release();
   }
+};
+
+// One item by id, scoped to its marathon. Used by the routes to check a film's
+// current state before changing it.
+export const getMarathonItemById = async (marathonId, itemId) => {
+  const result = await pool.query(
+    `SELECT * FROM marathon_items WHERE id = $1 AND marathon_id = $2`,
+    [itemId, marathonId]
+  );
+  return result.rows[0];
+};
+
+// A film the group watched outside the roll-out. status 'watched' is what keeps
+// the bot's hands off it — marathonProcessor only ever picks up 'pending' items.
+// scheduled_at becomes the date it actually played, which is what every derived
+// read already keys on (progress, next-up, the row's "Watched <day>" label).
+//
+// The WHERE clause carries the invariant rather than trusting the caller: a film
+// the bot has already taken ('scheduled', whether or not it has been back-linked
+// yet) can never be logged by hand, and an existing link can never be nulled.
+// Re-marking with the same night — to correct a date — still works.
+// IS DISTINCT FROM, not <>, so a NULL status could never silently refuse.
+export const markMarathonItemWatched = async (marathonId, itemId, watchedAt, movieNightId = null) => {
+  const result = await pool.query(
+    `UPDATE marathon_items
+     SET status = 'watched', scheduled_at = $3, scheduled_movie_night_id = $4
+     WHERE id = $1 AND marathon_id = $2
+       AND status IS DISTINCT FROM 'scheduled'
+       AND (scheduled_movie_night_id IS NULL OR scheduled_movie_night_id = $4)
+     RETURNING *`,
+    [itemId, marathonId, watchedAt, movieNightId]
+  );
+  return result.rows[0];
+};
+
+// Undo. The watched date overwrote whatever was planned, so there is nothing to
+// restore — the film goes back to TBD, a state the detail page already renders.
+// Guarded on status = 'watched' so it can only ever undo this feature's own work.
+export const unmarkMarathonItemWatched = async (marathonId, itemId) => {
+  const result = await pool.query(
+    `UPDATE marathon_items
+     SET status = 'pending', scheduled_at = NULL, scheduled_movie_night_id = NULL
+     WHERE id = $1 AND marathon_id = $2 AND status = 'watched'
+     RETURNING *`,
+    [itemId, marathonId]
+  );
+  return result.rows[0];
+};
+
+// Bring a completed marathon back to active. Guarded in SQL rather than by reading
+// the status first: the bot's completeMarathonIfDone runs every 5 minutes and can
+// land between a read and this write, which would leave a queued film sitting in a
+// completed marathon that getActiveMarathons never looks at again.
+export const reviveCompletedMarathon = async (marathonId) => {
+  const result = await pool.query(
+    `UPDATE marathons SET status = 'active', updated_at = NOW()
+     WHERE id = $1 AND status = 'completed'
+     RETURNING *`,
+    [marathonId]
+  );
+  return result.rows[0];
 };

@@ -386,6 +386,27 @@
 .mara-li2 .mara-iconbtn { flex-shrink: 0; }
 /* Inline "Remove? / Cancel" pair that replaces the row's × while confirming */
 .mara-li2 .li-confirm { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+/* "Already watched" — logs a film the group watched outside the roll-out. Sits
+   under its row (or under the next-up card), never inside the flex row itself. */
+.mara-watched { background: var(--ink-2); border: 1px solid var(--rule-strong);
+  border-radius: var(--r-2); padding: 14px 16px; margin: 0 0 8px; display: flex;
+  flex-direction: column; gap: 8px; }
+.mara-nextcard .mara-watched { margin-top: 12px; }
+/* margin: 0 — .mara-nextcard .k adds a bottom margin that would make the hero
+   mount's heading gap differ from the lineup's. The flex gap owns the spacing. */
+.mara-watched .k { font-family: var(--font-mono); font-size: 10px; letter-spacing: .28em;
+  text-transform: uppercase; color: var(--bone-mute); margin: 0; }
+.mara-watched .wopts { display: flex; flex-direction: column; gap: 8px; }
+.mara-watched .wopt { display: flex; align-items: center; gap: 10px; font-size: 13px;
+  color: var(--bone-dim); cursor: pointer; }
+.mara-watched .wopt input[type="radio"] { accent-color: var(--ember); flex-shrink: 0; }
+.mara-watched .wdate { align-self: flex-start; background: var(--ink);
+  border: 1px solid var(--rule-strong); border-radius: var(--r-2); color: var(--bone);
+  font-family: var(--font-ui); font-size: 12px; padding: 6px 8px; }
+.mara-watched .wdate:focus { outline: none; border-color: var(--ember); }
+.mara-watched .wact { display: flex; gap: 8px; margin-top: 4px; }
+
 .mara-badge-next { font-family: var(--font-mono); font-size: 9px; letter-spacing: .12em; text-transform: uppercase;
   color: var(--ember); border: 1px solid var(--ember-dim); border-radius: var(--r-full); padding: 2px 7px; }
 

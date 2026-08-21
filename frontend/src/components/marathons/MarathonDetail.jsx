@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '../../context/ToastContext';
 import * as api from '../../api/client';
 import { Icon } from '../ui';
+import MarkWatchedPanel from './MarkWatchedPanel';
 
 const fmtWhen = (d) =>
   d ? new Date(d).toLocaleString(undefined, { weekday: 'long', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'unscheduled';
@@ -18,6 +19,9 @@ const toLocalInput = (v) => {
 };
 
 const itemState = (it) => {
+  // A film logged by hand is watched outright — its date may be minutes old, so
+  // the date comparison alone would still call it upcoming right after logging.
+  if (it.status === 'watched') return 'watched';
   if (!it.scheduled_at) return 'wait';
   return new Date(it.scheduled_at) < new Date() ? 'watched' : 'upcoming';
 };
@@ -35,6 +39,10 @@ export default function MarathonDetail({ id, onBack }) {
   const [loading, setLoading] = useState(true);
   const [editingDate, setEditingDate] = useState(null);   // item id being date-edited
   const [confirmRemove, setConfirmRemove] = useState(null); // item id awaiting remove confirmation
+  // Which row has the "Already watched" panel open: an item id, or 'hero' for the
+  // next-up card. A string can never collide with an id, so one piece of state
+  // covers both entry points without ever rendering the panel twice.
+  const [markWatched, setMarkWatched] = useState(null);
   const [dragIndex, setDragIndex] = useState(null);
   const [dragOver, setDragOver] = useState(null);
   const confirmRef = useRef(null);
@@ -85,6 +93,22 @@ export default function MarathonDetail({ id, onBack }) {
       load();
     } catch (err) { showError(err.message); }
   };
+
+  const undoWatched = async (item) => {
+    try {
+      await api.unmarkMarathonItemWatched(m.id, item.id);
+      showSuccess(`“${item.title}” is back in the queue — give it a date when you know it`);
+      load();
+    } catch (err) { showError(err.message); }
+  };
+
+  // Keyed on the stored status, not itemState: itemState calls anything with a past
+  // date 'watched', which would hide this action on a pending film whose date has
+  // simply slipped — the out-of-sync marathon this feature exists to repair. A film
+  // the bot has taken is still excluded ('scheduled' covers queued and posted alike,
+  // since the link isn't written until the processor posts).
+  const canMarkWatched = (it) =>
+    m?.is_owner && it.status !== 'watched' && it.status !== 'scheduled' && !it.scheduled_movie_night_id;
 
   const onDrop = async (items, idx) => {
     if (dragIndex === null || dragIndex === idx) { setDragIndex(null); setDragOver(null); return; }
@@ -157,6 +181,7 @@ export default function MarathonDetail({ id, onBack }) {
             <div className="row">
               {editingDate === nextItem.id ? (
                 <input className="li-date" type="datetime-local" autoFocus
+                  min={toLocalInput(new Date())}
                   defaultValue={nextItem.scheduled_at ? toLocalInput(nextItem.scheduled_at) : ''}
                   onBlur={(e) => changeDate(nextItem, e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') changeDate(nextItem, e.target.value); }} />
@@ -165,12 +190,23 @@ export default function MarathonDetail({ id, onBack }) {
                   <>
                     <button className="btn" onClick={() => setEditingDate(nextItem.id)}><Icon name="calendar" size={15} /> {nextItem.scheduled_at ? 'Change date' : 'Set date'}</button>
                     {nextItem.scheduled_at && <button className="btn ghost" onClick={() => makeItemTbd(nextItem)}>Make TBD</button>}
+                    {canMarkWatched(nextItem) && (
+                      <button className="btn ghost" onClick={() => setMarkWatched(markWatched === 'hero' ? null : 'hero')}>
+                        <Icon name="check-circle" size={15} /> Already watched
+                      </button>
+                    )}
                   </>
                 )
               )}
               <button className="btn" disabled title="Available once the film posts to Discord"><Icon name="check" size={15} /> I&rsquo;m attending</button>
               <button className="btn" disabled title="Manual posting coming in a later update"><Icon name="send" size={15} /> Post now</button>
             </div>
+            {markWatched === 'hero' && (
+              <MarkWatchedPanel marathonId={m.id} item={nextItem}
+                onDone={() => { setMarkWatched(null); showSuccess(`“${nextItem.title}” logged as watched`); load(); }}
+                onCancel={() => setMarkWatched(null)}
+                onError={showError} />
+            )}
           </div>
         </div>
       )}
@@ -180,47 +216,79 @@ export default function MarathonDetail({ id, onBack }) {
       {items.map((it, idx) => {
         const st = itemState(it);
         const isNext = it.id === nextItem?.id;
-        const stateCls = st === 'watched' ? 'done' : isNext ? 'next' : 'wait';
-        const stateIcon = st === 'watched' ? 'check-circle' : isNext ? 'play-circle' : 'clock';
-        // Queued films only: watched ones are history and next-up may already be
-        // posted to Discord. Gates the drag handle and the remove button alike.
-        const editable = m.is_owner && st !== 'watched' && !isNext;
+        // Past its date but never announced — a lapsed film, not a watched one.
+        // Only 'pending' qualifies: a 'scheduled' film really did air, and a
+        // 'watched' one was logged by hand.
+        const missed = st === 'watched' && it.status === 'pending';
+        const stateCls = missed ? 'wait' : st === 'watched' ? 'done' : isNext ? 'next' : 'wait';
+        const stateIcon = missed ? 'clock' : st === 'watched' ? 'check-circle' : isNext ? 'play-circle' : 'clock';
+        // Queued films only: a film the bot has taken ('scheduled') is out of our
+        // hands, a hand-logged one is history, and next-up may already be posted.
+        // Keyed on the stored status, not itemState — a pending film whose date
+        // slipped is still queued, and reordering or removing it is a large part
+        // of repairing a marathon that fell behind.
+        const editable = m.is_owner && it.status === 'pending' && !isNext;
         const confirming = confirmRemove === it.id;
         const prev = items[idx - 1];
         return (
-          <div key={it.id}
-            className={`mara-li2 ${st === 'watched' ? 'past' : ''} ${dragIndex === idx ? 'dragging' : ''} ${dragOver === idx ? 'dragover' : ''} ${confirming ? 'confirming' : ''}`}
-            draggable={editable && !confirming}
-            onDragStart={() => editable && !confirming && setDragIndex(idx)}
-            onDragOver={(e) => { if (dragIndex !== null) { e.preventDefault(); setDragOver(idx); } }}
-            onDragLeave={() => setDragOver((o) => (o === idx ? null : o))}
-            onDrop={() => onDrop(items, idx)}
-            onDragEnd={() => { setDragIndex(null); setDragOver(null); }}>
+          <div key={it.id}>
+            <div
+              className={`mara-li2 ${st === 'watched' && !missed ? 'past' : ''} ${dragIndex === idx ? 'dragging' : ''} ${dragOver === idx ? 'dragover' : ''} ${confirming ? 'confirming' : ''}`}
+              draggable={editable && !confirming}
+              onDragStart={() => editable && !confirming && setDragIndex(idx)}
+              onDragOver={(e) => { if (dragIndex !== null) { e.preventDefault(); setDragOver(idx); } }}
+              onDragLeave={() => setDragOver((o) => (o === idx ? null : o))}
+              onDrop={() => onDrop(items, idx)}
+              onDragEnd={() => { setDragIndex(null); setDragOver(null); }}>
             <span className="num">{idx + 1}</span>
             <span className={`state ${stateCls}`}><Icon name={stateIcon} size={18} /></span>
             <div className="poster" style={{ backgroundImage: it.image_url ? `url(${it.image_url})` : 'none' }} />
             <div className="t">
               <h4>{it.title}</h4>
               <div className="m">
-                {st === 'watched' ? `Watched ${fmtDay(it.scheduled_at)}`
+                {missed ? `Was due ${fmtDay(it.scheduled_at)}`
+                  : st === 'watched' ? `Watched ${fmtDay(it.scheduled_at)}`
                   : isNext ? <span className="mara-badge-next">Next up</span>
                   : prev ? `Queues after ${prev.title}` : 'Queued'}
               </div>
             </div>
             <div className="date"><b>{fmtDay(it.scheduled_at)}</b>{fmtTime(it.scheduled_at) || 'unscheduled'}</div>
-            {editable && (
-              confirming ? (
-                <span className="li-confirm" ref={confirmRef}>
-                  <button className="btn destructive sm" onClick={() => removeItem(it)}>Remove</button>
-                  <button className="btn ghost sm" onClick={() => setConfirmRemove(null)}>Cancel</button>
-                </span>
-              ) : (
-                <>
-                  <span className="grip"><Icon name="grip" size={15} /></span>
-                  <button className="mara-iconbtn danger" title={`Remove ${it.title}`}
-                    onClick={() => setConfirmRemove(it.id)}><Icon name="close" size={15} /></button>
-                </>
+            {it.status === 'watched' ? (
+              // Routed on the stored status, not itemState: undo only has something
+              // to undo on a hand-logged film. A film the bot announced and aired
+              // also reads as watched by date, and offering undo there would report
+              // success while changing nothing.
+              m.is_owner && (
+                <button className="mara-iconbtn" title={`Put “${it.title}” back in the queue`}
+                  onClick={() => undoWatched(it)}><Icon name="undo" size={15} /></button>
               )
+            ) : (
+              <>
+                {!isNext && canMarkWatched(it) && (
+                  <button className="mara-iconbtn" title={`Mark “${it.title}” as already watched`}
+                    onClick={() => setMarkWatched(markWatched === it.id ? null : it.id)}>
+                    <Icon name="check-circle" size={15} /></button>
+                )}
+                {editable && (confirming ? (
+                  <span className="li-confirm" ref={confirmRef}>
+                    <button className="btn destructive sm" onClick={() => removeItem(it)}>Remove</button>
+                    <button className="btn ghost sm" onClick={() => setConfirmRemove(null)}>Cancel</button>
+                  </span>
+                ) : (
+                  <>
+                    <span className="grip"><Icon name="grip" size={15} /></span>
+                    <button className="mara-iconbtn danger" title={`Remove ${it.title}`}
+                      onClick={() => setConfirmRemove(it.id)}><Icon name="close" size={15} /></button>
+                  </>
+                ))}
+              </>
+            )}
+            </div>
+            {markWatched === it.id && (
+              <MarkWatchedPanel marathonId={m.id} item={it}
+                onDone={() => { setMarkWatched(null); showSuccess(`“${it.title}” logged as watched`); load(); }}
+                onCancel={() => setMarkWatched(null)}
+                onError={showError} />
             )}
           </div>
         );

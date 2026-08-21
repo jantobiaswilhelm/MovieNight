@@ -564,6 +564,19 @@ export const updateMarathonItemDate = (id, itemId, scheduledAt) =>
     body: JSON.stringify({ scheduled_at: scheduledAt })
   });
 
+// Past screenings of a marathon film — the choices in the "Already watched" panel.
+export const getMarathonItemMatches = (id, itemId) =>
+  fetchAPI(`/api/marathons/${id}/items/${itemId}/matches?guild_id=${GUILD_ID}`);
+
+export const markMarathonItemWatched = (id, itemId, watchedAt, movieNightId = null) =>
+  fetchAPI(`/api/marathons/${id}/items/${itemId}/watched?guild_id=${GUILD_ID}`, {
+    method: 'POST',
+    body: JSON.stringify({ watched_at: watchedAt, movie_night_id: movieNightId })
+  });
+
+export const unmarkMarathonItemWatched = (id, itemId) =>
+  fetchAPI(`/api/marathons/${id}/items/${itemId}/watched?guild_id=${GUILD_ID}`, { method: 'DELETE' });
+
 export const launchMarathon = (id, cadenceType, items) =>
   fetchAPI(`/api/marathons/${id}/launch?guild_id=${GUILD_ID}`, {
     method: 'POST',
