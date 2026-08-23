@@ -54,6 +54,57 @@ export const getMovieNights = async (guildId, limit = 10) => {
   return result.rows;
 };
 
+// One page of finished movie nights for /history, newest first.
+//
+// PARALLEL to backend/src/models/movies.js (getMovieNights) — intentionally
+// differs: the web collapses re-screenings by tmdb_id, the bot lists every
+// night as it happened.
+//
+// Differs from getMovieNights above in three ways the flat query can't have:
+// it is bounded to nights that are actually behind us (a night the bot never
+// started still counts once its date passes — otherwise an outage would erase
+// it from history), it drops test nights the way the web does, and it carries
+// the total so the caller knows how many pages exist without a second query.
+//
+// avg_rating is deliberately NULL rather than 0 for an unrated night — zero is
+// a score, "nobody rated it" is not.
+export const getMovieNightsPaged = async (guildId, limit = 5, offset = 0) => {
+  const result = await pool.query(
+    `SELECT mn.id, mn.title, mn.release_year, mn.image_url, mn.scheduled_at, mn.runtime,
+            ROUND(AVG(r.score), 1) AS avg_rating,
+            COUNT(r.id)::int AS rating_count,
+            (SELECT COUNT(*) FROM movie_attendance ma
+               WHERE ma.movie_night_id = mn.id)::int AS attendee_count,
+            COUNT(*) OVER()::int AS total_count
+     FROM movie_nights mn
+     LEFT JOIN ratings r ON mn.id = r.movie_night_id
+     WHERE mn.guild_id = $1
+       AND (mn.started_at IS NOT NULL OR mn.scheduled_at < NOW())
+       AND (mn.is_test = false OR mn.is_test IS NULL)
+     GROUP BY mn.id
+     ORDER BY mn.scheduled_at DESC
+     LIMIT $2 OFFSET $3`,
+    [guildId, limit, offset]
+  );
+  return result.rows;
+};
+
+// Total minutes the guild has spent watching — the sum of every finished night's
+// runtime. COALESCE covers nights announced before TMDB metadata existed; 90 is
+// the same stand-in the marathon queries use for an unknown runtime.
+export const getGuildWatchTime = async (guildId, since = null) => {
+  const result = await pool.query(
+    `SELECT COALESCE(SUM(COALESCE(mn.runtime, 90)), 0)::int AS minutes
+     FROM movie_nights mn
+     WHERE mn.guild_id = $1
+       AND (mn.started_at IS NOT NULL OR mn.scheduled_at < NOW())
+       AND (mn.is_test = false OR mn.is_test IS NULL)
+       AND ($2::timestamp IS NULL OR mn.scheduled_at >= $2)`,
+    [guildId, since]
+  );
+  return result.rows[0].minutes;
+};
+
 // PARALLEL to backend/src/models/movies.js (getMovieNightById) — intentionally differs: backend selects extra display columns for the web UI
 export const getMovieNightById = async (id) => {
   const result = await pool.query(
