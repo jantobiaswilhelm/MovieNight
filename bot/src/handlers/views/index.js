@@ -2,6 +2,7 @@ import { parseId } from '../../utils/customId.js';
 import { createLogger } from '../../utils/logger.js';
 import * as next from './next.js';
 import * as history from './history.js';
+import * as stats from './stats.js';
 
 const logger = createLogger('views');
 
@@ -18,7 +19,8 @@ export const RENDERERS = {
   next: next.render,
   calendar: next.render,
   marathons: next.render,
-  history: history.render
+  history: history.render,
+  stats: stats.render
 };
 
 /**

@@ -1,6 +1,5 @@
 import { SlashCommandBuilder } from 'discord.js';
-import { getGuildStats, getTopRatedMovies, getMostActiveRaters } from '../models/index.js';
-import { createStatsEmbed } from '../utils/embeds.js';
+import { renderView } from '../handlers/index.js';
 import { createLogger } from '../utils/logger.js';
 
 const logger = createLogger('stats');
@@ -11,14 +10,12 @@ export const data = new SlashCommandBuilder()
 
 export const execute = async (interaction) => {
   try {
-    const [stats, topMovies, topRaters] = await Promise.all([
-      getGuildStats(interaction.guildId),
-      getTopRatedMovies(interaction.guildId, 5),
-      getMostActiveRaters(interaction.guildId, 5)
-    ]);
-
-    const embed = createStatsEmbed(stats, topMovies, topRaters);
-    await interaction.reply({ embeds: [embed] });
+    const payload = await renderView('stats', {
+      guildId: interaction.guildId,
+      user: interaction.user,
+      args: ['all']
+    });
+    await interaction.reply(payload);
   } catch (err) {
     logger.error('Error fetching stats', err);
     await interaction.reply({

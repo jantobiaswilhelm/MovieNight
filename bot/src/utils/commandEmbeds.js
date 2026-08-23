@@ -152,4 +152,86 @@ export const buildHistoryEmbed = (nights, { page = 1, pageCount = 1, pageSize = 
   return embed;
 };
 
+// ── /stats ──────────────────────────────────────────────────────────────────
+
+const RANGES = [
+  { key: 'all', label: 'All time', emoji: '🗓️' },
+  { key: 'month', label: 'This month', emoji: '📅' },
+  { key: 'year', label: 'This year', emoji: '📆' }
+];
+
+export const rangeLabel = (range) =>
+  RANGES.find((r) => r.key === range)?.label ?? 'All time';
+
+/**
+ * The lower bound for a range, or null for "everything".
+ *
+ * Takes `now` rather than reading the clock so the boundaries are testable, and
+ * returns a local-midnight Date — the column is a naive TIMESTAMP, so the
+ * comparison happens in whatever zone the database and bot share.
+ */
+export const sinceForRange = (range, now = new Date()) => {
+  if (range === 'month') return new Date(now.getFullYear(), now.getMonth(), 1);
+  if (range === 'year') return new Date(now.getFullYear(), 0, 1);
+  return null;
+};
+
+export const buildRangeButtons = (current) => {
+  const row = new ActionRowBuilder().addComponents(
+    RANGES.map((range) => new ButtonBuilder()
+      .setCustomId(buildId('stats', range.key))
+      .setLabel(range.label)
+      .setEmoji(range.emoji)
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(range.key === current))
+  );
+  return [row];
+};
+
+const MEDALS = ['🥇', '🥈', '🥉'];
+
+export const buildStatsEmbed = ({ stats, topMovies = [], topRaters = [], watchMinutes = 0, regulars = 0, range = 'all' } = {}) => {
+  const embed = new EmbedBuilder()
+    .setTitle('📊 Movie Night Stats')
+    .setColor(COLOR);
+
+  const sections = [
+    [
+      `🎬 **${stats.total_movies}** nights`,
+      `⭐ **${stats.total_ratings}** ratings`,
+      `📈 **${stats.overall_avg_rating}** average`,
+      `⏱️ **${formatWatchTime(watchMinutes)}** watched`,
+      `👥 **${regulars}** regulars`
+    ].join('  ·  ')
+  ];
+
+  if (topMovies.length) {
+    const rows = topMovies.map((movie, index) => {
+      const { name, year } = splitTitleYear(movie.title, movie.release_year);
+      const medal = MEDALS[index] ?? `**${index + 1}.**`;
+      const score = Number(movie.avg_rating);
+      return `${medal} **${name}**${year ? ` (${year})` : ''}\n${ratingMeter(score)} ${score.toFixed(1)} · ${movie.rating_count} votes`;
+    });
+    sections.push(['**🏆 Best rated**', ...rows].join('\n'));
+  } else {
+    sections.push('**🏆 Best rated**\n_Nothing rated yet._');
+  }
+
+  if (topRaters.length) {
+    const rows = topRaters.map((rater) => {
+      const attended = rater.attended_count > 0 ? ` · ${rater.attended_count} nights` : '';
+      return `**${rater.username}** — ${rater.rating_count} ratings · avg ${rater.avg_rating}${attended}`;
+    });
+    sections.push(['**🎙️ Most active**', ...rows].join('\n'));
+  }
+
+  embed.setDescription(sections.join('\n\n'));
+  embed.setFooter({ text: rangeLabel(range) });
+
+  const backdrop = topMovies.map((movie) => safeImageUrl(movie.backdrop_url)).find(Boolean);
+  if (backdrop) embed.setImage(backdrop);
+
+  return embed;
+};
+
 export { COLOR, COLOR_GOLD };

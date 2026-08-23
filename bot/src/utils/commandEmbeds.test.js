@@ -6,7 +6,11 @@ import {
   buildPagerButtons,
   buildHistoryEmbed,
   safeImageUrl,
-  fitEntries
+  fitEntries,
+  buildStatsEmbed,
+  buildRangeButtons,
+  rangeLabel,
+  sinceForRange
 } from './commandEmbeds.js';
 
 const night = (overrides = {}) => ({
@@ -122,4 +126,93 @@ test('buildPagerButtons disables both when everything fits on one page', () => {
 test('buildPagerButtons carries extra arguments so a sort survives paging', () => {
   const [row] = buildPagerButtons('myratings', 2, 5, ['score']);
   assert.deepEqual(row.components.map((b) => b.data.custom_id), ['mn:myratings:1:score', 'mn:myratings:3:score']);
+});
+
+// ── /stats ──────────────────────────────────────────────────────────────────
+
+const NOW = new Date(2026, 7, 23, 20, 0, 0);
+
+const stats = {
+  total_movies: '38',
+  total_raters: '9',
+  overall_avg_rating: '7.8',
+  total_ratings: '214'
+};
+
+const topMovies = [
+  { id: 1, title: 'Dune: Part Two', release_year: 2024, avg_rating: '8.4', rating_count: '5', backdrop_url: 'https://img/dune-bd.jpg' },
+  { id: 2, title: 'Arrival', release_year: 2016, avg_rating: '8.2', rating_count: '4', backdrop_url: null },
+  { id: 3, title: 'Sicario', release_year: 2015, avg_rating: '7.4', rating_count: '6', backdrop_url: null }
+];
+
+const topRaters = [
+  { discord_id: '1', username: 'kira', rating_count: '38', avg_rating: '7.2', attended_count: 34 },
+  { discord_id: '2', username: 'sam', rating_count: '31', avg_rating: '8.1', attended_count: 28 }
+];
+
+const statsArgs = { stats, topMovies, topRaters, watchMinutes: 4920, regulars: 9, range: 'all' };
+
+test('buildStatsEmbed leads with the five headline numbers', () => {
+  const text = buildStatsEmbed(statsArgs).data.description;
+  assert.match(text, /38/);
+  assert.match(text, /214/);
+  assert.match(text, /7\.8/);
+  assert.match(text, /82h/);
+  assert.match(text, /9/);
+});
+
+test('buildStatsEmbed medals the top three and meters their scores', () => {
+  const text = buildStatsEmbed(statsArgs).data.description;
+  assert.match(text, /🥇.*Dune: Part Two/);
+  assert.match(text, /🥈.*Arrival/);
+  assert.match(text, /🥉.*Sicario/);
+  assert.match(text, /████████░░/);
+});
+
+test('buildStatsEmbed shows how often each rater actually turned up', () => {
+  const text = buildStatsEmbed(statsArgs).data.description;
+  assert.match(text, /kira/);
+  assert.match(text, /38 ratings/);
+  assert.match(text, /34 nights/);
+});
+
+test('buildStatsEmbed uses the top film backdrop as the banner', () => {
+  assert.equal(buildStatsEmbed(statsArgs).data.image.url, 'https://img/dune-bd.jpg');
+});
+
+test('buildStatsEmbed skips the banner rather than sending a bad URL', () => {
+  const embed = buildStatsEmbed({ ...statsArgs, topMovies: [{ ...topMovies[0], backdrop_url: 'nope' }] });
+  assert.equal(embed.data.image, undefined);
+});
+
+test('buildStatsEmbed survives a guild that has watched nothing', () => {
+  const embed = buildStatsEmbed({
+    stats: { total_movies: '0', total_raters: '0', overall_avg_rating: '0', total_ratings: '0' },
+    topMovies: [], topRaters: [], watchMinutes: 0, regulars: 0, range: 'all'
+  });
+  assert.match(embed.data.description, /Nothing rated yet|No ratings/i);
+});
+
+test('rangeLabel names the window being shown', () => {
+  assert.match(rangeLabel('all'), /All time/i);
+  assert.match(rangeLabel('month'), /month/i);
+  assert.match(rangeLabel('year'), /year/i);
+});
+
+test('sinceForRange bounds the month and year, and leaves all time unbounded', () => {
+  assert.equal(sinceForRange('all', NOW), null);
+  assert.deepEqual(sinceForRange('month', NOW), new Date(2026, 7, 1));
+  assert.deepEqual(sinceForRange('year', NOW), new Date(2026, 0, 1));
+});
+
+test('sinceForRange treats an unknown range as all time rather than throwing', () => {
+  assert.equal(sinceForRange('nonsense', NOW), null);
+});
+
+test('buildRangeButtons disables the range you are already looking at', () => {
+  const [row] = buildRangeButtons('month');
+  const byId = Object.fromEntries(row.components.map((b) => [b.data.custom_id, b.data.disabled]));
+  assert.equal(byId['mn:stats:month'], true);
+  assert.equal(byId['mn:stats:all'], false);
+  assert.equal(byId['mn:stats:year'], false);
 });

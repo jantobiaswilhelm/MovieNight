@@ -206,8 +206,14 @@ export const getUserRating = async (movieNightId, discordId) => {
 };
 
 // Stats operations
-// PARALLEL to backend/src/models/stats.js (getGuildStats) — intentionally differs: backend adds is_test filter; bot ROUNDs aggregates for Discord embeds
-export const getGuildStats = async (guildId) => {
+//
+// The three queries below take an optional `since` — the date filter behind
+// /stats' This month / This year buttons. It is bot-only: the web has its own
+// date handling. Passing null reproduces the original SQL exactly, which is why
+// the guard is written as "no bound, or within it" rather than a branch.
+//
+// PARALLEL to backend/src/models/stats.js (getGuildStats) — intentionally differs: backend adds is_test filter; bot ROUNDs aggregates for Discord embeds, and takes a bot-only `since` bound
+export const getGuildStats = async (guildId, since = null) => {
   const result = await pool.query(
     `SELECT
        COUNT(DISTINCT mn.id) as total_movies,
@@ -216,46 +222,69 @@ export const getGuildStats = async (guildId) => {
        COUNT(r.id) as total_ratings
      FROM movie_nights mn
      LEFT JOIN ratings r ON mn.id = r.movie_night_id
-     WHERE mn.guild_id = $1`,
-    [guildId]
+     WHERE mn.guild_id = $1
+       AND ($2::timestamp IS NULL OR mn.scheduled_at >= $2)`,
+    [guildId, since]
   );
   return result.rows[0];
 };
 
-// PARALLEL to backend/src/models/ratings.js (getTopRatedMovies) — intentionally differs: backend adds image_url + is_test filter; bot ROUNDs for embeds
-export const getTopRatedMovies = async (guildId, limit = 5) => {
+// PARALLEL to backend/src/models/ratings.js (getTopRatedMovies) — intentionally differs: backend adds image_url + is_test filter; bot ROUNDs for embeds, selects the poster for the stats backdrop, and takes a bot-only `since` bound
+export const getTopRatedMovies = async (guildId, limit = 5, since = null) => {
   const result = await pool.query(
-    `SELECT mn.id, mn.title, mn.scheduled_at,
+    `SELECT mn.id, mn.title, mn.scheduled_at, mn.release_year, mn.image_url, mn.backdrop_url,
             ROUND(AVG(r.score)::numeric, 1) as avg_rating,
             COUNT(r.id) as rating_count
      FROM movie_nights mn
      JOIN ratings r ON mn.id = r.movie_night_id
      WHERE mn.guild_id = $1
+       AND ($3::timestamp IS NULL OR mn.scheduled_at >= $3)
      GROUP BY mn.id
      HAVING COUNT(r.id) >= 1
      ORDER BY avg_rating DESC
      LIMIT $2`,
-    [guildId, limit]
+    [guildId, limit, since]
   );
   return result.rows;
 };
 
-// PARALLEL to backend/src/models/stats.js (getMostActiveRaters) — intentionally differs: backend adds id/avatar + is_test filter; bot ROUNDs for embeds
-export const getMostActiveRaters = async (guildId, limit = 5) => {
+// PARALLEL to backend/src/models/stats.js (getMostActiveRaters) — intentionally differs: backend adds id/avatar + is_test filter; bot ROUNDs for embeds, counts nights attended, and takes a bot-only `since` bound
+export const getMostActiveRaters = async (guildId, limit = 5, since = null) => {
   const result = await pool.query(
     `SELECT u.discord_id, u.username,
             COUNT(r.id) as rating_count,
-            ROUND(AVG(r.score)::numeric, 1) as avg_rating
+            ROUND(AVG(r.score)::numeric, 1) as avg_rating,
+            -- Counted in a subquery, not a join: attendance and ratings are
+            -- independent one-to-many relations, so joining both would multiply
+            -- the rows and inflate every aggregate above.
+            (SELECT COUNT(*) FROM movie_attendance ma
+               JOIN movie_nights amn ON amn.id = ma.movie_night_id
+              WHERE ma.user_id = u.id AND amn.guild_id = $1)::int AS attended_count
      FROM users u
      JOIN ratings r ON u.id = r.user_id
      JOIN movie_nights mn ON r.movie_night_id = mn.id
      WHERE mn.guild_id = $1
+       AND ($3::timestamp IS NULL OR mn.scheduled_at >= $3)
      GROUP BY u.id
      ORDER BY rating_count DESC
      LIMIT $2`,
-    [guildId, limit]
+    [guildId, limit, since]
   );
   return result.rows;
+};
+
+// People who actually show up — distinct attendees across finished nights.
+export const getRegularCount = async (guildId, since = null) => {
+  const result = await pool.query(
+    `SELECT COUNT(DISTINCT ma.user_id)::int AS regulars
+     FROM movie_attendance ma
+     JOIN movie_nights mn ON mn.id = ma.movie_night_id
+     WHERE mn.guild_id = $1
+       AND (mn.is_test = false OR mn.is_test IS NULL)
+       AND ($2::timestamp IS NULL OR mn.scheduled_at >= $2)`,
+    [guildId, since]
+  );
+  return result.rows[0].regulars;
 };
 
 // SHARED: keep identical with backend/src/models/movies.js (deleteMovieNight)
