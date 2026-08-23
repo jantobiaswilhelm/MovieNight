@@ -1,5 +1,6 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { splitTitleYear, formatRuntime } from './announcementEmbed.js';
+import { buildId } from './customId.js';
 
 // The three faces of /next. Kept out of embeds.js, which is already the home of
 // the announcement/rating builders.
@@ -18,7 +19,7 @@ const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 const VIEWS = [
-  { key: 'list', label: 'List', emoji: '📃' },
+  { key: 'next', label: 'List', emoji: '📃' },
   { key: 'calendar', label: 'Calendar', emoji: '📅' },
   { key: 'marathons', label: 'Marathons', emoji: '🍿' }
 ];
@@ -217,13 +218,13 @@ export const buildEmptyEmbed = ({ marathons = [], suggestions = [] } = {}) => {
 // Buttons carry every piece of state they need in the customId, so they keep
 // working after a restart instead of dying with an in-memory collector.
 export const buildViewButtons = (current, { count = 5, hasMovies = true, hasMarathons = true } = {}) => {
-  const enabled = { list: true, calendar: hasMovies, marathons: hasMarathons };
+  const enabled = { next: true, calendar: hasMovies, marathons: hasMarathons };
 
   const row = new ActionRowBuilder().addComponents(
     VIEWS
       .filter((view) => view.key !== current)
       .map((view) => new ButtonBuilder()
-        .setCustomId(`next_view:${view.key}:${count}`)
+        .setCustomId(buildId(view.key, count))
         .setLabel(view.label)
         .setEmoji(view.emoji)
         .setStyle(ButtonStyle.Secondary)

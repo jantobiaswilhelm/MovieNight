@@ -14,7 +14,6 @@ import {
 export const DEFAULT_COUNT = 5;
 export const MAX_COUNT = 10;
 const EMPTY_SUGGESTION_COUNT = 3;
-export const VIEW_KEYS = ['list', 'calendar', 'marathons'];
 
 export const clampCount = (value) => {
   const n = Number(value);
@@ -23,13 +22,15 @@ export const clampCount = (value) => {
 };
 
 /**
- * Build one /next view from scratch.
+ * The shared /next board, in one of its three faces.
  *
  * Every render re-reads the database rather than caching, so a button pressed
  * days after the command was run shows today's schedule, not the one the message
  * was born with. That is also what lets the buttons be stateless.
  */
-export const renderNextView = async (guildId, view, count = DEFAULT_COUNT) => {
+export const render = async ({ guildId, view = 'next', args = [] }) => {
+  const count = clampCount(args[0] ?? DEFAULT_COUNT);
+
   const [movies, marathons] = await Promise.all([
     getUpcomingMovieNights(guildId, count),
     getGuildActiveMarathons(guildId)
@@ -55,9 +56,9 @@ export const renderNextView = async (guildId, view, count = DEFAULT_COUNT) => {
     const suggestions = await getTopBoardSuggestions(guildId, EMPTY_SUGGESTION_COUNT);
     return {
       embeds: [buildEmptyEmbed({ marathons, suggestions })],
-      components: buildViewButtons('list', options)
+      components: buildViewButtons('next', options)
     };
   }
 
-  return { embeds: [buildUpcomingEmbed(movies)], components: buildViewButtons('list', options) };
+  return { embeds: [buildUpcomingEmbed(movies)], components: buildViewButtons('next', options) };
 };

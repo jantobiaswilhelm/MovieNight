@@ -181,18 +181,18 @@ test('buildEmptyEmbed skips the board section when nothing is suggested', () => 
 });
 
 test('buildViewButtons offers the two views you are not looking at', () => {
-  const [row] = buildViewButtons('list', { count: 5, hasMovies: true, hasMarathons: true });
+  const [row] = buildViewButtons('next', { count: 5, hasMovies: true, hasMarathons: true });
   const ids = row.components.map((b) => b.data.custom_id);
-  assert.deepEqual(ids, ['next_view:calendar:5', 'next_view:marathons:5']);
+  assert.deepEqual(ids, ['mn:calendar:5', 'mn:marathons:5']);
 });
 
 test('buildViewButtons carries the requested count so a view swap keeps it', () => {
   const [row] = buildViewButtons('calendar', { count: 10, hasMovies: true, hasMarathons: true });
   const ids = row.components.map((b) => b.data.custom_id);
-  assert.deepEqual(ids, ['next_view:list:10', 'next_view:marathons:10']);
+  assert.deepEqual(ids, ['mn:next:10', 'mn:marathons:10']);
 });
 
 test('buildViewButtons disables the views that have nothing to show', () => {
-  const [row] = buildViewButtons('list', { count: 5, hasMovies: false, hasMarathons: false });
+  const [row] = buildViewButtons('next', { count: 5, hasMovies: false, hasMarathons: false });
   assert.deepEqual(row.components.map((b) => b.data.disabled), [true, true]);
 });

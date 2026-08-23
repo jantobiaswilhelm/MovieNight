@@ -3,7 +3,7 @@ import {
   handleRatingButton,
   handleRatingCommentModal,
   handleRsvpButton,
-  handleNextViewButton
+  handleViewInteraction
 } from '../handlers/index.js';
 import { createLogger } from '../utils/logger.js';
 
@@ -61,9 +61,17 @@ export const execute = async (interaction) => {
       await handleRatingButton(interaction);
     } else if (customId.startsWith('rsvp_')) {
       await handleRsvpButton(interaction);
-    } else if (customId.startsWith('next_view:')) {
-      await handleNextViewButton(interaction);
+    } else {
+      // Claims anything in the `mn:` namespace and ignores the rest, so an
+      // unknown button from an older deploy falls through silently.
+      await handleViewInteraction(interaction);
     }
+    return;
+  }
+
+  // Select menus — the view router owns all of them
+  if (interaction.isStringSelectMenu()) {
+    await handleViewInteraction(interaction);
     return;
   }
 
