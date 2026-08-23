@@ -7,6 +7,7 @@ import * as myratings from './myratings.js';
 import * as top10 from './top10.js';
 import * as board from './board.js';
 import * as wishlist from './wishlist.js';
+import * as marathon from './marathon.js';
 
 const logger = createLogger('views');
 
@@ -30,7 +31,8 @@ export const RENDERERS = {
   board: board.render,
   boardvote: board.render,
   wishlist: wishlist.render,
-  wishpick: wishlist.render
+  wishpick: wishlist.render,
+  marathon: marathon.render
 };
 
 /**

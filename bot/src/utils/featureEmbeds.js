@@ -187,4 +187,115 @@ export const buildWishlistComponents = (scope = 'me') => {
   return [row];
 };
 
+// ── /marathon ───────────────────────────────────────────────────────────────
+
+// The stand-in runtime shared with the marathon queries: without it, a film with
+// no TMDB runtime could never be considered finished.
+const ASSUMED_RUNTIME = 90;
+
+/**
+ * Where a film in the lineup stands right now.
+ *
+ * Same definition the web uses: watched means finished, not merely started, and
+ * a hand-logged film counts outright because its runtime may not have elapsed.
+ * `now` is a parameter so the boundaries are testable.
+ */
+export const itemState = (item, now = new Date()) => {
+  if (item.status === 'watched') return 'watched';
+  if (!item.scheduled_at) return 'pending';
+
+  const start = new Date(item.scheduled_at);
+  const end = new Date(start.getTime() + (Number(item.runtime) || ASSUMED_RUNTIME) * 60_000);
+
+  if (end <= now) return 'watched';
+  if (start <= now) return 'airing';
+  return 'scheduled';
+};
+
+const STATE_ICON = { watched: '✅', airing: '🔴', scheduled: '📅', pending: '○' };
+
+export const buildMarathonEmbed = (marathon, items, { now = new Date() } = {}) => {
+  const embed = new EmbedBuilder()
+    .setTitle(`🍿 ${marathon.name}`)
+    .setColor(COLOR);
+
+  if (!items.length) {
+    embed.setDescription('This marathon has no films in it yet.');
+    return embed;
+  }
+
+  const states = items.map((item) => itemState(item, now));
+  const watched = states.filter((state) => state === 'watched').length;
+
+  const cadence = marathon.cadence_type === 'binge'
+    ? '🍿 Binge · back-to-back'
+    : marathon.cadence_type === 'interval' ? '📆 Scheduled run' : null;
+
+  const header = [
+    `${progressBar(watched, items.length)} ${watched} of ${items.length} watched`,
+    cadence
+  ].filter(Boolean).join('\n');
+
+  const entries = items.map((item, index) => {
+    const state = states[index];
+    const { name, year } = splitTitleYear(item.title, item.release_year);
+    const label = `${STATE_ICON[state]} **${index + 1}. ${name}**${year ? ` (${year})` : ''}`;
+
+    if (state === 'watched') {
+      const score = item.rating_count > 0 ? Number(item.avg_rating) : null;
+      return score !== null ? `${label} — ${score.toFixed(1)}` : `${label} — not rated`;
+    }
+    if (state === 'airing') return `${label} — on now`;
+    if (state === 'scheduled') return `${label} — <t:${unixSeconds(item.scheduled_at)}:R>`;
+    return `${label} — no date yet`;
+  });
+
+  // Single newlines: these are one-liners, and blank lines between them turn a
+  // running order into a scroll.
+  embed.setDescription(`${header}\n\n${fitEntries(entries, 3600, '\n')}`);
+
+  const poster = items.map((item) => safeImageUrl(item.image_url)).find(Boolean);
+  if (poster) embed.setThumbnail(poster);
+
+  const rated = items.filter((item, index) => states[index] === 'watched' && item.rating_count > 0);
+  if (rated.length) {
+    const average = rated.reduce((sum, item) => sum + Number(item.avg_rating), 0) / rated.length;
+    embed.setFooter({ text: `Running average ${average.toFixed(1)} across ${rated.length} rated` });
+  }
+
+  return embed;
+};
+
+const progressBar = (done, total) => {
+  const blocks = 10;
+  const filled = total > 0 ? Math.round((done / total) * blocks) : 0;
+  return '█'.repeat(filled) + '░'.repeat(blocks - filled);
+};
+
+export const buildMarathonComponents = (currentId, marathons) => {
+  const buttons = [
+    new ButtonBuilder()
+      .setCustomId(buildId('marathon', currentId, 'join'))
+      .setLabel("I'm in")
+      .setEmoji('✋')
+      .setStyle(ButtonStyle.Primary)
+  ];
+
+  // Cycle to the next one rather than offering a menu: a guild rarely runs more
+  // than a couple at a time, and a button keeps the row to one line.
+  if (marathons.length > 1) {
+    const index = marathons.findIndex((m) => String(m.id) === String(currentId));
+    const nextMarathon = marathons[(index + 1) % marathons.length];
+    buttons.push(
+      new ButtonBuilder()
+        .setCustomId(buildId('marathon', nextMarathon.id))
+        .setLabel(truncateLabel(nextMarathon.name))
+        .setEmoji('▶')
+        .setStyle(ButtonStyle.Secondary)
+    );
+  }
+
+  return [new ActionRowBuilder().addComponents(buttons)];
+};
+
 export { COLOR };

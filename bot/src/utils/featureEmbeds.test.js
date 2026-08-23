@@ -7,7 +7,10 @@ import {
   stars,
   pickWeighted,
   buildWishlistEmbed,
-  buildWishlistComponents
+  buildWishlistComponents,
+  itemState,
+  buildMarathonEmbed,
+  buildMarathonComponents
 } from './featureEmbeds.js';
 
 const suggestion = (overrides = {}) => ({
@@ -178,4 +181,106 @@ test('buildWishlistComponents offers the picker and the other scope', () => {
 test('buildWishlistComponents flips the scope button when showing the server list', () => {
   const [row] = buildWishlistComponents('guild');
   assert.deepEqual(row.components.map((b) => b.data.custom_id), ['mn:wishpick:guild', 'mn:wishlist:me']);
+});
+
+// ── /marathon ───────────────────────────────────────────────────────────────
+
+const NOW = new Date(2026, 7, 23, 20, 0, 0);
+
+const item = (overrides = {}) => ({
+  id: 1,
+  position: 0,
+  status: 'pending',
+  scheduled_at: new Date(2026, 7, 27, 20, 0, 0),
+  title: 'Dune: Part Two',
+  release_year: 2024,
+  image_url: 'https://img/dune.jpg',
+  runtime: 166,
+  avg_rating: null,
+  rating_count: 0,
+  ...overrides
+});
+
+const marathon = { id: 7, name: 'Villeneuve Marathon', cadence_type: 'interval' };
+
+test('itemState calls a hand-logged film watched however its dates read', () => {
+  assert.equal(itemState(item({ status: 'watched', scheduled_at: null }), NOW), 'watched');
+});
+
+test('itemState calls a film watched once its runtime has elapsed', () => {
+  const done = item({ scheduled_at: new Date(2026, 7, 20, 20, 0, 0) });
+  assert.equal(itemState(done, NOW), 'watched');
+});
+
+test('itemState calls a film that started but has not finished on now', () => {
+  const airing = item({ scheduled_at: new Date(2026, 7, 23, 19, 0, 0) });
+  assert.equal(itemState(airing, NOW), 'airing');
+});
+
+test('itemState separates a dated film ahead from one with no date', () => {
+  assert.equal(itemState(item(), NOW), 'scheduled');
+  assert.equal(itemState(item({ scheduled_at: null }), NOW), 'pending');
+});
+
+test('itemState falls back to a default runtime when the film has none', () => {
+  // 90 minutes is the stand-in; started 2 hours ago means it is over.
+  const noRuntime = item({ runtime: null, scheduled_at: new Date(2026, 7, 23, 18, 0, 0) });
+  assert.equal(itemState(noRuntime, NOW), 'watched');
+});
+
+test('buildMarathonEmbed shows every film in the running order with its state', () => {
+  const items = [
+    item({ id: 1, position: 0, status: 'watched', title: 'Blade Runner 2049', avg_rating: '8.4', rating_count: 5 }),
+    item({ id: 2, position: 1, status: 'watched', title: 'Sicario', avg_rating: '7.9', rating_count: 6 }),
+    item({ id: 3, position: 2 }),
+    item({ id: 4, position: 3, title: 'Enemy', scheduled_at: null })
+  ];
+  const text = buildMarathonEmbed(marathon, items, { now: NOW }).data.description;
+  assert.match(text, /✅.*Blade Runner 2049/);
+  assert.match(text, /📅.*Dune: Part Two/);
+  assert.match(text, /Enemy/);
+  assert.match(text, /2 of 4 watched/);
+});
+
+test('buildMarathonEmbed reports the running average of what has been watched', () => {
+  const items = [
+    item({ id: 1, status: 'watched', avg_rating: '8.4', rating_count: 5 }),
+    item({ id: 2, status: 'watched', avg_rating: '8.0', rating_count: 4 }),
+    item({ id: 3, position: 2 })
+  ];
+  assert.match(buildMarathonEmbed(marathon, items, { now: NOW }).data.footer.text, /8\.2/);
+});
+
+test('buildMarathonEmbed leaves out the average when nothing has been rated', () => {
+  const embed = buildMarathonEmbed(marathon, [item()], { now: NOW });
+  assert.doesNotMatch(embed.data.footer?.text ?? '', /average/i);
+});
+
+test('buildMarathonEmbed names the cadence', () => {
+  assert.match(buildMarathonEmbed(marathon, [item()], { now: NOW }).data.description, /Scheduled run/);
+  assert.match(
+    buildMarathonEmbed({ ...marathon, cadence_type: 'binge' }, [item()], { now: NOW }).data.description,
+    /Binge/
+  );
+});
+
+test('buildMarathonEmbed stays inside the description limit on a very long lineup', () => {
+  const long = Array.from({ length: 120 }, (_, i) => item({ id: i, position: i, title: `A Long Film Title Number ${i}` }));
+  assert.ok(buildMarathonEmbed(marathon, long, { now: NOW }).data.description.length <= 4096);
+});
+
+test('buildMarathonEmbed handles a marathon with no films in it', () => {
+  assert.match(buildMarathonEmbed(marathon, [], { now: NOW }).data.description, /no films/i);
+});
+
+test('buildMarathonComponents offers the next marathon when there is more than one', () => {
+  const [row] = buildMarathonComponents(7, [{ id: 7, name: 'A' }, { id: 9, name: 'B' }]);
+  const ids = row.components.map((b) => b.data.custom_id);
+  assert.deepEqual(ids, ['mn:marathon:7:join', 'mn:marathon:9']);
+  assert.match(row.components[1].data.label, /B/);
+});
+
+test('buildMarathonComponents drops the cycle button for a lone marathon', () => {
+  const [row] = buildMarathonComponents(7, [{ id: 7, name: 'A' }]);
+  assert.deepEqual(row.components.map((b) => b.data.custom_id), ['mn:marathon:7:join']);
 });

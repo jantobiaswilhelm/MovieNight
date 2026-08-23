@@ -1121,6 +1121,27 @@ export const completeMarathonIfDone = async (marathonId) => {
 // as already watched: it is history, not part of tonight, and including it would
 // announce it a second time and overwrite its link to the real screening. Filtered
 // here rather than at each call site — there are three, and one of them was missed.
+// The whole lineup for /marathon — watched films included, which is the
+// difference from getMarathonItemsByMarathon below (that one feeds the binge
+// announcement, where a finished film has no place). The rating comes from the
+// night the item was tied to, so a film watched off-schedule and logged by hand
+// still shows what the room gave it.
+export const getMarathonRunningOrder = async (marathonId) => {
+  const result = await pool.query(
+    `SELECT mi.id, mi.position, mi.status, mi.scheduled_at, mi.title, mi.release_year,
+            mi.image_url, mi.runtime, mi.scheduled_movie_night_id,
+            (SELECT ROUND(AVG(r.score), 1) FROM ratings r
+               WHERE r.movie_night_id = mi.scheduled_movie_night_id) AS avg_rating,
+            (SELECT COUNT(*) FROM ratings r
+               WHERE r.movie_night_id = mi.scheduled_movie_night_id)::int AS rating_count
+     FROM marathon_items mi
+     WHERE mi.marathon_id = $1
+     ORDER BY mi.position ASC`,
+    [marathonId]
+  );
+  return result.rows;
+};
+
 export const getMarathonItemsByMarathon = async (marathonId) => {
   const result = await pool.query(
     `SELECT * FROM marathon_items

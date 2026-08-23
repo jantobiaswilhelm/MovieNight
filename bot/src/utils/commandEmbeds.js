@@ -61,12 +61,12 @@ export const pageCountFor = (totalRows, pageSize) => {
  * comment can still overflow. This is the backstop that keeps the embed
  * renderable no matter what someone typed.
  */
-export const fitEntries = (entries, budget = DESCRIPTION_BUDGET) => {
+export const fitEntries = (entries, budget = DESCRIPTION_BUDGET, separator = '\n\n') => {
   const kept = [];
   let used = 0;
 
   for (const entry of entries) {
-    const cost = entry.length + 2;
+    const cost = entry.length + separator.length;
     if (used + cost > budget) break;
     kept.push(entry);
     used += cost;
@@ -74,7 +74,7 @@ export const fitEntries = (entries, budget = DESCRIPTION_BUDGET) => {
 
   const dropped = entries.length - kept.length;
   if (dropped > 0) kept.push(`_…and ${dropped} more that wouldn't fit_`);
-  return kept.join('\n\n');
+  return kept.join(separator);
 };
 
 /**
