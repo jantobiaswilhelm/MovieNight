@@ -912,6 +912,53 @@ export const findOpenBoardSuggestionByTmdb = async (guildId, tmdbId) => {
   return result.rows[0];
 };
 
+// ── Wishlists (bot side) ─────────────────────────────────────────────────────
+
+// PARALLEL to backend/src/models/wishlists.js (getUserWishlist) — intentionally
+// differs: the bot keys on discord_id, has no paging or sort options, and flags
+// films someone else also wants, which is the bit worth saying out loud in chat.
+export const getUserWishlistForBot = async (discordId, guildId) => {
+  const result = await pool.query(
+    `SELECT w.id, w.title, w.release_year, w.image_url, w.runtime, w.genres, w.importance,
+            (SELECT COUNT(*) FROM wishlists o
+              WHERE o.guild_id = w.guild_id
+                AND o.tmdb_id IS NOT NULL
+                AND o.tmdb_id = w.tmdb_id
+                AND o.user_id <> w.user_id)::int AS also_wanted_by
+     FROM wishlists w
+     JOIN users u ON w.user_id = u.id
+     WHERE u.discord_id = $1 AND w.guild_id = $2
+     ORDER BY w.importance DESC, w.created_at ASC`,
+    [discordId, guildId]
+  );
+  return result.rows;
+};
+
+// The whole server's list, one row per film, carrying how many people want it.
+// tmdb_id is the grouping key because the same film added twice by hand can
+// differ in title punctuation; rows without one fall back to grouping by title.
+export const getGuildWishlistForBot = async (guildId) => {
+  const result = await pool.query(
+    `SELECT MIN(w.id) AS id,
+            MIN(w.title) AS title,
+            MIN(w.release_year) AS release_year,
+            MIN(w.image_url) AS image_url,
+            MIN(w.runtime) AS runtime,
+            MIN(w.genres) AS genres,
+            MAX(w.importance)::int AS importance,
+            COUNT(DISTINCT w.user_id)::int AS wanted_by,
+            STRING_AGG(DISTINCT u.username, ', ') AS wanted_by_names
+     FROM wishlists w
+     JOIN users u ON w.user_id = u.id
+     WHERE w.guild_id = $1
+     GROUP BY COALESCE(w.tmdb_id::text, LOWER(w.title))
+     ORDER BY COUNT(DISTINCT w.user_id) DESC, MAX(w.importance) DESC
+     LIMIT 25`,
+    [guildId]
+  );
+  return result.rows;
+};
+
 // ── Marathons (bot side) ─────────────────────────────────────────────────────
 
 // PARALLEL to backend/src/models/marathons.js (getMarathons) — intentionally

@@ -1,4 +1,4 @@
-import { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder } from 'discord.js';
+import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder } from 'discord.js';
 import { splitTitleYear, formatRuntime } from './announcementEmbed.js';
 import { buildId } from './customId.js';
 import { fitEntries, safeImageUrl } from './commandEmbeds.js';
@@ -93,6 +93,98 @@ export const buildBoardComponents = (suggestions) => {
     .addOptions(options);
 
   return [new ActionRowBuilder().addComponents(menu)];
+};
+
+// ── /wishlist ───────────────────────────────────────────────────────────────
+
+const STAR_MAX = 5;
+
+export const stars = (importance) => {
+  const n = Math.max(0, Math.min(STAR_MAX, Math.round(Number(importance) || 0)));
+  return '★'.repeat(n) + '☆'.repeat(STAR_MAX - n);
+};
+
+/**
+ * Pick a film, weighted by priority — the site's "spin the wheel", in chat.
+ *
+ * `roll` is injected rather than drawn here so the behaviour is testable: the
+ * caller supplies a random integer in [0, totalWeight). Weight is priority, with
+ * an unset priority worth 1 rather than 0 — otherwise a film with no stars could
+ * never be picked at all, which is not what "random" should mean.
+ */
+export const pickWeighted = (films, roll) => {
+  if (!films.length) return null;
+
+  const weightOf = (film) => Math.max(1, Math.min(STAR_MAX, Math.round(Number(film.importance) || 0)));
+
+  let remaining = roll;
+  for (const film of films) {
+    remaining -= weightOf(film);
+    if (remaining < 0) return film;
+  }
+
+  // Only reachable if the roll exceeded the total weight; the last film is the
+  // honest answer rather than null, which callers would read as "empty list".
+  return films[films.length - 1];
+};
+
+export const totalWeight = (films) =>
+  films.reduce((sum, film) => sum + Math.max(1, Math.min(STAR_MAX, Math.round(Number(film.importance) || 0))), 0);
+
+export const buildWishlistEmbed = (films, { username = 'Your', scope = 'me' } = {}) => {
+  const isGuild = scope === 'guild';
+
+  const embed = new EmbedBuilder()
+    .setTitle(isGuild ? '🎯 The server wishlist' : `🎯 ${username}'s Wishlist`)
+    .setColor(COLOR);
+
+  if (!films.length) {
+    embed.setDescription(isGuild
+      ? 'Nothing on the server wishlist yet.'
+      : 'Nothing on your wishlist yet — add films on the website.');
+    return embed;
+  }
+
+  const entries = films.map((film) => {
+    const { name, year } = splitTitleYear(film.title, film.release_year);
+
+    const meta = [
+      formatRuntime(film.runtime),
+      film.genres,
+      isGuild
+        ? (film.wanted_by > 1 ? `${film.wanted_by} people want it` : film.wanted_by_names)
+        : (film.also_wanted_by > 0 ? `also on ${film.also_wanted_by} other list${film.also_wanted_by === 1 ? '' : 's'}` : null)
+    ].filter(Boolean).join(' · ');
+
+    return `${stars(film.importance)} **${name}**${year ? ` (${year})` : ''}\n${meta}`;
+  });
+
+  embed.setDescription(fitEntries(entries, 3700));
+
+  const poster = films.map((film) => safeImageUrl(film.image_url)).find(Boolean);
+  if (poster) embed.setThumbnail(poster);
+
+  embed.setFooter({ text: `${films.length} film${films.length === 1 ? '' : 's'}` });
+  return embed;
+};
+
+export const buildWishlistComponents = (scope = 'me') => {
+  const other = scope === 'guild' ? 'me' : 'guild';
+
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId(buildId('wishpick', scope))
+      .setLabel('Pick one for me')
+      .setEmoji('🎲')
+      .setStyle(ButtonStyle.Primary),
+    new ButtonBuilder()
+      .setCustomId(buildId('wishlist', other))
+      .setLabel(other === 'guild' ? 'Server wishlist' : 'My wishlist')
+      .setEmoji(other === 'guild' ? '👥' : '🎯')
+      .setStyle(ButtonStyle.Secondary)
+  );
+
+  return [row];
 };
 
 export { COLOR };
