@@ -184,9 +184,9 @@ export const buildMarathonsEmbed = (marathons) => {
   return embed;
 };
 
-// Nothing scheduled doesn't mean nothing is happening: a marathon may be waiting
-// on a date, or a vote may still be deciding what to schedule.
-export const buildEmptyEmbed = ({ marathons = [], votingSession = null, guildId } = {}) => {
+// Nothing scheduled doesn't mean nothing is waiting: a marathon may need a date,
+// and the board usually already knows what the group wants to watch.
+export const buildEmptyEmbed = ({ marathons = [], suggestions = [] } = {}) => {
   const parts = ['Nothing on the schedule right now.'];
 
   for (const marathon of marathons) {
@@ -198,9 +198,12 @@ export const buildEmptyEmbed = ({ marathons = [], votingSession = null, guildId 
     parts.push(`🍿 **${marathon.name}** is running — next up is *${next.title}*${due}.`);
   }
 
-  if (votingSession?.channel_id && votingSession?.message_id) {
-    const link = `https://discord.com/channels/${guildId}/${votingSession.channel_id}/${votingSession.message_id}`;
-    parts.push(`🗳️ A vote is still open — [cast yours](${link}).`);
+  if (suggestions.length) {
+    const lines = suggestions.map((suggestion) => {
+      const { name, year } = splitTitleYear(suggestion.title, suggestion.release_year);
+      return `▲ ${suggestion.upvotes} · ${name}${year ? ` (${year})` : ''}`;
+    });
+    parts.push(['🗳️ **Most wanted on the board**', ...lines].join('\n'));
   }
 
   parts.push('Use `/announce` to put something on the calendar.');

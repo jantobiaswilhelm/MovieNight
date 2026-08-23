@@ -1,7 +1,7 @@
 import {
   getUpcomingMovieNights,
   getGuildActiveMarathons,
-  getActiveVotingSession
+  getTopBoardSuggestions
 } from '../../models/index.js';
 import {
   buildUpcomingEmbed,
@@ -13,6 +13,7 @@ import {
 
 export const DEFAULT_COUNT = 5;
 export const MAX_COUNT = 10;
+const EMPTY_SUGGESTION_COUNT = 3;
 export const VIEW_KEYS = ['list', 'calendar', 'marathons'];
 
 export const clampCount = (value) => {
@@ -49,11 +50,11 @@ export const renderNextView = async (guildId, view, count = DEFAULT_COUNT) => {
   }
 
   if (!movies.length) {
-    // Only the empty board needs the vote — everywhere else it would be a query
-    // whose answer is never printed.
-    const votingSession = await getActiveVotingSession(guildId);
+    // Only the empty board prints the suggestions — everywhere else this would
+    // be a query whose answer is never read.
+    const suggestions = await getTopBoardSuggestions(guildId, EMPTY_SUGGESTION_COUNT);
     return {
-      embeds: [buildEmptyEmbed({ marathons, votingSession, guildId })],
+      embeds: [buildEmptyEmbed({ marathons, suggestions })],
       components: buildViewButtons('list', options)
     };
   }

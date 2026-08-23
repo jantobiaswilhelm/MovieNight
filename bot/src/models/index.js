@@ -904,6 +904,23 @@ export const zeroOutPresenceById = async (ids) => {
   );
 };
 
+// What the group has asked for but nobody has scheduled — the fallback the
+// /next board offers when the schedule is empty. Board suggestions replaced the
+// retired voting feature (see the DROP in backend/src/config/migrate.js).
+export const getTopBoardSuggestions = async (guildId, limit = 3) => {
+  const result = await pool.query(
+    `SELECT bs.id, bs.title, bs.release_year,
+            (SELECT COUNT(*) FROM board_upvotes bu
+               WHERE bu.suggestion_id = bs.id)::int AS upvotes
+     FROM board_suggestions bs
+     WHERE bs.guild_id = $1 AND bs.status = 'open'
+     ORDER BY upvotes DESC, bs.created_at ASC
+     LIMIT $2`,
+    [guildId, limit]
+  );
+  return result.rows;
+};
+
 // ── Marathons (bot side) ─────────────────────────────────────────────────────
 
 // PARALLEL to backend/src/models/marathons.js (getMarathons) — intentionally
