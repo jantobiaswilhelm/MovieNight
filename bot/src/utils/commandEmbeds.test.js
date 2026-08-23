@@ -10,7 +10,11 @@ import {
   buildStatsEmbed,
   buildRangeButtons,
   rangeLabel,
-  sinceForRange
+  sinceForRange,
+  buildMyRatingsEmbed,
+  buildSortSelect,
+  DESCRIPTION_LIMIT,
+  MY_RATINGS_PAGE_SIZE
 } from './commandEmbeds.js';
 
 const night = (overrides = {}) => ({
@@ -215,4 +219,81 @@ test('buildRangeButtons disables the range you are already looking at', () => {
   assert.equal(byId['mn:stats:month'], true);
   assert.equal(byId['mn:stats:all'], false);
   assert.equal(byId['mn:stats:year'], false);
+});
+
+// ── /myratings ──────────────────────────────────────────────────────────────
+//
+// The command this replaces concatenated every rating into one description with
+// no cap. Discord rejects a description over 4096 characters, so it threw
+// outright at 81 plain ratings — far fewer once people leave comments. These
+// are the tests that keep it fixed.
+
+const rating = (overrides = {}) => ({
+  id: 1,
+  score: '8.5',
+  comment: null,
+  movie_night_id: 10,
+  title: 'Dune: Part Two',
+  release_year: 2024,
+  image_url: 'https://img/dune.jpg',
+  scheduled_at: new Date(2026, 7, 27),
+  community_avg: '8.4',
+  total_count: 47,
+  ...overrides
+});
+
+test('buildMyRatingsEmbed stays inside the description limit however many rows it is handed', () => {
+  const many = Array.from({ length: 200 }, (_, i) => rating({
+    id: i,
+    title: `A Fairly Long Movie Title Number ${i}`,
+    comment: 'x'.repeat(300)
+  }));
+  const embed = buildMyRatingsEmbed(many, { page: 1, pageCount: 25, username: 'kira' });
+  assert.ok(
+    embed.data.description.length <= DESCRIPTION_LIMIT,
+    `description was ${embed.data.description.length}, over the ${DESCRIPTION_LIMIT} limit`
+  );
+});
+
+test('buildMyRatingsEmbed survives a single pathological comment', () => {
+  const embed = buildMyRatingsEmbed([rating({ comment: 'y'.repeat(9000) })], { page: 1, pageCount: 1, username: 'kira' });
+  assert.ok(embed.data.description.length <= DESCRIPTION_LIMIT);
+});
+
+test('buildMyRatingsEmbed shows the score against the room', () => {
+  const text = buildMyRatingsEmbed([rating()], { page: 1, pageCount: 6, username: 'kira' }).data.description;
+  assert.match(text, /Dune: Part Two/);
+  assert.match(text, /8\.5/);
+  assert.match(text, /server 8\.4/);
+});
+
+test('buildMyRatingsEmbed quotes a comment it was given', () => {
+  const text = buildMyRatingsEmbed([rating({ comment: 'Best sound design in years' })], { page: 1, pageCount: 1, username: 'kira' }).data.description;
+  assert.match(text, /Best sound design in years/);
+});
+
+test('buildMyRatingsEmbed copes with a film nobody else rated', () => {
+  const text = buildMyRatingsEmbed([rating({ community_avg: null })], { page: 1, pageCount: 1, username: 'kira' }).data.description;
+  assert.match(text, /Dune: Part Two/);
+  assert.doesNotMatch(text, /server null/);
+});
+
+test('buildMyRatingsEmbed handles someone who has rated nothing', () => {
+  const embed = buildMyRatingsEmbed([], { page: 1, pageCount: 1, username: 'kira' });
+  assert.match(embed.data.description, /no ratings yet/i);
+});
+
+test('MY_RATINGS_PAGE_SIZE is small enough that a full page of comments still fits', () => {
+  const full = Array.from({ length: MY_RATINGS_PAGE_SIZE }, (_, i) => rating({ id: i, comment: 'z'.repeat(200) }));
+  const embed = buildMyRatingsEmbed(full, { page: 1, pageCount: 3, username: 'kira' });
+  assert.ok(embed.data.description.length <= DESCRIPTION_LIMIT);
+  assert.doesNotMatch(embed.data.description, /wouldn't fit/);
+});
+
+test('buildSortSelect marks the sort currently in effect', () => {
+  const [row] = buildSortSelect('myratings', 2, 'score');
+  const [menu] = row.components;
+  assert.equal(menu.data.custom_id, 'mn:myratings:2');
+  const chosen = menu.options.filter((o) => o.data.default).map((o) => o.data.value);
+  assert.deepEqual(chosen, ['score']);
 });

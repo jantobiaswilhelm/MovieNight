@@ -3,6 +3,7 @@ import { createLogger } from '../../utils/logger.js';
 import * as next from './next.js';
 import * as history from './history.js';
 import * as stats from './stats.js';
+import * as myratings from './myratings.js';
 
 const logger = createLogger('views');
 
@@ -20,7 +21,8 @@ export const RENDERERS = {
   calendar: next.render,
   marathons: next.render,
   history: history.render,
-  stats: stats.render
+  stats: stats.render,
+  myratings: myratings.render
 };
 
 /**

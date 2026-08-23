@@ -1,4 +1,4 @@
-import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder } from 'discord.js';
 import { splitTitleYear } from './announcementEmbed.js';
 import { ratingMeter } from './screeningCard.js';
 import { buildId } from './customId.js';
@@ -230,6 +230,85 @@ export const buildStatsEmbed = ({ stats, topMovies = [], topRaters = [], watchMi
 
   const backdrop = topMovies.map((movie) => safeImageUrl(movie.backdrop_url)).find(Boolean);
   if (backdrop) embed.setImage(backdrop);
+
+  return embed;
+};
+
+// ── /myratings ──────────────────────────────────────────────────────────────
+
+// Eight rows leaves headroom for eight comments inside the description budget.
+// The budget is still enforced on top of it — a page size bounds how many rows
+// there are, not how long any one of them is.
+export const MY_RATINGS_PAGE_SIZE = 8;
+
+const COMMENT_MAX = 140;
+
+export const SORTS = [
+  { key: 'recent', label: 'Most recent first', emoji: '🕒' },
+  { key: 'score', label: 'Highest rated first', emoji: '⭐' }
+];
+
+export const buildSortSelect = (view, page, current) => {
+  const menu = new StringSelectMenuBuilder()
+    .setCustomId(buildId(view, page))
+    .setPlaceholder('Sort…')
+    .addOptions(SORTS.map((sort) => ({
+      label: sort.label,
+      value: sort.key,
+      emoji: sort.emoji,
+      default: sort.key === current
+    })));
+
+  return [new ActionRowBuilder().addComponents(menu)];
+};
+
+const formatScore = (value) => {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return null;
+  return Number.isInteger(n) ? String(n) : n.toFixed(1);
+};
+
+export const buildMyRatingsEmbed = (ratings, { page = 1, pageCount = 1, sort = 'recent', username = 'Your' } = {}) => {
+  const embed = new EmbedBuilder()
+    .setTitle(`⭐ ${username}'s Ratings`)
+    .setColor(COLOR);
+
+  if (!ratings.length) {
+    embed.setDescription('No ratings yet — watch something and rate it.');
+    return embed;
+  }
+
+  const entries = ratings.map((row) => {
+    const { name, year } = splitTitleYear(row.title, row.release_year);
+    const score = Number(row.score);
+    const community = formatScore(row.community_avg);
+
+    const meta = [
+      `${ratingMeter(score)} **${formatScore(score)}**`,
+      community ? `server ${community}` : null,
+      `<t:${unixSeconds(row.scheduled_at)}:D>`
+    ].filter(Boolean).join(' · ');
+
+    const lines = [`**${name}**${year ? ` (${year})` : ''}`, meta];
+
+    if (row.comment) {
+      const trimmed = row.comment.length > COMMENT_MAX
+        ? `${row.comment.slice(0, COMMENT_MAX - 1)}…`
+        : row.comment;
+      lines.push(`> ${trimmed}`);
+    }
+
+    return lines.join('\n');
+  });
+
+  embed.setDescription(fitEntries(entries));
+
+  const poster = ratings.map((row) => safeImageUrl(row.image_url)).find(Boolean);
+  if (poster) embed.setThumbnail(poster);
+
+  const total = ratings[0]?.total_count ?? ratings.length;
+  const sortLabel = SORTS.find((s) => s.key === sort)?.label ?? SORTS[0].label;
+  embed.setFooter({ text: `Page ${page} of ${pageCount} · ${total} rated · ${sortLabel}` });
 
   return embed;
 };

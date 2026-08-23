@@ -173,6 +173,42 @@ export const getUserRatings = async (discordId, limit = 10) => {
   return result.rows;
 };
 
+// One page of a member's ratings, with the room's average beside each score so
+// you can see where you disagreed.
+//
+// PARALLEL to backend/src/models/ratings.js (getUserRatings) — intentionally
+// differs: the bot keys on discord_id and pages; the web keys on internal
+// user_id and is guild-scoped.
+//
+// `sort` is resolved through a lookup, never interpolated — it arrives from a
+// select menu, which means it arrives from the user.
+const RATING_SORTS = {
+  recent: 'mn.scheduled_at DESC',
+  score: 'r.score DESC, mn.scheduled_at DESC'
+};
+
+export const getUserRatingsPaged = async (discordId, { limit = 8, offset = 0, sort = 'recent' } = {}) => {
+  const orderBy = RATING_SORTS[sort] ?? RATING_SORTS.recent;
+
+  const result = await pool.query(
+    `SELECT r.id, r.score, r.comment, r.updated_at,
+            mn.id AS movie_night_id, mn.title, mn.release_year, mn.image_url, mn.scheduled_at,
+            (SELECT ROUND(AVG(cr.score), 1) FROM ratings cr
+               WHERE cr.movie_night_id = mn.id) AS community_avg,
+            COUNT(*) OVER()::int AS total_count
+     FROM ratings r
+     JOIN users u ON r.user_id = u.id
+     JOIN movie_nights mn ON r.movie_night_id = mn.id
+     WHERE u.discord_id = $1
+     ORDER BY ${orderBy}
+     LIMIT $2 OFFSET $3`,
+    [discordId, limit, offset]
+  );
+  return result.rows;
+};
+
+export const RATING_SORT_KEYS = Object.keys(RATING_SORTS);
+
 // PARALLEL to backend/src/models/ratings.js (getUserTopRatedMovies) — intentionally differs: bot keys on discord_id + JOINs users; backend keys on user_id
 export const getUserTopRatedMovies = async (discordId, limit = 10) => {
   const result = await pool.query(
