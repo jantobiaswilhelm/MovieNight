@@ -699,6 +699,48 @@ export const getUpcomingMovies = async (guildId) => {
   return result.rows;
 };
 
+// The /next board: everything a screening needs on screen, in one round-trip.
+// Deliberately separate from getUpcomingMovies above, whose narrow
+// {id, title, scheduled_at} shape the /start and /reschedule autocompletes read.
+//
+// "Upcoming" here means not-yet-finished rather than not-yet-started, so a film
+// halfway through still holds the top of the board instead of vanishing mid-
+// screening. The runtime-elapsed test is the same one the web uses to decide a
+// marathon item is behind it (backend/src/models/marathons.js). It also gives the
+// window a floor for free: a night nobody ever started stops leading the list
+// once its runtime is spent, which the unbounded query above never does.
+export const getUpcomingMovieNights = async (guildId, limit = 5) => {
+  const result = await pool.query(
+    `SELECT mn.id, mn.title, mn.scheduled_at, mn.image_url, mn.runtime, mn.genres,
+            mn.release_year, mn.tmdb_id,
+            (SELECT COUNT(*) FROM movie_attendance ma
+               WHERE ma.movie_night_id = mn.id)::int AS attendee_count,
+            m.name AS marathon_name,
+            mi.position AS marathon_position,
+            (SELECT COUNT(*) FROM marathon_items x
+               WHERE x.marathon_id = m.id)::int AS marathon_total
+     FROM movie_nights mn
+     -- LATERAL … LIMIT 1 rather than a plain join: hand-logging a film as
+     -- watched also points a marathon item at a night, so one night can be
+     -- claimed by more than one item. A join would print it twice.
+     LEFT JOIN LATERAL (
+       SELECT mi.position, mi.marathon_id
+       FROM marathon_items mi
+       WHERE mi.scheduled_movie_night_id = mn.id
+       ORDER BY mi.id ASC
+       LIMIT 1
+     ) mi ON TRUE
+     LEFT JOIN marathons m ON m.id = mi.marathon_id
+     WHERE mn.guild_id = $1
+       AND mn.scheduled_at + INTERVAL '1 minute' * COALESCE(mn.runtime, 90) > NOW()
+       AND (mn.is_test = false OR mn.is_test IS NULL)
+     ORDER BY mn.scheduled_at ASC
+     LIMIT $2`,
+    [guildId, limit]
+  );
+  return result.rows;
+};
+
 // Pending announcement operations
 export const getPendingAnnouncements = async () => {
   const result = await pool.query(
@@ -863,6 +905,36 @@ export const zeroOutPresenceById = async (ids) => {
 };
 
 // ── Marathons (bot side) ─────────────────────────────────────────────────────
+
+// PARALLEL to backend/src/models/marathons.js (getMarathons) — intentionally
+// differs: the web lists marathons in every state with poster fans, creator
+// identity and an airing_item; the bot's /next board shows only the running ones
+// and only what it prints. The watched/next-up definitions are copied on purpose
+// — watched means finished, not merely started, and a film with no date yet is
+// still the one that's next.
+export const getGuildActiveMarathons = async (guildId) => {
+  const result = await pool.query(
+    `SELECT m.id, m.name, m.cadence_type,
+            (SELECT COUNT(*) FROM marathon_items mi
+               WHERE mi.marathon_id = m.id)::int AS item_count,
+            (SELECT COUNT(*) FROM marathon_items mi
+               WHERE mi.marathon_id = m.id
+                 AND (mi.status = 'watched'
+                      OR (mi.scheduled_at IS NOT NULL
+                          AND mi.scheduled_at + INTERVAL '1 minute' * COALESCE(mi.runtime, 90) < NOW())))::int AS watched_count,
+            (SELECT json_build_object('title', mi.title, 'scheduled_at', mi.scheduled_at)
+               FROM marathon_items mi
+               WHERE mi.marathon_id = m.id AND mi.status IS DISTINCT FROM 'watched'
+                 AND (mi.scheduled_at IS NULL OR mi.scheduled_at >= NOW())
+               ORDER BY mi.position ASC LIMIT 1) AS next_item
+     FROM marathons m
+     WHERE m.guild_id = $1 AND m.status = 'active'
+     ORDER BY m.updated_at DESC`,
+    [guildId]
+  );
+  return result.rows;
+};
+
 export const getActiveMarathons = async () => {
   const result = await pool.query(`SELECT * FROM marathons WHERE status = 'active'`);
   return result.rows;
