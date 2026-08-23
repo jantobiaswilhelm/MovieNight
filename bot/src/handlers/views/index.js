@@ -8,6 +8,7 @@ import * as top10 from './top10.js';
 import * as board from './board.js';
 import * as wishlist from './wishlist.js';
 import * as marathon from './marathon.js';
+import { makeRender as makeHubRender } from './hub.js';
 
 const logger = createLogger('views');
 
@@ -34,6 +35,11 @@ export const RENDERERS = {
   wishpick: wishlist.render,
   marathon: marathon.render
 };
+
+// The hub dispatches into the table above, so it is added after the table
+// exists and receives renderView rather than importing it — a plain import both
+// ways would be a cycle.
+RENDERERS.hub = makeHubRender((view, ctx) => renderView(view, ctx));
 
 /**
  * Render a view by name — the entry point a slash command uses.
