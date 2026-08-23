@@ -99,14 +99,17 @@ A named, ordered run of films that schedules itself.
 
 | Command | What it does |
 |---|---|
+| `/movienight` | **The hub.** What's on next, what leads the board, and a menu into every other view. Private to you. `/help` is the same screen. |
 | `/next [count]` | Upcoming films with runtime, RSVPs and marathon progress. Buttons switch the board to a **month calendar** or to the **running marathons**. |
+| `/board` | The suggestion board — see what the room wants and vote. `/board suggest:"…"` adds a film. |
+| `/wishlist` | Your list by priority, or the whole server's with `server:true`. Includes the site's weighted **"pick one for me"**. |
+| `/marathon` | A marathon's full running order: watched and what it scored, scheduled, and still undated. |
 | `/announce <title> <datetime>` | Schedule a night and post the announcement. Accepts `tomorrow 8pm` as readily as `2026-01-20 20:00`. |
 | `/rate <movie> <score>` | Rate 1–10 with half-point precision — the scores the buttons can't reach. |
-| `/history [count]` | Past movie nights with their averages. |
-| `/stats` | Server statistics: totals, top-rated films, most active raters. |
-| `/myratings` | Everything you've rated, and your average. |
-| `/top10` | Your ten highest-rated films. |
-| `/help` | All of the above, in Discord. |
+| `/history [count]` | Past nights with ratings and attendance, paged. |
+| `/stats` | Totals, watch time, best rated and most active — filterable to this month or year. |
+| `/myratings` | Everything you've rated against the room's average, paged and sortable. |
+| `/top10 [user]` | Your ten highest-rated films, or anyone else's. |
 | 🔒 `/start <movie>` | Start a night early, by hand. |
 | 🔒 `/reschedule <movie> <datetime>` | Move a night that hasn't started. |
 | 🔒 `/delete <movie>` | Delete a film and its ratings. |
@@ -304,8 +307,9 @@ cd frontend && npm run dev     # http://localhost:5173
 | `frontend` | `npm run dev` | Vite dev server |
 | | `npm run build` | Production build |
 
-No linter or CI is configured. The bot's embed builders are covered by `node --test`;
-nothing else has tests.
+No linter or CI is configured. The bot's embed builders and view plumbing are covered by
+`node --test` — around 200 assertions, all pure functions, no database or Discord needed.
+Nothing else has tests.
 
 ---
 
