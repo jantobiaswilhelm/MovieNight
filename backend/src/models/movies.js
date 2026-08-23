@@ -121,7 +121,7 @@ export const getRecentMovieNightsForRating = async (guildId, limit = 10) => {
 export const deleteMovieNight = async (movieId) => {
   // Deleting the movie_nights row cascades to all child rows: ratings,
   // movie_attendance, movie_credits and movie_night_voice_presence are all
-  // declared ON DELETE CASCADE, while voting_sessions / wishlists / marathon
+  // declared ON DELETE CASCADE, while board_suggestions / wishlists / marathon
   // items are ON DELETE SET NULL. A single delete is therefore atomic on its
   // own — no explicit transaction or manual child cleanup is needed.
   const result = await pool.query(

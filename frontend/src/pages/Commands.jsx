@@ -4,9 +4,11 @@ import './Commands.css';
 const commands = [
   { name: '/announce',   description: 'Announce a new movie night',       usage: '/announce title:"Movie Name" datetime:"tomorrow 8pm" image:"poster-url"', details: 'Schedule a movie night and post an announcement with rating buttons. The image is required and will be shown in the embed.', category: 'Movies' },
   { name: '/rate',       description: 'Rate a movie',                     usage: '/rate movie:"Movie Name" score:8.5', details: "Rate a movie with half-point precision (1-10). Use this for ratings like 7.5 or 8.5 that aren't available on the buttons.", category: 'Movies' },
+  { name: '/next',       description: "See what's coming up",              usage: '/next count:5', details: 'Upcoming movie nights with runtime, RSVPs and marathon progress. Buttons switch the board to a month calendar or to the marathons still running.', category: 'Movies' },
   { name: '/history',    description: 'View movie history',               usage: '/history', details: 'See all past movie nights with their average ratings and vote counts.', category: 'Movies' },
   { name: '/stats',      description: 'View server statistics',           usage: '/stats', details: 'See overall stats including total movies watched, top rated movies, and most active raters.', category: 'Stats' },
   { name: '/myratings',  description: 'View your ratings',                usage: '/myratings', details: "See all the movies you've rated and your personal average score.", category: 'Stats' },
+  { name: '/top10',      description: 'View your top 10',                 usage: '/top10', details: 'Your ten highest-rated films, ranked.', category: 'Stats' },
   { name: '/help',       description: 'Show help message',                usage: '/help', details: 'Display all available commands in Discord.', category: 'Other' },
   { name: '/delete',     description: 'Delete a movie (Admin only)',      usage: '/delete movie:"Movie Name"', details: 'Permanently delete a movie and all its ratings. Only available to server admins.', category: 'Admin' },
   { name: '/start',      description: 'Manually start a movie night (Admin only)', usage: '/start movie:"Movie Name"', details: 'Manually trigger the "starting now" announcement for a movie. Movies normally start automatically at their scheduled time.', category: 'Admin' },
