@@ -19,6 +19,10 @@ export const execute = async (interaction) => {
         value: '**Rate a movie**\n`/rate movie:"Movie Name" score:8.5`\nRate a movie with half-point precision (1-10). Use this for ratings like 7.5 or 8.5.'
       },
       {
+        name: '/next',
+        value: '**See what\'s coming up**\n`/next count:5`\nUpcoming movie nights with runtime, RSVPs and marathon progress. Buttons switch to a calendar or the running marathons.'
+      },
+      {
         name: '/history',
         value: '**View movie history**\n`/history`\nSee all past movie nights with their ratings.'
       },
