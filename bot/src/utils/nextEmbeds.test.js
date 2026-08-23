@@ -165,8 +165,8 @@ test('buildEmptyEmbed falls back to what the board already wants', () => {
   const embed = buildEmptyEmbed({
     marathons: [],
     suggestions: [
-      { id: 1, title: 'The Thing', release_year: 1982, upvotes: 4 },
-      { id: 2, title: 'Heat', release_year: 1995, upvotes: 2 }
+      { id: 1, title: 'The Thing', release_year: 1982, score: 4 },
+      { id: 2, title: 'Heat', release_year: 1995, score: 2 }
     ]
   });
   const text = embed.data.description;

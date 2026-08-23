@@ -202,7 +202,7 @@ export const buildEmptyEmbed = ({ marathons = [], suggestions = [] } = {}) => {
   if (suggestions.length) {
     const lines = suggestions.map((suggestion) => {
       const { name, year } = splitTitleYear(suggestion.title, suggestion.release_year);
-      return `▲ ${suggestion.upvotes} · ${name}${year ? ` (${year})` : ''}`;
+      return `▲ ${suggestion.score} · ${name}${year ? ` (${year})` : ''}`;
     });
     parts.push(['🗳️ **Most wanted on the board**', ...lines].join('\n'));
   }

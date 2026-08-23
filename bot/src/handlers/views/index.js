@@ -5,6 +5,7 @@ import * as history from './history.js';
 import * as stats from './stats.js';
 import * as myratings from './myratings.js';
 import * as top10 from './top10.js';
+import * as board from './board.js';
 
 const logger = createLogger('views');
 
@@ -24,7 +25,9 @@ export const RENDERERS = {
   history: history.render,
   stats: stats.render,
   myratings: myratings.render,
-  top10: top10.render
+  top10: top10.render,
+  board: board.render,
+  boardvote: board.render
 };
 
 /**

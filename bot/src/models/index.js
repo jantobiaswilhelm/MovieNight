@@ -806,18 +806,110 @@ export const zeroOutPresenceById = async (ids) => {
 // What the group has asked for but nobody has scheduled — the fallback the
 // /next board offers when the schedule is empty. Board suggestions replaced the
 // retired voting feature (see the DROP in backend/src/config/migrate.js).
+//
+// board_upvotes stores a SIGNED vote (+1 up, -1 down), so ranking means SUM,
+// not COUNT — counting rows would score a divisive film the same as a loved
+// one. Same ordering the web uses in getBoardSuggestions.
 export const getTopBoardSuggestions = async (guildId, limit = 3) => {
   const result = await pool.query(
     `SELECT bs.id, bs.title, bs.release_year,
-            (SELECT COUNT(*) FROM board_upvotes bu
-               WHERE bu.suggestion_id = bs.id)::int AS upvotes
+            COALESCE(SUM(bu.vote), 0)::int AS score
      FROM board_suggestions bs
+     LEFT JOIN board_upvotes bu ON bu.suggestion_id = bs.id
      WHERE bs.guild_id = $1 AND bs.status = 'open'
-     ORDER BY upvotes DESC, bs.created_at ASC
+     GROUP BY bs.id
+     ORDER BY score DESC, bs.created_at ASC
      LIMIT $2`,
     [guildId, limit]
   );
   return result.rows;
+};
+
+// PARALLEL to backend/src/models/board.js (getBoardSuggestions) — intentionally
+// differs: the web carries avatars and a downvote breakdown for its board UI;
+// the bot needs the score, the suggester's name and the caller's own vote. The
+// status filter and the score ordering are copied on purpose — an already
+// scheduled film stays on the board until its night passes.
+export const getBoardForGuild = async (guildId, viewerUserId = null) => {
+  const result = await pool.query(
+    `SELECT bs.id, bs.title, bs.release_year, bs.image_url, bs.runtime, bs.genres,
+            bs.status, bs.scheduled_at,
+            u.username AS suggested_by_name,
+            u.discord_id AS suggested_by_discord_id,
+            COALESCE(SUM(bu.vote), 0)::int AS score,
+            COALESCE(MAX(bu.vote) FILTER (WHERE bu.user_id = $2), 0)::int AS user_vote
+     FROM board_suggestions bs
+     LEFT JOIN users u ON bs.suggested_by = u.id
+     LEFT JOIN board_upvotes bu ON bs.id = bu.suggestion_id
+     WHERE bs.guild_id = $1
+       AND (bs.status = 'open' OR (bs.status = 'scheduled' AND bs.scheduled_at >= NOW()))
+     GROUP BY bs.id, u.username, u.discord_id
+     ORDER BY score DESC, bs.created_at DESC`,
+    [guildId, viewerUserId]
+  );
+  return result.rows;
+};
+
+// Pressing upvote on a film you already upvoted takes the vote back, which is
+// what makes one button both actions. Returns the caller's vote afterwards.
+export const toggleBoardUpvote = async (suggestionId, userId) => {
+  const existing = await pool.query(
+    'SELECT vote FROM board_upvotes WHERE suggestion_id = $1 AND user_id = $2',
+    [suggestionId, userId]
+  );
+
+  if (existing.rows[0]?.vote === 1) {
+    await pool.query(
+      'DELETE FROM board_upvotes WHERE suggestion_id = $1 AND user_id = $2',
+      [suggestionId, userId]
+    );
+    return 0;
+  }
+
+  // ON CONFLICT rather than an insert: the row may exist as a downvote, and two
+  // fast clicks would otherwise race into a unique violation.
+  await pool.query(
+    `INSERT INTO board_upvotes (suggestion_id, user_id, vote)
+     VALUES ($1, $2, 1)
+     ON CONFLICT (suggestion_id, user_id) DO UPDATE SET vote = 1`,
+    [suggestionId, userId]
+  );
+  return 1;
+};
+
+// PARALLEL to backend/src/models/board.js (createBoardSuggestion) — the same
+// insert; the bot passes the TMDB payload it just fetched for autocomplete.
+export const createBoardSuggestion = async (guildId, suggestedBy, title, imageUrl, tmdbData = {}) => {
+  const {
+    description, tmdbId, tmdbRating, genres, runtime, releaseYear,
+    backdropUrl, tagline, imdbId, originalLanguage, collectionName, trailerUrl
+  } = tmdbData;
+
+  const result = await pool.query(
+    `INSERT INTO board_suggestions
+       (guild_id, suggested_by, title, image_url, description, tmdb_id, tmdb_rating,
+        genres, runtime, release_year, backdrop_url, tagline, imdb_id,
+        original_language, collection_name, trailer_url)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+     RETURNING *`,
+    [guildId, suggestedBy, title, imageUrl, description || null, tmdbId || null,
+      tmdbRating || null, genres || null, runtime || null, releaseYear || null,
+      backdropUrl || null, tagline || null, imdbId || null, originalLanguage || null,
+      collectionName || null, trailerUrl || null]
+  );
+  return result.rows[0];
+};
+
+// Already on the board? Suggesting it again should bump into the existing row
+// rather than splitting its votes across duplicates.
+export const findOpenBoardSuggestionByTmdb = async (guildId, tmdbId) => {
+  const result = await pool.query(
+    `SELECT id, title FROM board_suggestions
+     WHERE guild_id = $1 AND tmdb_id = $2 AND status = 'open'
+     LIMIT 1`,
+    [guildId, tmdbId]
+  );
+  return result.rows[0];
 };
 
 // ── Marathons (bot side) ─────────────────────────────────────────────────────
