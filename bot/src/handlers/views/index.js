@@ -4,6 +4,7 @@ import * as next from './next.js';
 import * as history from './history.js';
 import * as stats from './stats.js';
 import * as myratings from './myratings.js';
+import * as top10 from './top10.js';
 
 const logger = createLogger('views');
 
@@ -22,7 +23,8 @@ export const RENDERERS = {
   marathons: next.render,
   history: history.render,
   stats: stats.render,
-  myratings: myratings.render
+  myratings: myratings.render,
+  top10: top10.render
 };
 
 /**

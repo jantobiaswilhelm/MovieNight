@@ -262,9 +262,18 @@ export const buildSortSelect = (view, page, current) => {
   return [new ActionRowBuilder().addComponents(menu)];
 };
 
-const formatScore = (value) => {
+// Number(null) is 0 and Number('') is 0, so an absent average would otherwise
+// render as a room that scored the film zero. Absence has to be checked before
+// coercion, not after it.
+const toScore = (value) => {
+  if (value === null || value === undefined || value === '') return null;
   const n = Number(value);
-  if (!Number.isFinite(n)) return null;
+  return Number.isFinite(n) ? n : null;
+};
+
+const formatScore = (value) => {
+  const n = toScore(value);
+  if (n === null) return null;
   return Number.isInteger(n) ? String(n) : n.toFixed(1);
 };
 
@@ -309,6 +318,81 @@ export const buildMyRatingsEmbed = (ratings, { page = 1, pageCount = 1, sort = '
   const total = ratings[0]?.total_count ?? ratings.length;
   const sortLabel = SORTS.find((s) => s.key === sort)?.label ?? SORTS[0].label;
   embed.setFooter({ text: `Page ${page} of ${pageCount} · ${total} rated · ${sortLabel}` });
+
+  return embed;
+};
+
+// ── /top10 ──────────────────────────────────────────────────────────────────
+
+const gapOf = (row) => {
+  const mine = toScore(row.score);
+  const room = toScore(row.community_avg);
+  if (mine === null || room === null) return null;
+  return Math.round((mine - room) * 10) / 10;
+};
+
+/**
+ * The film this member disagreed with the room about most, in either direction.
+ * Null when nothing has a room average to compare against.
+ */
+export const biggestHotTake = (rows) => {
+  let winner = null;
+  let widest = 0;
+
+  for (const row of rows) {
+    const gap = gapOf(row);
+    if (gap === null) continue;
+    if (Math.abs(gap) > widest) {
+      widest = Math.abs(gap);
+      winner = row;
+    }
+  }
+
+  return winner;
+};
+
+const formatGap = (gap) => {
+  if (gap === null || gap === 0) return null;
+  return gap > 0 ? `▲ ${gap}` : `▼ ${Math.abs(gap)}`;
+};
+
+export const buildTop10Embed = (rows, { username = 'Your' } = {}) => {
+  const embed = new EmbedBuilder()
+    .setTitle(`🏆 ${username}'s Top 10`)
+    .setColor(COLOR_GOLD);
+
+  if (!rows.length) {
+    embed.setDescription(`${username} hasn't rated enough films yet — a film needs three ratings before it can rank.`);
+    return embed;
+  }
+
+  const entries = rows.map((row, index) => {
+    const { name, year } = splitTitleYear(row.title, row.release_year);
+    const medal = MEDALS[index] ?? `**${index + 1}.**`;
+    const score = Number(row.score);
+    const community = formatScore(row.community_avg);
+    const gap = formatGap(gapOf(row));
+
+    const meta = [
+      `${ratingMeter(score)} **${formatScore(score)}**`,
+      community ? `server ${community}` : null,
+      gap
+    ].filter(Boolean).join(' · ');
+
+    return `${medal} **${name}**${year ? ` (${year})` : ''}\n${meta}`;
+  });
+
+  embed.setDescription(fitEntries(entries));
+
+  const poster = rows.map((row) => safeImageUrl(row.image_url)).find(Boolean);
+  if (poster) embed.setThumbnail(poster);
+
+  const hotTake = biggestHotTake(rows);
+  if (hotTake) {
+    const gap = Math.abs(gapOf(hotTake));
+    const direction = gapOf(hotTake) > 0 ? 'above' : 'below';
+    embed.setFooter({ text: `Biggest hot take: ${hotTake.title}, ${gap} ${direction} the room` });
+  }
 
   return embed;
 };

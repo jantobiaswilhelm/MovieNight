@@ -213,7 +213,7 @@ export const RATING_SORT_KEYS = Object.keys(RATING_SORTS);
 export const getUserTopRatedMovies = async (discordId, limit = 10) => {
   const result = await pool.query(
     `SELECT r.id, r.movie_night_id, r.score, r.comment,
-            mn.title, mn.scheduled_at, mn.image_url,
+            mn.title, mn.scheduled_at, mn.image_url, mn.release_year,
             ROUND(AVG(r2.score)::numeric, 1) as community_avg,
             COUNT(r2.id)::integer as rating_count
      FROM ratings r

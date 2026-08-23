@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from 'discord.js';
-import { getUserTopRatedMovies, findOrCreateUser } from '../models/index.js';
-import { createTop10Embed } from '../utils/embeds.js';
+import { findOrCreateUser } from '../models/index.js';
+import { renderView } from '../handlers/index.js';
 import { createLogger } from '../utils/logger.js';
 
 const logger = createLogger('top10');
@@ -16,19 +16,18 @@ export const data = new SlashCommandBuilder()
 
 export const execute = async (interaction) => {
   try {
-    const targetUser = interaction.options.getUser('user') || interaction.user;
+    const target = interaction.options.getUser('user') || interaction.user;
 
-    // Ensure user exists in database
-    await findOrCreateUser(
-      targetUser.id,
-      targetUser.username,
-      targetUser.avatar
-    );
+    // The target may never have used the bot, in which case they have no row to
+    // join against — this makes the lookup below return empty rather than fail.
+    await findOrCreateUser(target.id, target.username, target.avatar);
 
-    const movies = await getUserTopRatedMovies(targetUser.id, 10);
-    const embed = createTop10Embed(movies, targetUser.username);
-
-    await interaction.reply({ embeds: [embed] });
+    const payload = await renderView('top10', {
+      guildId: interaction.guildId,
+      user: interaction.user,
+      target
+    });
+    await interaction.reply(payload);
   } catch (err) {
     logger.error('Error fetching top 10', err);
     await interaction.reply({

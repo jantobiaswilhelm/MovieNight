@@ -14,7 +14,9 @@ import {
   buildMyRatingsEmbed,
   buildSortSelect,
   DESCRIPTION_LIMIT,
-  MY_RATINGS_PAGE_SIZE
+  MY_RATINGS_PAGE_SIZE,
+  buildTop10Embed,
+  biggestHotTake
 } from './commandEmbeds.js';
 
 const night = (overrides = {}) => ({
@@ -272,10 +274,14 @@ test('buildMyRatingsEmbed quotes a comment it was given', () => {
   assert.match(text, /Best sound design in years/);
 });
 
-test('buildMyRatingsEmbed copes with a film nobody else rated', () => {
-  const text = buildMyRatingsEmbed([rating({ community_avg: null })], { page: 1, pageCount: 1, username: 'kira' }).data.description;
-  assert.match(text, /Dune: Part Two/);
-  assert.doesNotMatch(text, /server null/);
+test('buildMyRatingsEmbed omits the room average when there is none', () => {
+  // Number(null) is 0, so the naive coercion renders a film nobody else rated
+  // as one the room scored zero. Assert the line is absent, not just non-null.
+  for (const absent of [null, undefined, '']) {
+    const text = buildMyRatingsEmbed([rating({ community_avg: absent })], { page: 1, pageCount: 1, username: 'kira' }).data.description;
+    assert.match(text, /Dune: Part Two/);
+    assert.doesNotMatch(text, /server/, `rendered a room average for ${JSON.stringify(absent)}`);
+  }
 });
 
 test('buildMyRatingsEmbed handles someone who has rated nothing', () => {
@@ -288,6 +294,70 @@ test('MY_RATINGS_PAGE_SIZE is small enough that a full page of comments still fi
   const embed = buildMyRatingsEmbed(full, { page: 1, pageCount: 3, username: 'kira' });
   assert.ok(embed.data.description.length <= DESCRIPTION_LIMIT);
   assert.doesNotMatch(embed.data.description, /wouldn't fit/);
+});
+
+// ── /top10 ──────────────────────────────────────────────────────────────────
+
+const pick = (overrides = {}) => ({
+  id: 1,
+  score: '9.0',
+  title: 'Arrival',
+  release_year: 2016,
+  image_url: 'https://img/arrival.jpg',
+  community_avg: '8.2',
+  rating_count: 4,
+  ...overrides
+});
+
+test('buildTop10Embed medals the top three and numbers the rest', () => {
+  const rows = Array.from({ length: 5 }, (_, i) => pick({ id: i, title: `Film ${i}`, score: String(9 - i) }));
+  const text = buildTop10Embed(rows, { username: 'sam' }).data.description;
+  assert.match(text, /🥇/);
+  assert.match(text, /🥈/);
+  assert.match(text, /🥉/);
+  assert.match(text, /\*\*4\.\*\*/);
+});
+
+test('buildTop10Embed signs the gap against the room', () => {
+  const text = buildTop10Embed([
+    pick({ score: '10', community_avg: '8.0', title: 'Heat' }),
+    pick({ id: 2, score: '6.0', community_avg: '7.5', title: 'Tenet' })
+  ], { username: 'sam' }).data.description;
+  assert.match(text, /▲ 2/);
+  assert.match(text, /▼ 1\.5/);
+});
+
+test('buildTop10Embed says nothing about a gap when there is none', () => {
+  const text = buildTop10Embed([pick({ score: '8.0', community_avg: '8.0' })], { username: 'sam' }).data.description;
+  assert.doesNotMatch(text, /[▲▼]/);
+});
+
+test('buildTop10Embed copes with a film the room never rated', () => {
+  const text = buildTop10Embed([pick({ community_avg: null })], { username: 'sam' }).data.description;
+  assert.match(text, /Arrival/);
+  assert.doesNotMatch(text, /NaN/);
+});
+
+test('biggestHotTake finds the widest gap in either direction', () => {
+  const rows = [
+    pick({ title: 'Heat', score: '10', community_avg: '8.0' }),
+    pick({ title: 'Tenet', score: '4', community_avg: '7.5' })
+  ];
+  assert.equal(biggestHotTake(rows).title, 'Tenet');
+});
+
+test('biggestHotTake returns null when nothing can be compared', () => {
+  assert.equal(biggestHotTake([]), null);
+  assert.equal(biggestHotTake([pick({ community_avg: null })]), null);
+});
+
+test('buildTop10Embed handles a member who has rated nothing', () => {
+  const embed = buildTop10Embed([], { username: 'sam' });
+  assert.match(embed.data.description, /hasn't rated|no ratings/i);
+});
+
+test('buildTop10Embed titles itself after the member being shown', () => {
+  assert.match(buildTop10Embed([pick()], { username: 'sam' }).data.title, /sam/);
 });
 
 test('buildSortSelect marks the sort currently in effect', () => {
