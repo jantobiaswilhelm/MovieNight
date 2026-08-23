@@ -152,8 +152,7 @@ test('buildMarathonsEmbed reports a marathon with nothing left to watch', () => 
 test('buildEmptyEmbed points at a running marathon that has not been scheduled', () => {
   const embed = buildEmptyEmbed({
     marathons: [marathon({ next_item: { title: 'Dune: Part Two', scheduled_at: null } })],
-    votingSession: null,
-    guildId: '1'
+    suggestions: []
   });
   const text = embed.data.description;
   assert.match(text, /Nothing on the schedule/);
@@ -162,28 +161,38 @@ test('buildEmptyEmbed points at a running marathon that has not been scheduled',
   assert.match(text, /\/announce/);
 });
 
-test('buildEmptyEmbed links a vote that is still open', () => {
+test('buildEmptyEmbed falls back to what the board already wants', () => {
   const embed = buildEmptyEmbed({
     marathons: [],
-    votingSession: { id: 3, channel_id: '222', message_id: '333' },
-    guildId: '111'
+    suggestions: [
+      { id: 1, title: 'The Thing', release_year: 1982, score: 4 },
+      { id: 2, title: 'Heat', release_year: 1995, score: 2 }
+    ]
   });
-  assert.match(embed.data.description, /discord\.com\/channels\/111\/222\/333/);
+  const text = embed.data.description;
+  assert.match(text, /Most wanted on the board/);
+  assert.match(text, /▲ 4 · The Thing \(1982\)/);
+  assert.match(text, /▲ 2 · Heat \(1995\)/);
+});
+
+test('buildEmptyEmbed skips the board section when nothing is suggested', () => {
+  const embed = buildEmptyEmbed({ marathons: [], suggestions: [] });
+  assert.doesNotMatch(embed.data.description, /Most wanted/);
 });
 
 test('buildViewButtons offers the two views you are not looking at', () => {
-  const [row] = buildViewButtons('list', { count: 5, hasMovies: true, hasMarathons: true });
+  const [row] = buildViewButtons('next', { count: 5, hasMovies: true, hasMarathons: true });
   const ids = row.components.map((b) => b.data.custom_id);
-  assert.deepEqual(ids, ['next_view:calendar:5', 'next_view:marathons:5']);
+  assert.deepEqual(ids, ['mn:calendar:5', 'mn:marathons:5']);
 });
 
 test('buildViewButtons carries the requested count so a view swap keeps it', () => {
   const [row] = buildViewButtons('calendar', { count: 10, hasMovies: true, hasMarathons: true });
   const ids = row.components.map((b) => b.data.custom_id);
-  assert.deepEqual(ids, ['next_view:list:10', 'next_view:marathons:10']);
+  assert.deepEqual(ids, ['mn:next:10', 'mn:marathons:10']);
 });
 
 test('buildViewButtons disables the views that have nothing to show', () => {
-  const [row] = buildViewButtons('list', { count: 5, hasMovies: false, hasMarathons: false });
+  const [row] = buildViewButtons('next', { count: 5, hasMovies: false, hasMarathons: false });
   assert.deepEqual(row.components.map((b) => b.data.disabled), [true, true]);
 });

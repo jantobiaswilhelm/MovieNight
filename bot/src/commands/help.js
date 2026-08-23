@@ -1,49 +1,11 @@
-import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
+import { SlashCommandBuilder } from 'discord.js';
+import { executeHub } from './movienight.js';
 
+// /help and /movienight are the same screen. It stays registered because people
+// type /help by reflex, and a hub that only answers to a name you have to learn
+// first is not much of a hub.
 export const data = new SlashCommandBuilder()
   .setName('help')
-  .setDescription('Show all available commands');
+  .setDescription('Everything MovieNight can do, in one place');
 
-export const execute = async (interaction) => {
-  const embed = new EmbedBuilder()
-    .setTitle('Movie Night Bot Commands')
-    .setDescription('Here are all the available commands:')
-    .setColor(0x5865F2)
-    .addFields(
-      {
-        name: '/announce',
-        value: '**Announce a new movie night**\n`/announce title:"Movie Name" datetime:"tomorrow 8pm" image:"poster-url"`\nSchedule a movie night and post an announcement with rating buttons.'
-      },
-      {
-        name: '/rate',
-        value: '**Rate a movie**\n`/rate movie:"Movie Name" score:8.5`\nRate a movie with half-point precision (1-10). Use this for ratings like 7.5 or 8.5.'
-      },
-      {
-        name: '/next',
-        value: '**See what\'s coming up**\n`/next count:5`\nUpcoming movie nights with runtime, RSVPs and marathon progress. Buttons switch to a calendar or the running marathons.'
-      },
-      {
-        name: '/history',
-        value: '**View movie history**\n`/history`\nSee all past movie nights with their ratings.'
-      },
-      {
-        name: '/stats',
-        value: '**View server statistics**\n`/stats`\nSee overall stats including top rated movies and most active raters.'
-      },
-      {
-        name: '/myratings',
-        value: '**View your ratings**\n`/myratings`\nSee all the movies you\'ve rated and your average score.'
-      },
-      {
-        name: '/help',
-        value: '**Show this help message**\n`/help`\nDisplay all available commands.'
-      },
-      {
-        name: '🔒 Admin Commands',
-        value: '`/delete movie:"Title"` - Delete a movie and its ratings\n`/start movie:"Title"` - Manually start a movie night\n`/reschedule movie:"Title" datetime:"new time"` - Reschedule a movie'
-      }
-    )
-    .setFooter({ text: 'You can also rate movies by clicking the buttons under announcements!' });
-
-  await interaction.reply({ embeds: [embed] });
-};
+export const execute = (interaction) => executeHub(interaction, 'help');

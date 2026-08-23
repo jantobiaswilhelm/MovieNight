@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from 'discord.js';
-import { getMovieNights } from '../models/index.js';
-import { createHistoryEmbed } from '../utils/embeds.js';
+import { renderView } from '../handlers/index.js';
+import { HISTORY_PAGE_SIZE } from '../utils/commandEmbeds.js';
 import { createLogger } from '../utils/logger.js';
 
 const logger = createLogger('history');
@@ -10,19 +10,21 @@ export const data = new SlashCommandBuilder()
   .setDescription('View past movie nights')
   .addIntegerOption(option =>
     option.setName('count')
-      .setDescription('Number of movies to show (default: 10)')
+      .setDescription(`Movies per page (default: ${HISTORY_PAGE_SIZE})`)
       .setRequired(false)
       .setMinValue(1)
       .setMaxValue(25));
 
 export const execute = async (interaction) => {
-  const count = interaction.options.getInteger('count') || 10;
+  const pageSize = interaction.options.getInteger('count') || HISTORY_PAGE_SIZE;
 
   try {
-    const movies = await getMovieNights(interaction.guildId, count);
-    const embed = createHistoryEmbed(movies);
-
-    await interaction.reply({ embeds: [embed] });
+    const payload = await renderView('history', {
+      guildId: interaction.guildId,
+      user: interaction.user,
+      args: ['1', String(pageSize)]
+    });
+    await interaction.reply(payload);
   } catch (err) {
     logger.error('Error fetching history', err);
     await interaction.reply({

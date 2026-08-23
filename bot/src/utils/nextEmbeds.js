@@ -1,5 +1,6 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { splitTitleYear, formatRuntime } from './announcementEmbed.js';
+import { buildId } from './customId.js';
 
 // The three faces of /next. Kept out of embeds.js, which is already the home of
 // the announcement/rating builders.
@@ -18,7 +19,7 @@ const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 const VIEWS = [
-  { key: 'list', label: 'List', emoji: '📃' },
+  { key: 'next', label: 'List', emoji: '📃' },
   { key: 'calendar', label: 'Calendar', emoji: '📅' },
   { key: 'marathons', label: 'Marathons', emoji: '🍿' }
 ];
@@ -184,9 +185,9 @@ export const buildMarathonsEmbed = (marathons) => {
   return embed;
 };
 
-// Nothing scheduled doesn't mean nothing is happening: a marathon may be waiting
-// on a date, or a vote may still be deciding what to schedule.
-export const buildEmptyEmbed = ({ marathons = [], votingSession = null, guildId } = {}) => {
+// Nothing scheduled doesn't mean nothing is waiting: a marathon may need a date,
+// and the board usually already knows what the group wants to watch.
+export const buildEmptyEmbed = ({ marathons = [], suggestions = [] } = {}) => {
   const parts = ['Nothing on the schedule right now.'];
 
   for (const marathon of marathons) {
@@ -198,9 +199,12 @@ export const buildEmptyEmbed = ({ marathons = [], votingSession = null, guildId 
     parts.push(`🍿 **${marathon.name}** is running — next up is *${next.title}*${due}.`);
   }
 
-  if (votingSession?.channel_id && votingSession?.message_id) {
-    const link = `https://discord.com/channels/${guildId}/${votingSession.channel_id}/${votingSession.message_id}`;
-    parts.push(`🗳️ A vote is still open — [cast yours](${link}).`);
+  if (suggestions.length) {
+    const lines = suggestions.map((suggestion) => {
+      const { name, year } = splitTitleYear(suggestion.title, suggestion.release_year);
+      return `▲ ${suggestion.score} · ${name}${year ? ` (${year})` : ''}`;
+    });
+    parts.push(['🗳️ **Most wanted on the board**', ...lines].join('\n'));
   }
 
   parts.push('Use `/announce` to put something on the calendar.');
@@ -214,13 +218,13 @@ export const buildEmptyEmbed = ({ marathons = [], votingSession = null, guildId 
 // Buttons carry every piece of state they need in the customId, so they keep
 // working after a restart instead of dying with an in-memory collector.
 export const buildViewButtons = (current, { count = 5, hasMovies = true, hasMarathons = true } = {}) => {
-  const enabled = { list: true, calendar: hasMovies, marathons: hasMarathons };
+  const enabled = { next: true, calendar: hasMovies, marathons: hasMarathons };
 
   const row = new ActionRowBuilder().addComponents(
     VIEWS
       .filter((view) => view.key !== current)
       .map((view) => new ButtonBuilder()
-        .setCustomId(`next_view:${view.key}:${count}`)
+        .setCustomId(buildId(view.key, count))
         .setLabel(view.label)
         .setEmoji(view.emoji)
         .setStyle(ButtonStyle.Secondary)

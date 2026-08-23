@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from 'discord.js';
-import { renderNextView, DEFAULT_COUNT, MAX_COUNT } from '../handlers/index.js';
+import { renderView, DEFAULT_COUNT, MAX_COUNT } from '../handlers/index.js';
 import { createLogger } from '../utils/logger.js';
 
 const logger = createLogger('next');
@@ -18,7 +18,11 @@ export const execute = async (interaction) => {
   const count = interaction.options.getInteger('count') || DEFAULT_COUNT;
 
   try {
-    const payload = await renderNextView(interaction.guildId, 'list', count);
+    const payload = await renderView('next', {
+      guildId: interaction.guildId,
+      user: interaction.user,
+      args: [String(count)]
+    });
     await interaction.reply(payload);
   } catch (err) {
     logger.error('Error fetching upcoming movies', err);

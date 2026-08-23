@@ -54,6 +54,57 @@ export const getMovieNights = async (guildId, limit = 10) => {
   return result.rows;
 };
 
+// One page of finished movie nights for /history, newest first.
+//
+// PARALLEL to backend/src/models/movies.js (getMovieNights) — intentionally
+// differs: the web collapses re-screenings by tmdb_id, the bot lists every
+// night as it happened.
+//
+// Differs from getMovieNights above in three ways the flat query can't have:
+// it is bounded to nights that are actually behind us (a night the bot never
+// started still counts once its date passes — otherwise an outage would erase
+// it from history), it drops test nights the way the web does, and it carries
+// the total so the caller knows how many pages exist without a second query.
+//
+// avg_rating is deliberately NULL rather than 0 for an unrated night — zero is
+// a score, "nobody rated it" is not.
+export const getMovieNightsPaged = async (guildId, limit = 5, offset = 0) => {
+  const result = await pool.query(
+    `SELECT mn.id, mn.title, mn.release_year, mn.image_url, mn.scheduled_at, mn.runtime,
+            ROUND(AVG(r.score), 1) AS avg_rating,
+            COUNT(r.id)::int AS rating_count,
+            (SELECT COUNT(*) FROM movie_attendance ma
+               WHERE ma.movie_night_id = mn.id)::int AS attendee_count,
+            COUNT(*) OVER()::int AS total_count
+     FROM movie_nights mn
+     LEFT JOIN ratings r ON mn.id = r.movie_night_id
+     WHERE mn.guild_id = $1
+       AND (mn.started_at IS NOT NULL OR mn.scheduled_at < NOW())
+       AND (mn.is_test = false OR mn.is_test IS NULL)
+     GROUP BY mn.id
+     ORDER BY mn.scheduled_at DESC
+     LIMIT $2 OFFSET $3`,
+    [guildId, limit, offset]
+  );
+  return result.rows;
+};
+
+// Total minutes the guild has spent watching — the sum of every finished night's
+// runtime. COALESCE covers nights announced before TMDB metadata existed; 90 is
+// the same stand-in the marathon queries use for an unknown runtime.
+export const getGuildWatchTime = async (guildId, since = null) => {
+  const result = await pool.query(
+    `SELECT COALESCE(SUM(COALESCE(mn.runtime, 90)), 0)::int AS minutes
+     FROM movie_nights mn
+     WHERE mn.guild_id = $1
+       AND (mn.started_at IS NOT NULL OR mn.scheduled_at < NOW())
+       AND (mn.is_test = false OR mn.is_test IS NULL)
+       AND ($2::timestamp IS NULL OR mn.scheduled_at >= $2)`,
+    [guildId, since]
+  );
+  return result.rows[0].minutes;
+};
+
 // PARALLEL to backend/src/models/movies.js (getMovieNightById) — intentionally differs: backend selects extra display columns for the web UI
 export const getMovieNightById = async (id) => {
   const result = await pool.query(
@@ -122,11 +173,47 @@ export const getUserRatings = async (discordId, limit = 10) => {
   return result.rows;
 };
 
+// One page of a member's ratings, with the room's average beside each score so
+// you can see where you disagreed.
+//
+// PARALLEL to backend/src/models/ratings.js (getUserRatings) — intentionally
+// differs: the bot keys on discord_id and pages; the web keys on internal
+// user_id and is guild-scoped.
+//
+// `sort` is resolved through a lookup, never interpolated — it arrives from a
+// select menu, which means it arrives from the user.
+const RATING_SORTS = {
+  recent: 'mn.scheduled_at DESC',
+  score: 'r.score DESC, mn.scheduled_at DESC'
+};
+
+export const getUserRatingsPaged = async (discordId, { limit = 8, offset = 0, sort = 'recent' } = {}) => {
+  const orderBy = RATING_SORTS[sort] ?? RATING_SORTS.recent;
+
+  const result = await pool.query(
+    `SELECT r.id, r.score, r.comment, r.updated_at,
+            mn.id AS movie_night_id, mn.title, mn.release_year, mn.image_url, mn.scheduled_at,
+            (SELECT ROUND(AVG(cr.score), 1) FROM ratings cr
+               WHERE cr.movie_night_id = mn.id) AS community_avg,
+            COUNT(*) OVER()::int AS total_count
+     FROM ratings r
+     JOIN users u ON r.user_id = u.id
+     JOIN movie_nights mn ON r.movie_night_id = mn.id
+     WHERE u.discord_id = $1
+     ORDER BY ${orderBy}
+     LIMIT $2 OFFSET $3`,
+    [discordId, limit, offset]
+  );
+  return result.rows;
+};
+
+export const RATING_SORT_KEYS = Object.keys(RATING_SORTS);
+
 // PARALLEL to backend/src/models/ratings.js (getUserTopRatedMovies) — intentionally differs: bot keys on discord_id + JOINs users; backend keys on user_id
 export const getUserTopRatedMovies = async (discordId, limit = 10) => {
   const result = await pool.query(
     `SELECT r.id, r.movie_night_id, r.score, r.comment,
-            mn.title, mn.scheduled_at, mn.image_url,
+            mn.title, mn.scheduled_at, mn.image_url, mn.release_year,
             ROUND(AVG(r2.score)::numeric, 1) as community_avg,
             COUNT(r2.id)::integer as rating_count
      FROM ratings r
@@ -155,8 +242,14 @@ export const getUserRating = async (movieNightId, discordId) => {
 };
 
 // Stats operations
-// PARALLEL to backend/src/models/stats.js (getGuildStats) — intentionally differs: backend adds is_test filter; bot ROUNDs aggregates for Discord embeds
-export const getGuildStats = async (guildId) => {
+//
+// The three queries below take an optional `since` — the date filter behind
+// /stats' This month / This year buttons. It is bot-only: the web has its own
+// date handling. Passing null reproduces the original SQL exactly, which is why
+// the guard is written as "no bound, or within it" rather than a branch.
+//
+// PARALLEL to backend/src/models/stats.js (getGuildStats) — intentionally differs: backend adds is_test filter; bot ROUNDs aggregates for Discord embeds, and takes a bot-only `since` bound
+export const getGuildStats = async (guildId, since = null) => {
   const result = await pool.query(
     `SELECT
        COUNT(DISTINCT mn.id) as total_movies,
@@ -165,243 +258,76 @@ export const getGuildStats = async (guildId) => {
        COUNT(r.id) as total_ratings
      FROM movie_nights mn
      LEFT JOIN ratings r ON mn.id = r.movie_night_id
-     WHERE mn.guild_id = $1`,
-    [guildId]
+     WHERE mn.guild_id = $1
+       AND ($2::timestamp IS NULL OR mn.scheduled_at >= $2)`,
+    [guildId, since]
   );
   return result.rows[0];
 };
 
-// PARALLEL to backend/src/models/ratings.js (getTopRatedMovies) — intentionally differs: backend adds image_url + is_test filter; bot ROUNDs for embeds
-export const getTopRatedMovies = async (guildId, limit = 5) => {
+// PARALLEL to backend/src/models/ratings.js (getTopRatedMovies) — intentionally differs: backend adds image_url + is_test filter; bot ROUNDs for embeds, selects the poster for the stats backdrop, and takes a bot-only `since` bound
+export const getTopRatedMovies = async (guildId, limit = 5, since = null) => {
   const result = await pool.query(
-    `SELECT mn.id, mn.title, mn.scheduled_at,
+    `SELECT mn.id, mn.title, mn.scheduled_at, mn.release_year, mn.image_url, mn.backdrop_url,
             ROUND(AVG(r.score)::numeric, 1) as avg_rating,
             COUNT(r.id) as rating_count
      FROM movie_nights mn
      JOIN ratings r ON mn.id = r.movie_night_id
      WHERE mn.guild_id = $1
+       AND ($3::timestamp IS NULL OR mn.scheduled_at >= $3)
      GROUP BY mn.id
      HAVING COUNT(r.id) >= 1
      ORDER BY avg_rating DESC
      LIMIT $2`,
-    [guildId, limit]
+    [guildId, limit, since]
   );
   return result.rows;
 };
 
-// PARALLEL to backend/src/models/stats.js (getMostActiveRaters) — intentionally differs: backend adds id/avatar + is_test filter; bot ROUNDs for embeds
-export const getMostActiveRaters = async (guildId, limit = 5) => {
+// PARALLEL to backend/src/models/stats.js (getMostActiveRaters) — intentionally differs: backend adds id/avatar + is_test filter; bot ROUNDs for embeds, counts nights attended, and takes a bot-only `since` bound
+export const getMostActiveRaters = async (guildId, limit = 5, since = null) => {
   const result = await pool.query(
     `SELECT u.discord_id, u.username,
             COUNT(r.id) as rating_count,
-            ROUND(AVG(r.score)::numeric, 1) as avg_rating
+            ROUND(AVG(r.score)::numeric, 1) as avg_rating,
+            -- Counted in a subquery, not a join: attendance and ratings are
+            -- independent one-to-many relations, so joining both would multiply
+            -- the rows and inflate every aggregate above.
+            (SELECT COUNT(*) FROM movie_attendance ma
+               JOIN movie_nights amn ON amn.id = ma.movie_night_id
+              WHERE ma.user_id = u.id AND amn.guild_id = $1)::int AS attended_count
      FROM users u
      JOIN ratings r ON u.id = r.user_id
      JOIN movie_nights mn ON r.movie_night_id = mn.id
      WHERE mn.guild_id = $1
+       AND ($3::timestamp IS NULL OR mn.scheduled_at >= $3)
      GROUP BY u.id
      ORDER BY rating_count DESC
      LIMIT $2`,
-    [guildId, limit]
+    [guildId, limit, since]
   );
   return result.rows;
 };
 
-// Voting operations
-export const createVotingSession = async (guildId, channelId, messageId, scheduledAt, createdBy) => {
+// People who actually show up — distinct attendees across finished nights.
+export const getRegularCount = async (guildId, since = null) => {
   const result = await pool.query(
-    `INSERT INTO voting_sessions (guild_id, channel_id, message_id, scheduled_at, created_by, status)
-     VALUES ($1, $2, $3, $4, $5, 'open')
-     RETURNING *`,
-    [guildId, channelId, messageId, scheduledAt, createdBy]
+    `SELECT COUNT(DISTINCT ma.user_id)::int AS regulars
+     FROM movie_attendance ma
+     JOIN movie_nights mn ON mn.id = ma.movie_night_id
+     WHERE mn.guild_id = $1
+       AND (mn.is_test = false OR mn.is_test IS NULL)
+       AND ($2::timestamp IS NULL OR mn.scheduled_at >= $2)`,
+    [guildId, since]
   );
-  return result.rows[0];
-};
-
-export const getActiveVotingSession = async (guildId) => {
-  const result = await pool.query(
-    `SELECT vs.*, u.username as created_by_name
-     FROM voting_sessions vs
-     LEFT JOIN users u ON vs.created_by = u.id
-     WHERE vs.guild_id = $1 AND vs.status = 'open'
-     ORDER BY vs.created_at DESC
-     LIMIT 1`,
-    [guildId]
-  );
-  return result.rows[0];
-};
-
-export const getVotingSessionById = async (sessionId) => {
-  const result = await pool.query(
-    `SELECT vs.*, u.username as created_by_name
-     FROM voting_sessions vs
-     LEFT JOIN users u ON vs.created_by = u.id
-     WHERE vs.id = $1`,
-    [sessionId]
-  );
-  return result.rows[0];
-};
-
-export const closeVotingSession = async (id, winnerId) => {
-  const result = await pool.query(
-    `UPDATE voting_sessions
-     SET status = 'closed', winner_id = $2, closed_at = CURRENT_TIMESTAMP
-     WHERE id = $1
-     RETURNING *`,
-    [id, winnerId]
-  );
-  return result.rows[0];
-};
-
-export const updateVotingSessionSchedule = async (id, scheduledAt) => {
-  const result = await pool.query(
-    `UPDATE voting_sessions SET scheduled_at = $2 WHERE id = $1 RETURNING *`,
-    [id, scheduledAt]
-  );
-  return result.rows[0];
-};
-
-// Suggestion operations
-export const createSuggestion = async (votingSessionId, title, imageUrl, suggestedBy, tmdbData = {}) => {
-  const { description, tmdbId, tmdbRating, genres, runtime, releaseYear, backdropUrl, tagline, imdbId, originalLanguage, collectionName, trailerUrl } = tmdbData;
-  const result = await pool.query(
-    `INSERT INTO movie_suggestions (voting_session_id, title, image_url, suggested_by, description, tmdb_id, tmdb_rating, genres, runtime, release_year, backdrop_url, tagline, imdb_id, original_language, collection_name, trailer_url)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
-     RETURNING *`,
-    [votingSessionId, title, imageUrl, suggestedBy, description || null, tmdbId || null, tmdbRating || null, genres || null, runtime || null, releaseYear || null, backdropUrl || null, tagline || null, imdbId || null, originalLanguage || null, collectionName || null, trailerUrl || null]
-  );
-  return result.rows[0];
-};
-
-export const getSuggestionsForSession = async (votingSessionId) => {
-  const result = await pool.query(
-    `SELECT ms.*, u.username as suggested_by_name,
-            COUNT(v.id) as vote_count
-     FROM movie_suggestions ms
-     LEFT JOIN users u ON ms.suggested_by = u.id
-     LEFT JOIN votes v ON ms.id = v.suggestion_id
-     WHERE ms.voting_session_id = $1
-     GROUP BY ms.id, u.username
-     ORDER BY vote_count DESC, ms.created_at ASC`,
-    [votingSessionId]
-  );
-  return result.rows;
-};
-
-export const getWinningSuggestion = async (votingSessionId) => {
-  const result = await pool.query(
-    `SELECT ms.*, u.username as suggested_by_name,
-            COUNT(v.id) as vote_count
-     FROM movie_suggestions ms
-     LEFT JOIN users u ON ms.suggested_by = u.id
-     LEFT JOIN votes v ON ms.id = v.suggestion_id
-     WHERE ms.voting_session_id = $1
-     GROUP BY ms.id, u.username
-     ORDER BY vote_count DESC, ms.created_at ASC
-     LIMIT 1`,
-    [votingSessionId]
-  );
-  return result.rows[0];
-};
-
-// Vote operations
-export const castVote = async (suggestionId, userId) => {
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-
-    // Get the voting session for this suggestion to remove any existing vote
-    const suggestionResult = await client.query(
-      'SELECT voting_session_id FROM movie_suggestions WHERE id = $1',
-      [suggestionId]
-    );
-
-    if (suggestionResult.rows.length > 0) {
-      const sessionId = suggestionResult.rows[0].voting_session_id;
-
-      // Remove any existing vote for this user in this session
-      await client.query(
-        `DELETE FROM votes v
-         USING movie_suggestions ms
-         WHERE v.suggestion_id = ms.id
-         AND ms.voting_session_id = $1
-         AND v.user_id = $2`,
-        [sessionId, userId]
-      );
-    }
-
-    // Now insert the new vote
-    const result = await client.query(
-      `INSERT INTO votes (suggestion_id, user_id)
-       VALUES ($1, $2)
-       ON CONFLICT (suggestion_id, user_id) DO NOTHING
-       RETURNING *`,
-      [suggestionId, userId]
-    );
-
-    await client.query('COMMIT');
-    return result.rows[0];
-  } catch (err) {
-    await client.query('ROLLBACK');
-    throw err;
-  } finally {
-    client.release();
-  }
-};
-
-export const getUserVoteForSession = async (votingSessionId, userId) => {
-  const result = await pool.query(
-    `SELECT v.*, ms.title
-     FROM votes v
-     JOIN movie_suggestions ms ON v.suggestion_id = ms.id
-     WHERE ms.voting_session_id = $1 AND v.user_id = $2`,
-    [votingSessionId, userId]
-  );
-  return result.rows[0];
-};
-
-export const getSuggestionById = async (id) => {
-  const result = await pool.query(
-    `SELECT ms.*, u.username as suggested_by_name
-     FROM movie_suggestions ms
-     LEFT JOIN users u ON ms.suggested_by = u.id
-     WHERE ms.id = $1`,
-    [id]
-  );
-  return result.rows[0];
-};
-
-export const removeVoteByDiscordId = async (votingSessionId, discordId) => {
-  const result = await pool.query(
-    `DELETE FROM votes v
-     USING movie_suggestions ms, users u
-     WHERE v.suggestion_id = ms.id
-     AND v.user_id = u.id
-     AND ms.voting_session_id = $1
-     AND u.discord_id = $2
-     RETURNING v.*`,
-    [votingSessionId, discordId]
-  );
-  return result.rows[0];
-};
-
-// Admin delete operations
-export const deleteSuggestion = async (suggestionId) => {
-  // First delete all votes for this suggestion
-  await pool.query('DELETE FROM votes WHERE suggestion_id = $1', [suggestionId]);
-  // Then delete the suggestion
-  const result = await pool.query(
-    'DELETE FROM movie_suggestions WHERE id = $1 RETURNING *',
-    [suggestionId]
-  );
-  return result.rows[0];
+  return result.rows[0].regulars;
 };
 
 // SHARED: keep identical with backend/src/models/movies.js (deleteMovieNight)
 export const deleteMovieNight = async (movieId) => {
   // Child rows (ratings, movie_attendance, movie_credits, movie_night_voice_presence)
-  // are removed by ON DELETE CASCADE. SET NULL refs (voting_sessions, user_favorite_movies,
-  // marathon_items) are preserved. Single statement = atomic.
+  // are removed by ON DELETE CASCADE. SET NULL refs (user_favorite_movies,
+  // board_suggestions, marathon_items) are preserved. Single statement = atomic.
   const result = await pool.query(
     'DELETE FROM movie_nights WHERE id = $1 RETURNING *',
     [movieId]
@@ -620,33 +546,6 @@ export const getMovieNightForAnnouncement = async (movieNightId) => {
     [movieNightId]
   );
   return result.rows[0];
-};
-
-export const deleteVotingSession = async (sessionId) => {
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    // Delete all votes for suggestions in this session
-    await client.query(
-      `DELETE FROM votes WHERE suggestion_id IN
-       (SELECT id FROM movie_suggestions WHERE voting_session_id = $1)`,
-      [sessionId]
-    );
-    // Delete all suggestions
-    await client.query('DELETE FROM movie_suggestions WHERE voting_session_id = $1', [sessionId]);
-    // Delete the session
-    const result = await client.query(
-      'DELETE FROM voting_sessions WHERE id = $1 RETURNING *',
-      [sessionId]
-    );
-    await client.query('COMMIT');
-    return result.rows[0];
-  } catch (err) {
-    await client.query('ROLLBACK');
-    throw err;
-  } finally {
-    client.release();
-  }
 };
 
 // Movie start operations
@@ -904,6 +803,162 @@ export const zeroOutPresenceById = async (ids) => {
   );
 };
 
+// What the group has asked for but nobody has scheduled — the fallback the
+// /next board offers when the schedule is empty. Board suggestions replaced the
+// retired voting feature (see the DROP in backend/src/config/migrate.js).
+//
+// board_upvotes stores a SIGNED vote (+1 up, -1 down), so ranking means SUM,
+// not COUNT — counting rows would score a divisive film the same as a loved
+// one. Same ordering the web uses in getBoardSuggestions.
+export const getTopBoardSuggestions = async (guildId, limit = 3) => {
+  const result = await pool.query(
+    `SELECT bs.id, bs.title, bs.release_year,
+            COALESCE(SUM(bu.vote), 0)::int AS score
+     FROM board_suggestions bs
+     LEFT JOIN board_upvotes bu ON bu.suggestion_id = bs.id
+     WHERE bs.guild_id = $1 AND bs.status = 'open'
+     GROUP BY bs.id
+     ORDER BY score DESC, bs.created_at ASC
+     LIMIT $2`,
+    [guildId, limit]
+  );
+  return result.rows;
+};
+
+// PARALLEL to backend/src/models/board.js (getBoardSuggestions) — intentionally
+// differs: the web carries avatars and a downvote breakdown for its board UI;
+// the bot needs the score, the suggester's name and the caller's own vote. The
+// status filter and the score ordering are copied on purpose — an already
+// scheduled film stays on the board until its night passes.
+export const getBoardForGuild = async (guildId, viewerUserId = null) => {
+  const result = await pool.query(
+    `SELECT bs.id, bs.title, bs.release_year, bs.image_url, bs.runtime, bs.genres,
+            bs.status, bs.scheduled_at,
+            u.username AS suggested_by_name,
+            u.discord_id AS suggested_by_discord_id,
+            COALESCE(SUM(bu.vote), 0)::int AS score,
+            COALESCE(MAX(bu.vote) FILTER (WHERE bu.user_id = $2), 0)::int AS user_vote
+     FROM board_suggestions bs
+     LEFT JOIN users u ON bs.suggested_by = u.id
+     LEFT JOIN board_upvotes bu ON bs.id = bu.suggestion_id
+     WHERE bs.guild_id = $1
+       AND (bs.status = 'open' OR (bs.status = 'scheduled' AND bs.scheduled_at >= NOW()))
+     GROUP BY bs.id, u.username, u.discord_id
+     ORDER BY score DESC, bs.created_at DESC`,
+    [guildId, viewerUserId]
+  );
+  return result.rows;
+};
+
+// Pressing upvote on a film you already upvoted takes the vote back, which is
+// what makes one button both actions. Returns the caller's vote afterwards.
+export const toggleBoardUpvote = async (suggestionId, userId) => {
+  const existing = await pool.query(
+    'SELECT vote FROM board_upvotes WHERE suggestion_id = $1 AND user_id = $2',
+    [suggestionId, userId]
+  );
+
+  if (existing.rows[0]?.vote === 1) {
+    await pool.query(
+      'DELETE FROM board_upvotes WHERE suggestion_id = $1 AND user_id = $2',
+      [suggestionId, userId]
+    );
+    return 0;
+  }
+
+  // ON CONFLICT rather than an insert: the row may exist as a downvote, and two
+  // fast clicks would otherwise race into a unique violation.
+  await pool.query(
+    `INSERT INTO board_upvotes (suggestion_id, user_id, vote)
+     VALUES ($1, $2, 1)
+     ON CONFLICT (suggestion_id, user_id) DO UPDATE SET vote = 1`,
+    [suggestionId, userId]
+  );
+  return 1;
+};
+
+// PARALLEL to backend/src/models/board.js (createBoardSuggestion) — the same
+// insert; the bot passes the TMDB payload it just fetched for autocomplete.
+export const createBoardSuggestion = async (guildId, suggestedBy, title, imageUrl, tmdbData = {}) => {
+  const {
+    description, tmdbId, tmdbRating, genres, runtime, releaseYear,
+    backdropUrl, tagline, imdbId, originalLanguage, collectionName, trailerUrl
+  } = tmdbData;
+
+  const result = await pool.query(
+    `INSERT INTO board_suggestions
+       (guild_id, suggested_by, title, image_url, description, tmdb_id, tmdb_rating,
+        genres, runtime, release_year, backdrop_url, tagline, imdb_id,
+        original_language, collection_name, trailer_url)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+     RETURNING *`,
+    [guildId, suggestedBy, title, imageUrl, description || null, tmdbId || null,
+      tmdbRating || null, genres || null, runtime || null, releaseYear || null,
+      backdropUrl || null, tagline || null, imdbId || null, originalLanguage || null,
+      collectionName || null, trailerUrl || null]
+  );
+  return result.rows[0];
+};
+
+// Already on the board? Suggesting it again should bump into the existing row
+// rather than splitting its votes across duplicates.
+export const findOpenBoardSuggestionByTmdb = async (guildId, tmdbId) => {
+  const result = await pool.query(
+    `SELECT id, title FROM board_suggestions
+     WHERE guild_id = $1 AND tmdb_id = $2 AND status = 'open'
+     LIMIT 1`,
+    [guildId, tmdbId]
+  );
+  return result.rows[0];
+};
+
+// ── Wishlists (bot side) ─────────────────────────────────────────────────────
+
+// PARALLEL to backend/src/models/wishlists.js (getUserWishlist) — intentionally
+// differs: the bot keys on discord_id, has no paging or sort options, and flags
+// films someone else also wants, which is the bit worth saying out loud in chat.
+export const getUserWishlistForBot = async (discordId, guildId) => {
+  const result = await pool.query(
+    `SELECT w.id, w.title, w.release_year, w.image_url, w.runtime, w.genres, w.importance,
+            (SELECT COUNT(*) FROM wishlists o
+              WHERE o.guild_id = w.guild_id
+                AND o.tmdb_id IS NOT NULL
+                AND o.tmdb_id = w.tmdb_id
+                AND o.user_id <> w.user_id)::int AS also_wanted_by
+     FROM wishlists w
+     JOIN users u ON w.user_id = u.id
+     WHERE u.discord_id = $1 AND w.guild_id = $2
+     ORDER BY w.importance DESC, w.created_at ASC`,
+    [discordId, guildId]
+  );
+  return result.rows;
+};
+
+// The whole server's list, one row per film, carrying how many people want it.
+// tmdb_id is the grouping key because the same film added twice by hand can
+// differ in title punctuation; rows without one fall back to grouping by title.
+export const getGuildWishlistForBot = async (guildId) => {
+  const result = await pool.query(
+    `SELECT MIN(w.id) AS id,
+            MIN(w.title) AS title,
+            MIN(w.release_year) AS release_year,
+            MIN(w.image_url) AS image_url,
+            MIN(w.runtime) AS runtime,
+            MIN(w.genres) AS genres,
+            MAX(w.importance)::int AS importance,
+            COUNT(DISTINCT w.user_id)::int AS wanted_by,
+            STRING_AGG(DISTINCT u.username, ', ') AS wanted_by_names
+     FROM wishlists w
+     JOIN users u ON w.user_id = u.id
+     WHERE w.guild_id = $1
+     GROUP BY COALESCE(w.tmdb_id::text, LOWER(w.title))
+     ORDER BY COUNT(DISTINCT w.user_id) DESC, MAX(w.importance) DESC
+     LIMIT 25`,
+    [guildId]
+  );
+  return result.rows;
+};
+
 // ── Marathons (bot side) ─────────────────────────────────────────────────────
 
 // PARALLEL to backend/src/models/marathons.js (getMarathons) — intentionally
@@ -1066,6 +1121,27 @@ export const completeMarathonIfDone = async (marathonId) => {
 // as already watched: it is history, not part of tonight, and including it would
 // announce it a second time and overwrite its link to the real screening. Filtered
 // here rather than at each call site — there are three, and one of them was missed.
+// The whole lineup for /marathon — watched films included, which is the
+// difference from getMarathonItemsByMarathon below (that one feeds the binge
+// announcement, where a finished film has no place). The rating comes from the
+// night the item was tied to, so a film watched off-schedule and logged by hand
+// still shows what the room gave it.
+export const getMarathonRunningOrder = async (marathonId) => {
+  const result = await pool.query(
+    `SELECT mi.id, mi.position, mi.status, mi.scheduled_at, mi.title, mi.release_year,
+            mi.image_url, mi.runtime, mi.scheduled_movie_night_id,
+            (SELECT ROUND(AVG(r.score), 1) FROM ratings r
+               WHERE r.movie_night_id = mi.scheduled_movie_night_id) AS avg_rating,
+            (SELECT COUNT(*) FROM ratings r
+               WHERE r.movie_night_id = mi.scheduled_movie_night_id)::int AS rating_count
+     FROM marathon_items mi
+     WHERE mi.marathon_id = $1
+     ORDER BY mi.position ASC`,
+    [marathonId]
+  );
+  return result.rows;
+};
+
 export const getMarathonItemsByMarathon = async (marathonId) => {
   const result = await pool.query(
     `SELECT * FROM marathon_items

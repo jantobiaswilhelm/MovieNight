@@ -1,6 +1,5 @@
 import { SlashCommandBuilder } from 'discord.js';
-import { getUserRatings } from '../models/index.js';
-import { createMyRatingsEmbed } from '../utils/embeds.js';
+import { renderView } from '../handlers/index.js';
 import { createLogger } from '../utils/logger.js';
 
 const logger = createLogger('myratings');
@@ -11,10 +10,12 @@ export const data = new SlashCommandBuilder()
 
 export const execute = async (interaction) => {
   try {
-    const ratings = await getUserRatings(interaction.user.id, 15);
-    const embed = createMyRatingsEmbed(ratings, interaction.user.username);
-
-    await interaction.reply({ embeds: [embed], ephemeral: true });
+    const payload = await renderView('myratings', {
+      guildId: interaction.guildId,
+      user: interaction.user,
+      args: ['1', 'recent']
+    });
+    await interaction.reply(payload);
   } catch (err) {
     logger.error('Error fetching ratings', err);
     await interaction.reply({
