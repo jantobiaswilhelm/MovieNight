@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bot commands — refresh & additions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,600;1,600&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  :root{
+    --ink:#14110D; --ink-2:#1C1915; --ink-3:#252119;
+    --bone:#E8DFC9; --bone-dim:#A89E88; --bone-mute:#6B6556;
+    --ember:#D4663A; --gold:#E0A23A;
+    --rule:rgba(232,223,201,.08); --rule-strong:rgba(232,223,201,.16);
+    --font-ui:"Figtree",sans-serif; --font-mono:"JetBrains Mono",monospace; --font-display:"Fraunces",serif;
+    /* discord palette */
+    --dc-chat:#313338; --dc-embed:#2b2d31; --dc-input:#383a40; --dc-btn:#4e5058;
+    --dc-text:#dbdee1; --dc-muted:#949ba4; --dc-head:#f2f3f5; --dc-link:#00a8fc; --dc-mention:#3f4270; --dc-mention-tx:#c9cdfb;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--ink);color:var(--bone);font-family:var(--font-ui);padding:34px 40px 70px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1180px;margin:0 auto}
+
+  .head{margin:0 auto 34px}
+  .eyebrow{font-family:var(--font-mono);font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--bone-mute)}
+  .head h1{font-family:var(--font-display);font-style:italic;font-weight:600;font-size:32px;margin-top:12px}
+  .head p{color:var(--bone-dim);font-size:14.5px;margin-top:10px;max-width:720px;line-height:1.6}
+
+  h2.sec{font-family:var(--font-display);font-style:italic;font-weight:600;font-size:23px;margin:46px 0 6px;padding-top:26px;border-top:1px solid var(--rule-strong)}
+  h2.sec:first-of-type{border-top:none;padding-top:0}
+  .sec-sub{color:var(--bone-dim);font-size:14px;margin-bottom:22px;max-width:720px;line-height:1.6}
+
+  .pair{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:24px;align-items:start;margin-bottom:30px}
+  .caption{font-family:var(--font-mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--bone-dim);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+  .pill{border-radius:999px;padding:2px 8px;font-size:10px}
+  .pill.now{color:var(--bone-mute);border:1px solid var(--rule-strong);background:rgba(232,223,201,.04)}
+  .pill.new{color:var(--ember);border:1px solid rgba(212,102,58,.4);background:rgba(212,102,58,.12)}
+  .pill.add{color:var(--gold);border:1px solid rgba(224,162,58,.4);background:rgba(224,162,58,.12)}
+
+  /* discord channel frame */
+  .dc{background:var(--dc-chat);border-radius:10px;padding:16px 18px 20px;font-size:15px;color:var(--dc-text);line-height:1.375}
+  .dc.faded{opacity:.62}
+  .msg{display:flex;gap:14px}
+  .bot-av{width:40px;height:40px;border-radius:50%;background:var(--ember);flex-shrink:0;display:grid;place-items:center;color:var(--ink)}
+  .bot-av svg{width:22px}
+  .mbody{flex:1;min-width:0}
+  .mhead{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+  .mhead .nm{color:var(--dc-head);font-weight:600;font-size:15px}
+  .mhead .bot{background:var(--ember);color:var(--ink);font-size:10px;font-weight:700;padding:1px 5px;border-radius:4px}
+  .mhead .ts{color:var(--dc-muted);font-size:12px}
+  .cmdline{color:var(--dc-muted);font-size:13px;margin-bottom:8px}
+  .cmdline b{color:var(--dc-link);font-weight:500}
+
+  /* embed */
+  .embed{border-left:4px solid var(--ember);background:var(--dc-embed);border-radius:5px;padding:14px 16px 16px;max-width:560px;display:grid;grid-template-columns:1fr auto;gap:14px}
+  .embed.gold{border-left-color:var(--gold)}
+  .embed .etitle{color:var(--dc-head);font-weight:700;font-size:16px;margin-bottom:8px;line-height:1.25}
+  .embed .esub{color:var(--dc-muted);font-size:12.5px;margin:-4px 0 10px}
+  .embed .edesc{color:var(--dc-text);font-size:14px}
+  .col{min-width:0}
+  .thumb{width:86px;height:129px;border-radius:5px;background:var(--ink-3);display:grid;place-items:center;text-align:center;font-family:var(--font-mono);font-size:9px;color:var(--bone-mute);padding:6px;align-self:start}
+  .banner{grid-column:1/-1;height:104px;border-radius:5px;background:linear-gradient(120deg,var(--ink-3),#3a3128);display:grid;place-items:center;font-family:var(--font-mono);font-size:9px;color:var(--bone-mute);margin-top:4px}
+
+  /* rows */
+  .row{padding:7px 0;border-top:1px solid rgba(255,255,255,.06)}
+  .row:first-of-type{border-top:none}
+  .rt{color:var(--dc-head);font-weight:600;font-size:14.5px}
+  .rt .yr{color:var(--dc-muted);font-weight:400}
+  .rmeta{color:var(--dc-muted);font-size:12.5px;margin-top:2px;display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+  .meter{font-family:var(--font-mono);font-size:12.5px;color:var(--ember);letter-spacing:-.5px}
+  .meter.gold{color:var(--gold)}
+  .score{color:var(--dc-head);font-weight:700;font-size:13px}
+  .dotc{width:3px;height:3px;border-radius:50%;background:var(--dc-muted);display:inline-block}
+  .quote{color:var(--dc-muted);font-size:13px;font-style:italic;border-left:2px solid var(--dc-btn);padding-left:8px;margin-top:5px}
+  .ts-chip{color:var(--dc-link)}
+
+  /* stat band */
+  .band{display:flex;gap:22px;flex-wrap:wrap;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,.06)}
+  .stat .k{color:var(--dc-muted);font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+  .stat .v{color:var(--dc-head);font-size:19px;font-weight:700;font-family:var(--font-display);margin-top:1px}
+  .fieldhead{color:var(--dc-head);font-weight:700;font-size:12.5px;letter-spacing:.04em;margin:12px 0 6px;text-transform:uppercase}
+
+  .efoot{display:flex;align-items:center;gap:7px;color:var(--dc-muted);font-size:12px;margin-top:11px;padding-top:9px;border-top:1px solid rgba(255,255,255,.06)}
+  .btns{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+  .db{background:var(--dc-btn);color:#fff;border:none;border-radius:4px;padding:8px 14px;font-family:var(--font-ui);font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
+  .db svg{width:14px}
+  .db.primary{background:var(--ember);color:var(--ink)}
+  .db.off{opacity:.42}
+  .select{background:var(--dc-input);color:var(--dc-muted);border-radius:4px;padding:9px 13px;font-size:13.5px;margin-top:10px;max-width:360px;display:flex;justify-content:space-between;align-items:center}
+
+  .note{background:var(--ink-2);border:1px solid var(--rule);border-radius:8px;padding:13px 15px;font-size:13.5px;color:var(--bone-dim);line-height:1.62;display:flex;gap:10px;margin-top:2px}
+  .note svg{width:15px;color:var(--ember);flex-shrink:0;margin-top:2px}
+  .note b{color:var(--bone)}
+  .note.warn svg{color:var(--gold)}
+
+  .foot{margin:38px auto 0;font-size:13.5px;color:var(--bone-dim);background:var(--ink-2);border:1px solid var(--rule);border-radius:8px;padding:16px 18px;line-height:1.65}
+  .foot b{color:var(--bone)}
+  .foot ul{margin:9px 0 0 18px}
+  .foot li{margin-bottom:5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="head">
+    <div class="eyebrow">Bot output — proposed</div>
+    <h1>Bringing the older commands up to the newer standard</h1>
+    <p>Four commands still render as flat text from the original build, while <b>/next</b>, the announcements and the screening cards moved on to meters, posters and timestamp chips. Left column is what each prints today; right is the proposal. Then three new commands, for the features that are still web-only.</p>
+  </div>
+
+  <!-- ═══════════════ SECTION 1 — THE REFRESH ═══════════════ -->
+  <h2 class="sec">1 · The four that never got the refresh</h2>
+  <p class="sec-sub">No new concepts here — the same data, given the shape the rest of the bot already uses.</p>
+
+  <!-- /history -->
+  <div class="pair">
+    <div>
+      <div class="caption"><span class="pill now">Today</span> /history</div>
+      <div class="dc faded">
+        <div class="msg">
+          <div class="bot-av"><i data-lucide="clapperboard"></i></div>
+          <div class="mbody">
+            <div class="mhead"><span class="nm">MovieNight</span><span class="bot">BOT</span></div>
+            <div class="embed" style="max-width:none">
+              <div class="col">
+                <div class="etitle">Movie Night History</div>
+                <div class="edesc" style="font-size:13.5px;line-height:1.7">
+                  <b>1. Dune: Part Two</b><br><span style="color:var(--dc-link)">27 August 2026</span> | 8.4/10 (5 votes)<br><br>
+                  <b>2. Sicario</b><br><span style="color:var(--dc-link)">13 August 2026</span> | 7.4/10 (6 votes)<br><br>
+                  <b>3. Arrival</b><br><span style="color:var(--dc-link)">30 July 2026</span> | 8.2/10 (4 votes)
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="note" style="margin-top:12px"><i data-lucide="alert-triangle"></i><div>Capped at 25 with no way to go further back, no attendance, and the rating is a bare number.</div></div>
+    </div>
+
+    <div>
+      <div class="caption"><span class="pill new">Proposed</span> /history — paged, with attendance</div>
+      <div class="dc">
+        <div class="msg">
+          <div class="bot-av"><i data-lucide="clapperboard"></i></div>
+          <div class="mbody">
+            <div class="mhead"><span class="nm">MovieNight</span><span class="bot">BOT</span><span class="ts">Today at 8:14 PM</span></div>
+            <div class="cmdline"><b>/history</b></div>
+            <div class="embed">
+              <div class="col">
+                <div class="etitle">🎭 Movie Night History</div>
+                <div class="esub">Page 1 of 4 · 38 nights · server average 7.8</div>
+
+                <div class="row">
+                  <div class="rt">1. Dune: Part Two <span class="yr">(2024)</span></div>
+                  <div class="rmeta"><span class="meter">████████░░</span><span class="score">8.4</span><span class="dotc"></span><span>5 votes</span><span class="dotc"></span><span>4 attended</span><span class="dotc"></span><span class="ts-chip">27 Aug 2026</span></div>
+                </div>
+                <div class="row">
+                  <div class="rt">2. Sicario <span class="yr">(2015)</span></div>
+                  <div class="rmeta"><span class="meter">███████░░░</span><span class="score">7.4</span><span class="dotc"></span><span>6 votes</span><span class="dotc"></span><span>5 attended</span><span class="dotc"></span><span class="ts-chip">13 Aug 2026</span></div>
+                </div>
+                <div class="row">
+                  <div class="rt">3. Arrival <span class="yr">(2016)</span></div>
+                  <div class="rmeta"><span class="meter">████████░░</span><span class="score">8.2</span><span class="dotc"></span><span>4 votes</span><span class="dotc"></span><span>6 attended</span><span class="dotc"></span><span class="ts-chip">30 Jul 2026</span></div>
+                </div>
+                <div class="row">
+                  <div class="rt">4. Prisoners <span class="yr">(2013)</span></div>
+                  <div class="rmeta"><span class="meter">████████░░</span><span class="score">7.9</span><span class="dotc"></span><span>5 votes</span><span class="dotc"></span><span>4 attended</span><span class="dotc"></span><span class="ts-chip">16 Jul 2026</span></div>
+                </div>
+
+                <div class="efoot"><i data-lucide="clock" style="width:13px"></i><span>82 hours watched together</span></div>
+                <div class="btns">
+                  <button class="db off"><i data-lucide="chevron-left"></i> Newer</button>
+                  <button class="db">Older <i data-lucide="chevron-right"></i></button>
+                </div>
+              </div>
+              <div class="thumb">Dune: Part Two — poster</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- /stats -->
+  <div class="pair">
+    <div>
+      <div class="caption"><span class="pill now">Today</span> /stats</div>
+      <div class="dc faded">
+        <div class="msg">
+          <div class="bot-av"><i data-lucide="clapperboard"></i></div>
+          <div class="mbody">
+            <div class="mhead"><span class="nm">MovieNight</span><span class="bot">BOT</span></div>
+            <div class="embed" style="max-width:none">
+              <div class="col">
+                <div class="etitle">Movie Night Stats</div>
+                <div style="display:flex;gap:26px;margin:10px 0 12px">
+                  <div><div class="fieldhead" style="margin:0">Total Movies</div><div style="font-size:14px">38</div></div>
+                  <div><div class="fieldhead" style="margin:0">Total Ratings</div><div style="font-size:14px">214</div></div>
+                  <div><div class="fieldhead" style="margin:0">Avg Rating</div><div style="font-size:14px">7.8/10</div></div>
+                </div>
+                <div class="fieldhead">Top Rated Movies</div>
+                <div style="font-size:13.5px;line-height:1.7">1. <b>Dune: Part Two</b> - 8.4/10<br>2. <b>Arrival</b> - 8.2/10<br>3. <b>Sicario</b> - 7.4/10</div>
+                <div class="fieldhead">Most Active Raters</div>
+                <div style="font-size:13.5px;line-height:1.7">1. <b>kira</b> - 38 ratings (avg: 7.2)<br>2. <b>sam</b> - 31 ratings (avg: 8.1)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="note" style="margin-top:12px"><i data-lucide="alert-triangle"></i><div>Three counters and two lists. No watch time, no time filter, nothing to look at.</div></div>
+    </div>
+
+    <div>
+      <div class="caption"><span class="pill new">Proposed</span> /stats — with watch time and a time filter</div>
+      <div class="dc">
+        <div class="msg">
+          <div class="bot-av"><i data-lucide="clapperboard"></i></div>
+          <div class="mbody">
+            <div class="mhead"><span class="nm">MovieNight</span><span class="bot">BOT</span><span class="ts">Today at 8:20 PM</span></div>
+            <div class="cmdline"><b>/stats</b></div>
+            <div class="embed" style="grid-template-columns:1fr">
+              <div class="col">
+                <div class="etitle">📊 Movie Night Stats</div>
+                <div class="esub">All time · since 14 Jan 2026</div>
+
+                <div class="band">
+                  <div class="stat"><div class="k">Nights</div><div class="v">38</div></div>
+                  <div class="stat"><div class="k">Ratings</div><div class="v">214</div></div>
+                  <div class="stat"><div class="k">Average</div><div class="v">7.8</div></div>
+                  <div class="stat"><div class="k">Watched</div><div class="v">82h</div></div>
+                  <div class="stat"><div class="k">Regulars</div><div class="v">9</div></div>
+                </div>
+
+                <div class="fieldhead">🏆 Best rated</div>
+                <div class="row">
+                  <div class="rmeta" style="margin:0"><span style="font-size:15px">🥇</span><span class="rt" style="font-size:14px">Dune: Part Two</span><span class="meter gold">████████░░</span><span class="score">8.4</span></div>
+                </div>
+                <div class="row">
+                  <div class="rmeta" style="margin:0"><span style="font-size:15px">🥈</span><span class="rt" style="font-size:14px">Arrival</span><span class="meter gold">████████░░</span><span class="score">8.2</span></div>
+                </div>
+                <div class="row">
+                  <div class="rmeta" style="margin:0"><span style="font-size:15px">🥉</span><span class="rt" style="font-size:14px">Sicario</span><span class="meter gold">███████░░░</span><span class="score">7.4</span></div>
+                </div>
+
+                <div class="fieldhead">🎙️ Most active</div>
+                <div class="row">
+                  <div class="rmeta" style="margin:0"><span class="rt" style="font-size:14px">kira</span><span>38 ratings</span><span class="dotc"></span><span>avg 7.2</span><span class="dotc"></span><span>34 nights attended</span></div>
+                </div>
+                <div class="row">
+                  <div class="rmeta" style="margin:0"><span class="rt" style="font-size:14px">sam</span><span>31 ratings</span><span class="dotc"></span><span>avg 8.1</span><span class="dotc"></span><span>28 nights attended</span></div>
+                </div>
+
+                <div class="btns">
+                  <button class="db"><i data-lucide="calendar"></i> This month</button>
+                  <button class="db"><i data-lucide="calendar-range"></i> This year</button>
+                  <button class="db"><i data-lucide="user"></i> My stats</button>
+                </div>
+              </div>
+              <div class="banner">backdrop of the top-rated film — setImage()</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="note" style="margin-top:12px"><i data-lucide="database"></i><div><b>New data:</b> watch time (sum of runtime over started nights), attendance counts per rater, and a date-bounded variant of the three existing stat queries. Everything else is already in the model layer.</div></div>
+    </div>
+  </div>
+
+  <!-- /myratings -->
+  <div class="pair">
+    <div>
+      <div class="caption"><span class="pill now">Today</span> /myratings</div>
+      <div class="dc faded">
+        <div class="msg">
+          <div class="bot-av"><i data-lucide="clapperboard"></i></div>
+          <div class="mbody">
+            <div class="mhead"><span class="nm">MovieNight</span><span class="bot">BOT</span></div>
+            <div class="embed" style="max-width:none">
+              <div class="col">
+                <div class="etitle">kira's Ratings</div>
+                <div class="edesc" style="font-size:13.5px;line-height:1.7">
+                  <b>1. Dune: Part Two</b> - 8.5/10<br><span style="color:var(--dc-link)">27 August 2026</span><br>
+                  <span style="color:var(--dc-muted)">&gt; "Best sound design in years"</span><br><br>
+                  <b>2. Arrival</b> - 9.0/10<br><span style="color:var(--dc-link)">30 July 2026</span><br><br>
+                  <b>3. Sicario</b> - 7.0/10<br><span style="color:var(--dc-link)">13 August 2026</span>
+                  <div style="color:var(--gold);margin-top:10px">…and 44 more, all in this one block</div>
+                </div>
+                <div class="efoot">Your average rating: 7.4/10</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="note warn" style="margin-top:12px"><i data-lucide="alert-triangle"></i><div><b>This one is a live bug.</b> Every rating is concatenated into a single description with no cap. Discord rejects a description over 4096 characters, so the command starts throwing outright for anyone with roughly 40+ rated films.</div></div>
+    </div>
+
+    <div>
+      <div class="caption"><span class="pill new">Proposed</span> /myratings — paged and sortable</div>
+      <div class="dc">
+        <div class="msg">
+          <div class="bot-av"><i data-lucide="clapperboard"></i></div>
+          <div class="mbody">
+            <div class="mhead"><span class="nm">MovieNight</span><span class="bot">BOT</span><span class="ts">Today at 8:31 PM</span></div>
+            <div class="cmdline"><b>/myratings</b></div>
+            <div class="embed">
+              <div class="col">
+                <div class="etitle">⭐ kira's Ratings</div>
+                <div class="esub">Page 1 of 5 · 47 films rated · average 7.4</div>
+
+                <div class="row">
+                  <div class="rt">Arrival <span class="yr">(2016)</span></div>
+                  <div class="rmeta"><span class="meter">█████████░</span><span class="score">9.0</span><span class="dotc"></span><span>server 8.2</span><span class="dotc"></span><span class="ts-chip">30 Jul 2026</span></div>
+                </div>
+                <div class="row">
+                  <div class="rt">Dune: Part Two <span class="yr">(2024)</span></div>
+                  <div class="rmeta"><span class="meter">████████░░</span><span class="score">8.5</span><span class="dotc"></span><span>server 8.4</span><span class="dotc"></span><span class="ts-chip">27 Aug 2026</span></div>
+                  <div class="quote">Best sound design in years</div>
+                </div>
+                <div class="row">
+                  <div class="rt">Sicario <span class="yr">(2015)</span></div>
+                  <div class="rmeta"><span class="meter">███████░░░</span><span class="score">7.0</span><span class="dotc"></span><span>server 7.4</span><span class="dotc"></span><span class="ts-chip">13 Aug 2026</span></div>
+                </div>
+
+                <div class="efoot"><i data-lucide="trending-up" style="width:13px"></i><span>You rate 0.4 below the server on average</span></div>
+                <div class="select"><span>Sort: highest first</span><i data-lucide="chevron-down" style="width:15px"></i></div>
+                <div class="btns">
+                  <button class="db off"><i data-lucide="chevron-left"></i></button>
+                  <button class="db"><i data-lucide="chevron-right"></i></button>
+                </div>
+              </div>
+              <div class="thumb">Arrival — poster</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- /top10 -->
+  <div class="pair">
+    <div>
+      <div class="caption"><span class="pill now">Today</span> /top10</div>
+      <div class="dc faded">
+        <div class="msg">
+          <div class="bot-av"><i data-lucide="clapperboard"></i></div>
+          <div class="mbody">
+            <div class="mhead"><span class="nm">MovieNight</span><span class="bot">BOT</span></div>
+            <div class="embed gold" style="max-width:none">
+              <div class="col">
+                <div class="etitle">kira's Top 10 Movies</div>
+                <div class="edesc" style="font-size:13.5px;line-height:1.85">
+                  🥇 <b>Arrival</b> - 9.0/10 (avg: 8.2)<br>
+                  🥈 <b>Dune: Part Two</b> - 8.5/10 (avg: 8.4)<br>
+                  🥉 <b>Prisoners</b> - 8.0/10 (avg: 7.9)<br>
+                  <b>4.</b> <b>Sicario</b> - 7.0/10 (avg: 7.4)
+                </div>
+                <div class="efoot">Top 4 average: 8.1/10</div>
+              </div>
+              <div class="thumb">Arrival — poster</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="note" style="margin-top:12px"><i data-lucide="info"></i><div>The closest to fine already. It just can't look at anyone else's ten.</div></div>
+    </div>
+
+    <div>
+      <div class="caption"><span class="pill new">Proposed</span> /top10 — can target another member</div>
+      <div class="dc">
+        <div class="msg">
+          <div class="bot-av"><i data-lucide="clapperboard"></i></div>
+          <div class="mbody">
+            <div class="mhead"><span class="nm">MovieNight</span><span class="bot">BOT</span><span class="ts">Today at 8:36 PM</span></div>
+            <div class="cmdline"><b>/top10</b> user: <span class="mention" style="padding:0 4px">@sam</span></div>
+            <div class="embed gold">
+              <div class="col">
+                <div class="etitle">🏆 sam's Top 10</div>
+                <div class="esub">31 films rated · average 8.1 · agrees with the server 6 times out of 10</div>
+
+                <div class="row">
+                  <div class="rmeta" style="margin:0"><span style="font-size:15px">🥇</span><span class="rt" style="font-size:14px">Heat <span class="yr">(1995)</span></span></div>
+                  <div class="rmeta"><span class="meter gold">██████████</span><span class="score">10</span><span class="dotc"></span><span>server 8.0</span><span style="color:var(--ember)">▲ 2.0</span></div>
+                </div>
+                <div class="row">
+                  <div class="rmeta" style="margin:0"><span style="font-size:15px">🥈</span><span class="rt" style="font-size:14px">Arrival <span class="yr">(2016)</span></span></div>
+                  <div class="rmeta"><span class="meter gold">█████████░</span><span class="score">9.0</span><span class="dotc"></span><span>server 8.2</span><span style="color:var(--ember)">▲ 0.8</span></div>
+                </div>
+                <div class="row">
+                  <div class="rmeta" style="margin:0"><span style="font-size:15px">🥉</span><span class="rt" style="font-size:14px">Sicario <span class="yr">(2015)</span></span></div>
+                  <div class="rmeta"><span class="meter gold">████████░░</span><span class="score">8.5</span><span class="dotc"></span><span>server 7.4</span><span style="color:var(--ember)">▲ 1.1</span></div>
+                </div>
+
+                <div class="efoot"><i data-lucide="zap" style="width:13px"></i><span>Biggest hot take: <b style="color:var(--dc-head)">Heat</b>, 2.0 above the room</span></div>
+              </div>
+              <div class="thumb">Heat — poster</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ SECTION 2 — NEW COMMANDS ═══════════════ -->
+  <h2 class="sec">2 · Three commands for the web-only features</h2>
+  <p class="sec-sub">The board, wishlists and marathons all live on the site today. These bring the read — and the cheap parts of the write — into chat.</p>
+
+  <div class="pair" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr)">
+    <!-- /board -->
+    <div>
+      <div class="caption"><span class="pill add">New</span> /board — suggest and upvote without leaving Discord</div>
+      <div class="dc">
+        <div class="msg">
+          <div class="bot-av"><i data-lucide="clapperboard"></i></div>
+          <div class="mbody">
+            <div class="mhead"><span class="nm">MovieNight</span><span class="bot">BOT</span><span class="ts">Today at 9:02 PM</span></div>
+            <div class="cmdline"><b>/board</b></div>
+            <div class="embed">
+              <div class="col">
+                <div class="etitle">🗳️ The Suggestion Board</div>
+                <div class="esub">6 open · 3 you haven't voted on yet</div>
+
+                <div class="row">
+                  <div class="rmeta" style="margin:0"><span class="meter" style="font-size:14px">▲ 4</span><span class="rt" style="font-size:14.5px">The Thing <span class="yr">(1982)</span></span></div>
+                  <div class="rmeta">John Carpenter<span class="dotc"></span>1h 49m<span class="dotc"></span>suggested by kira</div>
+                </div>
+                <div class="row">
+                  <div class="rmeta" style="margin:0"><span class="meter" style="font-size:14px">▲ 2</span><span class="rt" style="font-size:14.5px">Heat <span class="yr">(1995)</span></span></div>
+                  <div class="rmeta">Michael Mann<span class="dotc"></span>2h 50m<span class="dotc"></span>suggested by sam</div>
+                </div>
+                <div class="row">
+                  <div class="rmeta" style="margin:0"><span class="meter" style="font-size:14px;opacity:.5">▲ 0</span><span class="rt" style="font-size:14.5px">Tampopo <span class="yr">(1985)</span></span></div>
+                  <div class="rmeta">Juzo Itami<span class="dotc"></span>1h 54m<span class="dotc"></span>suggested by you</div>
+                </div>
+
+                <div class="select"><span>▲ Upvote a film…</span><i data-lucide="chevron-down" style="width:15px"></i></div>
+                <div class="btns">
+                  <button class="db primary"><i data-lucide="plus"></i> Suggest a film</button>
+                  <button class="db"><i data-lucide="calendar-plus"></i> Schedule top 🔒</button>
+                </div>
+              </div>
+              <div class="thumb">The Thing — poster</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="note" style="margin-top:12px"><i data-lucide="info"></i><div><b>Suggesting</b> goes through <b>/board suggest title:…</b> with TMDB autocomplete, the same as <b>/announce</b> — Discord modals can't autocomplete, so a subcommand beats a popup here. Upvoting is a select menu, so one click covers any film on the board.</div></div>
+    </div>
+
+    <!-- /wishlist -->
+    <div>
+      <div class="caption"><span class="pill add">New</span> /wishlist — yours, the server's, or a random pick</div>
+      <div class="dc">
+        <div class="msg">
+          <div class="bot-av"><i data-lucide="clapperboard"></i></div>
+          <div class="mbody">
+            <div class="mhead"><span class="nm">MovieNight</span><span class="bot">BOT</span><span class="ts">Today at 9:07 PM</span></div>
+            <div class="cmdline"><b>/wishlist</b></div>
+            <div class="embed">
+              <div class="col">
+                <div class="etitle">🎯 kira's Wishlist</div>
+                <div class="esub">7 films · 2 also on someone else's list</div>
+
+                <div class="row">
+                  <div class="rmeta" style="margin:0"><span class="meter gold" style="font-size:13px">★★★★★</span><span class="rt" style="font-size:14.5px">The Thing <span class="yr">(1982)</span></span></div>
+                  <div class="rmeta">1h 49m<span class="dotc"></span>Horror, Sci-Fi<span class="dotc"></span><span style="color:var(--ember)">also on sam's list</span></div>
+                </div>
+                <div class="row">
+                  <div class="rmeta" style="margin:0"><span class="meter gold" style="font-size:13px">★★★☆☆</span><span class="rt" style="font-size:14.5px">Heat <span class="yr">(1995)</span></span></div>
+                  <div class="rmeta">2h 50m<span class="dotc"></span>Crime, Drama</div>
+                </div>
+                <div class="row">
+                  <div class="rmeta" style="margin:0"><span class="meter gold" style="font-size:13px">★★☆☆☆</span><span class="rt" style="font-size:14.5px">Tampopo <span class="yr">(1985)</span></span></div>
+                  <div class="rmeta">1h 54m<span class="dotc"></span>Comedy</div>
+                </div>
+
+                <div class="btns">
+                  <button class="db primary"><i data-lucide="dices"></i> Pick one for me</button>
+                  <button class="db"><i data-lucide="users"></i> Server wishlist</button>
+                </div>
+              </div>
+              <div class="thumb">The Thing — poster</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="note" style="margin-top:12px"><i data-lucide="dices"></i><div><b>Pick one for me</b> is the random picker from the site, weighted by priority. It replies ephemerally so it doesn't spam the channel when someone spins it four times.</div></div>
+    </div>
+  </div>
+
+  <!-- /marathon -->
+  <div class="pair" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr)">
+    <div>
+      <div class="caption"><span class="pill add">New</span> /marathon — the full running order</div>
+      <div class="dc">
+        <div class="msg">
+          <div class="bot-av"><i data-lucide="clapperboard"></i></div>
+          <div class="mbody">
+            <div class="mhead"><span class="nm">MovieNight</span><span class="bot">BOT</span><span class="ts">Today at 9:15 PM</span></div>
+            <div class="cmdline"><b>/marathon</b></div>
+            <div class="embed">
+              <div class="col">
+                <div class="etitle">🍿 Villeneuve Marathon</div>
+                <div class="esub">📆 Scheduled run · started 12 Jun 2026 · 4 regulars</div>
+                <div class="rmeta" style="margin-bottom:8px"><span class="meter">████░░░░░░</span><span class="score">2 of 5 watched</span></div>
+
+                <div class="row"><div class="rmeta" style="margin:0"><span>✅</span><span class="rt" style="font-size:14px">Blade Runner 2049</span><span class="meter">████████░░</span><span class="score">8.4</span></div></div>
+                <div class="row"><div class="rmeta" style="margin:0"><span>✅</span><span class="rt" style="font-size:14px">Sicario</span><span class="meter">███████░░░</span><span class="score">7.9</span></div></div>
+                <div class="row"><div class="rmeta" style="margin:0"><span>📅</span><span class="rt" style="font-size:14px">Dune: Part Two</span><span class="ts-chip">in 4 days</span></div></div>
+                <div class="row"><div class="rmeta" style="margin:0;opacity:.62"><span>○</span><span class="rt" style="font-size:14px">Enemy</span><span>not scheduled</span></div></div>
+                <div class="row"><div class="rmeta" style="margin:0;opacity:.62"><span>○</span><span class="rt" style="font-size:14px">Prisoners</span><span>not scheduled</span></div></div>
+
+                <div class="efoot"><i data-lucide="trending-up" style="width:13px"></i><span>Running average 8.2 — the best marathon so far</span></div>
+                <div class="btns">
+                  <button class="db primary"><i data-lucide="check"></i> I'm in</button>
+                  <button class="db"><i data-lucide="chevron-right"></i> Halloween Binge</button>
+                </div>
+              </div>
+              <div class="thumb">Villeneuve — poster fan</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="note" style="margin-top:12px"><i data-lucide="info"></i><div>This is the "full running order" shape you turned down for <b>/next</b> — it's too long for a board that lists several marathons, but it's exactly right as a command about one.</div></div>
+    </div>
+
+    <div>
+      <div class="caption">Where each command gets its data</div>
+      <div class="note" style="display:block;line-height:1.75">
+        <div style="margin-bottom:12px"><b style="color:var(--ember)">Already in the bot's model layer</b><br>
+        <span style="font-family:var(--font-mono);font-size:12px">getMovieNights · getGuildStats · getTopRatedMovies · getMostActiveRaters · getUserRatings · getUserTopRatedMovies · getGuildActiveMarathons · getMarathonItemsByMarathon · getTopBoardSuggestions · toggleMarathonAttendance</span></div>
+
+        <div style="margin-bottom:12px"><b style="color:var(--gold)">New queries needed</b><br>
+        <span style="font-family:var(--font-mono);font-size:12px">watch time · attendance-per-rater · date-bounded stats · paged history / ratings · wishlist read + random pick · board upvote write</span><br>
+        <span style="font-size:12.5px">Most have a backend twin already written — they need a bot-side copy carrying a <b>// PARALLEL</b> comment, per the convention in the repo.</span></div>
+
+        <div><b style="color:var(--bone)">Shared plumbing</b><br>
+        <span style="font-size:12.5px">Pagination reuses the stateless <b>customId</b> pattern <b>/next</b> just introduced — the page number rides in the id, every press re-queries, and the buttons survive a bot restart. One helper covers <b>/history</b>, <b>/myratings</b> and the board.</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ SECTION 3 — THE HUB ═══════════════ -->
+  <h2 class="sec">3 · <span style="font-style:normal">/movienight</span> — one door to all of it</h2>
+  <p class="sec-sub">Every command above becomes a renderer that returns an embed and its buttons. Once that's true, a hub is nearly free: pick from the menu and the same message re-renders in place, no new message per hop.</p>
+
+  <div class="pair" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr)">
+    <div>
+      <div class="caption"><span class="pill add">New</span> /movienight — the landing screen</div>
+      <div class="dc">
+        <div class="msg">
+          <div class="bot-av"><i data-lucide="clapperboard"></i></div>
+          <div class="mbody">
+            <div class="mhead"><span class="nm">MovieNight</span><span class="bot">BOT</span><span class="ts">Today at 9:41 PM</span></div>
+            <div class="cmdline">Only you can see this <span class="dotc"></span> <b>/movienight</b></div>
+            <div class="embed">
+              <div class="col">
+                <div class="etitle">🎬 MovieNight</div>
+                <div class="esub">38 nights watched together · 82 hours · average 7.8</div>
+
+                <div class="row">
+                  <div class="rmeta" style="margin:0"><span>🍿</span><span class="rt" style="font-size:14px">Up next — Dune: Part Two</span></div>
+                  <div class="rmeta"><span class="ts-chip">in 4 days</span><span class="dotc"></span><span>3 attending</span><span class="dotc"></span><span>Villeneuve Marathon (3/5)</span></div>
+                </div>
+                <div class="row">
+                  <div class="rmeta" style="margin:0"><span>🗳️</span><span class="rt" style="font-size:14px">The Thing leads the board</span></div>
+                  <div class="rmeta"><span>4 upvotes</span><span class="dotc"></span><span style="color:var(--ember)">you haven't voted</span></div>
+                </div>
+
+                <div class="select"><span>Jump to…</span><i data-lucide="chevron-down" style="width:15px"></i></div>
+                <div class="btns">
+                  <button class="db primary"><i data-lucide="plus"></i> Suggest a film</button>
+                  <button class="db"><i data-lucide="check"></i> I'm in for Friday</button>
+                </div>
+              </div>
+              <div class="thumb">Dune: Part Two — poster</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="note" style="margin-top:12px"><i data-lucide="eye-off"></i><div><b>Ephemeral.</b> A personal navigation surface shouldn't sit in the channel forever, and it means one person browsing doesn't drag everyone else's view around — the opposite of <b>/next</b>, which is deliberately shared.</div></div>
+    </div>
+
+    <div>
+      <div class="caption">The menu, open</div>
+      <div class="dc">
+        <div class="msg" style="gap:0">
+          <div class="mbody">
+            <div style="background:var(--dc-input);border-radius:5px;padding:8px;max-width:420px">
+              <div style="color:var(--dc-muted);font-size:12px;padding:4px 8px 8px">JUMP TO…</div>
+              <div class="row" style="border:none;padding:8px;border-radius:4px;background:rgba(255,255,255,.04)">
+                <div class="rmeta" style="margin:0"><span>🎬</span><span class="rt" style="font-size:14px">What's coming up</span></div>
+                <div class="rmeta" style="margin-left:22px">the schedule, calendar and marathons — <span style="font-family:var(--font-mono);font-size:11.5px">/next</span></div>
+              </div>
+              <div class="row" style="border:none;padding:8px">
+                <div class="rmeta" style="margin:0"><span>🗳️</span><span class="rt" style="font-size:14px">The suggestion board</span></div>
+                <div class="rmeta" style="margin-left:22px">suggest and upvote — <span style="font-family:var(--font-mono);font-size:11.5px">/board</span></div>
+              </div>
+              <div class="row" style="border:none;padding:8px">
+                <div class="rmeta" style="margin:0"><span>🎯</span><span class="rt" style="font-size:14px">My wishlist</span></div>
+                <div class="rmeta" style="margin-left:22px">yours, the server's, or a random pick — <span style="font-family:var(--font-mono);font-size:11.5px">/wishlist</span></div>
+              </div>
+              <div class="row" style="border:none;padding:8px">
+                <div class="rmeta" style="margin:0"><span>⭐</span><span class="rt" style="font-size:14px">My ratings</span></div>
+                <div class="rmeta" style="margin-left:22px">everything you scored — <span style="font-family:var(--font-mono);font-size:11.5px">/myratings</span></div>
+              </div>
+              <div class="row" style="border:none;padding:8px">
+                <div class="rmeta" style="margin:0"><span>🏆</span><span class="rt" style="font-size:14px">Top tens</span></div>
+                <div class="rmeta" style="margin-left:22px">yours or anyone's — <span style="font-family:var(--font-mono);font-size:11.5px">/top10</span></div>
+              </div>
+              <div class="row" style="border:none;padding:8px">
+                <div class="rmeta" style="margin:0"><span>🎭</span><span class="rt" style="font-size:14px">History &amp; stats</span></div>
+                <div class="rmeta" style="margin-left:22px">what we've watched — <span style="font-family:var(--font-mono);font-size:11.5px">/history</span> <span style="font-family:var(--font-mono);font-size:11.5px">/stats</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="note" style="margin-top:12px;display:block;line-height:1.75">
+        <div style="margin-bottom:10px"><b style="color:var(--ember)">Why it's cheap</b><br>
+        <span style="font-size:12.5px">Each command already has to build <span style="font-family:var(--font-mono);font-size:12px">{ embeds, components }</span> from a guild id — that's the shape <b>renderNextView</b> established. The hub is a select menu that calls one of those renderers and hands the result to <span style="font-family:var(--font-mono);font-size:12px">interaction.update()</span>.</span></div>
+        <div><b style="color:var(--gold)">One open question</b><br>
+        <span style="font-size:12.5px">This overlaps <b>/help</b>, which is a static list of command names. Either <b>/help</b> stays as the plain reference and <b>/movienight</b> is the live one, or <b>/help</b> simply becomes this. Your call — I'd keep both, since people type <b>/help</b> by reflex.</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <b>What this comes to.</b>
+    <ul>
+      <li><b>Section 1</b> is pure embed-builder work — same data, new shape — plus three new stat queries. Fully unit-testable against the existing <span style="font-family:var(--font-mono);font-size:12px">node --test</span> setup, no Discord round-trip needed.</li>
+      <li><b>Section 2</b> adds three commands, one select menu and one write path (the board upvote), which is the only place here that changes data.</li>
+      <li><b>The /myratings overflow is a real bug</b>, not a polish item — pagination is the fix, so that one is worth doing regardless of what else you keep.</li>
+      <li><b>Section 3</b> is the cheapest thing on the page <em>if it goes last</em> — it's a menu over renderers the first two sections already built. Built first, it would mean writing those renderers twice.</li>
+      <li>Anything here can be dropped without affecting the rest. If <b>/wishlist</b> or the <b>/stats</b> backdrop isn't worth it, say so and it goes.</li>
+    </ul>
+  </div>
+
+</div>
+<script>lucide.createIcons();</script>
+</body>
+</html>
