@@ -91,7 +91,11 @@
   background: var(--bone-mute);
   border-radius: var(--r-full);
   display: inline-block;
+  flex: none;
 }
+/* A flex item defaults to min-width:auto and so refuses to shrink below its
+   own text, pushing the genre list past the hero's overflow edge. */
+.hero-genre-list{ min-width: 0; }
 
 .hero-title{
   font-family: var(--font-display);
@@ -453,7 +457,8 @@
   position: absolute;
   left: 0; top: 0; bottom: 0;
   background: var(--bone-dim);
-  transition: width var(--dur-3) var(--ease-out), background var(--dur-1) var(--ease-out);
+  /* Width is not animated — it relayouts the row every frame. */
+  transition: background var(--dur-1) var(--ease-out);
 }
 
 .vote-count{
@@ -499,20 +504,26 @@
   gap: var(--s-5);
   padding: var(--s-5) 0 var(--s-3);
 }
-/* Faint backdrop of the rated movie, feathered into the page. */
-.rf-bg{
+/* Faint backdrop of the rated movie, feathered into the page.
+   Two stacked layers crossfade on rotation; the outgoing image holds the
+   stage until the incoming one has decoded, so the panel never goes empty. */
+.rf-bgs{
   position: absolute;
   inset: 0;
   z-index: 0;
-  background-size: cover;
-  background-position: center;
-  opacity: .14;
   pointer-events: none;
   -webkit-mask-image: radial-gradient(ellipse 78% 78% at center, #000 20%, transparent 82%);
   mask-image: radial-gradient(ellipse 78% 78% at center, #000 20%, transparent 82%);
-  animation: rf-bg-fade var(--dur-3) var(--ease-out);
 }
-@keyframes rf-bg-fade{ from{ opacity: 0; } to{ opacity: .14; } }
+.rf-bg{
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  opacity: 0;
+  transition: opacity var(--dur-3) var(--ease-out);
+}
+.rf-bg.is-visible{ opacity: .14; }
 .rf-stage{
   position: relative;
   z-index: 1;
@@ -641,6 +652,7 @@
 }
 @media (prefers-reduced-motion: reduce){
   .rf-card{ animation: none; }
+  .rf-bg{ transition: none; }
 }
 @media (max-width: 640px){
   .rf-nav{ display: none; }

@@ -395,6 +395,17 @@ select{
 /* ──────────────────────────────────────────────────────────────────────────
    8. CHIPS · BADGES · STARS
    ────────────────────────────────────────────────────────────────────────── */
+
+/* Posters fade in over their held surface once decoded — see PosterImg.jsx. */
+.poster-img{
+  opacity: 0;
+  transition: opacity var(--dur-2) var(--ease-out);
+}
+.poster-img.is-loaded{ opacity: 1; }
+@media (prefers-reduced-motion: reduce){
+  .poster-img{ transition: none; }
+}
+
 .chip{
   display: inline-flex;
   align-items: center;

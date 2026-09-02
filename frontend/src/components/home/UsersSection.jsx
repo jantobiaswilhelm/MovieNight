@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getGuildUsers } from '../../api/client';
 import { getAvatarUrl } from '../../utils/helpers';
+import { SectionHead } from '../ui';
 import './UsersSection.css';
 
 const UsersSection = () => {
@@ -27,7 +28,7 @@ const UsersSection = () => {
   if (loading) {
     return (
       <div className="users-section">
-        <h3>Members</h3>
+        <SectionHead num="05" title="Members" />
         <div className="users-grid">
           {[...Array(8)].map((_, i) => (
             <div key={i} className="user-item user-skeleton">
@@ -49,10 +50,7 @@ const UsersSection = () => {
 
   return (
     <div className="users-section">
-      <div className="users-section-header">
-        <h3>Members</h3>
-        <span className="users-count">{users.length} raters</span>
-      </div>
+      <SectionHead num="05" title="Members" meta={`${users.length} raters`} />
       <div className={`users-grid ${expanded ? 'expanded' : ''}`}>
         {displayedUsers.map((user) => (
           <Link key={user.id} to={`/user/${user.id}`} className="user-item">

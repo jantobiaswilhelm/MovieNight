@@ -8,6 +8,8 @@ import {
   deleteTestMovies
 } from '../../api/client';
 import { SEASONAL_KEYS } from '../../utils/seasonalTheme';
+import { Icon } from '../ui';
+import './AdminSettingsPanel.css';
 
 const SEASON_LABELS = {
   halloween: 'Halloween',
@@ -85,9 +87,11 @@ const AdminSettingsPanel = ({ onDataRefresh, seasonPreview = null, onSeasonPrevi
     <section className="admin-settings-section">
       <button
         className="admin-settings-toggle"
+        aria-expanded={showAdminSettings}
         onClick={() => setShowAdminSettings(!showAdminSettings)}
       >
-        Admin Settings {showAdminSettings ? '\u25B2' : '\u25BC'}
+        Admin Settings
+        <Icon name="chevron" size={12} />
       </button>
 
       {showAdminSettings && (
@@ -137,7 +141,7 @@ const AdminSettingsPanel = ({ onDataRefresh, seasonPreview = null, onSeasonPrevi
 
           <div className="admin-setting-actions">
             <button
-              className="btn-primary btn-small"
+              className="btn sm"
               onClick={handleSaveSettings}
               disabled={savingSettings}
             >
@@ -146,7 +150,7 @@ const AdminSettingsPanel = ({ onDataRefresh, seasonPreview = null, onSeasonPrevi
 
             {testMovieCount > 0 && (
               <button
-                className="btn-danger btn-small"
+                className="btn sm destructive"
                 onClick={handleDeleteTestMovies}
                 disabled={deletingTestMovies}
               >

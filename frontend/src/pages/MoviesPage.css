@@ -148,7 +148,9 @@
   border-radius: var(--r-2);
   overflow: hidden;
   border: 1px solid var(--rule);
-  background: var(--ink-2);
+  /* Lifted a step off the page so an unloaded poster reads as a held frame
+     rather than a hole in the grid. */
+  background: var(--ink-3);
   transition: border-color var(--dur-1) var(--ease-out);
 }
 .mg-poster img{
@@ -207,6 +209,10 @@
 .mg-meta{
   display: flex;
   align-items: center;
+  /* Year + date + rewatch count overruns the card at narrow column widths;
+     wrapping keeps the rewatch badge off the date line instead of over it. */
+  flex-wrap: wrap;
+  row-gap: var(--s-1);
   gap: var(--s-2);
   font-family: var(--font-mono);
   font-size: var(--fs-11);

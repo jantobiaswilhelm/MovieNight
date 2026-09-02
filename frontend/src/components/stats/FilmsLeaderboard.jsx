@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import SegmentedControl from './SegmentedControl';
 import Backdrop from './Backdrop';
+import { PosterImg } from '../common';
 import './shared.css';
 
 const PERIOD_LABEL = { month: 'this month', year: 'this year', all: 'all time' };
@@ -42,7 +43,7 @@ export default function FilmsLeaderboard({ stats }) {
               <Link to={`/movie/${m.id}`} className="st-rank">
                 <span className="st-rk">{String(i + 1).padStart(2, '0')}</span>
                 {m.image_url
-                  ? <img className="st-thumb" src={m.image_url} alt="" loading="lazy" />
+                  ? <PosterImg className="st-thumb" src={m.image_url} alt="" />
                   : <span className="st-thumb st-thumb-empty" aria-hidden="true" />}
                 <div className="st-rbody">
                   <span className="st-rname">{m.title}</span>

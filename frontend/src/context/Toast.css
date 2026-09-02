@@ -17,7 +17,6 @@
   padding: var(--s-3);
   background: var(--ink-2);
   border: 1px solid var(--rule-strong);
-  border-left-width: 3px;
   border-radius: var(--r-2);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
   color: var(--bone);
@@ -26,9 +25,10 @@
   animation: ui-toast-in var(--dur-1) var(--ease-out);
 }
 
-.ui-toast-success { border-left-color: var(--ember); }
-.ui-toast-error { border-left-color: var(--red); }
-.ui-toast-info { border-left-color: var(--rule-strong); }
+/* The whole frame carries the variant rather than a thick left slab. */
+.ui-toast-success { border-color: var(--ember); }
+.ui-toast-error { border-color: var(--red); }
+.ui-toast-info { border-color: var(--rule-strong); }
 
 .ui-toast-msg {
   flex: 1;

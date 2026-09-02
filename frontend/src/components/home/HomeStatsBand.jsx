@@ -34,9 +34,11 @@ export default function HomeStatsBand({ stats, seasonalKey = null }) {
         label="Hours watched"
         value={revealed ? <CountUp value={hours} /> : FAKE.hours}
       />
+      {/* Counts may count; a 1–10 average may not. Ticking it up from zero
+          reads as broken data ("0.3/10") for the length of the animation. */}
       <Stat
         label="Average rating"
-        value={revealed ? <CountUp value={avg} decimals={1} /> : FAKE.rating}
+        value={revealed ? avg.toFixed(1) : FAKE.rating}
         unit={revealed ? '/10' : '/11'}
       />
     </section>

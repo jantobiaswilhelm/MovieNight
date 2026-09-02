@@ -169,8 +169,10 @@ const Home = () => {
   const seasonal = getSeasonalTheme(new Date(), seasonPreview || seasonOverride);
 
   const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  // A calendar month is a bad window for a ranking: on the 2nd it can only ever
+  // hold a screening or two, which leaves the column near-empty for most of any
+  // given month. A rolling 30 days always has something to rank.
+  const rankingWindowStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
   const upcomingMovies = movies
     .filter(movie => new Date(movie.scheduled_at) > now)
@@ -179,7 +181,7 @@ const Home = () => {
   const bestRatedThisMonth = movies
     .filter(movie => {
       const date = new Date(movie.scheduled_at);
-      return date >= startOfMonth && date <= endOfMonth && parseFloat(movie.avg_rating) > 0;
+      return date >= rankingWindowStart && date <= now && parseFloat(movie.avg_rating) > 0;
     })
     .sort((a, b) => parseFloat(b.avg_rating) - parseFloat(a.avg_rating))
     .slice(0, 5);
@@ -298,7 +300,17 @@ const Home = () => {
                   {heroMovie.genres && (
                     <>
                       <span className="sep" />
-                      <span>{heroMovie.genres}</span>
+                      {/* Uppercase mono at .28em tracking runs wide — a full
+                          four-genre list overruns the hero and gets clipped
+                          mid-word against its overflow edge. */}
+                      <span className="hero-genre-list">
+                        {heroMovie.genres
+                          .split(',')
+                          .map((g) => g.trim())
+                          .filter(Boolean)
+                          .slice(0, 3)
+                          .join(', ')}
+                      </span>
                     </>
                   )}
                 </div>
@@ -473,7 +485,7 @@ const Home = () => {
         <section className="home-block">
           <SectionHead
             num="04"
-            title="Best this month"
+            title="Best of late"
             meta={<Link to="/stats" className="btn text">Stats →</Link>}
           />
           {loading ? (

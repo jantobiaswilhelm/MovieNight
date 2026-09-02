@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getAvatarUrl, formatRelativeTime } from '../../utils/helpers';
 import { sanitizeImageUrl } from '../../utils/sanitizeUrl';
 import { Icon } from '../ui';
@@ -9,6 +9,53 @@ const reducedMotion = () =>
   typeof window !== 'undefined' &&
   typeof window.matchMedia === 'function' &&
   window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// Two stacked layers that crossfade, so a rotation never leaves the panel empty.
+// The incoming image is decoded off-screen first and only then swapped to the
+// front — a single keyed element would unmount, refetch, and blank the stage.
+function Backdrop({ src }) {
+  const [layers, setLayers] = useState([src || null, null]);
+  const [front, setFront] = useState(0);
+  const frontRef = useRef(0);
+  const shownRef = useRef(src || null);
+
+  useEffect(() => {
+    if (!src || src === shownRef.current) return undefined;
+
+    let cancelled = false;
+    const swap = () => {
+      if (cancelled) return;
+      const back = 1 - frontRef.current;
+      shownRef.current = src;
+      frontRef.current = back;
+      setLayers((prev) => {
+        const next = [...prev];
+        next[back] = src;
+        return next;
+      });
+      setFront(back);
+    };
+
+    const img = new Image();
+    img.onload = swap;
+    img.onerror = swap;
+    img.src = src;
+
+    return () => { cancelled = true; };
+  }, [src]);
+
+  return (
+    <div className="rf-bgs" aria-hidden="true">
+      {layers.map((layer, i) => (
+        <div
+          key={i}
+          className={`rf-bg ${layer && i === front ? 'is-visible' : ''}`.trim()}
+          style={layer ? { backgroundImage: `url(${layer})` } : undefined}
+        />
+      ))}
+    </div>
+  );
+}
 
 // Magazine-style featured review: one quote at a time, auto-rotating
 // (pauses on hover, disabled under reduced-motion), with arrows + dots to browse.
@@ -40,14 +87,7 @@ export default function ReviewsFeature({ reviews }) {
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      {backdrop && (
-        <div
-          key={`bg-${index}`}
-          className="rf-bg"
-          style={{ backgroundImage: `url(${backdrop})` }}
-          aria-hidden="true"
-        />
-      )}
+      <Backdrop src={backdrop} />
       <div className="rf-stage">
         {count > 1 && (
           <button className="rf-nav" onClick={() => go(index - 1)} aria-label="Previous review">
