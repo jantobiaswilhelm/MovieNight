@@ -75,7 +75,7 @@ const GenreBreakdown = ({ genreStats }) => {
                   <div className="genre-bar-container">
                     <div
                       className="genre-bar"
-                      style={{ width: `${(parseFloat(genre.avg_rating) / 10) * 100}%` }}
+                      style={{ transform: `scaleX(${Math.max(0, Math.min(1, parseFloat(genre.avg_rating) / 10))})` }}
                     />
                   </div>
                   <span className="genre-stats">

@@ -112,7 +112,7 @@
   line-height: 1.65;
   color: var(--bone-dim);
   padding: var(--s-4);
-  border-left: 2px solid var(--ember);
+  border-left: 1px solid var(--ember);
   background: var(--ember-soft);
   border-radius: 0 var(--r-1) var(--r-1) 0;
 }

@@ -71,13 +71,9 @@
   background: var(--ink-3);
 }
 
-.genre-item.favorite {
-  border-left: 3px solid var(--ember);
-}
-
-.genre-item.least-favorite {
-  border-left: 3px solid var(--error);
-}
+/* The "Favorites" / "Least Favorites" headings already carry this distinction,
+   so the per-row accent slab was redundant signalling. (Its --error colour was
+   never a defined token either, so the least-favorite rule silently did nothing.) */
 
 .genre-rank {
   font-size: 0.75rem;
@@ -157,11 +153,18 @@
   overflow: hidden;
 }
 
+/* Scaled rather than resized: animating width relayouts the row on every frame.
+   The bar is full-width and squeezed from its left edge instead. */
 .genre-bar {
+  width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, var(--ember) 0%, var(--gold) 100%);
+  transform-origin: left center;
+  background: var(--ember);
   border-radius: 3px;
-  transition: width 0.3s ease;
+  transition: transform var(--dur-2) var(--ease-out);
+}
+@media (prefers-reduced-motion: reduce) {
+  .genre-bar { transition: none; }
 }
 
 @media (max-width: 600px) {

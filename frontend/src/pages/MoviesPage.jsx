@@ -8,6 +8,7 @@ import { useFetch } from '../hooks';
 import { formatDate, formatMonth, formatMonthYear } from '../utils/helpers';
 import { Icon, PageHeader, Chip, EmptyState } from '../components/ui';
 import RescheduleModal from '../components/common/RescheduleModal';
+import { PosterImg } from '../components/common';
 import './MoviesPage.css';
 
 const SORT_OPTIONS = [
@@ -355,7 +356,7 @@ const MoviesPage = () => {
                   <Link to={`/movie/${movie.id}`} className="mg-card">
                     <div className="mg-poster">
                       {movie.image_url ? (
-                        <img src={movie.image_url} alt={movie.title} loading="lazy" />
+                        <PosterImg src={movie.image_url} alt={movie.title} />
                       ) : (
                         <div className="mg-poster-placeholder">
                           {movie.title?.charAt(0) ?? '?'}
@@ -371,7 +372,8 @@ const MoviesPage = () => {
                         {movie.release_year && <span>{movie.release_year}</span>}
                         {movie.release_year && movie.scheduled_at && <span className="sep" />}
                         {movie.scheduled_at && <span>{formatDate(movie.scheduled_at)}</span>}
-                        {movie.screening_count > 1 && <span className="sep" />}
+                        {/* No leading separator: when the line wraps it would
+                            dangle at the end of the date row. */}
                         {movie.screening_count > 1 && (
                           <span className="mg-rewatch">Watched {movie.screening_count}×</span>
                         )}
