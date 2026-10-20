@@ -16,8 +16,7 @@ import {
   announceMovie
 } from '../api/client';
 import { getSeasonalTheme } from '../utils/seasonalTheme';
-import { StarRating, MovieCard, MovieCardSkeleton } from '../components/common';
-import { AdminSettingsPanel, UsersSection, AnnounceFlow, SuggestionBoard, HomeStatsBand, HomeHallOfFame, OnThisDay, SeasonalDecoration, ReviewsFeature, OnTheCalendar } from '../components/home';
+import { AdminSettingsPanel, AnnounceFlow, SuggestionBoard, HomeClub, OnThisDay, SeasonalDecoration, ReviewsFeature, OnTheCalendar } from '../components/home';
 import { filmFromTmdb, ScreeningComposer } from '../components/scheduler';
 import { Icon, SectionHead, Skeleton, EmptyState, Badge } from '../components/ui';
 import './Home.css';
@@ -234,7 +233,8 @@ const Home = () => {
     ? calendar
     : lastScreenings.map((m) => ({
         id: m.id, kind: 'one-off', title: m.title, scheduled_at: m.scheduled_at,
-        image_url: m.image_url, runtime: m.runtime, release_year: m.release_year
+        image_url: m.image_url, runtime: m.runtime, release_year: m.release_year,
+        avg_rating: m.avg_rating
       }));
 
   const heroBackdrop = heroMovie
@@ -442,89 +442,37 @@ const Home = () => {
         />
       </section>
 
-      {onThisDay && <OnThisDay movie={onThisDay} />}
-      {stats && <HomeStatsBand stats={stats} seasonalKey={seasonal?.key || null} />}
-      {stats && <HomeHallOfFame stats={stats} />}
+      {/* ═══ Recent nights: what's on or what we watched, and what we said ═══ */}
+      <section className="home-recent" aria-label={calendar.length > 0 ? 'Coming up' : 'Recent nights'}>
+        <SectionHead
+          title={calendar.length > 0 ? 'Coming up' : 'Recent nights'}
+          meta={<Link to="/movies" className="btn text">Archive →</Link>}
+        />
+        <div className={`recent-grid ${reviews.length > 0 ? '' : 'is-single'}`.trim()}>
+          <div className="recent-list">
+            {loading ? (
+              <div className="recent-skeleton">
+                {[1, 2, 3].map((i) => <Skeleton key={i} variant="rect" height={72} />)}
+              </div>
+            ) : (
+              <OnTheCalendar
+                items={calendarItems}
+                fallback={
+                  <EmptyState
+                    title="Nothing queued."
+                    body="Announce a movie to start the next screening."
+                  />
+                }
+              />
+            )}
+            {onThisDay && <OnThisDay movie={onThisDay} />}
+          </div>
+          {reviews.length > 0 && <ReviewsFeature reviews={reviews} />}
+        </div>
+      </section>
 
-      {/* ═══ Reviews — featured pull-quote ═══ */}
-      {reviews.length > 0 && (
-        <section className="home-block">
-          <SectionHead num="02" title="Recent dispatches" meta={`${reviews.length} reviews`} />
-          <ReviewsFeature reviews={reviews} />
-        </section>
-      )}
-
-      {/* ═══ Upcoming + Best rated ═══ */}
-      <div className="home-bottom">
-        <section className="home-block">
-          <SectionHead
-            num="03"
-            title={calendar.length > 0 ? 'On the calendar' : 'Last screenings'}
-            meta={<Link to="/movies" className="btn text">Archive →</Link>}
-          />
-          {loading ? (
-            <div className="upcoming-grid">
-              <MovieCardSkeleton />
-              <MovieCardSkeleton />
-              <MovieCardSkeleton />
-            </div>
-          ) : (
-            <OnTheCalendar
-              items={calendarItems}
-              fallback={
-                <EmptyState
-                  title="Nothing queued."
-                  body="Announce a movie to start the next screening."
-                />
-              }
-            />
-          )}
-        </section>
-
-        <section className="home-block">
-          <SectionHead
-            num="04"
-            title="Best of late"
-            meta={<Link to="/stats" className="btn text">Stats →</Link>}
-          />
-          {loading ? (
-            <div className="best-list">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="best-item">
-                  <Skeleton variant="line" width={24} height={20} />
-                  <Skeleton variant="rect" width={32} height={48} />
-                  <Skeleton variant="line" width="60%" height={16} />
-                </div>
-              ))}
-            </div>
-          ) : bestRatedThisMonth.length === 0 ? (
-            <EmptyState
-              title="No ratings yet."
-              body="Rate a movie after the screening and it'll appear here."
-            />
-          ) : (
-            <ol className="best-list">
-              {bestRatedThisMonth.slice(0, 4).map((movie, index) => (
-                <li key={movie.id}>
-                  <Link to={`/movie/${movie.id}`} className="best-item">
-                    <span className="rank">{String(index + 1).padStart(2, '0')}</span>
-                    {movie.image_url && (
-                      <img src={movie.image_url} alt={movie.title} className="best-poster" loading="lazy" />
-                    )}
-                    <div className="best-info">
-                      <span className="best-title">{movie.title}</span>
-                      <StarRating rating={parseFloat(movie.avg_rating)} size="small" />
-                    </div>
-                    <Icon name="arrow-right" size={16} stroke={1.5} className="best-arrow" />
-                  </Link>
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
-      </div>
-
-      <UsersSection />
+      {/* ═══ The Club: totals, leaderboards, best of late, members ═══ */}
+      <HomeClub stats={stats} best={bestRatedThisMonth} seasonalKey={seasonal?.key || null} />
 
     </div>
   );

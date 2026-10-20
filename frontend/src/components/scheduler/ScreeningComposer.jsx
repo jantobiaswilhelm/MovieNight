@@ -104,7 +104,8 @@ export default function ScreeningComposer({ request, onClose, variant = 'drawer'
   const byDay = useMemo(() => {
     const map = new Map();
     for (const it of calendar) {
-      if (isReschedule && it.kind !== 'marathon' && it.id === movieId) continue;
+      // Calendar ids come back as text ("123"; marathon items are "mi-7").
+      if (isReschedule && it.kind !== 'marathon' && String(it.id) === String(movieId)) continue;
       const key = localDateStr(new Date(it.scheduled_at));
       if (!map.has(key)) map.set(key, []);
       map.get(key).push(it);
