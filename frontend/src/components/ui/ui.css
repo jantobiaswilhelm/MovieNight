@@ -102,6 +102,11 @@
   color: var(--bone-dim);
   text-transform: uppercase;
 }
+@media (max-width: 560px){
+  .ui-section-head{ flex-wrap: wrap; row-gap: var(--s-2); }
+  .ui-section-head .rule{ display: none; }
+  .ui-section-head .meta{ margin-left: auto; }
+}
 
 /* — EmptyState extras — */
 .ui-empty{

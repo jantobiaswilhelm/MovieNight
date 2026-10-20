@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useScheduler } from '../context/SchedulerContext';
 import { sanitizeUrl, sanitizeImdbId, sanitizeImageUrl } from '../utils/sanitizeUrl';
-import { formatDate, formatRuntime, getAvatarUrl } from '../utils/helpers';
+import { formatDate, formatRuntime, getAvatarUrl, splitTitleYear } from '../utils/helpers';
 import {
   getMovies,
   getNowPlayingMovie,
@@ -12,16 +13,19 @@ import {
   toggleAttendance,
   getStats,
   getOnThisDay,
-  getCalendar
+  getCalendar,
+  announceMovie
 } from '../api/client';
 import { getSeasonalTheme } from '../utils/seasonalTheme';
 import { StarRating, MovieCard, MovieCardSkeleton } from '../components/common';
-import { AdminSettingsPanel, UsersSection, AnnounceFlow, SuggestionBoard, HomeStatsBand, HomeHallOfFame, OnThisDay, SeasonalDecoration, ReviewsFeature, OnTheCalendar, ScheduleSection } from '../components/home';
+import { AdminSettingsPanel, UsersSection, AnnounceFlow, SuggestionBoard, HomeStatsBand, HomeHallOfFame, OnThisDay, SeasonalDecoration, ReviewsFeature, OnTheCalendar } from '../components/home';
+import { filmFromTmdb } from '../components/scheduler';
 import { Icon, SectionHead, Skeleton, EmptyState, Badge } from '../components/ui';
 import './Home.css';
 
 const Home = () => {
   const { isAuthenticated, isAdmin } = useAuth();
+  const openScheduler = useScheduler();
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -33,7 +37,6 @@ const Home = () => {
   const [seasonPreview, setSeasonPreview] = useState(null);
   const [onThisDay, setOnThisDay] = useState(null);
   const [calendar, setCalendar] = useState([]);
-  const [scheduleMovie, setScheduleMovie] = useState(null);   // picked movie → full-width scheduler
   const [togglingAttendance, setTogglingAttendance] = useState(false);
 
   const fetchData = useCallback(async () => {
@@ -199,6 +202,7 @@ const Home = () => {
   // first, a movie that had started dropped out of "next" and the hero called
   // it "Watched" while it was still playing.
   const heroMovie = nowPlaying || nextMovie || lastMovie;
+  const heroTitle = splitTitleYear(heroMovie?.title, heroMovie?.release_year);
   const heroState = nowPlaying ? 'playing' : (nextMovie ? 'upcoming' : (lastMovie ? 'past' : 'empty'));
   const isHeroPast = heroState === 'past';
   const isHeroPlaying = heroState === 'playing';
@@ -290,7 +294,7 @@ const Home = () => {
             ) : heroMovie ? (
               <>
                 <div className="hero-meta">
-                  {heroMovie.release_year && <span>{heroMovie.release_year}</span>}
+                  {heroTitle.year && <span>{heroTitle.year}</span>}
                   {heroMovie.runtime > 0 && (
                     <>
                       <span className="sep" />
@@ -316,7 +320,7 @@ const Home = () => {
                 </div>
 
                 <h1 className="hero-title">
-                  <Link to={`/movie/${heroMovie.id}`}>{heroMovie.title}</Link>
+                  <Link to={`/movie/${heroMovie.id}`}>{heroTitle.name}</Link>
                 </h1>
 
                 {heroMovie.description && (
@@ -429,19 +433,16 @@ const Home = () => {
           isAuthenticated={isAuthenticated}
           loading={loading}
           onAnnounced={fetchData}
-          onPick={setScheduleMovie}
-          pickedMovie={scheduleMovie}
+          onPick={(details) => openScheduler({
+            film: filmFromTmdb(details),
+            submit: async (iso) => {
+              const announcement = await announceMovie(details, iso);
+              return { announcementId: announcement?.id };
+            },
+            onDone: fetchData,
+          })}
         />
       </section>
-
-      {scheduleMovie && (
-        <ScheduleSection
-          movie={scheduleMovie}
-          occupancy={calendar}
-          onCancel={() => setScheduleMovie(null)}
-          onScheduled={() => { setScheduleMovie(null); fetchData(); }}
-        />
-      )}
 
       {onThisDay && <OnThisDay movie={onThisDay} />}
       {stats && <HomeStatsBand stats={stats} seasonalKey={seasonal?.key || null} />}
@@ -534,7 +535,7 @@ const Home = () => {
 /* ═══════════════════════════════════════════════════════════════════════
    Home sidebar — toggles between Announce and Board in the same slot.
    ═══════════════════════════════════════════════════════════════════════ */
-function HomeSidebar({ isAuthenticated, loading, onAnnounced, onPick, pickedMovie }) {
+function HomeSidebar({ isAuthenticated, loading, onAnnounced, onPick }) {
   const [tab, setTab] = useState(isAuthenticated ? 'announce' : 'board');
   // Auth resolves after the first render, so the initial value above sees a
   // logged-in user as anonymous. Follow it until the user picks a tab themselves.
@@ -576,7 +577,7 @@ function HomeSidebar({ isAuthenticated, loading, onAnnounced, onPick, pickedMovi
       <div className="hs-panel" role="tabpanel">
         {tab === 'announce' ? (
           isAuthenticated ? (
-            <AnnounceFlow onPick={onPick} pickedMovie={pickedMovie} />
+            <AnnounceFlow onPick={onPick} />
           ) : (
             <div className="hs-login">
               <div className="hs-login-eyebrow">Host the next night</div>

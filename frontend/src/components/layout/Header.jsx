@@ -100,7 +100,7 @@ const Header = () => {
             </div>
           ) : (
             <button onClick={login} className="btn">
-              Log in with Discord
+              Log in<span> with Discord</span>
             </button>
           )}
         </div>

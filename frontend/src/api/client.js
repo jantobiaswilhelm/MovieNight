@@ -257,6 +257,10 @@ export const announceMovie = (tmdbData, scheduledAt) =>
     body: JSON.stringify({ tmdb_data: tmdbData, scheduled_at: scheduledAt, guild_id: GUILD_ID })
   });
 
+// Whether the bot has posted a web announcement yet: { id, status: 'pending'|'processed'|'failed' }
+export const getAnnouncementStatus = (announcementId) =>
+  fetchAPI(`/api/movies/announcements/${announcementId}?guild_id=${GUILD_ID}`);
+
 // Attendance
 export const toggleAttendance = (movieId) =>
   fetchAPI(`/api/movies/${movieId}/attend`, {

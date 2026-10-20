@@ -3,13 +3,14 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useConfirm } from '../context/ConfirmContext';
-import { getMovie, submitRating, getMyRating, deleteMovie, cancelMovie, getSimilarMovies, toggleAttendance, getMovieCredits } from '../api/client';
+import { useScheduler } from '../context/SchedulerContext';
+import { getMovie, submitRating, getMyRating, deleteMovie, cancelMovie, getSimilarMovies, toggleAttendance, getMovieCredits, rescheduleMovie, unscheduleMovie } from '../api/client';
 import { sanitizeUrl, sanitizeImdbId, sanitizeImageUrl } from '../utils/sanitizeUrl';
 import { formatDate, formatRuntime, getLanguageName, getAvatarUrl } from '../utils/helpers';
 import { StarRating } from '../components/common';
 import { RatingInput, RatingReactions } from '../components/rating';
 import { QuickAddToWishlist } from '../components/wishlist';
-import RescheduleModal from '../components/common/RescheduleModal';
+import { filmFromRow } from '../components/scheduler';
 import { Icon, SectionHead, Chip, Badge, Eyebrow, EmptyState } from '../components/ui';
 import './Movie.css';
 
@@ -17,6 +18,7 @@ const Movie = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, isAuthenticated, isAdmin, login } = useAuth();
+  const openScheduler = useScheduler();
   const { showError } = useToast();
   const confirm = useConfirm();
   const [movie, setMovie] = useState(null);
@@ -33,7 +35,6 @@ const Movie = () => {
   const [ratingsAvailable, setRatingsAvailable] = useState(false);
   const [timeUntilRatings, setTimeUntilRatings] = useState(null);
   const [quickAddMovie, setQuickAddMovie] = useState(null);
-  const [showReschedule, setShowReschedule] = useState(false);
   const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
@@ -152,6 +153,16 @@ const Movie = () => {
       setDeleting(false);
     }
   };
+
+  const openReschedule = () => openScheduler({
+    mode: 'reschedule',
+    film: filmFromRow(movie),
+    movieId: movie.id,
+    currentAt: movie.scheduled_at,
+    submit: (iso) => rescheduleMovie(movie.id, iso),
+    unschedule: () => unscheduleMovie(movie.id),
+    onDone: (updated) => setMovie((prev) => ({ ...prev, scheduled_at: updated.scheduled_at })),
+  });
 
   const handleCancel = async () => {
     if (!(await confirm({
@@ -324,7 +335,7 @@ const Movie = () => {
                 <>
                   <button
                     className="btn ghost sm"
-                    onClick={() => setShowReschedule(true)}
+                    onClick={openReschedule}
                     style={{ marginLeft: 'auto' }}
                   >
                     <Icon name="calendar" size={14} />
@@ -661,16 +672,6 @@ const Movie = () => {
         />
       )}
 
-      {showReschedule && (
-        <RescheduleModal
-          movie={movie}
-          isOpen
-          onClose={() => setShowReschedule(false)}
-          onRescheduled={(updated) =>
-            setMovie((prev) => ({ ...prev, scheduled_at: updated.scheduled_at }))
-          }
-        />
-      )}
     </div>
   );
 };

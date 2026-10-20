@@ -12,8 +12,11 @@ let openModalCount = 0;
  * Accessible modal shell: overlay click / Escape to close, focus trap, focus
  * restore on close, body scroll-lock, and dialog aria wiring. Render it
  * conditionally (`{open && <Modal …>}`) or pass `isOpen`.
+ *
+ * `variant="drawer"` docks it to the right edge (a bottom sheet on phones) and
+ * drops the built-in head; pass `label` so the dialog still has a name.
  */
-export default function Modal({ isOpen = true, onClose, title, children, className = '', size = 'md' }) {
+export default function Modal({ isOpen = true, onClose, title, label, children, className = '', size = 'md', variant = 'center' }) {
   const overlayRef = useRef(null);
   const contentRef = useRef(null);
   const lastFocused = useRef(null);
@@ -30,8 +33,10 @@ export default function Modal({ isOpen = true, onClose, title, children, classNa
     const node = contentRef.current;
     const focusables = () =>
       Array.from(node?.querySelectorAll(FOCUSABLE) ?? []).filter((el) => el.offsetParent !== null);
+    // A drawer opens on its own panel so its first control (the close button)
+    // doesn't light up; Tab moves into it from there.
     const initial = focusables();
-    (initial[0] ?? node)?.focus();
+    (variant === 'drawer' ? node : initial[0] ?? node)?.focus();
 
     const onKeyDown = (e) => {
       if (e.key === 'Escape') {
@@ -65,9 +70,34 @@ export default function Modal({ isOpen = true, onClose, title, children, classNa
       if (openModalCount === 0) document.body.style.overflow = '';
       lastFocused.current?.focus?.();
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, variant]);
 
   if (!isOpen) return null;
+
+  const isDrawer = variant === 'drawer';
+
+  if (isDrawer) {
+    return (
+      <div
+        className="ui-modal-overlay is-drawer"
+        ref={overlayRef}
+        onMouseDown={(e) => {
+          if (e.target === overlayRef.current) onClose?.();
+        }}
+      >
+        <div
+          ref={contentRef}
+          className={`ui-drawer ${className}`.trim()}
+          role="dialog"
+          aria-modal="true"
+          aria-label={label}
+          tabIndex={-1}
+        >
+          {children}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div

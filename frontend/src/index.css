@@ -20,7 +20,7 @@
   /* Color — ink on dark */
   --bone:       #E8DFC9;
   --bone-dim:   #A89E88;
-  --bone-mute:  #6B6556;
+  --bone-mute:  #928A77;
 
   /* Color — accents */
   --ember:      #D4663A;
@@ -29,6 +29,14 @@
   --ember-soft: rgba(212, 102, 58, .14);
   --gold:       #E0A23A;
   --red:        #C8321A;
+
+  /* Discord — only for previews of what the bot will post */
+  --discord-surface: #2B2D31;
+  --discord-blurple: #5865F2;
+  --discord-text:    #DBDEE1;
+  --discord-link:    #00A8FC;
+  --discord-button:  #4E5058;
+  --discord-green:   #248046;
 
   /* Rules */
   --rule:        rgba(232, 223, 201, .08);

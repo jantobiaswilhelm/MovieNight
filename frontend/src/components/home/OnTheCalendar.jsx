@@ -1,4 +1,5 @@
 import { Icon } from '../ui';
+import { splitTitleYear } from '../../utils/helpers';
 import './OnTheCalendar.css';
 
 const dayKey = (d) => {
@@ -37,18 +38,16 @@ export default function OnTheCalendar({ items = [], fallback = null }) {
               <div className="otc-ev" key={ev.id}>
                 <div className="otc-poster" style={{ backgroundImage: ev.image_url ? `url(${ev.image_url})` : 'none' }} />
                 <div className="otc-info">
-                  <h4>{ev.title}</h4>
-                  <div className="otc-meta">
-                    {ev.kind === 'marathon' ? (
+                  <h4>{splitTitleYear(ev.title).name}</h4>
+                  {ev.kind === 'marathon' && (
+                    <div className="otc-meta">
                       <span className="otc-tag mara">
                         <Icon name={ev.cadence_type === 'binge' ? 'film' : 'layers'} size={11} />
                         {ev.cadence_type === 'binge' ? 'Marathon' : `Marathon ${ev.marathon_position}/${ev.marathon_total}`}
                       </span>
-                    ) : (
-                      <span className="otc-tag">One-off</span>
-                    )}
-                    <span className="otc-sub">{ev.marathon_name || ''}</span>
-                  </div>
+                      <span className="otc-sub">{ev.marathon_name || ''}</span>
+                    </div>
+                  )}
                 </div>
                 <div className="otc-time">{fmtTime(ev.scheduled_at)}</div>
               </div>

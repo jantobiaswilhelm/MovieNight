@@ -47,6 +47,18 @@ router.get('/calendar', validateGuildId, optionalAuth, async (req, res) => {
   }
 });
 
+// Status of a web announcement waiting for the bot: 'pending' | 'processed' | 'failed'.
+router.get('/announcements/:id', validateIntParams('id'), validateGuildId, authenticateToken, async (req, res) => {
+  try {
+    const row = await db.getPendingAnnouncementStatus(parseInt(req.params.id), req.guildId);
+    if (!row) return res.status(404).json({ error: 'Announcement not found' });
+    res.json(row);
+  } catch (err) {
+    console.error('Error fetching announcement status:', err);
+    res.status(500).json({ error: 'Failed to fetch announcement status' });
+  }
+});
+
 // Get the movie currently on screen, or null (for the homepage hero).
 // Must be before /:id.
 router.get('/now-playing', validateGuildId, optionalAuth, async (req, res) => {

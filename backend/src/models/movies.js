@@ -201,6 +201,15 @@ export const createPendingAnnouncement = async (data) => {
   return result.rows[0];
 };
 
+// Status of a queued web announcement, so the web can show when the bot has posted it.
+export const getPendingAnnouncementStatus = async (id, guildId) => {
+  const result = await pool.query(
+    `SELECT id, status, processed_at FROM pending_announcements WHERE id = $1 AND guild_id = $2`,
+    [id, guildId]
+  );
+  return result.rows[0] || null;
+};
+
 export const saveMovieCredits = async (movieNightId, credits) => {
   // Replace the credit set atomically: a mid-loop failure must not leave the
   // movie with the old credits deleted but only some new ones inserted.

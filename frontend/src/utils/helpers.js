@@ -44,6 +44,30 @@ export function formatRuntime(minutes) {
   return `${hours}h ${mins}m`;
 }
 
+const pad2 = (n) => String(n).padStart(2, '0');
+
+/** Format a Date as YYYY-MM-DD in the browser's local timezone (never UTC). */
+export const localDateStr = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+
+/** Format a Date as HH:MM in the browser's local timezone. */
+export const localTimeStr = (d) => `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+
+const YEAR_SUFFIX = /\s*\((\d{4})\)\s*$/;
+
+/**
+ * Split a stored title like "Death Proof (2007)" into its name and year.
+ * Announcements bake the year into the title, so it would otherwise repeat
+ * next to a separate year field. PARALLEL: splitTitleYear in
+ * bot/src/utils/announcementEmbed.js.
+ */
+export function splitTitleYear(title, releaseYear) {
+  const match = title?.match(YEAR_SUFFIX);
+  if (match) {
+    return { name: title.replace(YEAR_SUFFIX, '').trim(), year: parseInt(match[1], 10) };
+  }
+  return { name: title ?? '', year: releaseYear ?? null };
+}
+
 /**
  * Format minutes into watchtime string (alias for formatRuntime with '0h' default).
  */

@@ -5,6 +5,7 @@ import { ErrorBoundary } from './components/common';
 import { NotificationProvider } from './context/NotificationContext';
 import { ToastProvider } from './context/ToastContext';
 import { ConfirmProvider } from './context/ConfirmContext';
+import { SchedulerProvider } from './context/SchedulerContext';
 import './App.css';
 
 const Home = lazy(() => import('./pages/Home'));
@@ -29,6 +30,7 @@ function App() {
     <NotificationProvider>
       <ToastProvider>
       <ConfirmProvider>
+      <SchedulerProvider>
       <div className="app">
         <Header />
         <main className="container">
@@ -66,6 +68,7 @@ function App() {
           </div>
         </footer>
       </div>
+      </SchedulerProvider>
       </ConfirmProvider>
       </ToastProvider>
     </NotificationProvider>
