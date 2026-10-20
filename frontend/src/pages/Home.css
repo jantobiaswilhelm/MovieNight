@@ -1,6 +1,6 @@
 /* ==========================================================================
    HOME — editorial
-   Hero (feature + voting) · Reviews carousel · Upcoming + Best rated
+   Hero (feature + sidebar) · Recent nights (agenda + reviews) · The Club
    ========================================================================== */
 
 .home{
@@ -272,6 +272,19 @@
 @media (max-width: 1060px){
   .home-sidebar{ min-height: 0; }
   .hs-fill{ position: static; }
+}
+/* Scheduling inline: the composer is taller than the hero, so the card grows
+   with it instead of scrolling inside, and the hero keeps its own height. */
+.home-sidebar.is-composing{ overflow: visible; }
+.home-sidebar.is-composing .hs-fill{ position: static; }
+/* The hero (the film on now or next) stays in view beside the composer. */
+.hero-split:has(.home-sidebar.is-composing) .hero-feature{
+  align-self: start;
+  position: sticky;
+  top: calc(64px + var(--s-4));
+}
+@media (max-width: 1060px){
+  .hero-split:has(.home-sidebar.is-composing) .hero-feature{ position: relative; top: auto; }
 }
 
 /* Tab row */
@@ -660,76 +673,44 @@
   .rf-card{ min-height: 160px; }
 }
 
-/* ── UPCOMING + BEST RATED ─────────────────────────────────────────────── */
-.home-bottom{
+/* ── RECENT NIGHTS ─────────────────────────────────────────────────────── */
+/* Leads the page below the hero: the agenda with the latest reviews beside it. */
+.home-recent{
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  margin-top: var(--s-4); /* with .home's gap: 64px under the hero */
+}
+.recent-grid{
   display: grid;
   grid-template-columns: 1.4fr 1fr;
   gap: var(--s-7);
+  align-items: start;
 }
+.recent-grid.is-single{ grid-template-columns: 1fr; }
+.recent-list{ display: flex; flex-direction: column; gap: var(--s-4); min-width: 0; }
+.recent-skeleton{ display: flex; flex-direction: column; gap: var(--s-2); }
 @media (max-width: 960px){
-  .home-bottom{ grid-template-columns: 1fr; }
+  .recent-grid{ grid-template-columns: 1fr; }
 }
 
-.upcoming-grid{
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--s-4);
-}
-@media (max-width: 720px){
-  .upcoming-grid{ grid-template-columns: 1fr 1fr; }
-}
-
-.best-list{
-  list-style: none;
-  padding: 0;
-  margin: 0;
+/* On this day: a footnote under the agenda */
+.on-this-day{
   display: flex;
-  flex-direction: column;
-}
-.best-item{
-  display: grid;
-  grid-template-columns: 32px 48px 1fr auto;
-  gap: var(--s-3);
-  padding: var(--s-3) 0;
-  border-bottom: 1px solid var(--rule);
   align-items: center;
-  color: var(--bone);
-  cursor: pointer;
-  transition: color var(--dur-1) var(--ease-out);
+  gap: var(--s-2);
+  font-size: var(--fs-13);
+  color: var(--bone-dim);
 }
-.best-list li:last-child .best-item{ border-bottom: none; }
-.best-item:hover{ color: var(--ember); }
-.best-item:hover .best-arrow{ transform: translateX(2px); color: var(--ember); }
-.best-item:hover .best-title{ color: var(--ember); }
-.rank{
-  font-family: var(--font-mono);
-  font-size: var(--fs-11);
-  letter-spacing: .2em;
-  color: var(--bone-mute);
-}
-.best-poster{
-  width: 48px; height: 72px;
-  object-fit: cover;
-  border-radius: var(--r-1);
-  border: 1px solid var(--rule);
-}
-.best-info{ min-width: 0; display: flex; flex-direction: column; gap: var(--s-2); }
-.best-title{
+.on-this-day svg{ flex-shrink: 0; }
+.on-this-day .otd-title{
   font-family: var(--font-display);
   font-style: italic;
-  font-weight: 500;
   font-size: var(--fs-16);
   color: var(--bone);
-  line-height: 1.2;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  transition: color var(--dur-1) var(--ease-out);
 }
-.best-arrow{
-  color: var(--bone-mute);
-  transition: transform var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
-}
+.on-this-day .otd-title:hover{ color: var(--ember); }
+.on-this-day .otd-score{ font-family: var(--font-mono); color: var(--gold); }
 
 /* ── Responsive trims ──────────────────────────────────────────────────── */
 @media (max-width: 720px){
@@ -1208,71 +1189,6 @@
   transition: color var(--dur-1) var(--ease-out), border-color var(--dur-1) var(--ease-out);
 }
 .sb-modal-close:hover { color: var(--bone); border-color: var(--ember); }
-
-/* ═══ Homepage stat counter band ═══ */
-/* A framed "featured numbers" strip: a lifted surface, an ember top accent, and
-   hairline column dividers make it stand out from the page — without enlarging
-   the type. The rating carries the gold accent as a focal point. */
-.home-stats-band {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0;
-  margin: var(--s-7) 0;
-  background: var(--ink-2);
-  border-top: 2px solid var(--ember);
-  border-bottom: 1px solid var(--rule-strong);
-}
-.home-stats-band .ui-stat {
-  border-top: none;
-  padding: var(--s-5) var(--s-6);
-}
-.home-stats-band .ui-stat + .ui-stat {
-  border-left: 1px solid var(--rule);
-}
-/* Gold = ratings only — gives the strip a focal point without growing the type. */
-.home-stats-band .ui-stat:last-child .stat-value {
-  color: var(--gold);
-}
-@media (max-width: 640px) {
-  .home-stats-band {
-    grid-template-columns: 1fr;
-  }
-  .home-stats-band .ui-stat + .ui-stat {
-    border-left: none;
-    border-top: 1px solid var(--rule);
-  }
-}
-
-/* ═══ On This Day banner ═══ */
-.on-this-day {
-  border: 1px solid var(--rule);
-  border-left: 2px solid var(--ember);
-  padding: var(--s-4) var(--s-5);
-  margin: var(--s-6) 0 0;
-}
-.on-this-day .otd-eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s-2);
-  font-family: var(--font-mono);
-  font-size: var(--fs-11);
-  letter-spacing: .28em;
-  text-transform: uppercase;
-  color: var(--bone-dim);
-}
-.on-this-day .otd-body {
-  margin: var(--s-2) 0 0;
-  font-family: var(--font-ui);
-  color: var(--bone-dim);
-}
-.on-this-day .otd-title {
-  font-family: var(--font-display);
-  font-style: italic;
-  color: var(--bone);
-}
-.on-this-day .otd-title:hover {
-  color: var(--ember);
-}
 
 /* ═══ Seasonal accents ═══ */
 /* Homepage-scoped accent swap. Reassigning the --ember token (rather than

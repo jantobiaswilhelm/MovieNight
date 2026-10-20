@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { Icon } from '../ui';
 import { splitTitleYear } from '../../utils/helpers';
 import './OnTheCalendar.css';
@@ -10,7 +11,7 @@ const isToday = (d) => dayKey(d) === dayKey(new Date());
 const fmtDow = (d) => new Date(d).toLocaleDateString(undefined, { weekday: 'short' });
 const fmtNum = (d) => new Date(d).getDate();
 const fmtMon = (d) => new Date(d).toLocaleDateString(undefined, { month: 'short' });
-const fmtTime = (d) => new Date(d).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+const fmtTime = (d) => new Date(d).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
 
 export default function OnTheCalendar({ items = [], fallback = null }) {
   if (!items.length) return fallback;
@@ -34,11 +35,17 @@ export default function OnTheCalendar({ items = [], fallback = null }) {
             <div className="mon">{fmtMon(day.date)}</div>
           </div>
           <div className="otc-slots">
-            {day.events.map((ev) => (
+            {day.events.map((ev) => {
+              const past = new Date(ev.scheduled_at) <= new Date();
+              const score = parseFloat(ev.avg_rating);
+              // One-off ids are movie night ids; marathon items ("mi-7") have no page.
+              const href = ev.kind === 'marathon' ? null : `/movie/${ev.id}`;
+              const name = splitTitleYear(ev.title).name;
+              return (
               <div className="otc-ev" key={ev.id}>
                 <div className="otc-poster" style={{ backgroundImage: ev.image_url ? `url(${ev.image_url})` : 'none' }} />
                 <div className="otc-info">
-                  <h4>{splitTitleYear(ev.title).name}</h4>
+                  <h4>{href ? <Link to={href}>{name}</Link> : name}</h4>
                   {ev.kind === 'marathon' && (
                     <div className="otc-meta">
                       <span className="otc-tag mara">
@@ -49,9 +56,14 @@ export default function OnTheCalendar({ items = [], fallback = null }) {
                     </div>
                   )}
                 </div>
-                <div className="otc-time">{fmtTime(ev.scheduled_at)}</div>
+                {/* A past night shows what the club thought of it; a clock time
+                    there reads like a runtime. */}
+                {past
+                  ? score > 0 && <div className="otc-score" title="Club average">{score.toFixed(1)}</div>
+                  : <div className="otc-time">{fmtTime(ev.scheduled_at)}</div>}
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       ))}

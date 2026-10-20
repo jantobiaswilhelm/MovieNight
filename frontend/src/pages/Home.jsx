@@ -1,7 +1,6 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useScheduler } from '../context/SchedulerContext';
 import { sanitizeUrl, sanitizeImdbId, sanitizeImageUrl } from '../utils/sanitizeUrl';
 import { formatDate, formatRuntime, getAvatarUrl, splitTitleYear } from '../utils/helpers';
 import {
@@ -17,15 +16,13 @@ import {
   announceMovie
 } from '../api/client';
 import { getSeasonalTheme } from '../utils/seasonalTheme';
-import { StarRating, MovieCard, MovieCardSkeleton } from '../components/common';
-import { AdminSettingsPanel, UsersSection, AnnounceFlow, SuggestionBoard, HomeStatsBand, HomeHallOfFame, OnThisDay, SeasonalDecoration, ReviewsFeature, OnTheCalendar } from '../components/home';
-import { filmFromTmdb } from '../components/scheduler';
+import { AdminSettingsPanel, AnnounceFlow, SuggestionBoard, HomeClub, OnThisDay, SeasonalDecoration, ReviewsFeature, OnTheCalendar } from '../components/home';
+import { filmFromTmdb, ScreeningComposer } from '../components/scheduler';
 import { Icon, SectionHead, Skeleton, EmptyState, Badge } from '../components/ui';
 import './Home.css';
 
 const Home = () => {
   const { isAuthenticated, isAdmin } = useAuth();
-  const openScheduler = useScheduler();
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -236,7 +233,8 @@ const Home = () => {
     ? calendar
     : lastScreenings.map((m) => ({
         id: m.id, kind: 'one-off', title: m.title, scheduled_at: m.scheduled_at,
-        image_url: m.image_url, runtime: m.runtime, release_year: m.release_year
+        image_url: m.image_url, runtime: m.runtime, release_year: m.release_year,
+        avg_rating: m.avg_rating
       }));
 
   const heroBackdrop = heroMovie
@@ -433,7 +431,7 @@ const Home = () => {
           isAuthenticated={isAuthenticated}
           loading={loading}
           onAnnounced={fetchData}
-          onPick={(details) => openScheduler({
+          onPick={(details) => ({
             film: filmFromTmdb(details),
             submit: async (iso) => {
               const announcement = await announceMovie(details, iso);
@@ -444,89 +442,37 @@ const Home = () => {
         />
       </section>
 
-      {onThisDay && <OnThisDay movie={onThisDay} />}
-      {stats && <HomeStatsBand stats={stats} seasonalKey={seasonal?.key || null} />}
-      {stats && <HomeHallOfFame stats={stats} />}
+      {/* ═══ Recent nights: what's on or what we watched, and what we said ═══ */}
+      <section className="home-recent" aria-label={calendar.length > 0 ? 'Coming up' : 'Recent nights'}>
+        <SectionHead
+          title={calendar.length > 0 ? 'Coming up' : 'Recent nights'}
+          meta={<Link to="/movies" className="btn text">Archive →</Link>}
+        />
+        <div className={`recent-grid ${reviews.length > 0 ? '' : 'is-single'}`.trim()}>
+          <div className="recent-list">
+            {loading ? (
+              <div className="recent-skeleton">
+                {[1, 2, 3].map((i) => <Skeleton key={i} variant="rect" height={72} />)}
+              </div>
+            ) : (
+              <OnTheCalendar
+                items={calendarItems}
+                fallback={
+                  <EmptyState
+                    title="Nothing queued."
+                    body="Announce a movie to start the next screening."
+                  />
+                }
+              />
+            )}
+            {onThisDay && <OnThisDay movie={onThisDay} />}
+          </div>
+          {reviews.length > 0 && <ReviewsFeature reviews={reviews} />}
+        </div>
+      </section>
 
-      {/* ═══ Reviews — featured pull-quote ═══ */}
-      {reviews.length > 0 && (
-        <section className="home-block">
-          <SectionHead num="02" title="Recent dispatches" meta={`${reviews.length} reviews`} />
-          <ReviewsFeature reviews={reviews} />
-        </section>
-      )}
-
-      {/* ═══ Upcoming + Best rated ═══ */}
-      <div className="home-bottom">
-        <section className="home-block">
-          <SectionHead
-            num="03"
-            title={calendar.length > 0 ? 'On the calendar' : 'Last screenings'}
-            meta={<Link to="/movies" className="btn text">Archive →</Link>}
-          />
-          {loading ? (
-            <div className="upcoming-grid">
-              <MovieCardSkeleton />
-              <MovieCardSkeleton />
-              <MovieCardSkeleton />
-            </div>
-          ) : (
-            <OnTheCalendar
-              items={calendarItems}
-              fallback={
-                <EmptyState
-                  title="Nothing queued."
-                  body="Announce a movie to start the next screening."
-                />
-              }
-            />
-          )}
-        </section>
-
-        <section className="home-block">
-          <SectionHead
-            num="04"
-            title="Best of late"
-            meta={<Link to="/stats" className="btn text">Stats →</Link>}
-          />
-          {loading ? (
-            <div className="best-list">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="best-item">
-                  <Skeleton variant="line" width={24} height={20} />
-                  <Skeleton variant="rect" width={32} height={48} />
-                  <Skeleton variant="line" width="60%" height={16} />
-                </div>
-              ))}
-            </div>
-          ) : bestRatedThisMonth.length === 0 ? (
-            <EmptyState
-              title="No ratings yet."
-              body="Rate a movie after the screening and it'll appear here."
-            />
-          ) : (
-            <ol className="best-list">
-              {bestRatedThisMonth.slice(0, 4).map((movie, index) => (
-                <li key={movie.id}>
-                  <Link to={`/movie/${movie.id}`} className="best-item">
-                    <span className="rank">{String(index + 1).padStart(2, '0')}</span>
-                    {movie.image_url && (
-                      <img src={movie.image_url} alt={movie.title} className="best-poster" loading="lazy" />
-                    )}
-                    <div className="best-info">
-                      <span className="best-title">{movie.title}</span>
-                      <StarRating rating={parseFloat(movie.avg_rating)} size="small" />
-                    </div>
-                    <Icon name="arrow-right" size={16} stroke={1.5} className="best-arrow" />
-                  </Link>
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
-      </div>
-
-      <UsersSection />
+      {/* ═══ The Club: totals, leaderboards, best of late, members ═══ */}
+      <HomeClub stats={stats} best={bestRatedThisMonth} seasonalKey={seasonal?.key || null} />
 
     </div>
   );
@@ -536,6 +482,18 @@ const Home = () => {
    Home sidebar — toggles between Announce and Board in the same slot.
    ═══════════════════════════════════════════════════════════════════════ */
 function HomeSidebar({ isAuthenticated, loading, onAnnounced, onPick }) {
+  // While a screening is being scheduled, the composer takes over the whole
+  // sidebar (tabs included) and the card grows to fit it.
+  const [composing, setComposing] = useState(null);
+  const composerRef = useRef(null);
+
+  useEffect(() => {
+    const el = composerRef.current;
+    if (!composing || !el) return;
+    el.focus({ preventScroll: true });
+    if (el.getBoundingClientRect().top < 0) el.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  }, [composing]);
+
   const [tab, setTab] = useState(isAuthenticated ? 'announce' : 'board');
   // Auth resolves after the first render, so the initial value above sees a
   // logged-in user as anonymous. Follow it until the user picks a tab themselves.
@@ -551,44 +509,58 @@ function HomeSidebar({ isAuthenticated, loading, onAnnounced, onPick }) {
   };
 
   return (
-    <aside className="home-sidebar">
+    <aside className={`home-sidebar ${composing ? 'is-composing' : ''}`}>
       <div className="hs-fill">
-      <nav className="hs-tabs" role="tablist" aria-label="Home sidebar">
-        <button
-          role="tab"
-          aria-selected={tab === 'announce'}
-          className={`hs-tab ${tab === 'announce' ? 'active' : ''}`}
-          onClick={() => choose('announce')}
+      {composing ? (
+        <div
+          ref={composerRef}
+          className="sd sd-inline"
+          role="region"
+          aria-label={`Schedule ${composing.film.title}`}
+          tabIndex={-1}
         >
-          <Icon name="megaphone" size={14} stroke={1.5} />
-          <span>Announce</span>
-        </button>
-        <button
-          role="tab"
-          aria-selected={tab === 'board'}
-          className={`hs-tab ${tab === 'board' ? 'active' : ''}`}
-          onClick={() => choose('board')}
-        >
-          <Icon name="star" size={14} stroke={1.5} />
-          <span>Board</span>
-        </button>
-      </nav>
-
-      <div className="hs-panel" role="tabpanel">
-        {tab === 'announce' ? (
-          isAuthenticated ? (
-            <AnnounceFlow onPick={onPick} />
-          ) : (
-            <div className="hs-login">
-              <div className="hs-login-eyebrow">Host the next night</div>
-              <h3 className="hs-login-title">Want to schedule the next movie?</h3>
-              <p>Log in with Discord and use this space to search a film, pick a date, and announce it to the club.</p>
-            </div>
-          )
-        ) : (
-          <SuggestionBoard onAnnounced={onAnnounced} />
-        )}
-      </div>
+          <ScreeningComposer request={composing} variant="inline" onClose={() => setComposing(null)} />
+        </div>
+      ) : (
+        <>
+          <nav className="hs-tabs" role="tablist" aria-label="Home sidebar">
+            <button
+              role="tab"
+              aria-selected={tab === 'announce'}
+              className={`hs-tab ${tab === 'announce' ? 'active' : ''}`}
+              onClick={() => choose('announce')}
+            >
+              <Icon name="megaphone" size={14} stroke={1.5} />
+              <span>Announce</span>
+            </button>
+            <button
+              role="tab"
+              aria-selected={tab === 'board'}
+              className={`hs-tab ${tab === 'board' ? 'active' : ''}`}
+              onClick={() => choose('board')}
+            >
+              <Icon name="star" size={14} stroke={1.5} />
+              <span>Board</span>
+            </button>
+          </nav>
+    
+          <div className="hs-panel" role="tabpanel">
+            {tab === 'announce' ? (
+              isAuthenticated ? (
+                <AnnounceFlow onPick={(details) => setComposing(onPick(details))} />
+              ) : (
+                <div className="hs-login">
+                  <div className="hs-login-eyebrow">Host the next night</div>
+                  <h3 className="hs-login-title">Want to schedule the next movie?</h3>
+                  <p>Log in with Discord and use this space to search a film, pick a date, and announce it to the club.</p>
+                </div>
+              )
+            ) : (
+              <SuggestionBoard onAnnounced={onAnnounced} onSchedule={setComposing} />
+            )}
+          </div>
+        </>
+      )}
       </div>
     </aside>
   );

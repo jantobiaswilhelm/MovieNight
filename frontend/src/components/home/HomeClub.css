@@ -1,0 +1,181 @@
+/* ==========================================================================
+   The Club — totals, leaderboards and members as one ruled band.
+   No surfaces or card chrome: hairline columns carry the structure.
+   ========================================================================== */
+
+.club {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  margin-top: var(--s-7); /* with .home's gap: the one 96px break on the page */
+}
+
+.club-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-top: 1px solid var(--rule-strong);
+  border-bottom: 1px solid var(--rule);
+}
+.club-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+  min-width: 0;
+  padding: var(--s-5) var(--s-6) var(--s-6);
+}
+.club-col + .club-col { border-left: 1px solid var(--rule); }
+.club-col:first-child { padding-left: 0; }
+.club-col:last-child { padding-right: 0; }
+.club-col .ui-stat { padding: 0; border-top: 0; }
+/* Gold = ratings only. */
+.club-col.is-ratings .stat-value { color: var(--gold); }
+
+.club-kicker {
+  display: block;
+  margin-bottom: var(--s-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-11);
+  letter-spacing: .28em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+}
+
+/* Leaderboard */
+.club-leader {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  color: var(--bone);
+}
+.club-leader-av {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: var(--r-full);
+  object-fit: cover;
+  border: 1px solid var(--rule-strong);
+}
+.club-leader-name {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: var(--fs-24);
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color var(--dur-1) var(--ease-out);
+}
+.club-leader:hover .club-leader-name { color: var(--ember); }
+.club-leader-metric {
+  font-family: var(--font-display);
+  font-size: var(--fs-19);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.club-leader-metric small {
+  margin-left: var(--s-1);
+  font-family: var(--font-mono);
+  font-size: var(--fs-11);
+  color: var(--bone-dim);
+}
+.club-leader-metric.is-ember { color: var(--ember); }
+.club-leader-metric.is-gold { color: var(--gold); }
+
+.club-runners { list-style: none; margin-top: var(--s-2); }
+.club-runner {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-1) 0;
+  font-size: var(--fs-13);
+  color: var(--bone-dim);
+}
+.club-runner:hover { color: var(--bone); }
+.club-runner-rank {
+  width: 16px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-11);
+  text-align: center;
+}
+.club-runner-av { width: 20px; height: 20px; border-radius: var(--r-full); object-fit: cover; }
+.club-runner-name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.club-runner-metric { font-family: var(--font-mono); font-size: var(--fs-12); font-variant-numeric: tabular-nums; }
+
+/* Best of the last 30 days, under the ratings column */
+.club-best ol { list-style: none; }
+.club-best-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-3);
+  padding: var(--s-2) 0;
+  border-top: 1px solid var(--rule);
+  color: var(--bone);
+}
+.club-best li:first-child .club-best-row { border-top: 0; padding-top: 0; }
+.club-best-title {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: var(--fs-16);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color var(--dur-1) var(--ease-out);
+}
+.club-best-row:hover .club-best-title { color: var(--ember); }
+.club-best-score {
+  font-family: var(--font-mono);
+  font-size: var(--fs-13);
+  color: var(--gold);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Members: a closing roster row */
+.club-roster {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-4);
+  margin-top: var(--s-2);
+}
+.club-avatars {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--s-2);
+  list-style: none;
+}
+.club-avatar {
+  display: block;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-full);
+  border: 1px solid var(--rule-strong);
+  overflow: hidden;
+  transition: border-color var(--dur-1) var(--ease-out), transform var(--dur-1) var(--ease-out);
+}
+.club-avatar:hover { border-color: var(--ember); transform: translateY(-2px); }
+.club-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.club-roster-count {
+  font-family: var(--font-mono);
+  font-size: var(--fs-11);
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .club-avatar:hover { transform: none; }
+}
+
+/* Narrow screens: the columns stack, each keeping its total over its board. */
+@media (max-width: 860px) {
+  .club-grid { grid-template-columns: 1fr; }
+  .club-col { padding: var(--s-5) 0; }
+  .club-col + .club-col { border-left: 0; border-top: 1px solid var(--rule); }
+  .club-roster { flex-wrap: wrap; }
+}

@@ -1,5 +1,6 @@
 /* ==========================================================================
-   Screening drawer — schedule or move a movie night.
+   Screening composer — schedule or move a movie night. Shown inline in the
+   frontpage sidebar, or in ScreeningDrawer everywhere else.
    The sentence is the interface: film and time read as one line of copy,
    and the controls below it edit the underlined words.
    ========================================================================== */
@@ -566,6 +567,25 @@
 
 @media (prefers-reduced-motion: reduce) {
   .sd-ticket, .sd-status.is-posting svg { animation: none; }
+}
+
+/* ── Inline: in the frontpage sidebar, scrolling with the page ────────── */
+.sd-inline {
+  display: flex;
+  flex-direction: column;
+  scroll-margin-top: var(--s-9);
+}
+/* Focus lands on the region only so keyboard users start inside it; no ring. */
+.sd-inline:focus-visible { outline: none; }
+.sd-inline .sd-head { flex-direction: row-reverse; }
+.sd-back { margin-left: calc(var(--s-2) * -1); }
+.sd-inline .sd-scroll { overflow: visible; }
+.sd-inline .sd-sentence { padding-top: var(--s-5); }
+.sd-inline .sd-ticket-val { font-size: var(--fs-24); }
+.sd-inline .sd-foot {
+  position: sticky;
+  bottom: 0;
+  border-radius: 0 0 var(--r-2) var(--r-2);
 }
 
 @media (max-width: 720px) {
