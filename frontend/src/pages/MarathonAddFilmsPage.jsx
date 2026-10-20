@@ -11,7 +11,7 @@ const pad = (n) => String(n).padStart(2, '0');
 const toLocalInput = (d) =>
   `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 const fmtWhen = (v) =>
-  v ? new Date(v).toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—';
+  v ? new Date(v).toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }) : '—';
 
 export default function MarathonAddFilmsPage() {
   const { id } = useParams();

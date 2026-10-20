@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import Backdrop from './Backdrop';
+import { splitTitleYear } from '../../utils/helpers';
 import './ChampionHero.css';
 
 export default function ChampionHero({ champion }) {
@@ -20,7 +21,7 @@ export default function ChampionHero({ champion }) {
         : <span className="champ-poster champ-poster-empty" aria-hidden="true" />}
       <div className="champ-info">
         <span className="champ-kicker">Reigning champion · highest rated of all time</span>
-        <div className="champ-title">{champion.title}</div>
+        <div className="champ-title">{splitTitleYear(champion.title).name}</div>
         {meta && <div className="champ-sub">{meta}</div>}
       </div>
       <div className="champ-score">

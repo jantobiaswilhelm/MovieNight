@@ -11,7 +11,7 @@ const toLocalInput = (d) =>
 // to the wrong night's ratings.
 const fmtNight = (n) =>
   new Date(n.scheduled_at).toLocaleString(undefined,
-    { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
 
 // Logs a film the group already watched outside the roll-out. Offers whatever past
 // movie nights we can find for it, so the marathon ends up pointing at the real

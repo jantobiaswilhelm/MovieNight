@@ -2,6 +2,7 @@ import { Link, useParams, useNavigate } from 'react-router-dom';
 import { getCollections, getCollectionMovies } from '../api/client';
 import { useFetch } from '../hooks';
 import { Icon, PageHeader, EmptyState } from '../components/ui';
+import { splitTitleYear } from '../utils/helpers';
 import './CollectionsPage.css';
 
 const CollectionsPage = () => {
@@ -57,7 +58,7 @@ const CollectionsPage = () => {
                   )}
                 </div>
                 <div className="coll-body">
-                  <h3 className="coll-title">{movie.title}</h3>
+                  <h3 className="coll-title">{splitTitleYear(movie.title).name}</h3>
                   <div className="coll-meta">
                     {movie.release_year && <span>{movie.release_year}</span>}
                     {movie.rating_count > 0 && (

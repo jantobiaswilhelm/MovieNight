@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { formatMonth } from '../../utils/helpers';
+import { formatMonth, splitTitleYear } from '../../utils/helpers';
 import RatingHistogram from './RatingHistogram';
 import Backdrop from './Backdrop';
 import './ClubLore.css';
@@ -86,8 +86,8 @@ export default function ClubLore({ stats }) {
             <Backdrop image={(ext.oldest || ext.newest)?.backdrop_url || (ext.oldest || ext.newest)?.image_url} />
             <span className="lore-k">Era range</span>
             <div className="lore-two">
-              {ext.oldest && <div><span className="lore-two-k">Oldest</span><div className="lore-two-v">{ext.oldest.title}</div><div className="lore-two-s">{ext.oldest.release_year}</div></div>}
-              {ext.newest && <div><span className="lore-two-k">Newest</span><div className="lore-two-v">{ext.newest.title}</div><div className="lore-two-s">{ext.newest.release_year}</div></div>}
+              {ext.oldest && <div><span className="lore-two-k">Oldest</span><div className="lore-two-v">{splitTitleYear(ext.oldest.title).name}</div><div className="lore-two-s">{ext.oldest.release_year}</div></div>}
+              {ext.newest && <div><span className="lore-two-k">Newest</span><div className="lore-two-v">{splitTitleYear(ext.newest.title).name}</div><div className="lore-two-s">{ext.newest.release_year}</div></div>}
             </div>
           </div>
         )}

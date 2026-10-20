@@ -45,7 +45,7 @@ export default function OnTheCalendar({ items = [], fallback = null }) {
               <div className="otc-ev" key={ev.id}>
                 <div className="otc-poster" style={{ backgroundImage: ev.image_url ? `url(${ev.image_url})` : 'none' }} />
                 <div className="otc-info">
-                  <h4>{href ? <Link to={href}>{name}</Link> : name}</h4>
+                  <h3>{href ? <Link to={href}>{name}</Link> : name}</h3>
                   {ev.kind === 'marathon' && (
                     <div className="otc-meta">
                       <span className="otc-tag mara">

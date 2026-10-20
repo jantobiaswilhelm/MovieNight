@@ -8,15 +8,16 @@ export function formatDate(dateStr, variant = 'short') {
   if (!dateStr) return null;
   const date = new Date(dateStr);
   if (variant === 'time') {
-    return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
   }
   if (variant === 'long') {
     return date.toLocaleDateString('en-US', {
       weekday: 'long',
       month: 'long',
       day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit'
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23'
     });
   }
   return date.toLocaleDateString('en-US', {

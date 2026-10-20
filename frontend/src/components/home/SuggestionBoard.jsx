@@ -137,7 +137,7 @@ const SuggestionBoard = ({ onAnnounced, onSchedule }) => {
       <header className="sb-head">
         <div>
           <div className="sb-eyebrow">The board</div>
-          <h3 className="sb-title">Suggest a movie</h3>
+          <h2 className="sb-title">Suggest a movie</h2>
         </div>
         {isAuthenticated && (
           <button className="btn sm" onClick={() => setShowSuggest(true)}>
