@@ -4,7 +4,7 @@ import { Icon } from '../ui';
 
 /**
  * Announce — search & pick a movie. `onPick(details)` hands the TMDB details on;
- * Home opens the screening drawer with them to set the date.
+ * Home opens the screening composer over its hero to set the date.
  */
 const AnnounceFlow = ({ onPick }) => {
   const [search, setSearch] = useState('');

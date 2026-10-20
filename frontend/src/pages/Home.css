@@ -275,18 +275,52 @@
   .home-sidebar{ min-height: 0; }
   .hs-fill{ position: static; }
 }
-/* Scheduling inline: the composer is taller than the hero, so the card grows
-   with it instead of scrolling inside, and the hero keeps its own height. */
-.home-sidebar.is-composing{ overflow: visible; }
-.home-sidebar.is-composing .hs-fill{ position: static; }
-/* The hero (the film on now or next) stays in view beside the composer. */
-.hero-split:has(.home-sidebar.is-composing) .hero-feature{
-  align-self: start;
-  position: sticky;
-  top: calc(64px + var(--s-4));
+/* Scheduling: the composer (.sd-hero, styled with the composer) covers the
+   hero and the sidebar lists the calendar. Neither box changes size, so the
+   page below stays put. The hero's own content is only hidden, which keeps it
+   setting the height and lets it fade back in on Cancel. */
+.hero-feature > :not(.sd-hero){
+  transition: opacity var(--dur-2) var(--ease-out), visibility var(--dur-2);
 }
+.hero-feature.is-composing > :not(.sd-hero){ opacity: 0; visibility: hidden; }
 @media (max-width: 1060px){
-  .hero-split:has(.home-sidebar.is-composing) .hero-feature{ position: relative; top: auto; }
+  .hero-feature.is-composing{ min-height: 0; }
+  .hero-feature.is-composing > :not(.sd-hero){ display: none; }
+}
+
+.hs-main{
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.hs-main[hidden]{ display: none; }
+.hs-preview{
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  animation: hs-in var(--dur-2) var(--ease-out);
+}
+.hs-preview-head{
+  padding: var(--s-4) var(--s-5);
+  border-bottom: 1px solid var(--rule);
+}
+.hs-preview-body{
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--s-4) var(--s-5) var(--s-5);
+}
+.hs-preview-body .dp{ margin-top: 0; }
+@keyframes hs-in{
+  from{ opacity: 0; transform: translateY(4px); }
+  to{ opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce){
+  .hs-preview{ animation: none; }
+  .hero-feature > :not(.sd-hero){ transition: none; }
 }
 
 /* Tab row */

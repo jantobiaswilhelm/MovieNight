@@ -99,7 +99,7 @@ const SuggestionBoard = ({ onAnnounced, onSchedule }) => {
     }
   };
 
-  // Home schedules inline in its sidebar (onSchedule); anywhere else, the drawer.
+  // Home schedules over its hero (onSchedule); anywhere else, the drawer.
   const openAnnounce = (sug) => (onSchedule || openScheduler)({
     film: filmFromRow(sug),
     submit: async (iso) => {

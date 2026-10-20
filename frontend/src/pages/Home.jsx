@@ -17,7 +17,7 @@ import {
 } from '../api/client';
 import { getSeasonalTheme } from '../utils/seasonalTheme';
 import { AdminSettingsPanel, AnnounceFlow, SuggestionBoard, HomeClub, OnThisDay, SeasonalDecoration, ReviewsFeature, OnTheCalendar } from '../components/home';
-import { filmFromTmdb, ScreeningComposer } from '../components/scheduler';
+import { DiscordPreview, filmFromTmdb, ScreeningComposer } from '../components/scheduler';
 import { Icon, SectionHead, Skeleton, EmptyState, Badge } from '../components/ui';
 import './Home.css';
 
@@ -35,6 +35,11 @@ const Home = () => {
   const [onThisDay, setOnThisDay] = useState(null);
   const [calendar, setCalendar] = useState([]);
   const [togglingAttendance, setTogglingAttendance] = useState(false);
+  // Scheduling takes over the hero (same box, same height, so nothing below it
+  // moves) and the sidebar shows the Discord post as it will look.
+  const [composing, setComposing] = useState(null);
+  const [composeAt, setComposeAt] = useState(null);
+  const composerRef = useRef(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -136,6 +141,21 @@ const Home = () => {
     document.addEventListener('visibilitychange', onVisible);
     return () => document.removeEventListener('visibilitychange', onVisible);
   }, [nextTransitionAt, refreshHero]);
+
+  const schedule = useCallback((request) => {
+    setComposeAt(null);
+    setComposing(request);
+  }, []);
+  const closeComposer = useCallback(() => setComposing(null), []);
+
+  // Keyboard users start inside the composer; bring the hero back into view if
+  // the page had scrolled past it.
+  useEffect(() => {
+    const el = composerRef.current;
+    if (!composing || !el) return;
+    el.focus({ preventScroll: true });
+    if (el.getBoundingClientRect().top < 0) el.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  }, [composing]);
 
   const handleAttendanceToggle = async (e) => {
     e.preventDefault();
@@ -254,7 +274,7 @@ const Home = () => {
 
       {/* ═══ HERO — Feature + voting ═══ */}
       <section className="hero-split">
-        <article className="hero-feature">
+        <article className={`hero-feature ${composing ? 'is-composing' : ''}`.trim()}>
           {heroBackdrop && (
             <div
               className="hero-bg"
@@ -424,6 +444,26 @@ const Home = () => {
               />
             )}
           </div>
+
+          {/* The hero underneath stays laid out (only hidden), so it keeps
+              setting the box's height while the composer covers it. */}
+          {composing && (
+            <div
+              ref={composerRef}
+              className="sd sd-hero"
+              role="region"
+              aria-label={`Schedule ${composing.film.title}`}
+              tabIndex={-1}
+            >
+              <ScreeningComposer
+                request={composing}
+                variant="hero"
+                calendar={calendar}
+                onWhenChange={setComposeAt}
+                onClose={closeComposer}
+              />
+            </div>
+          )}
         </article>
 
         {/* Tabbed sidebar: Announce + Board share the space */}
@@ -431,7 +471,10 @@ const Home = () => {
           isAuthenticated={isAuthenticated}
           loading={loading}
           onAnnounced={fetchData}
-          onPick={(details) => ({
+          composing={composing}
+          composeAt={composeAt}
+          onSchedule={schedule}
+          onPick={(details) => schedule({
             film: filmFromTmdb(details),
             submit: async (iso) => {
               const announcement = await announceMovie(details, iso);
@@ -481,19 +524,8 @@ const Home = () => {
 /* ═══════════════════════════════════════════════════════════════════════
    Home sidebar — toggles between Announce and Board in the same slot.
    ═══════════════════════════════════════════════════════════════════════ */
-function HomeSidebar({ isAuthenticated, loading, onAnnounced, onPick }) {
-  // While a screening is being scheduled, the composer takes over the whole
-  // sidebar (tabs included) and the card grows to fit it.
-  const [composing, setComposing] = useState(null);
-  const composerRef = useRef(null);
-
-  useEffect(() => {
-    const el = composerRef.current;
-    if (!composing || !el) return;
-    el.focus({ preventScroll: true });
-    if (el.getBoundingClientRect().top < 0) el.scrollIntoView({ block: 'start', behavior: 'smooth' });
-  }, [composing]);
-
+function HomeSidebar({ isAuthenticated, loading, onAnnounced, onPick, onSchedule, composing, composeAt }) {
+  const { user } = useAuth();
   const [tab, setTab] = useState(isAuthenticated ? 'announce' : 'board');
   // Auth resolves after the first render, so the initial value above sees a
   // logged-in user as anonymous. Follow it until the user picks a tab themselves.
@@ -511,18 +543,21 @@ function HomeSidebar({ isAuthenticated, loading, onAnnounced, onPick }) {
   return (
     <aside className={`home-sidebar ${composing ? 'is-composing' : ''}`}>
       <div className="hs-fill">
-      {composing ? (
-        <div
-          ref={composerRef}
-          className="sd sd-inline"
-          role="region"
-          aria-label={`Schedule ${composing.film.title}`}
-          tabIndex={-1}
-        >
-          <ScreeningComposer request={composing} variant="inline" onClose={() => setComposing(null)} />
-        </div>
-      ) : (
-        <>
+        {/* While the hero schedules, the sidebar previews the Discord post. The
+            tabs stay mounted underneath, so a search survives a Cancel. */}
+        {composing && (
+          <section className="hs-preview" aria-labelledby="hs-preview-label">
+            <header className="hs-preview-head">
+              <span id="hs-preview-label" className="eyebrow">Preview in Discord</span>
+            </header>
+            <div className="hs-preview-body">
+              {composeAt && (
+                <DiscordPreview film={composing.film} when={composeAt} announcer={user?.username} />
+              )}
+            </div>
+          </section>
+        )}
+        <div className="hs-main" hidden={Boolean(composing)}>
           <nav className="hs-tabs" role="tablist" aria-label="Home sidebar">
             <button
               role="tab"
@@ -547,7 +582,7 @@ function HomeSidebar({ isAuthenticated, loading, onAnnounced, onPick }) {
           <div className="hs-panel" role="tabpanel">
             {tab === 'announce' ? (
               isAuthenticated ? (
-                <AnnounceFlow onPick={(details) => setComposing(onPick(details))} />
+                <AnnounceFlow onPick={onPick} />
               ) : (
                 <div className="hs-login">
                   <div className="hs-login-eyebrow">Host the next night</div>
@@ -556,11 +591,10 @@ function HomeSidebar({ isAuthenticated, loading, onAnnounced, onPick }) {
                 </div>
               )
             ) : (
-              <SuggestionBoard onAnnounced={onAnnounced} onSchedule={setComposing} />
+              <SuggestionBoard onAnnounced={onAnnounced} onSchedule={onSchedule} />
             )}
           </div>
-        </>
-      )}
+        </div>
       </div>
     </aside>
   );

@@ -1,6 +1,6 @@
 /* ==========================================================================
-   Screening composer — schedule or move a movie night. Shown inline in the
-   frontpage sidebar, or in ScreeningDrawer everywhere else.
+   Screening composer — schedule or move a movie night. Shown over the
+   frontpage hero, or in ScreeningDrawer everywhere else.
    The sentence is the interface: film and time read as one line of copy,
    and the controls below it edit the underlined words.
    ========================================================================== */
@@ -565,27 +565,160 @@
 .sd-status.is-posting svg { animation: sd-pulse 1.2s var(--ease-out) infinite alternate; }
 @keyframes sd-pulse { from { opacity: 1; } to { opacity: .3; } }
 
-@media (prefers-reduced-motion: reduce) {
-  .sd-ticket, .sd-status.is-posting svg { animation: none; }
+/* Opening parts ease in rather than pop. */
+.mg { animation: sd-reveal var(--dur-2) var(--ease-out); }
+@keyframes sd-reveal {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: none; }
 }
 
-/* ── Inline: in the frontpage sidebar, scrolling with the page ────────── */
-.sd-inline {
+/* The screening being scheduled, slotted into the list at its date. */
+.sd-cal-row.is-pending {
+  background: var(--ember-soft);
+  box-shadow: inset 2px 0 0 var(--ember);
+}
+.sd-cal-row.is-pending .sd-cal-num,
+.sd-cal-row.is-pending .sd-cal-sub { color: var(--ember-hi); }
+.sd-cal-after { margin-top: var(--s-3); }
+
+/* ── Hero: over the frontpage hero, in the same box ───────────────────── */
+/* The hero stays laid out underneath, so the box keeps its height and the
+   page below never moves; anything taller scrolls inside. */
+.sd-hero {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
   display: flex;
   flex-direction: column;
-  scroll-margin-top: var(--s-9);
+  background: var(--ink-2);
+  animation: sd-hero-in var(--dur-2) var(--ease-out);
+  scroll-margin-top: calc(64px + var(--s-4)); /* clear the sticky site header */
 }
+@keyframes sd-hero-in { from { opacity: 0; } to { opacity: 1; } }
 /* Focus lands on the region only so keyboard users start inside it; no ring. */
-.sd-inline:focus-visible { outline: none; }
-.sd-inline .sd-head { flex-direction: row-reverse; }
-.sd-back { margin-left: calc(var(--s-2) * -1); }
-.sd-inline .sd-scroll { overflow: visible; }
-.sd-inline .sd-sentence { padding-top: var(--s-5); }
-.sd-inline .sd-ticket-val { font-size: var(--fs-24); }
-.sd-inline .sd-foot {
-  position: sticky;
-  bottom: 0;
-  border-radius: 0 0 var(--r-2) var(--r-2);
+.sd-hero:focus-visible { outline: none; }
+.sd-hero > :not(.sd-hero-bg) { position: relative; }
+.sd-hero-bg {
+  position: absolute;
+  inset: 0;
+  background: center 25% / cover no-repeat;
+  opacity: .4;
+  pointer-events: none;
+}
+/* Photo overlay: the still shows behind the sentence and fades out before the controls. */
+.sd-hero-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--ink-2) 45%, transparent) 0%, color-mix(in srgb, var(--ink-2) 90%, transparent) 40%, var(--ink-2) 70%);
+}
+.sd-hero .sd-head { padding: var(--s-4) var(--s-6); }
+.sd-cancel { margin-right: calc(var(--s-2) * -1); }
+
+/* Top to bottom: the sentence, the week, the time with Announce under it, and
+   the calendar. The bands are evenly spaced, and a taller box spaces them
+   further apart. The Discord preview is in the frontpage sidebar. */
+.sd-hero .sd-scroll {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  padding: 0 var(--s-6);
+}
+.sd-hero .sd-scroll > * { flex-shrink: 0; }
+.sd-hero .sd-sentence,
+.sd-hero .sd-group { padding: 0; }
+.sd-hero .sd-group + .sd-group { padding-top: 0; }
+.sd-hero .sd-scroll > .sd-msg { padding: 0; margin: 0; }
+.sd-hero .sd-sentence { overflow: visible; }
+.sd-hero .sd-when { margin-top: var(--s-1); font-size: var(--fs-24); }
+.sd-hero .sd-days { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+.sd-hero .sd-day { min-height: 0; padding: var(--s-2); }
+.sd-hero .sd-day-name { letter-spacing: .08em; }
+
+/* Centred: "Starts at" on the picker's line, then Announce. */
+.sd-act {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-3);
+  text-align: center;
+}
+.sd-act .sd-group-time {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2) var(--s-3);
+  padding: 0;
+}
+.sd-act .sd-group-time > .sd-label { margin: 0; }
+.sd-act .sd-time-row { justify-content: center; }
+.sd-act .sd-msg { flex-basis: 100%; justify-content: center; margin-top: 0; }
+.sd-act .sd-actions { min-width: 280px; }
+
+/* The calendar runs along the bottom as a strip of cards, scrolling sideways. */
+.sd-hero .sd-cal-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: var(--s-4);
+}
+.sd-hero .sd-cal-head {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--s-4);
+}
+.sd-hero .sd-cal-head .sd-msg { margin: 0 0 var(--s-2); }
+/* With nothing else booked, the note sits beside the one card. */
+.sd-hero .sd-cal-group > .sd-cal-after { flex: 1 1 160px; margin: 0; }
+.sd-hero .sd-cal {
+  display: flex;
+  gap: var(--s-2);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  flex: 0 1 auto;
+  min-width: 0;
+  scrollbar-width: thin;
+  border: 0;
+  border-radius: 0;
+}
+.sd-hero .sd-cal-row,
+.sd-hero .sd-cal-row:first-child,
+.sd-hero .sd-cal-more {
+  flex: 0 0 auto;
+  border: 1px solid var(--rule);
+  border-radius: var(--r-2);
+  scroll-snap-align: start;
+}
+.sd-hero .sd-cal-row { width: 256px; }
+.sd-hero .sd-cal-more {
+  display: flex;
+  align-items: center;
+  padding: 0 var(--s-4);
+  white-space: nowrap;
+}
+
+.sd-hero .sd-scroll.sd-sent {
+  display: block;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: var(--s-6) var(--s-5);
+}
+.sd-hero .sd-foot { padding: var(--s-4) var(--s-6); }
+
+/* Stacked under 1060px the hero has no neighbour to match, so the composer
+   takes its place in the flow and sets the height itself. */
+@media (max-width: 1060px) {
+  .sd-hero { position: relative; inset: auto; flex: 1; }
+  .sd-hero .sd-scroll { overflow: visible; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sd-ticket, .sd-status.is-posting svg, .mg, .sd-hero { animation: none; }
 }
 
 @media (max-width: 720px) {
@@ -597,4 +730,8 @@
   .sd-sent { padding: var(--s-5) var(--s-4); }
   .dp-fields { grid-template-columns: 1fr 1fr; }
   .dp-thumb { width: 64px; height: 96px; }
+  .sd-hero .sd-head, .sd-hero .sd-foot { padding-left: var(--s-4); padding-right: var(--s-4); }
+  .sd-hero .sd-scroll { padding: var(--s-4); }
+  .sd-hero .sd-days { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .sd-act .sd-actions { align-self: stretch; min-width: 0; }
 }
