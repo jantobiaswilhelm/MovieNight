@@ -3,11 +3,12 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useConfirm } from '../context/ConfirmContext';
-import { getMovies, deleteMovie } from '../api/client';
+import { useScheduler } from '../context/SchedulerContext';
+import { getMovies, deleteMovie, rescheduleMovie, unscheduleMovie } from '../api/client';
 import { useFetch } from '../hooks';
 import { formatDate, formatMonth, formatMonthYear } from '../utils/helpers';
 import { Icon, PageHeader, Chip, EmptyState } from '../components/ui';
-import RescheduleModal from '../components/common/RescheduleModal';
+import { filmFromRow } from '../components/scheduler';
 import { PosterImg } from '../components/common';
 import './MoviesPage.css';
 
@@ -23,10 +24,10 @@ const SORT_OPTIONS = [
 
 const MoviesPage = () => {
   const { isAdmin, user } = useAuth();
+  const openScheduler = useScheduler();
   const { showError } = useToast();
   const confirm = useConfirm();
   const [searchQuery, setSearchQuery] = useState('');
-  const [reschedulingMovie, setReschedulingMovie] = useState(null);
   const [selectedMonth, setSelectedMonth] = useState('');
   const [selectedGenre, setSelectedGenre] = useState('');
   const [selectedYear, setSelectedYear] = useState('');
@@ -59,6 +60,17 @@ const MoviesPage = () => {
       setDeleting(null);
     }
   }, [setMovies, confirm, showError]);
+
+  const openReschedule = (movie) => openScheduler({
+    mode: 'reschedule',
+    film: filmFromRow(movie),
+    movieId: movie.id,
+    currentAt: movie.scheduled_at,
+    submit: (iso) => rescheduleMovie(movie.id, iso),
+    unschedule: () => unscheduleMovie(movie.id),
+    onDone: (updated) =>
+      setMovies((prev) => prev.map((m) => (m.id === updated.id ? { ...m, scheduled_at: updated.scheduled_at } : m))),
+  });
 
   const availableMonths = useMemo(() => {
     const months = new Set();
@@ -401,7 +413,7 @@ const MoviesPage = () => {
                     (isAdmin || (user && movie.announced_by === user.id)) && (
                     <button
                       className="mg-reschedule"
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setReschedulingMovie(movie); }}
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); openReschedule(movie); }}
                       aria-label={`Reschedule ${movie.title}`}
                     >
                       <Icon name="calendar" size={14} />
@@ -436,16 +448,6 @@ const MoviesPage = () => {
         </div>
       )}
 
-      {reschedulingMovie && (
-        <RescheduleModal
-          movie={reschedulingMovie}
-          isOpen
-          onClose={() => setReschedulingMovie(null)}
-          onRescheduled={(updated) =>
-            setMovies((prev) => prev.map((m) => (m.id === updated.id ? { ...m, scheduled_at: updated.scheduled_at } : m)))
-          }
-        />
-      )}
     </div>
   );
 };

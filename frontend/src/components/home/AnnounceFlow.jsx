@@ -3,11 +3,10 @@ import { searchTMDB, getTMDBMovie, getPopularMovies } from '../../api/client';
 import { Icon } from '../ui';
 
 /**
- * Announce — search & pick a movie. Scheduling happens in the full-width
- * ScheduleSection (rendered by Home once a movie is picked).
- * Controlled: `onPick(movie|null)` reports the selection; `pickedMovie` reflects it.
+ * Announce — search & pick a movie. `onPick(details)` hands the TMDB details on;
+ * Home opens the screening drawer with them to set the date.
  */
-const AnnounceFlow = ({ onPick, pickedMovie }) => {
+const AnnounceFlow = ({ onPick }) => {
   const [search, setSearch] = useState('');
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
@@ -78,68 +77,57 @@ const AnnounceFlow = ({ onPick, pickedMovie }) => {
         </div>
       </header>
 
-      {pickedMovie ? (
-        <div className="af-flow-body af-picked">
-          {pickedMovie.posterPath
-            ? <img src={pickedMovie.posterPath} alt="" className="af-picked-poster" loading="lazy" />
-            : <div className="af-picked-check"><Icon name="check" size={22} /></div>}
-          <div className="af-picked-title">{pickedMovie.title}</div>
-          <div className="af-picked-sub"><Icon name="chevron" size={14} /> Pick a date on the calendar below</div>
-          <button type="button" className="btn ghost sm" onClick={() => onPick(null)}>Choose a different movie</button>
-        </div>
-      ) : (
-        <div className="af-flow-body">
-          <form onSubmit={handleSearch} className="af-search">
-            <div className="af-search-input">
-              <span className="af-search-icon"><Icon name="search" size={16} /></span>
-              <input
-                type="text"
-                placeholder="Title, director, year…"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-              {search && (
-                <button
-                  type="button"
-                  className="af-search-clear"
-                  onClick={() => { setSearch(''); setResults([]); }}
-                  aria-label="Clear"
-                >
-                  <Icon name="close" size={12} />
-                </button>
-              )}
+      <div className="af-flow-body">
+        <form onSubmit={handleSearch} className="af-search">
+          <div className="af-search-input">
+            <span className="af-search-icon"><Icon name="search" size={16} /></span>
+            <input
+              type="text"
+              placeholder="Title, director, year…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            {search && (
+              <button
+                type="button"
+                className="af-search-clear"
+                onClick={() => { setSearch(''); setResults([]); }}
+                aria-label="Clear"
+              >
+                <Icon name="close" size={12} />
+              </button>
+            )}
+          </div>
+          <button type="submit" className="btn sm" disabled={searching || !search.trim()}>
+            {searching ? '…' : 'Search'}
+          </button>
+        </form>
+
+        {error && <div className="af-error">{error}</div>}
+
+        {results.length > 0 ? (
+          <ul className="af-results">
+            {results.slice(0, 10).map((movie) => renderResult(movie))}
+          </ul>
+        ) : !searching && (
+          popular.length > 0 ? (
+            <div className="af-popular">
+              <div className="af-popular-head">
+                <Icon name="sparkles" size={13} />
+                <span>Popular right now</span>
+              </div>
+              <ul className="af-results">
+                {popular.map((movie) => renderResult(movie))}
+              </ul>
             </div>
-            <button type="submit" className="btn sm" disabled={searching || !search.trim()}>
-              {searching ? '…' : 'Search'}
-            </button>
-          </form>
-
-          {error && <div className="af-error">{error}</div>}
-
-          {results.length > 0 ? (
-            <ul className="af-results">
-              {results.slice(0, 10).map((movie) => renderResult(movie))}
-            </ul>
-          ) : !searching && (
-            popular.length > 0 ? (
-              <div className="af-popular">
-                <div className="af-popular-head">
-                  <Icon name="sparkles" size={13} />
-                  <span>Popular right now</span>
-                </div>
-                <ul className="af-results">
-                  {popular.map((movie) => renderResult(movie))}
-                </ul>
-              </div>
-            ) : (
-              <div className="af-hint">
-                <Icon name="film" size={24} stroke={1.25} />
-                <p>Search TMDB for any film — you&rsquo;ll set the date next.</p>
-              </div>
-            )
-          )}
-        </div>
-      )}
+          ) : (
+            <div className="af-hint">
+              <Icon name="film" size={24} stroke={1.25} />
+              <p>Search TMDB for any film — you&rsquo;ll pick the night next.</p>
+            </div>
+          )
+        )}
+      </div>
     </div>
   );
 };

@@ -73,6 +73,7 @@ const REGISTRY = {
   calendar:  Calendar,
   megaphone: Megaphone,
   chevron:   ChevronDown,
+  'chevron-down':  ChevronDown,
   'chevron-up':    ChevronUp,
   'chevron-left':  ChevronLeft,
   'chevron-right': ChevronRight,

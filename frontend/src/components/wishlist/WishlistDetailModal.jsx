@@ -1,65 +1,13 @@
-import { useState } from 'react';
-import { announceFromWishlist } from '../../api/client';
 import { sanitizeUrl, sanitizeImdbId, sanitizeImageUrl } from '../../utils/sanitizeUrl';
 import { formatRuntime, getLanguageName, getAvatarUrl } from '../../utils/helpers';
-import { TimePicker } from '../ui';
+import { Icon } from '../ui';
 import './WishlistDetailModal.css';
 
-const WishlistDetailModal = ({ item, isOpen, onClose, onAnnounce, canAnnounce }) => {
-  const [showScheduleForm, setShowScheduleForm] = useState(false);
-  const [scheduleDate, setScheduleDate] = useState('');
-  const [scheduleTime, setScheduleTime] = useState('20:00');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState(null);
-
+const WishlistDetailModal = ({ item, isOpen, onClose, onSchedule, canAnnounce }) => {
   if (!isOpen || !item) return null;
 
-  const today = new Date().toISOString().split('T')[0];
-
-  const handleScheduleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!scheduleDate || !scheduleTime) {
-      setError('Please select both date and time');
-      return;
-    }
-
-    const scheduledAt = new Date(`${scheduleDate}T${scheduleTime}`);
-    if (scheduledAt <= new Date()) {
-      setError('Scheduled time must be in the future');
-      return;
-    }
-
-    setIsSubmitting(true);
-    setError(null);
-
-    try {
-      await announceFromWishlist(item.id, scheduledAt.toISOString());
-      if (onAnnounce) {
-        onAnnounce(item);
-      }
-      // Reset form and close
-      setShowScheduleForm(false);
-      setScheduleDate('');
-      setScheduleTime('20:00');
-      onClose();
-    } catch (err) {
-      setError(err.message || 'Failed to schedule movie night');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleClose = () => {
-    setShowScheduleForm(false);
-    setScheduleDate('');
-    setScheduleTime('20:00');
-    setError(null);
-    onClose();
-  };
-
   return (
-    <div className="modal-overlay" onClick={handleClose}>
+    <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content wishlist-detail-modal" onClick={(e) => e.stopPropagation()}>
         {/* Backdrop */}
         {sanitizeImageUrl(item.backdrop_url) && (
@@ -68,7 +16,7 @@ const WishlistDetailModal = ({ item, isOpen, onClose, onAnnounce, canAnnounce })
           </div>
         )}
 
-        <button className="modal-close" onClick={handleClose}>×</button>
+        <button className="modal-close" onClick={onClose}>×</button>
 
         <div className="detail-content">
           <div className="detail-header">
@@ -149,53 +97,10 @@ const WishlistDetailModal = ({ item, isOpen, onClose, onAnnounce, canAnnounce })
 
           {canAnnounce && (
             <div className="detail-actions">
-              {showScheduleForm ? (
-                <div className="schedule-inline-form">
-                  <h4>Schedule Movie Night</h4>
-                  <form onSubmit={handleScheduleSubmit}>
-                    <div className="schedule-form-row">
-                      <div className="schedule-form-field">
-                        <label>Date</label>
-                        <input
-                          type="date"
-                          value={scheduleDate}
-                          onChange={(e) => setScheduleDate(e.target.value)}
-                          min={today}
-                          required
-                        />
-                      </div>
-                      <div className="schedule-form-field">
-                        <label>Time</label>
-                        <TimePicker value={scheduleTime} onChange={setScheduleTime} />
-                      </div>
-                    </div>
-                    {error && <div className="schedule-form-error">{error}</div>}
-                    <div className="schedule-form-actions">
-                      <button
-                        type="button"
-                        className="btn-secondary"
-                        onClick={() => {
-                          setShowScheduleForm(false);
-                          setError(null);
-                        }}
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="submit"
-                        className="btn-primary"
-                        disabled={isSubmitting}
-                      >
-                        {isSubmitting ? 'Scheduling...' : 'Schedule & Announce'}
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              ) : (
-                <button className="btn-primary announce-btn" onClick={() => setShowScheduleForm(true)}>
-                  Schedule Movie Night
-                </button>
-              )}
+              <button className="btn announce-btn" onClick={() => onSchedule(item)}>
+                <Icon name="calendar" size={16} />
+                <span>Schedule a screening</span>
+              </button>
             </div>
           )}
         </div>

@@ -1,15 +1,18 @@
 import { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getMyWishlist, getGuildWishlist } from '../api/client';
+import { useScheduler } from '../context/SchedulerContext';
+import { getMyWishlist, getGuildWishlist, announceFromWishlist } from '../api/client';
 import { useFetch, useModal } from '../hooks';
 import { WishlistCard, AddToWishlistModal, WishlistDetailModal } from '../components/wishlist';
+import { filmFromRow } from '../components/scheduler';
 import { getAvatarUrl } from '../utils/helpers';
 import { Icon, PageHeader, Chip, EmptyState } from '../components/ui';
 import './WishlistPage.css';
 
 const WishlistPage = () => {
   const { user, isAuthenticated } = useAuth();
+  const openScheduler = useScheduler();
   const [activeTab, setActiveTab] = useState('my');
   const [sort, setSort] = useState('importance');
   const [groupByUser, setGroupByUser] = useState(false);
@@ -45,9 +48,17 @@ const WishlistPage = () => {
   const handleAdded = useCallback(() => { refetch(); }, [refetch]);
   const handleCardClick = useCallback((item) => { detailModal.open(item); }, [detailModal]);
 
-  const handleAnnounce = (item) => {
-    if (item) handleRemove(item.id);
+  // Only your own wishlist items can be announced (the backend enforces it too).
+  const handleSchedule = (item) => {
     detailModal.close();
+    openScheduler({
+      film: filmFromRow(item),
+      submit: async (iso) => {
+        const announcement = await announceFromWishlist(item.id, iso);
+        return { announcementId: announcement?.id };
+      },
+      onDone: () => handleRemove(item.id),
+    });
   };
 
   const pickRandomMovie = () => {
@@ -223,8 +234,8 @@ const WishlistPage = () => {
         item={detailModal.data}
         isOpen={detailModal.isOpen}
         onClose={detailModal.close}
-        onAnnounce={handleAnnounce}
-        canAnnounce={isAuthenticated}
+        onSchedule={handleSchedule}
+        canAnnounce={isAuthenticated && detailModal.data?.user_id === user?.id}
       />
 
       {/* ── Random pick modal ── */}

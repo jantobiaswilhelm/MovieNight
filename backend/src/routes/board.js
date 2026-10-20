@@ -120,9 +120,13 @@ router.post('/suggestions/:id/announce', validateGuildId, validateIntParams('id'
       return res.status(409).json({ error: 'That suggestion is already scheduled' });
     }
 
-    await db.createPendingAnnouncement({
+    // Respect test mode like the other announce routes do.
+    const settings = await db.getGuildSettings(s.guild_id);
+    const isTest = settings.test_mode === true;
+
+    const announcement = await db.createPendingAnnouncement({
       guildId: s.guild_id,
-      channelId: null,
+      channelId: isTest ? settings.test_channel_id : null,
       userId: req.user.id,
       title: s.release_year ? `${s.title} (${s.release_year})` : s.title,
       imageUrl: s.image_url,
@@ -135,11 +139,12 @@ router.post('/suggestions/:id/announce', validateGuildId, validateIntParams('id'
       runtime: s.runtime,
       releaseYear: s.release_year,
       trailerUrl: s.trailer_url,
-      scheduledAt: scheduledDate
+      scheduledAt: scheduledDate,
+      isTest
     });
 
     const updated = await db.markSuggestionScheduled(s.id, scheduledDate);
-    res.json({ success: true, suggestion: updated });
+    res.json({ success: true, suggestion: updated, announcement_id: announcement.id });
   } catch (err) {
     console.error('Error announcing suggestion:', err);
     res.status(500).json({ error: 'Failed to announce suggestion' });

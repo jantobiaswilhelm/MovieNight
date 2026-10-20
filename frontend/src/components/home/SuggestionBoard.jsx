@@ -2,17 +2,15 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { useConfirm } from '../../context/ConfirmContext';
+import { useScheduler } from '../../context/SchedulerContext';
 import { getAvatarUrl, formatRuntime } from '../../utils/helpers';
 import { sanitizeUrl, sanitizeImdbId, sanitizeImageUrl } from '../../utils/sanitizeUrl';
 import {
   getBoard, addSuggestion, setSuggestionVote, clearSuggestionVote,
   announceSuggestion, deleteSuggestion, searchTMDB, getTMDBMovie
 } from '../../api/client';
-import { Icon, TimePicker } from '../ui';
-
-/** Format a Date as YYYY-MM-DD in the browser's local timezone (never UTC). */
-const localDateStr = (d) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+import { Icon } from '../ui';
+import { filmFromRow } from '../scheduler';
 
 /**
  * Always-on suggestion board. Fetches its own data. Lives in the Home sidebar.
@@ -21,8 +19,9 @@ const localDateStr = (d) =>
  */
 const SuggestionBoard = ({ onAnnounced }) => {
   const { isAuthenticated, isAdmin, user, login } = useAuth();
-  const { showError, showSuccess } = useToast();
+  const { showError } = useToast();
   const confirm = useConfirm();
+  const openScheduler = useScheduler();
 
   const [board, setBoard] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -35,16 +34,6 @@ const SuggestionBoard = ({ onAnnounced }) => {
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const [addingId, setAddingId] = useState(null);
-
-  // Announce modal
-  const [announceFor, setAnnounceFor] = useState(null); // suggestion object
-  const [date, setDate] = useState(() => {
-    const d = new Date();
-    d.setDate(d.getDate() + ((5 + 7 - d.getDay()) % 7 || 7)); // next Friday
-    return localDateStr(d);
-  });
-  const [time, setTime] = useState('20:30');
-  const [announcing, setAnnouncing] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
@@ -109,28 +98,17 @@ const SuggestionBoard = ({ onAnnounced }) => {
     }
   };
 
-  const handleAnnounce = async (e) => {
-    e.preventDefault();
-    if (!announceFor) return;
-    const scheduledAt = new Date(`${date}T${time}`);
-    if (scheduledAt <= new Date()) {
-      showError('The time must be in the future.');
-      return;
-    }
-    setAnnouncing(true);
-    try {
-      await announceSuggestion(announceFor.id, scheduledAt.toISOString());
-      showSuccess(`${announceFor.title} is on the calendar.`);
-      setAnnounceFor(null);
+  const openAnnounce = (sug) => openScheduler({
+    film: filmFromRow(sug),
+    submit: async (iso) => {
+      const res = await announceSuggestion(sug.id, iso);
+      return { announcementId: res?.announcement_id };
+    },
+    onDone: async () => {
       await refresh();
       if (onAnnounced) onAnnounced();
-    } catch (err) {
-      if (err.status === 409) showError('That suggestion is already scheduled.');
-      else showError('Failed to announce: ' + err.message);
-    } finally {
-      setAnnouncing(false);
-    }
-  };
+    },
+  });
 
   const handleDelete = async (s) => {
     if (!(await confirm({
@@ -148,14 +126,6 @@ const SuggestionBoard = ({ onAnnounced }) => {
     } finally {
       setBusyId(null);
     }
-  };
-
-  const closeAnnounce = () => {
-    setAnnounceFor(null);
-    const d = new Date();
-    d.setDate(d.getDate() + ((5 + 7 - d.getDay()) % 7 || 7)); // next Friday
-    setDate(localDateStr(d));
-    setTime('20:30');
   };
 
   const canRemove = (s) => isAdmin || (user && s.suggested_by === user.id);
@@ -265,7 +235,7 @@ const SuggestionBoard = ({ onAnnounced }) => {
                   {!scheduled && isAuthenticated && (
                     <button
                       className="sb-announce"
-                      onClick={() => setAnnounceFor(s)}
+                      onClick={() => openAnnounce(s)}
                       title="Announce to movie night"
                     >
                       <Icon name="megaphone" size={14} />
@@ -356,36 +326,6 @@ const SuggestionBoard = ({ onAnnounced }) => {
                 <p>Search TMDB for any film to add it to the board.</p>
               </div>
             )}
-          </div>
-        </div>
-      )}
-
-      {/* Announce modal */}
-      {announceFor && (
-        <div className="sb-modal-overlay" onClick={closeAnnounce}>
-          <div className="sb-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="sb-modal-head">
-              <h2>Announce "{announceFor.title}"</h2>
-              <button className="sb-modal-close" aria-label="Close" onClick={closeAnnounce}>
-                <Icon name="close" size={16} />
-              </button>
-            </div>
-            <form onSubmit={handleAnnounce} className="sb-announce-form">
-              <div className="sb-when-fields">
-                <label className="sb-field">
-                  <span>Date</span>
-                  <input type="date" value={date} min={localDateStr(new Date())}
-                    onChange={(e) => setDate(e.target.value)} required />
-                </label>
-                <label className="sb-field">
-                  <span>Time</span>
-                  <TimePicker value={time} onChange={setTime} />
-                </label>
-              </div>
-              <button type="submit" className="btn lg" disabled={announcing}>
-                {announcing ? 'Scheduling…' : <><Icon name="megaphone" size={16} /> <span>Announce screening</span></>}
-              </button>
-            </form>
           </div>
         </div>
       )}

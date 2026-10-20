@@ -62,3 +62,53 @@
 .ui-modal-body {
   padding: var(--s-4);
 }
+
+/* ── Drawer variant: docked right on desktop, a bottom sheet on phones ── */
+.ui-modal-overlay.is-drawer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: stretch;
+  padding: 0;
+  overflow: hidden;
+}
+
+.ui-drawer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 520px;
+  height: 100%;
+  background: var(--ink-2);
+  border-left: 1px solid var(--rule-strong);
+  box-shadow: -24px 0 64px rgba(0, 0, 0, 0.45);
+  animation: ui-drawer-in var(--dur-2) var(--ease-out);
+  outline: none;
+}
+
+@keyframes ui-drawer-in {
+  from { transform: translateX(24px); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+
+@media (max-width: 720px) {
+  .ui-modal-overlay.is-drawer { align-items: flex-end; }
+  .ui-drawer {
+    max-width: none;
+    height: auto;
+    max-height: 92vh;
+    max-height: 92dvh;
+    border-left: 0;
+    border-top: 1px solid var(--rule-strong);
+    border-radius: var(--r-3) var(--r-3) 0 0;
+    box-shadow: 0 -24px 64px rgba(0, 0, 0, 0.45);
+    animation-name: ui-sheet-in;
+  }
+  @keyframes ui-sheet-in {
+    from { transform: translateY(32px); opacity: 0; }
+    to   { transform: none; opacity: 1; }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-drawer { animation: none; }
+}
