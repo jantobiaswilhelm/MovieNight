@@ -1213,3 +1213,38 @@ export const enqueueBingeMarathonAtomic = async (firstItem, marathon, itemCount)
     client.release();
   }
 };
+
+// ── Devlog posts ─────────────────────────────────────────────────────────────
+// A post is claimed (row inserted) before it is sent, so a restart or an
+// overlapping run can never post the same entry twice.
+
+export const getGuildTestSettings = async (guildId) => {
+  const result = await pool.query(
+    `SELECT test_mode, test_channel_id FROM guild_settings WHERE guild_id = $1`,
+    [guildId]
+  );
+  return result.rows[0] || { test_mode: false, test_channel_id: null };
+};
+
+export const claimDevlogPost = async (guildId, entryId, isTest) => {
+  const result = await pool.query(
+    `INSERT INTO devlog_posts (guild_id, entry_id, is_test)
+     VALUES ($1, $2, $3)
+     ON CONFLICT (guild_id, entry_id, is_test) DO NOTHING
+     RETURNING id`,
+    [guildId, entryId, isTest]
+  );
+  return result.rows[0] || null;
+};
+
+export const completeDevlogPost = async (id, channelId, messageId) => {
+  await pool.query(
+    `UPDATE devlog_posts SET channel_id = $2, message_id = $3, posted_at = CURRENT_TIMESTAMP WHERE id = $1`,
+    [id, channelId, messageId]
+  );
+};
+
+// Undo a claim when sending failed, so the next run tries again.
+export const releaseDevlogPost = async (id) => {
+  await pool.query(`DELETE FROM devlog_posts WHERE id = $1`, [id]);
+};

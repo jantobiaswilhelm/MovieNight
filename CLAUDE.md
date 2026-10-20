@@ -68,6 +68,14 @@ marked with a `// SHARED` or `// PARALLEL` comment citing the other file).
 
 The other ~175 model functions are single-consumer (bot-only or backend-only) and are not duplicated.
 
+### Devlog
+
+`frontend/public/devlog.json` holds the devlog shown at `/devlog` (footer link), newest first, kept short.
+An entry with `"discord": true` is posted once to the movie-night channel by the bot's `devlogPoster` job,
+which reads `${FRONTEND_URL}/devlog.json` on startup and every 30 min and records posts in `devlog_posts`
+(test mode posts to the test channel instead). Only entries from the last 30 days are posted, and an
+entry's `id` must never change once posted.
+
 ### Auth Flow
 
 Discord OAuth2 with a two-step code exchange:

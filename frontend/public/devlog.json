@@ -1,0 +1,48 @@
+[
+  {
+    "id": "2026-10-20-lights-up-a-little",
+    "date": "2026-10-20",
+    "title": "Lights up a little",
+    "discord": false,
+    "summary": "Still a dark screening room, just with the house lights up a notch.",
+    "items": [
+      "Cards stand apart from the page.",
+      "Film stills show through more."
+    ]
+  },
+  {
+    "id": "2026-10-20-a-calmer-frontpage",
+    "date": "2026-10-20",
+    "title": "A calmer frontpage",
+    "discord": false,
+    "summary": "Below the hero: what we watched, then the club.",
+    "items": [
+      "Recent nights with scores, reviews beside them.",
+      "Stats, leaderboards and members in one band."
+    ]
+  },
+  {
+    "id": "2026-10-20-scheduling-rebuilt",
+    "date": "2026-10-20",
+    "title": "Scheduling, rebuilt",
+    "discord": false,
+    "summary": "One scheduler instead of six. It opens on tonight.",
+    "items": [
+      "Quick “in 15 min / 30 min / 1 hour” starts.",
+      "See booked nights before you pick.",
+      "Preview the Discord post, then get a ticket."
+    ]
+  },
+  {
+    "id": "2026-10-20-small-fixes",
+    "date": "2026-10-20",
+    "title": "Small fixes",
+    "discord": false,
+    "summary": "Things that were quietly wrong.",
+    "items": [
+      "The downvote arrow is back.",
+      "24-hour times everywhere.",
+      "No more “Death Proof (2007) · 2007”."
+    ]
+  }
+]

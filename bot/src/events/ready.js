@@ -6,6 +6,7 @@ import { postRescheduleNote } from '../jobs/rescheduleNotifier.js';
 import { postCancelNote } from '../jobs/cancelNotifier.js';
 import { startRatingNotifierJob } from '../jobs/ratingNotifier.js';
 import { startChannelSyncJob } from '../jobs/channelSync.js';
+import { startDevlogPosterJob } from '../jobs/devlogPoster.js';
 import { startNotifyListener } from '../config/pgNotify.js';
 import { refreshScreeningCard } from '../utils/screeningMessage.js';
 import {
@@ -103,4 +104,7 @@ export const execute = async (client) => {
 
   // Start the channel sync job (syncs Discord channels to DB for admin settings)
   startChannelSyncJob(client);
+
+  // Post devlog entries flagged for Discord (read from the website's devlog.json)
+  startDevlogPosterJob(client);
 };

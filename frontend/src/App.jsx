@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Link } from 'react-router-dom';
 import { Header } from './components/layout';
 import { ErrorBoundary } from './components/common';
 import { NotificationProvider } from './context/NotificationContext';
@@ -24,6 +24,7 @@ const ActivityFeed = lazy(() => import('./pages/ActivityFeed'));
 const MarathonsPage = lazy(() => import('./pages/MarathonsPage'));
 const MarathonWizardPage = lazy(() => import('./pages/MarathonWizardPage'));
 const MarathonAddFilmsPage = lazy(() => import('./pages/MarathonAddFilmsPage'));
+const DevlogPage = lazy(() => import('./pages/DevlogPage'));
 
 function App() {
   return (
@@ -56,6 +57,7 @@ function App() {
             <Route path="/marathons/new" element={<MarathonWizardPage />} />
             <Route path="/marathons/:id/add" element={<MarathonAddFilmsPage />} />
             <Route path="/marathons/:id" element={<MarathonsPage />} />
+            <Route path="/devlog" element={<DevlogPage />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
           </Routes>
           </Suspense>
@@ -64,7 +66,10 @@ function App() {
         <footer className="app-footer">
           <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
             <span>MovieNight · Est. MMXXIV</span>
-            <span>Made by Jan Wilhelm</span>
+            <span className="footer-right">
+              <Link to="/devlog" className="footer-link">Devlog</Link>
+              <span>Made by Jan Wilhelm</span>
+            </span>
           </div>
         </footer>
       </div>

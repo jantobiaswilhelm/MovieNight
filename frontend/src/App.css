@@ -23,6 +23,15 @@ main{
   justify-content: space-between;
   align-items: center;
 }
+.footer-right{ display: inline-flex; align-items: center; gap: var(--s-5); }
+.footer-link{
+  color: var(--bone-dim);
+  text-decoration: underline;
+  text-decoration-color: var(--rule-strong);
+  text-underline-offset: 4px;
+  transition: color var(--dur-1) var(--ease-out), text-decoration-color var(--dur-1) var(--ease-out);
+}
+.footer-link:hover{ color: var(--ember); text-decoration-color: var(--ember); }
 
 .loading-spinner{
   color: var(--bone-dim);

@@ -831,6 +831,22 @@ const migrate = async () => {
     await client.query(`CREATE INDEX IF NOT EXISTS idx_marathon_items_marathon ON marathon_items(marathon_id)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_marathon_items_next ON marathon_items(marathon_id, status, position)`);
 
+    // Devlog entries the bot has posted to Discord (entries flagged "discord": true
+    // in frontend/public/devlog.json). One row per entry per guild, and separately
+    // for test mode, so a test post doesn't block the real one.
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS devlog_posts (
+        id SERIAL PRIMARY KEY,
+        guild_id VARCHAR(20) NOT NULL,
+        entry_id VARCHAR(100) NOT NULL,
+        is_test BOOLEAN NOT NULL DEFAULT false,
+        channel_id VARCHAR(20),
+        message_id VARCHAR(20),
+        posted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE (guild_id, entry_id, is_test)
+      )
+    `);
+
     await client.query('COMMIT');
     console.log('Migration completed successfully!');
   } catch (err) {
