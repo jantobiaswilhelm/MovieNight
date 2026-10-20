@@ -137,12 +137,14 @@
 .club-roster {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: var(--s-4);
   margin-top: var(--s-2);
 }
 .club-avatars {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: var(--s-2);
   list-style: none;
 }
