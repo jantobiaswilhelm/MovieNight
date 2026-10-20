@@ -1,7 +1,6 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useScheduler } from '../context/SchedulerContext';
 import { sanitizeUrl, sanitizeImdbId, sanitizeImageUrl } from '../utils/sanitizeUrl';
 import { formatDate, formatRuntime, getAvatarUrl, splitTitleYear } from '../utils/helpers';
 import {
@@ -19,13 +18,12 @@ import {
 import { getSeasonalTheme } from '../utils/seasonalTheme';
 import { StarRating, MovieCard, MovieCardSkeleton } from '../components/common';
 import { AdminSettingsPanel, UsersSection, AnnounceFlow, SuggestionBoard, HomeStatsBand, HomeHallOfFame, OnThisDay, SeasonalDecoration, ReviewsFeature, OnTheCalendar } from '../components/home';
-import { filmFromTmdb } from '../components/scheduler';
+import { filmFromTmdb, ScreeningComposer } from '../components/scheduler';
 import { Icon, SectionHead, Skeleton, EmptyState, Badge } from '../components/ui';
 import './Home.css';
 
 const Home = () => {
   const { isAuthenticated, isAdmin } = useAuth();
-  const openScheduler = useScheduler();
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -433,7 +431,7 @@ const Home = () => {
           isAuthenticated={isAuthenticated}
           loading={loading}
           onAnnounced={fetchData}
-          onPick={(details) => openScheduler({
+          onPick={(details) => ({
             film: filmFromTmdb(details),
             submit: async (iso) => {
               const announcement = await announceMovie(details, iso);
@@ -536,6 +534,18 @@ const Home = () => {
    Home sidebar — toggles between Announce and Board in the same slot.
    ═══════════════════════════════════════════════════════════════════════ */
 function HomeSidebar({ isAuthenticated, loading, onAnnounced, onPick }) {
+  // While a screening is being scheduled, the composer takes over the whole
+  // sidebar (tabs included) and the card grows to fit it.
+  const [composing, setComposing] = useState(null);
+  const composerRef = useRef(null);
+
+  useEffect(() => {
+    const el = composerRef.current;
+    if (!composing || !el) return;
+    el.focus({ preventScroll: true });
+    if (el.getBoundingClientRect().top < 0) el.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  }, [composing]);
+
   const [tab, setTab] = useState(isAuthenticated ? 'announce' : 'board');
   // Auth resolves after the first render, so the initial value above sees a
   // logged-in user as anonymous. Follow it until the user picks a tab themselves.
@@ -551,44 +561,58 @@ function HomeSidebar({ isAuthenticated, loading, onAnnounced, onPick }) {
   };
 
   return (
-    <aside className="home-sidebar">
+    <aside className={`home-sidebar ${composing ? 'is-composing' : ''}`}>
       <div className="hs-fill">
-      <nav className="hs-tabs" role="tablist" aria-label="Home sidebar">
-        <button
-          role="tab"
-          aria-selected={tab === 'announce'}
-          className={`hs-tab ${tab === 'announce' ? 'active' : ''}`}
-          onClick={() => choose('announce')}
+      {composing ? (
+        <div
+          ref={composerRef}
+          className="sd sd-inline"
+          role="region"
+          aria-label={`Schedule ${composing.film.title}`}
+          tabIndex={-1}
         >
-          <Icon name="megaphone" size={14} stroke={1.5} />
-          <span>Announce</span>
-        </button>
-        <button
-          role="tab"
-          aria-selected={tab === 'board'}
-          className={`hs-tab ${tab === 'board' ? 'active' : ''}`}
-          onClick={() => choose('board')}
-        >
-          <Icon name="star" size={14} stroke={1.5} />
-          <span>Board</span>
-        </button>
-      </nav>
-
-      <div className="hs-panel" role="tabpanel">
-        {tab === 'announce' ? (
-          isAuthenticated ? (
-            <AnnounceFlow onPick={onPick} />
-          ) : (
-            <div className="hs-login">
-              <div className="hs-login-eyebrow">Host the next night</div>
-              <h3 className="hs-login-title">Want to schedule the next movie?</h3>
-              <p>Log in with Discord and use this space to search a film, pick a date, and announce it to the club.</p>
-            </div>
-          )
-        ) : (
-          <SuggestionBoard onAnnounced={onAnnounced} />
-        )}
-      </div>
+          <ScreeningComposer request={composing} variant="inline" onClose={() => setComposing(null)} />
+        </div>
+      ) : (
+        <>
+          <nav className="hs-tabs" role="tablist" aria-label="Home sidebar">
+            <button
+              role="tab"
+              aria-selected={tab === 'announce'}
+              className={`hs-tab ${tab === 'announce' ? 'active' : ''}`}
+              onClick={() => choose('announce')}
+            >
+              <Icon name="megaphone" size={14} stroke={1.5} />
+              <span>Announce</span>
+            </button>
+            <button
+              role="tab"
+              aria-selected={tab === 'board'}
+              className={`hs-tab ${tab === 'board' ? 'active' : ''}`}
+              onClick={() => choose('board')}
+            >
+              <Icon name="star" size={14} stroke={1.5} />
+              <span>Board</span>
+            </button>
+          </nav>
+    
+          <div className="hs-panel" role="tabpanel">
+            {tab === 'announce' ? (
+              isAuthenticated ? (
+                <AnnounceFlow onPick={(details) => setComposing(onPick(details))} />
+              ) : (
+                <div className="hs-login">
+                  <div className="hs-login-eyebrow">Host the next night</div>
+                  <h3 className="hs-login-title">Want to schedule the next movie?</h3>
+                  <p>Log in with Discord and use this space to search a film, pick a date, and announce it to the club.</p>
+                </div>
+              )
+            ) : (
+              <SuggestionBoard onAnnounced={onAnnounced} onSchedule={setComposing} />
+            )}
+          </div>
+        </>
+      )}
       </div>
     </aside>
   );

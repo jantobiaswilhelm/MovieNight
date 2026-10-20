@@ -273,6 +273,19 @@
   .home-sidebar{ min-height: 0; }
   .hs-fill{ position: static; }
 }
+/* Scheduling inline: the composer is taller than the hero, so the card grows
+   with it instead of scrolling inside, and the hero keeps its own height. */
+.home-sidebar.is-composing{ overflow: visible; }
+.home-sidebar.is-composing .hs-fill{ position: static; }
+/* The hero (the film on now or next) stays in view beside the composer. */
+.hero-split:has(.home-sidebar.is-composing) .hero-feature{
+  align-self: start;
+  position: sticky;
+  top: calc(64px + var(--s-4));
+}
+@media (max-width: 1060px){
+  .hero-split:has(.home-sidebar.is-composing) .hero-feature{ position: relative; top: auto; }
+}
 
 /* Tab row */
 .hs-tabs{

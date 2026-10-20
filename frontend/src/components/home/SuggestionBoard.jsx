@@ -15,9 +15,10 @@ import { filmFromRow } from '../scheduler';
 /**
  * Always-on suggestion board. Fetches its own data. Lives in the Home sidebar.
  * Calls `onAnnounced()` after a successful announce so the parent can refresh
- * its movie data (hero, calendar).
+ * its movie data (hero, calendar). `onSchedule(request)`, when given, takes the
+ * scheduling request instead of the drawer.
  */
-const SuggestionBoard = ({ onAnnounced }) => {
+const SuggestionBoard = ({ onAnnounced, onSchedule }) => {
   const { isAuthenticated, isAdmin, user, login } = useAuth();
   const { showError } = useToast();
   const confirm = useConfirm();
@@ -98,7 +99,8 @@ const SuggestionBoard = ({ onAnnounced }) => {
     }
   };
 
-  const openAnnounce = (sug) => openScheduler({
+  // Home schedules inline in its sidebar (onSchedule); anywhere else, the drawer.
+  const openAnnounce = (sug) => (onSchedule || openScheduler)({
     film: filmFromRow(sug),
     submit: async (iso) => {
       const res = await announceSuggestion(sug.id, iso);
