@@ -18,7 +18,7 @@ const pad = (n) => String(n).padStart(2, '0');
 const toLocalInput = (date) =>
   `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 const fmtShort = (v) =>
-  v ? new Date(v).toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—';
+  v ? new Date(v).toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }) : '—';
 
 // The source cards, their panels, and the reviewable preview list all live in
 // <MarathonSourcePicker> — shared with the add-films page.

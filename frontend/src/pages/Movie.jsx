@@ -6,7 +6,7 @@ import { useConfirm } from '../context/ConfirmContext';
 import { useScheduler } from '../context/SchedulerContext';
 import { getMovie, submitRating, getMyRating, deleteMovie, cancelMovie, getSimilarMovies, toggleAttendance, getMovieCredits, rescheduleMovie, unscheduleMovie } from '../api/client';
 import { sanitizeUrl, sanitizeImdbId, sanitizeImageUrl } from '../utils/sanitizeUrl';
-import { formatDate, formatRuntime, getLanguageName, getAvatarUrl } from '../utils/helpers';
+import { formatDate, formatRuntime, getLanguageName, getAvatarUrl, splitTitleYear } from '../utils/helpers';
 import { StarRating } from '../components/common';
 import { RatingInput, RatingReactions } from '../components/rating';
 import { QuickAddToWishlist } from '../components/wishlist';
@@ -263,7 +263,7 @@ const Movie = () => {
               </div>
             )}
 
-            <h1 className="mv-title">{movie.title}</h1>
+            <h1 className="mv-title">{splitTitleYear(movie.title).name}</h1>
 
             {movie.tagline && (
               <p className="mv-tagline">&ldquo;{movie.tagline}&rdquo;</p>
@@ -367,7 +367,7 @@ const Movie = () => {
 
           {/* Dossier rail */}
           <aside className="mv-dossier">
-            <h4>Dossier</h4>
+            <h2>Dossier</h2>
             <dl>
               {credits?.directors?.length > 0 && (
                 <div className="row">
@@ -622,7 +622,7 @@ const Movie = () => {
                     )}
                   </div>
                   <div className="mv-similar-body">
-                    <h4 className="mv-similar-title">{similar.title}</h4>
+                    <h3 className="mv-similar-title">{similar.title}</h3>
                     {similar.year && <span className="mv-similar-year">{similar.year}</span>}
                     <div className="mv-similar-actions">
                       {sanitizeImdbId(similar.imdbId) && (

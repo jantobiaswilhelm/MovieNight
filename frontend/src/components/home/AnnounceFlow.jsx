@@ -73,7 +73,7 @@ const AnnounceFlow = ({ onPick }) => {
       <header className="af-flow-head">
         <div>
           <div className="af-flow-eyebrow">Host the next night</div>
-          <h3 className="af-flow-title">Announce the next movie</h3>
+          <h2 className="af-flow-title">Announce the next movie</h2>
         </div>
       </header>
 

@@ -252,7 +252,7 @@
   padding: var(--s-5);
   backdrop-filter: none;
 }
-.mv-dossier h4{
+.mv-dossier h2{
   font-family: var(--font-mono);
   font-size: var(--fs-11);
   letter-spacing: .32em;

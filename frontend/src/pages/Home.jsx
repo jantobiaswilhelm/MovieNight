@@ -551,7 +551,7 @@ function HomeSidebar({ isAuthenticated, loading, onAnnounced, onPick }) {
               ) : (
                 <div className="hs-login">
                   <div className="hs-login-eyebrow">Host the next night</div>
-                  <h3 className="hs-login-title">Want to schedule the next movie?</h3>
+                  <h2 className="hs-login-title">Want to schedule the next movie?</h2>
                   <p>Log in with Discord and use this space to search a film, pick a date, and announce it to the club.</p>
                 </div>
               )

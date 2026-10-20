@@ -6,11 +6,11 @@ import { Icon } from '../ui';
 import MarkWatchedPanel from './MarkWatchedPanel';
 
 const fmtWhen = (d) =>
-  d ? new Date(d).toLocaleString(undefined, { weekday: 'long', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'unscheduled';
+  d ? new Date(d).toLocaleString(undefined, { weekday: 'long', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }) : 'unscheduled';
 const fmtDay = (d) =>
   d ? new Date(d).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }) : '—';
 const fmtTime = (d) =>
-  d ? new Date(d).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }) : '';
+  d ? new Date(d).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }) : '';
 
 const pad = (n) => String(n).padStart(2, '0');
 const toLocalInput = (v) => {

@@ -79,7 +79,7 @@ export const inferRhythm = (items, cadenceType) => {
   const dayGaps = gaps.map((g) => Math.max(1, Math.round(g / DAY_MS)));
   const stepDays = mode(dayGaps);
   const weekday = lastDate.toLocaleDateString(undefined, { weekday: 'long' });
-  const time = lastDate.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  const time = lastDate.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
   const every = stepDays === 7 ? `every week, ${weekday}s at ${time}`
     : stepDays === 1 ? `daily at ${time}`
     : `every ${plural(stepDays, 'day')} at ${time}`;
