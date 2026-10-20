@@ -23,6 +23,13 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: true,
         },
+        // The backend's auth endpoints, so a session works in dev. Not
+        // /auth/callback: that one is a frontend route.
+        '^/auth/(me|refresh|exchange|logout|discord)': {
+          target,
+          changeOrigin: true,
+          secure: true,
+        },
       },
     },
   }
