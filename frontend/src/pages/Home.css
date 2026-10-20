@@ -50,9 +50,9 @@
   z-index: 1;
   /* The top fade keeps the eyebrow and badges legible on bright or red stills. */
   background:
-    linear-gradient(180deg, rgba(20,17,13,.75) 0%, rgba(20,17,13,.35) 14%, transparent 26%),
-    linear-gradient(180deg, transparent 35%, rgba(20,17,13,.65) 70%, rgba(20,17,13,.98) 100%),
-    linear-gradient(90deg, rgba(20,17,13,.85) 0%, rgba(20,17,13,.45) 45%, transparent 70%);
+    linear-gradient(180deg, color-mix(in srgb, var(--ink) 75%, transparent) 0%, color-mix(in srgb, var(--ink) 35%, transparent) 14%, transparent 26%),
+    linear-gradient(180deg, transparent 35%, color-mix(in srgb, var(--ink) 65%, transparent) 70%, color-mix(in srgb, var(--ink) 98%, transparent) 100%),
+    linear-gradient(90deg, color-mix(in srgb, var(--ink) 85%, transparent) 0%, color-mix(in srgb, var(--ink) 45%, transparent) 45%, transparent 70%);
 }
 
 .hero-top{
@@ -538,7 +538,7 @@
   opacity: 0;
   transition: opacity var(--dur-3) var(--ease-out);
 }
-.rf-bg.is-visible{ opacity: .14; }
+.rf-bg.is-visible{ opacity: .32; }
 .rf-stage{
   position: relative;
   z-index: 1;

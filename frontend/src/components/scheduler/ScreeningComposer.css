@@ -59,14 +59,14 @@
   inset: 0;
   z-index: -1;
   background: center 25% / cover no-repeat;
-  opacity: .32;
+  opacity: .5;
 }
 /* Photo overlay: fades the still into the panel so the copy stays legible. */
 .sd-backdrop::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(28, 25, 21, .55) 0%, var(--ink-2) 92%);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--ink-2) 55%, transparent) 0%, var(--ink-2) 92%);
 }
 .sd-lead {
   font-size: var(--fs-16);
@@ -498,7 +498,7 @@
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: linear-gradient(180deg, rgba(20, 17, 13, .35) 0%, rgba(20, 17, 13, .92) 100%);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--ink) 35%, transparent) 0%, color-mix(in srgb, var(--ink) 92%, transparent) 100%);
 }
 .sd-ticket-row {
   display: flex;
