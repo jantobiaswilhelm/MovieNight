@@ -685,9 +685,15 @@
 }
 .recent-grid{
   display: grid;
-  grid-template-columns: 1.4fr 1fr;
+  /* The agenda rows are short (date, title, score); the quote gets the room. */
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
   gap: var(--s-7);
   align-items: start;
+}
+/* The quote panel runs the full height of the list, its still filling the column. */
+.recent-grid > .reviews-feature{
+  align-self: stretch;
+  justify-content: center;
 }
 .recent-grid.is-single{ grid-template-columns: 1fr; }
 .recent-list{ display: flex; flex-direction: column; gap: var(--s-4); min-width: 0; }
