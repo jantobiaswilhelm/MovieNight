@@ -418,7 +418,6 @@ const Movie = () => {
       {!movie.started_at && (
         <section>
           <SectionHead
-            num="02"
             title="Who's coming"
             meta={movie.attendees?.length > 0 ? `${movie.attendees.length} confirmed` : 'None yet'}
           />
@@ -448,7 +447,7 @@ const Movie = () => {
       {/* ── Synopsis ── */}
       {movie.description && (
         <section>
-          <SectionHead num={movie.started_at ? '02' : '03'} title="The picture" meta="Synopsis" />
+          <SectionHead title="The picture" meta="Synopsis" />
           <div className="mv-synopsis">
             <p>{movie.description}</p>
           </div>
@@ -459,7 +458,6 @@ const Movie = () => {
       {credits && (credits.directors?.length > 0 || credits.cast?.length > 0) && (
         <section>
           <SectionHead
-            num={movie.started_at ? '03' : '04'}
             title="The players"
             meta={`${(credits.directors?.length || 0) + (credits.cast?.length || 0)} credits`}
           />
@@ -504,7 +502,6 @@ const Movie = () => {
       {/* ── Your rating ── */}
       <section>
         <SectionHead
-          num="05"
           title="Your verdict"
           meta={ratingsAvailable ? 'Rating open' : 'Locked'}
         />
@@ -547,7 +544,6 @@ const Movie = () => {
       {ratingsAvailable && movie.ratings?.length > 0 && (
         <section>
           <SectionHead
-            num="06"
             title="The ledger"
             meta={`${movie.ratings.length} verdict${movie.ratings.length !== 1 ? 's' : ''}`}
           />
@@ -595,7 +591,6 @@ const Movie = () => {
       {movie.tmdb_id && (
         <section>
           <SectionHead
-            num="07"
             title="Further viewing"
             meta={loadingSimilar ? 'Loading…' : `${similarMovies.length} titles`}
           />

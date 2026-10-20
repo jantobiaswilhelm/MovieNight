@@ -428,7 +428,8 @@ select{
   color: var(--bone-dim);
   background: transparent;
 }
-.chip.accent{ border-color: var(--ember); color: var(--ember); background: var(--ember-soft); }
+/* Text in --ember-hi: plain ember on its own tint is 4.1:1, under AA. */
+.chip.accent{ border-color: var(--ember); color: var(--ember-hi); background: var(--ember-soft); }
 .chip.solid { background: var(--ink-3); border-color: var(--ink-3); color: var(--bone); }
 
 .badge{
