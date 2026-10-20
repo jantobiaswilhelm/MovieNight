@@ -153,7 +153,7 @@
   position: absolute;
   top: var(--s-2); right: var(--s-2);
   padding: 3px 8px;
-  background: rgba(20, 17, 13, .85);
+  background: color-mix(in srgb, var(--ink) 85%, transparent);
   color: var(--gold);
   font-family: var(--font-display);
   font-style: italic;

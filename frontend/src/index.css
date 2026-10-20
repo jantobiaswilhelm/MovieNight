@@ -11,22 +11,24 @@
    New names. Use these in all new code.
    ────────────────────────────────────────────────────────────────────────── */
 :root{
-  /* Color — surface */
-  --ink:        #14110D;
-  --ink-2:      #1C1915;
-  --ink-3:      #252119;
-  --ink-4:      #2F2A21;
+  /* Color — surface. "Screening room": a warm dark, not black (L* 14/19/24/29),
+     with enough step between levels that panels read as surfaces. */
+  --ink:        #27221C;
+  --ink-2:      #332D25;
+  --ink-3:      #3F382E;
+  --ink-4:      #4C4338;
 
   /* Color — ink on dark */
   --bone:       #E8DFC9;
-  --bone-dim:   #A89E88;
-  --bone-mute:  #928A77;
+  --bone-dim:   #BFB59E;
+  --bone-mute:  #AFA58E; /* ≥4.7:1 on every surface up to --ink-3 */
 
   /* Color — accents */
-  --ember:      #D4663A;
-  --ember-hi:   #E27A4C;
-  --ember-dim:  #8A3F1F;
-  --ember-soft: rgba(212, 102, 58, .14);
+  /* Lifted with the surfaces so ember text keeps ≥4.6:1 on --ink-2. */
+  --ember:      #E27A4C;
+  --ember-hi:   #EC8D60;
+  --ember-dim:  #9A4A28;
+  --ember-soft: rgba(226, 122, 76, .16);
   --gold:       #E0A23A;
   --red:        #C8321A;
 
@@ -39,8 +41,8 @@
   --discord-green:   #248046;
 
   /* Rules */
-  --rule:        rgba(232, 223, 201, .08);
-  --rule-strong: rgba(232, 223, 201, .16);
+  --rule:        rgba(232, 223, 201, .11);
+  --rule-strong: rgba(232, 223, 201, .21);
 
   /* Type */
   --font-display: "Fraunces", ui-serif, Georgia, serif;
@@ -118,7 +120,7 @@
   /* Gradients — neutralised where they were UI chrome; kept only for photos */
   --gradient-card:   var(--ink-2);                                                /* was 135° gradient */
   --gradient-hero:   linear-gradient(180deg, transparent 0%, var(--ink) 100%);    /* photo overlay, OK */
-  --gradient-poster: linear-gradient(to top, rgba(20,17,13,.95) 0%, rgba(20,17,13,.5) 40%, transparent 100%);
+  --gradient-poster: linear-gradient(to top, color-mix(in srgb, var(--ink) 95%, transparent) 0%, color-mix(in srgb, var(--ink) 50%, transparent) 40%, transparent 100%);
 
   /* Borders */
   --border-color:    var(--rule);
